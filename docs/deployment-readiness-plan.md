@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-04 — 첫 iOS 실기기 빌드(EAS) 진행
+
+- 사용자가 맥에서 진행: 저장소 clone(`~/dev/IntellijProject/toffee`), EAS 로그인(처음엔 젤리 개인 계정 `ddururiiiiiii`로 로그인돼 있어서
+  `toffeechat`으로 바꿈), 기기는 젤리 때 Apple 개발자 포털에 등록해 둔 아이폰을 가져옴(Developer Portal), 토피용 배포 인증서 새로 생성,
+  expo-updates 설치·Expo 푸시 키는 거절.
+- **첫 빌드 실패(Install pods)**: `[react-native-firebase] SPM + static linkage is not supported` — `useFrameworks: 'static'`(카카오 등 때문)과
+  RNFirebase 26의 SPM 방식이 충돌. `app.config.ts`에서 `['@react-native-firebase/app', { ios: { disableSPM: true } }]`로 Firebase를
+  CocoaPods로 받게 함(Podfile에 `$RNFirebaseDisableSPM = true` 들어가는 것 prebuild로 확인). 다시 빌드 예정.
+- 사용자가 Expo 비밀번호로 보이는 값을 대화에 붙여넣음 → 비밀번호 변경 안내.
+
+---
+
 ## 2026-10-02 (이어서) — 베트남어 추가(1차, 7개 언어)
 
 - **원인**: 사용자 — 태국 GL 팬미팅이 열리는 나라 위주로 가려는데 베트남이 있음. 싱가포르(영어·간체)·필리핀(영어)은 지금 언어로 되지만
