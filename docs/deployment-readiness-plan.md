@@ -35,6 +35,9 @@
   원인인 `eas.json`의 `channel`(expo-updates 없이 채널만 있음)을 preview·production에서 뺌 — OTA 도입 때 다시. **빌드 성공**, 아이폰 설치.
 - 소셜 로그인 동의 화면 로고: 카카오·네이버·LINE에 앱 아이콘(T Spark) 업로드(앱 빌드와 무관, 각 회사 서버에 저장). 구글은 로고를 올리면
   OAuth 앱 심사가 시작돼서 출시 준비 때(ops-infra-backlog).
+- **실기기 테스트 체크리스트** 아티팩트 https://claude.ai/artifact/6oRVkwDdAgZiJtY75Yf8uV — 팬(폰)·팬(PC 웹)·아티스트·소속사·운영자별
+  56개 항목, 항목마다 통과/문제/건너뜀 + 메모(`results/<항목 id>`에 저장, Claude가 `ArtifactData`로 읽어 고침). 데모 서버엔 파일 저장소(R2)가
+  아직 없어 사진·음성·영상 보내기는 실패 예상 — 건너뜀 처리. 다 하면 운영자 "데모 초기화"(소셜 로그인으로 생긴 계정·푸시 기기도 지워짐).
 
 ---
 
