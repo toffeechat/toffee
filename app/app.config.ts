@@ -115,7 +115,9 @@ const config: ExpoConfig = {
       },
     ],
     'expo-video',
-    '@react-native-firebase/app',
+    // Firebase를 SPM(Swift 패키지) 대신 CocoaPods로 — 위 useFrameworks 'static'과 SPM을 같이 쓰면 Firebase가 모듈마다 복사돼
+    // 링크 단계에서 충돌함(RNFirebase가 pod install을 막음). 2026-10-04 첫 EAS iOS 빌드에서 발견
+    ['@react-native-firebase/app', { ios: { disableSPM: true } }],
     '@react-native-firebase/messaging',
     ['expo-notifications', { color: '#7C8CFF' }],
     // 카카오 SDK 저장소(안드로이드) — 패키지가 설치돼 있으면 키가 없어도 빌드에 필요

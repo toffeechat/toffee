@@ -1398,3 +1398,5 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - "번역 보기" 표시(`utils/detect-script.ts`): 베트남어는 라틴 문자라 영어와 구분이 안 돼서 베트남어 전용 글자(ă·đ·ơ·ư, U+1EA0–1EF9)가
   있으면 `vietnamese`로 봄. 성조 없이 쓴 베트남어는 latin(영어와 같음) 취급.
 - 언어 선택은 기기 언어(`getDeviceLanguage`) → 없으면 en, 사용자가 프로필에서 바꿈. 서버는 Accept-Language·`User.locale`.
+- **2026-10-04**: RNFirebase 26은 기본이 SPM이라 `useFrameworks: 'static'`과 같이 쓰면 pod install이 막힘 → `@react-native-firebase/app`
+  플러그인 옵션 `ios.disableSPM: true`(Podfile `$RNFirebaseDisableSPM = true`)로 CocoaPods 사용.
