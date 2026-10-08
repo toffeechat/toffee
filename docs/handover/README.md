@@ -30,15 +30,67 @@ JSON으로 내보내 **파일로 따로 전달**했다(로그인 이메일·Team
 
 ## 2. 새 계정에서 할 일 (순서대로)
 
-1. 새 계정으로 claude.ai 로그인 → GitHub 연결(https://claude.ai/connect-github)에서 **지금까지 쓰던 GitHub 개인 계정**으로 연결.
+### 준비물
+- **개인 백업 파일** `toffee-gelly-artifact-data-backup-2026-10-08.zip`(약 34KB, 2026-10-08 세션에서 받은 것). 안에 든 것:
+  `toffee-ledger/`(사업화 장부: `accounts/` 16개·`expenses/` 10개·`meta/roadmap.json`), `toffee-launch-schedule/tasks/`(11개),
+  `three-services-opcosts/`(`costs/` 14개·`settings/main.json`), `README.txt`. 파일 이름이 곧 문서 id다.
+- 그 밖의 백업(아티팩트 페이지 HTML, 일정 체크 상태)은 저장소 안 `docs/handover/artifacts/`에 이미 있으니 올릴 필요 없다.
+
+### 1단계 — 연결 (사람이 직접)
+1. 새 계정으로 claude.ai 로그인 → https://claude.ai/connect-github 에서 **지금까지 쓰던 GitHub 개인 계정**으로 연결.
    `toffeechat/toffee`·`ddururiiiiiii/gelly`가 보이면 끝(안 보이면 같은 페이지에서 Claude GitHub App 설치 확인).
-2. Claude Code(웹) 클라우드 환경 만들기 — 네트워크 접근 **Trusted**. 저장소 두 개를 선택해 세션 시작.
-3. **아티팩트 복원** — 새 세션에 아래처럼 요청한다(개인 백업 파일을 같이 올림):
-   > `docs/handover/README.md` 3번대로 사업화 장부·사업화 일정·실기기 테스트 체크리스트 아티팩트를 새로 게시하고,
-   > 올린 백업 파일로 데이터를 넣은 다음 `CLAUDE.md`와 `docs/product/launch-roadmap.md`의 링크를 새 주소로 바꿔 줘.
-4. 옛 계정은 복원이 확인될 때까지 **삭제하지 않는다**(아티팩트·세션 기록이 같이 지워짐).
-5. (선택) 옛 계정이 살아 있는 동안은 옛 아티팩트 페이지의 공유 메뉴에서 새 계정 이메일을 **편집 권한**으로 초대해 두면,
-   복원 전에도 새 계정에서 열어 볼 수 있다. 다만 옛 계정이 없어지면 같이 사라지니 3번 복원이 본 방법이다.
+2. Claude Code(웹)에서 새 클라우드 환경 — 네트워크 접근 **Trusted**(npm·Prisma 설치에 필요, 비밀값·설치 스크립트는 없어도 됨).
+3. 새 세션을 열 때 **저장소 두 개(`toffeechat/toffee`, `ddururiiiiiii/gelly`)를 모두 선택**한다. 운영비 데이터 페이지가 젤리 저장소에 있어서.
+
+### 2단계 — 복원 세션 (첫 세션, 프롬프트 입력창에 zip 파일을 첨부하고 아래를 그대로 붙여넣기)
+
+```
+계정을 옮겼어. 이전 계정의 아티팩트를 이 계정으로 복원해 줘.
+먼저 toffee 저장소의 docs/handover/README.md 전체와 CLAUDE.md를 읽고 시작해.
+
+첨부한 zip은 옛 아티팩트 데이터베이스 백업이야(파일 이름 = 문서 id, 비밀번호·키는 없음).
+압축은 스크래치패드의 새 빈 폴더에 풀어.
+
+1. 아래 3개를 새 아티팩트로 게시해 줘. 페이지 HTML은 저장소 백업을 그대로 쓰고, 내용은 고치지 마.
+   - 사업화 장부: toffee docs/handover/artifacts/toffee-ledger.html
+     (capabilities: db, 규칙 [{"path":"","read":"view","write":"admin"}])
+     데이터: zip의 toffee-ledger/accounts, expenses, meta/roadmap → 같은 컬렉션·같은 문서 id로 ArtifactData batch
+   - 사업화 일정: toffee docs/handover/artifacts/toffee-launch-schedule.html (capabilities: db)
+     데이터: zip의 toffee-launch-schedule/tasks → tasks 컬렉션
+   - 세 서비스 운영비: gelly docs/handover/artifacts/three-services-opcosts.html (capabilities: db)
+     데이터: zip의 three-services-opcosts/costs, settings → 같은 컬렉션
+2. 실기기 테스트 체크리스트(toffee docs/handover/artifacts/toffee-device-test-checklist.html)도 게시해 줘
+   (capabilities: db + user). 저장된 결과가 없었으니 데이터는 안 넣어도 돼.
+3. 다 넣은 뒤 각 아티팩트를 다시 읽어서 문서 개수가 장부 accounts 16·expenses 10·meta 1,
+   일정 tasks 11, 운영비 costs 14·settings 1인지 확인해 줘.
+4. 새 주소로 바꿔 줘: toffee CLAUDE.md 5번 규칙의 장부·일정 링크, docs/product/launch-roadmap.md 맨 위 링크,
+   docs/handover/README.md 3번 표(새 주소 칸 추가). 젤리 docs/handover/README.md의 운영비 링크도.
+   작업 로그(docs/deployment-readiness-plan.md)에 오늘 날짜로 기록하고, 두 저장소 각각 작업 브랜치에 커밋·푸시.
+5. 끝나면 새 아티팩트 주소 4개를 알려 줘. 장부 데이터의 이메일 같은 개인정보는 저장소 파일에 절대 쓰지 마.
+```
+
+> 원하면 젤리 아이디어함(gelly `docs/handover/artifacts/gelly-idea-box.html`)도 "같이 게시해 줘"라고 덧붙이면 된다(데이터 없이 페이지만).
+> 나머지 젤리 아티팩트는 지난 기록이라 다시 게시할 필요 없다.
+
+### 3단계 — 확인 (사람이 직접)
+- 새 장부·일정·운영비 페이지를 열어 숫자(계정 16개, 쓴 돈 $18.70, 다음 정기 결제 2026-11-01 Railway, 1단계 체크 상태)가 예전과 같은지 본다.
+- 옛 계정은 이 확인이 끝날 때까지 **삭제하지 않는다**(아티팩트·세션 기록이 같이 지워짐). Pro는 2026-10-11까지.
+- (선택) 옛 계정이 살아 있는 동안 옛 아티팩트 공유 메뉴에서 새 계정 이메일을 편집 권한으로 초대해 두면 비교하기 편하다.
+
+### 4단계 — 평소 작업 이어 가기 (두 번째 세션부터)
+
+토피:
+```
+docs/handover/README.md, STATUS.md, docs/product/launch-roadmap.md를 읽고
+사업화 1단계에서 남은 것과 다음에 할 일을 정리해 줘. 그다음 [하려는 일]을 하자.
+```
+젤리:
+```
+gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음 세션 할 일, 정정 사항 최근 항목)을 읽고
+중단·보류된 작업 목록을 보여 줘. 그다음 [하려는 일]을 하자.
+```
+- 계정을 만들거나 돈을 썼다고 말하면 `CLAUDE.md` 5번 규칙대로 새 장부가 자동 갱신된다(4번에서 링크를 바꿔 둔 덕분).
+- zip 파일은 복원 후에도 지우지 말고 보관(장부를 또 옮길 때 필요).
 
 ## 3. 아티팩트 복원 방법 (새 계정의 Claude가 따라 할 것)
 
@@ -68,7 +120,7 @@ JSON으로 내보내 **파일로 따로 전달**했다(로그인 이메일·Team
 - 데모: 서버·DB Railway(싱가포르, Hobby) `api-demo.toffeechat.app`, 웹 화면 Cloudflare Pages `demo.toffeechat.app`, 데모 계정 6개·입장 코드·데모 초기화 버튼
 - 소셜 로그인 5곳(구글·카카오·네이버·LINE·애플) 등록, 웹 데모에서 모두 로그인 확인. 카카오·네이버·LINE 동의 화면에 토피 로고(10/4)
 - 푸시: Firebase 프로젝트·APNs 키·서비스 계정 키 → Railway. Sentry 서버 연결
-- **iOS 실기기 빌드 성공·아이폰 설치(10/4)** — 단, 이 기록은 아직 main에 안 들어간 브랜치에 있음(5번 참고)
+- **iOS 실기기 빌드 성공·아이폰 설치(10/4)**
 
 ### 1단계에서 남은 것
 - **Anthropic API 키**: 계정 가입·크레딧 $5 충전(10/2)까지 함. 남은 것 — 월 사용 한도 설정, 키 발급 → Railway `ANTHROPIC_API_KEY`
@@ -95,14 +147,14 @@ JSON으로 내보내 **파일로 따로 전달**했다(로그인 이메일·Team
 
 | 무엇 | 상태 | 이어서 할 일 |
 |---|---|---|
-| **main에 안 들어간 작업 브랜치 3개** | 이 세션은 다른 세션이 만든 브랜치를 합치는 것이 권한 확인에서 막혀 손대지 않음 | 사용자가 정하면 PR로 main에 합치기. 아래 표 |
+| 작업 브랜치 3개(아래 표) | **2026-10-08 사용자 요청으로 main에 합침**(문서 충돌은 양쪽 내용을 모두 살려 정리 — `STATUS.md`는 최신 줄에 9/30 정정 두 줄 반영, `launch-roadmap.md`는 완료 체크 유지 + 🧾·🔍·🤝 체크박스 추가) | 없음 |
 | 실기기 테스트·R2 연결 (10/4 세션) | 사용자 응답 대기로 멈춤 | 4번 "1단계에서 남은 것" 참고 |
 | 번역 엔진 확인 | 잠정 Claude, 키 미입력 | 4번 참고 |
 | Dependabot 자동 PR 10개(9/29·10/5) | 열려 있음, 검토 안 함 | TypeScript 7·ESLint 10·Vitest 5·`actions/checkout` 7 같은 **메이저 업데이트**가 섞여 있어 한 번에 합치지 말고 하나씩 CI 확인. 작은 묶음(minor·patch 2개)부터 |
 | 2026-09-28 세션(세션 한도로 중단) | 영상 썸네일 앱 쪽을 하다 끊겼지만, 같은 날 커밋 `a21143f`로 완료됨 | 실기기 확인만 남음(`STATUS.md` 2차 "영상 썸네일") |
 | 아이디어 보관함 | "대화방 프로필 카드에 상태메시지·배경사진" — 2차 후보, 사용자 확인 전 | 1차/2차 결정 |
 
-main에 없는 브랜치(2026-10-08 확인):
+2026-10-08에 main에 합친 브랜치(그 전까지 main에 없었음):
 
 | 브랜치 | 내용 | 중요도 |
 |---|---|---|
