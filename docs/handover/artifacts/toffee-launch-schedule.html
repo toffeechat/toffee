@@ -1,0 +1,597 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>토피 사업화 일정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 한 줄 세로 흐름 — 요약(지금 위치·진행률·다가오는 일정) → 단계별 체크리스트 → 메모장. 넓은 화면에선 요약이 2열 */
+:root{
+  --bg:#FFFFFF; --surface:#F4F6FB; --line:#E3E6F0; --fg:#0F1115; --muted:#5B6172;
+  --accent:#7C8CFF; --accent-strong:#5566F2; --accent-soft:#DCE1FF; --on-accent:#FFFFFF;
+  --advisor:#0E8A7A; --advisor-soft:#D8F2EE; --bench:#B25E09; --bench-soft:#FBEBD6;
+  --done:#9AA0AE; --danger:#C2334B; --money:#3D55E0; --money-soft:#E4E8FF;
+  --font:"Pretendard","IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1115; --surface:#181B22; --line:#2A2E39; --fg:#EEF0F6; --muted:#9CA3B5;
+  --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
+  --advisor:#4FD1BE; --advisor-soft:#15302C; --bench:#F2A65A; --bench-soft:#33261A;
+  --done:#5F6575; --danger:#FF7B90; --money:#A9B3FF; --money-soft:#22284A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1115; --surface:#181B22; --line:#2A2E39; --fg:#EEF0F6; --muted:#9CA3B5;
+  --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
+  --advisor:#4FD1BE; --advisor-soft:#15302C; --bench:#F2A65A; --bench-soft:#33261A;
+  --done:#5F6575; --danger:#FF7B90; --money:#A9B3FF; --money-soft:#22284A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;padding:0 16px}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:700}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent-strong);text-transform:uppercase}
+.sub{color:var(--muted);margin:6px 0 0;font-size:14px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* 요약 */
+.summary{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+@media (max-width:680px){.summary{grid-template-columns:1fr}}
+.panel{background:var(--surface);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.now-stage{font-size:20px;font-weight:700}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.stats{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.next{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.next li{display:grid;grid-template-columns:64px 1fr;gap:10px;font-size:14px;align-items:baseline}
+.next .when{font-size:12px;color:var(--muted)}
+.next .over{color:var(--danger);font-weight:600}
+.empty{color:var(--muted);font-size:14px}
+
+/* 필터 */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:5px 14px;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* 단계 */
+.stages{display:flex;flex-direction:column;gap:10px}
+details.stage{border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+details.stage[open]{border-color:var(--accent-soft)}
+details.stage.current{border-color:var(--accent)}
+summary{list-style:none;cursor:pointer;padding:14px 16px;display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center}
+summary::-webkit-details-marker{display:none}
+.sn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface);font-weight:700;font-size:14px}
+.current .sn{background:var(--accent);color:var(--on-accent)}
+.complete .sn{background:var(--accent-soft);color:var(--accent-strong)}
+.st-title{font-weight:700;font-size:16px}
+.st-meta{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.st-count{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.mini{width:64px;height:4px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px;margin-left:auto}
+.mini>i{display:block;height:100%;background:var(--accent)}
+.st-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:4px}
+.st-note{font-size:13.5px;color:var(--muted);background:var(--surface);border-radius:8px;padding:10px 12px;margin:2px 0 8px}
+.st-note strong{color:var(--fg)}
+
+.task{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.task:first-of-type{border-top:0}
+.task input[type=checkbox]{width:18px;height:18px;margin:3px 0 0;accent-color:var(--accent-strong);cursor:pointer}
+.t-main{min-width:0;display:flex;flex-direction:column;gap:3px}
+.t-title{font-weight:600}
+.t-detail{font-size:13.5px;color:var(--muted)}
+.task.done .t-title{color:var(--done);text-decoration:line-through;text-decoration-thickness:1px}
+.task.done .t-detail{color:var(--done)}
+.t-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px}
+.tag{border-radius:99px;padding:1px 8px;font-weight:600;font-size:11.5px}
+.tag.advisor{background:var(--advisor-soft);color:var(--advisor)}
+.tag.bench{background:var(--bench-soft);color:var(--bench)}
+.tag.money{background:var(--money-soft);color:var(--money)}
+.ex-form{display:grid;grid-template-columns:150px 1fr 140px;gap:8px}
+.ex-form .wide{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ex-form .wide select{width:auto;flex:1 1 130px}
+@media (max-width:560px){.ex-form{grid-template-columns:1fr 1fr}.ex-form #exItem{grid-column:1/-1}}
+input[type=date],input[type=number]{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.ex-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.ex-sum{grid-template-columns:1fr}}
+.ex-box{background:var(--surface);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ex-box .big{font-size:20px;font-weight:700}
+.ex-box ul{list-style:none;margin:0;padding:0;font-size:13px}
+.ex-box li{display:flex;justify-content:space-between;gap:8px}
+.ex-tablewrap{overflow-x:auto}
+.ex-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+.ex-table th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+.ex-table td{padding:8px 8px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.ex-table td.amt,.ex-table th.amt{text-align:right}
+.ex-table input[type=checkbox]{accent-color:var(--accent-strong)}
+.ex-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.due{color:var(--muted)}
+.doneat{color:var(--done)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent-strong);cursor:pointer;font-size:12px}
+.t-memo{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+textarea,input[type=text],select{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{resize:vertical;min-height:64px}
+.memo-view{font-size:13.5px;white-space:pre-wrap;background:var(--surface);border-radius:8px;padding:8px 10px}
+.saved{font-size:12px;color:var(--muted)}
+
+/* 메모장 */
+.notes-form{display:grid;grid-template-columns:140px 1fr auto;gap:8px;align-items:start}
+@media (max-width:560px){.notes-form{grid-template-columns:1fr}}
+.btn{background:var(--accent-strong);color:var(--on-accent);border:0;border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:default}
+.notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.note{padding:12px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.note-head{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.note-text{white-space:pre-wrap;font-size:14.5px}
+.confirm{display:inline-flex;gap:8px;align-items:center}
+.danger{color:var(--danger)}
+
+.banner{background:var(--bench-soft);color:var(--fg);border-radius:8px;padding:10px 14px;font-size:13.5px}
+.foot{font-size:12.5px;color:var(--muted)}
+.foot code{font-family:var(--mono);font-size:12px}
+.cost{width:100%;border-collapse:collapse;font-size:13.5px}
+.cost td{padding:7px 0;border-top:1px solid var(--line);vertical-align:top}
+.cost td:first-child{width:92px;color:var(--muted);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Toffee · 지금부터 첫 매출까지</div>
+    <h1>토피 사업화 일정</h1>
+    <p class="sub">저장소의 <code>docs/product/launch-roadmap.md</code>를 옮긴 체크리스트예요. 체크하거나 메모를 남기면 바로 저장되고, Claude도 읽을 수 있어요.</p>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="summary" aria-label="요약">
+    <div class="panel">
+      <div class="eyebrow">지금 위치</div>
+      <div class="now-stage" id="nowStage">1단계. 계정·기반</div>
+      <div class="sub" id="nowRange" style="margin:0"></div>
+      <div class="bar" aria-hidden="true"><i id="allBar" style="width:0%"></i></div>
+      <div class="stats"><span>전체 진행</span><span class="num" id="allCount">0 / 0</span></div>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">다가오는 약속·마감</div>
+      <ul class="next" id="nextList"></ul>
+    </div>
+  </section>
+
+  <section aria-label="단계별 할 일" style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+      <h2>단계별 할 일</h2>
+      <div class="filters" role="group" aria-label="보기">
+        <button class="chip" data-f="all" aria-pressed="true">전체</button>
+        <button class="chip" data-f="todo" aria-pressed="false">남은 것만</button>
+        <button class="chip" data-f="advisor" aria-pressed="false">현지 조언</button>
+        <button class="chip" data-f="bench" aria-pressed="false">벤치마킹</button>
+        <button class="chip" data-f="money" aria-pressed="false">비용 기록</button>
+      </div>
+    </div>
+    <div class="stages" id="stages"></div>
+  </section>
+
+  <section class="panel" aria-label="지출 장부" style="background:var(--bg);border:1px solid var(--line)">
+    <div>
+      <h2>지출 장부</h2>
+      <p class="sub">토피·젤리에 쓴 돈을 적어 두세요. 세무사 첫 상담 때 이 표를 그대로 넘기면 돼요. 인보이스 PDF는 따로 한 폴더에 모으고, 받았으면 "인보이스"에 체크하세요.</p>
+    </div>
+    <form class="ex-form" id="exForm">
+      <input type="date" id="exDate" aria-label="날짜" required>
+      <input type="text" id="exItem" placeholder="항목 (예: 애플 개발자 계정 1년)" aria-label="항목" required>
+      <input type="number" id="exAmount" placeholder="원화 금액" min="0" step="1" inputmode="numeric" aria-label="원화 금액" required>
+      <div class="wide">
+        <select id="exCat" aria-label="분류">
+          <option value="account">계정·서비스</option><option value="devtool">개발 도구</option><option value="bench">벤치마킹</option>
+          <option value="meeting">미팅</option><option value="asset">장비(자산)</option><option value="etc">기타</option>
+        </select>
+        <select id="exProj" aria-label="사업"><option value="toffee">토피</option><option value="gelly">젤리</option><option value="both">공통</option></select>
+        <select id="exMethod" aria-label="결제 수단"><option value="card">토피 전용 카드</option><option value="personal">개인 카드</option><option value="other">현금·기타</option></select>
+        <button class="btn" id="exAdd" type="submit">지출 추가</button>
+      </div>
+      <input type="text" id="exMemo" class="wide" style="display:block" placeholder="메모 (선택) — 달러 금액, 미팅이면 누구와·무슨 목적" aria-label="메모">
+    </form>
+    <div class="ex-sum" id="exSum"></div>
+    <div class="ex-tools">
+      <span class="saved" id="exHint">2026년에 쓴 돈은 법인 비용으로 인정되지 않을 수 있어요(첫 사업연도 1년 제한). 그래도 코드 이전·사업계획서 근거로 남겨 두세요.</span>
+      <button class="linkbtn" id="exCopy" type="button">표 복사(엑셀에 붙여넣기)</button>
+    </div>
+    <div class="ex-tablewrap"><table class="ex-table">
+      <thead><tr><th>날짜</th><th>항목</th><th>분류</th><th>사업</th><th>결제</th><th class="amt">금액</th><th>인보이스</th><th></th></tr></thead>
+      <tbody id="exRows"><tr><td colspan="8" class="empty">아직 기록이 없어요. 위에서 첫 지출을 추가해 보세요.</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" aria-label="메모장" style="background:var(--bg);border:1px solid var(--line)">
+    <div>
+      <h2>메모장</h2>
+      <p class="sub">벤치마킹하면서 느낀 점, 대표님 통화 내용, 소속사 반응을 날짜와 함께 쌓아 두세요. 4단계 사업계획서의 근거가 돼요.</p>
+    </div>
+    <form class="notes-form" id="noteForm">
+      <select id="noteKind" aria-label="분류">
+        <option value="bench">벤치마킹</option>
+        <option value="advisor">현지 조언</option>
+        <option value="agency">소속사 반응</option>
+        <option value="etc">기타</option>
+      </select>
+      <textarea id="noteText" placeholder="예: 버블 첫 메시지까지 결제 포함 4분. 가격 표시가 결제창에서야 원화로 보임" aria-label="메모 내용"></textarea>
+      <button class="btn" id="noteAdd" type="submit">메모 추가</button>
+    </form>
+    <ul class="notes" id="notes"><li class="empty">아직 메모가 없어요. 첫 메모를 위에 적어 보세요.</li></ul>
+  </section>
+
+  <section class="panel" aria-label="돈이 나가는 시점">
+    <h2>돈이 나가는 시점</h2>
+    <table class="cost">
+      <tr><td>1~3단계</td><td>도메인 연 1~2만 원, 데모 서버 월 1~3만 원, 버블·위버스 벤치마킹 2개월 약 2~5만 원</td></tr>
+      <tr><td>4단계</td><td>거의 없음</td></tr>
+      <tr><td>5단계</td><td>법인 설립 30~50만 원, 구글 법인 계정 $25, 세무 기장 월 10~20만 원 시작</td></tr>
+      <tr><td>6단계</td><td>변호사·번역 검수(건별, 지원금으로 충당하면 좋음), 운영 서버 월 2~8만 원</td></tr>
+    </table>
+  </section>
+
+  <p class="foot">문구와 단계는 저장소 문서가 원본이에요. 계획이 바뀌면 Claude에게 말해 주세요. 문서와 이 페이지를 함께 고쳐요.</p>
+</div>
+
+<script>
+const STAGES = [
+  {n:1, title:"계정·기반", range:"2026-10-01 ~ 10-18", start:"2026-10-01", end:"2026-10-18", biz:"사업자 없음",
+   note:"순서가 중요해요: <strong>도메인 → 회사 메일 → 서버(약관 주소) → 소셜 로그인 등록</strong>. 소셜 로그인은 개인정보처리방침 주소를 요구하는데, 그 주소가 서버에 있는 <code>/legal/privacy</code> 페이지라서요.",
+   tasks:[
+    ["s1-domain","도메인 구매","연 1~2만 원, Cloudflare 추천. 앱 번들 ID(com.toffeechat.app, 잠정)도 도메인에 맞춰 이때 확정"],
+    ["s1-mail","회사 메일(hello@, support@)","Cloudflare 메일 전달(무료)로 시작, 보내기까지 필요하면 Google Workspace"],
+    ["s1-2fa","비밀번호 관리자 + 모든 계정 2단계 인증",""],
+    ["s1-card","토피 전용 카드 정하고 지출 기록 시작","해외 결제 되는 체크카드 하나로 토피·젤리 비용만 결제, 인보이스 PDF는 한 폴더에, 아래 지출 장부에 기록(매달 한 번 10분)","money"],
+    ["s1-org","GitHub Organization으로 저장소 옮기기","무료. 옮긴 뒤 Claude GitHub App 새로 설치"],
+    ["s1-accounts","토피 전용 메일로 서비스 가입","Cloudflare(R2 파일 저장소), Firebase(푸시), Sentry(오류), Expo(앱 빌드)"],
+    ["s1-demo","호스팅 고르고 데모 서버 띄우기","운영과 분리된 데모 환경에 가상 배우 데이터만(실제 배우 정보 금지)"],
+    ["s1-social","소셜 로그인 개발자 등록","구글·카카오·네이버·라인(무료, 개인 가능). 애플은 기존 개인 계정에서 개발용 번들 ID(…app.dev)로만"],
+    ["s1-anthropic","Anthropic API 키 발급","scripts/translation-sample.mjs로 태국어 등 예문 번역 품질 확인"],
+    ["s1-keys","소셜 로그인 키 넣고 실제 로그인 확인","버튼 코드는 완료, 키가 들어간 버튼만 보여요"],
+    ["s1-device","실기기 테스트 빌드","TestFlight·구글 내부 테스트로 푸시 수신, 카메라·녹음, 사진 확대 제스처, 영상 썸네일, 화면 꺼도 음성 재생 확인"],
+    ["s1-bench","버블·위버스 DM 직접 결제 시작","각각 아티스트 1~2명(태국 배우 우선), 폰 앱 스토어 결제로. 결제일과 갱신일을 달력에 적기","bench","2026-10-05"],
+    ["s1-advisor","대표님께 첫 연락","\"30분 통화로 몇 가지 여쭙고 싶다\"는 짧은 메시지. 통화는 데모가 준비되는 10월 말로 잡기","advisor","2026-10-07"],
+   ]},
+  {n:2, title:"데모·제안 자료", range:"10-19 ~ 11-01", start:"2026-10-19", end:"2026-11-01", biz:"사업자 없음", tasks:[
+    ["s2-demo","직접 눌러 보는 데모","데모 서버 주소 + 소속사 체험용 계정. 영상보다 설득력이 커요"],
+    ["s2-advisor","대표님과 첫 통화(제안서 보내기 전)","데모 링크를 들고: 태국 팬이 월 구독을 낼지·적정 바트 가격, 제안 조건이 통하는지, 첫 연락 방식(메일/LINE/대면), 소개받을 곳","advisor","2026-10-28"],
+    ["s2-video","데모 영상 2~3분","팬(둘러보기 → 구독 → 채팅) → 스타 스튜디오 → 소속사 모니터링·통계"],
+    ["s2-proposal","영문 제안서 1~2장","비용 없음·독점 없음·수익 배분만·3개월 파일럿·기술/번역/운영은 우리가. 가능하면 태국어 요약"],
+    ["s2-landing","간단한 랜딩 페이지","도메인 첫 화면"],
+    ["s2-bench","벤치마킹 1개월 차 정리","따라 할 것 / 우리가 더 나은 것 / 일부러 다르게 하는 것. 제안서 차별점 뽑기. 새 기능은 STATUS.md 아이디어 보관함으로","bench","2026-10-31"],
+    ["s2-list","연락할 곳 목록 15~20곳","대형보다 중소 제작사·신인 위주 소속사·매니저부터"],
+    ["s2-name","회사 이름 표기 확인","등록 전엔 \"Co., Ltd.\"·\"주식회사\" 금지 → \"Toffee\", \"Toffee Team\""],
+  ]},
+  {n:3, title:"소속사 의견 듣기", range:"11-02 ~ 12-31", start:"2026-11-02", end:"2026-12-31", biz:"사업자 없음",
+   note:"목표는 서명된 계약서가 아니라 <strong>관심의 증거</strong>예요. <strong>분기점</strong>: 반응 있음 + \"회사가 있어야 한다\" → 5단계(법인)를 앞당김. 3개월 반응 0 → 방향 점검, 지원사업은 그대로 신청.",
+   tasks:[
+    ["s3-first","1차 5곳 연락 → 문구·조건 다듬기 → 2차 5~10곳",""],
+    ["s3-intro","소개 경로 찾기","KOTRA 방콕무역관 파트너 발굴 문의, 태국 엔터 쪽 한국 업계 사람, 현지 팬 커뮤니티"],
+    ["s3-log","답장·미팅 메모 모으기","예: N곳 연락, M곳 미팅, 파일럿 검토 의사 K곳 (아래 메모장 활용)"],
+    ["s3-dev","개발은 피드백 반영만","소속사가 공통으로 원하는 게 있을 때만 1차/2차에"],
+    ["s3-share","정산 비율 초안 정리","feature-decisions.md \"소속사 계약/정산 조건\""],
+    ["s3-bench","벤치마킹 끝 — 갱신 전에 해지","해지하면서 해지·환불 안내 흐름도 기록, 최종 메모 남기기","bench","2026-11-28"],
+    ["s3-advisor","대표님께 중간 점검","반응 해석(예의상 긍정인지 진짜 관심인지), 정산 조건 감각(7:3, 계약금), 한국 개인·법인과 계약하는 데 거부감","advisor","2026-12-04"],
+  ]},
+  {n:4, title:"지원사업", range:"2027-01 ~ 03 (발표 보통 4~5월)", start:"2027-01-01", end:"2027-03-31", biz:"사업자 없음(중요)",
+   note:"지원금은 <strong>자본금이 아니에요</strong>. 협약한 용도에만 쓰고 증빙하는 돈이라 자본금·생활비로 못 써요. 법인 자본금은 개인 돈 100만~500만 원 정도로 작게.",
+   tasks:[
+    ["s4-plan","사업계획서 작성(1월)","재료: 동작하는 서비스, 젤리 운영 실적, 소속사 반응, 비용 문서"],
+    ["s4-notice","공고 확인","K-Startup, 기업마당(대전), 대전창조경제혁신센터, 대전정보문화산업진흥원, 대학 창업지원단, 한국콘텐츠진흥원"],
+    ["s4-apply","신청","예비창업패키지(청년) + 대전 지역 사업. 재직자 신청 가능 여부·현금 자부담 확인"],
+    ["s4-quotes","견적만 받아 두기","변호사, 원어민 번역 검수(태·일·중), 세무사"],
+  ]},
+  {n:5, title:"법인 설립", range:"선정 직후 또는 소속사 요구 시", biz:"법인", tasks:[
+    ["s5-advisor","설립 직전 대표님께","태국 법인이 따로 필요한지, 원천징수·해외 송금 실무, 태국 PDPA, 현지 로펌·세무사 소개","advisor"],
+    ["s5-corp","법인 설립 → 사업자등록 → 통신판매업 신고 → 법인 계좌","셀프 또는 법무사, 30만~50만 원"],
+    ["s5-duns","D-U-N-S 번호 바로 신청","무료, 몇 주 걸림. 애플·구글 법인 계정의 선행 조건"],
+    ["s5-tax","세무사 기장 계약","청년창업 세액감면, 무보수 대표이사, 태국 지급 원천징수, 코드·자산 법인 이전"],
+    ["s5-taxpre","세무사에게 설립 전 비용 묻기","결산월에 따라 설립 전 비용을 어디까지 넣을 수 있는지(첫 사업연도 1년 제한), 지출 장부를 그대로 넘기면 되는지, 테스트 폰·노트북 같은 장비를 법인으로 넘기는 방법","money"],
+    ["s5-gelly","젤리도 법인 사업으로","젤리 중고거래는 이때부터 준비(통신판매중개업 신고)"],
+    ["s5-apple","애플 개인 계정을 법인으로 전환","젤리 그대로, 판매자 이름만 변경 → 그 뒤 토피 운영 번들 ID 등록"],
+    ["s5-google","구글 법인 조직 계정 새로 만들기","토피 등록 + 젤리는 앱 이전 기능으로"],
+    ["s5-owners","기존 서비스 계정은 소유자 정보만 변경","새로 만들면 기존 로그인 회원 식별값이 달라져요"],
+    ["s5-job","직장 겸업금지 조항 다시 확인","무보수 대표면 4대보험으로 드러날 일은 거의 없음(세무사 확인)"],
+  ]},
+  {n:6, title:"출시 준비", range:"설립 후 6~8주", biz:"법인", tasks:[
+    ["s6-contract","소속사 계약서(변호사 검토)","정산 비율·주기·통화, 커플방·묶음 배분, 초상권, 최소 발송 빈도, 종료 처리, 환불 책임"],
+    ["s6-legal","약관·개인정보처리방침 + 정책 표 확정","STATUS.md \"출시 전 확정할 정책\"을 한 번에(태국 PDPA 포함)"],
+    ["s6-i18n","원어민 검수","앱·알림·오류 문구(태·일·중 간체/번체)"],
+    ["s6-products","스토어 구독 상품 등록","배우별·묶음별, 운영자 화면에 상품 ID 입력"],
+    ["s6-sandbox","샌드박스 결제로 끝까지 확인","구독·복원·갱신·해지·환불"],
+    ["s6-smb","애플 소규모 사업자 프로그램 신청","수수료 30% → 15%"],
+    ["s6-prod","운영 서버·DB + 모든 키 입력","데모와 분리, 실제 배우 사진으로 스토어 스크린샷"],
+    ["s6-submit","스토어 제출","store-submission.md + 심사용 계정 + 실존 인물 콘텐츠 권리 증빙"],
+  ]},
+  {n:7, title:"출시·파일럿", range:"3개월, 목표 2027년 여름", biz:"법인",
+   note:"매주 볼 숫자: 구독 전환율, <strong>월 해지율(가장 중요)</strong>, 배우 발송 빈도, 환불·신고 건수, 문의 건수. 스토어 매출은 약 1~2개월 뒤에 들어와요.",
+   tasks:[
+    ["s7-launch","배우 5~10명으로 출시","태국 팬 중심"],
+    ["s7-metrics","주간 숫자 기록 시작","다음 소속사를 설득하는 영업 자료가 돼요"],
+    ["s7-advisor","출시 전후 대표님께","태국 팬 마케팅(팬 커뮤니티·인플루언서·X·TikTok), 태국어 운영 담당 채용 기준·경로","advisor"],
+  ]},
+  {n:8, title:"확장·채용·퇴사 판단", range:"이후", biz:"법인", tasks:[
+    ["s8-expand","같은 소속사의 다른 배우 → 다른 소속사로","젤리는 GL 팬 유입 창구로"],
+    ["s8-hire","채용·퇴사 기준 점검","business-faq.md 7번·8번"],
+  ]},
+];
+const BENCH = {n:"B", title:"벤치마킹 — 볼 것", range:"버블·위버스 DM, 2026-10 ~ 11", biz:"약 2~5만 원",
+  note:"기능 목록은 이미 알아요. 문서로는 모르는 <strong>느낌·빈도·결제 경험</strong>을 보세요. 스크린샷은 개인 폴더에만(경쟁사 화면은 공개 자료에 쓰지 않아요).",
+  tasks:[
+    ["b-signup","가입~첫 메시지","몇 단계·몇 분인지, 결제 화면의 가격 표시·안내 문구","bench"],
+    ["b-freq","스타 발송 빈도·형식","하루 몇 개, 글·사진·음성·영상 비율, 시간대, 오래 안 오면 어떤 기분인지","bench"],
+    ["b-reply","팬 답장 규칙","글자 수·횟수 제한, 구독 기간에 따라 늘어나는 방식, 읽혔는지 알 수 있는지","bench"],
+    ["b-name","이름 부르기·개인화","스타 메시지에 내 닉네임이 들어가는 방식","bench"],
+    ["b-push","알림","문구, 몰릴 때, 누르면 어디로 가는지","bench"],
+    ["b-trans","번역(위버스)","품질, 버튼 위치, 기본 번역인지 눌러야 보이는지","bench"],
+    ["b-save","저장·보관","사진·영상 저장, 모아보기, 유출 금지 안내","bench"],
+    ["b-cancel","해지·환불","해지 경로와 문구, 재구독 시 이전 대화 안내 위치, 환불 안내","bench"],
+    ["b-upsell","돈을 더 쓰게 만드는 장치","묶음·할인, 기념일, 유료 부가 기능","bench"],
+    ["b-pain","불편했던 점","토피가 이길 수 있는 지점 → 제안서 차별점","bench"],
+  ]};
+const ALL_GROUPS = [...STAGES.slice(0,3), BENCH, ...STAGES.slice(3)];
+const TAGNAME = {advisor:"현지 조언", bench:"벤치마킹", money:"비용 기록"};
+const CATNAME = {account:"계정·서비스", devtool:"개발 도구", bench:"벤치마킹", meeting:"미팅", asset:"장비(자산)", etc:"기타"};
+const PROJNAME = {toffee:"토피", gelly:"젤리", both:"공통"};
+const METHODNAME = {card:"토피 카드", personal:"개인 카드", other:"현금·기타"};
+const KINDNAME = {bench:"벤치마킹", advisor:"현지 조언", agency:"소속사 반응", etc:"기타"};
+
+const state = {tasks:{}, notes:[], expenses:[], filter:"all", openMemo:null, confirmDel:null, confirmEx:null};
+let db = null, canWrite = false;
+try { const f = localStorage.getItem("toffee-filter"); if (f) state.filter = f; } catch(e) {}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today = () => { const d = new Date(); return d.toISOString().slice(0,10); };
+const fmtDate = iso => { const [y,m,d] = iso.slice(0,10).split("-"); return `${+m}/${+d}`; };
+const isDone = id => !!(state.tasks[id] && state.tasks[id].done);
+
+function currentStage(){
+  const t = today();
+  for (const s of STAGES) if (s.end && t <= s.end) return s;
+  return STAGES.find(s => s.tasks.some(x => !isDone(x[0]))) || STAGES[STAGES.length-1];
+}
+
+function renderSummary(){
+  const cur = currentStage();
+  $("#nowStage").textContent = `${cur.n}단계. ${cur.title}`;
+  const t = today();
+  $("#nowRange").textContent = cur.start && t < cur.start ? `${cur.range} · ${fmtDate(cur.start)}에 시작` : cur.range;
+  const all = STAGES.flatMap(s => s.tasks);
+  const done = all.filter(x => isDone(x[0])).length;
+  $("#allCount").textContent = `${done} / ${all.length}`;
+  $("#allBar").style.width = (all.length ? done/all.length*100 : 0) + "%";
+  const upcoming = ALL_GROUPS.flatMap(g => g.tasks).filter(x => x[4] && !isDone(x[0])).sort((a,b) => a[4].localeCompare(b[4])).slice(0,5);
+  $("#nextList").innerHTML = upcoming.length ? upcoming.map(x =>
+    `<li><span class="when num ${x[4] < t ? "over" : ""}">${fmtDate(x[4])}${x[4] < t ? " 지남" : ""}</span><span>${esc(x[1])} <span class="tag ${x[3]}">${TAGNAME[x[3]]}</span></span></li>`).join("")
+    : `<li class="empty">날짜가 정해진 약속을 모두 마쳤어요.</li>`;
+}
+
+function taskVisible(x){
+  const f = state.filter;
+  if (f === "todo") return !isDone(x[0]);
+  if (f === "advisor" || f === "bench" || f === "money") return x[3] === f;
+  return true;
+}
+
+function renderTask(x){
+  const [id, title, detail, tag, due] = x;
+  const d = state.tasks[id] || {};
+  const memoOpen = state.openMemo === id;
+  const memo = d.note || "";
+  return `<div class="task ${d.done ? "done" : ""}">
+    <input type="checkbox" id="cb-${id}" data-id="${id}" ${d.done ? "checked" : ""} ${canWrite ? "" : "disabled"} aria-label="${esc(title)}">
+    <div class="t-main">
+      <label class="t-title" for="cb-${id}">${esc(title)}</label>
+      ${detail ? `<div class="t-detail">${esc(detail)}</div>` : ""}
+      <div class="t-row">
+        ${tag ? `<span class="tag ${tag}">${TAGNAME[tag]}</span>` : ""}
+        ${due ? `<span class="due num">목표 ${fmtDate(due)}</span>` : ""}
+        ${d.done && d.doneAt ? `<span class="doneat num">${fmtDate(d.doneAt)} 완료</span>` : ""}
+        ${canWrite ? `<button class="linkbtn" data-memo="${id}">${memoOpen ? "닫기" : memo ? "메모 고치기" : "메모"}</button>` : ""}
+      </div>
+      ${memo && !memoOpen ? `<div class="memo-view">${esc(memo)}</div>` : ""}
+      ${memoOpen ? `<div class="t-memo"><textarea id="memo-${id}" data-memoinput="${id}" placeholder="진행 상황, 연락처, 결정한 것">${esc(memo)}</textarea><span class="saved" id="saved-${id}">입력을 멈추면 저장돼요</span></div>` : ""}
+    </div>
+  </div>`;
+}
+
+function renderStages(){
+  const cur = currentStage();
+  const openNow = new Set([...document.querySelectorAll("details.stage[open]")].map(d => d.dataset.n));
+  const first = !document.querySelector("details.stage");
+  $("#stages").innerHTML = ALL_GROUPS.map(g => {
+    const vis = g.tasks.filter(taskVisible);
+    if (!vis.length) return "";
+    const done = g.tasks.filter(x => isDone(x[0])).length;
+    const complete = done === g.tasks.length;
+    const isCur = g === cur;
+    const key = String(g.n);
+    const open = state.filter !== "all" || (first ? (isCur || g === BENCH) : openNow.has(key));
+    return `<details class="stage ${isCur ? "current" : ""} ${complete ? "complete" : ""}" data-n="${key}" ${open ? "open" : ""}>
+      <summary>
+        <span class="sn num">${g.n}</span>
+        <span><div class="st-title">${g === BENCH ? "" : g.n + "단계. "}${esc(g.title)}</div>
+          <div class="st-meta"><span class="num">${esc(g.range)}</span><span>${esc(g.biz)}</span>${isCur ? "<span style='color:var(--accent-strong);font-weight:600'>지금</span>" : ""}</div></span>
+        <span class="st-count"><span class="num">${done}/${g.tasks.length}</span><div class="mini"><i style="width:${done/g.tasks.length*100}%"></i></div></span>
+      </summary>
+      <div class="st-body">
+        ${g.note && state.filter === "all" ? `<div class="st-note">${g.note}</div>` : ""}
+        ${vis.map(renderTask).join("")}
+      </div>
+    </details>`;
+  }).join("") || `<p class="empty">이 보기에 해당하는 할 일이 없어요.</p>`;
+  if (state.openMemo) { const ta = document.getElementById("memo-" + state.openMemo); if (ta && document.activeElement !== ta) ta.focus(); }
+}
+
+function renderNotes(){
+  const ul = $("#notes");
+  if (!state.notes.length) { ul.innerHTML = `<li class="empty">아직 메모가 없어요. 첫 메모를 위에 적어 보세요.</li>`; return; }
+  ul.innerHTML = state.notes.map(n => {
+    const d = n.data();
+    const confirming = state.confirmDel === n.id;
+    return `<li class="note">
+      <div class="note-head"><span class="tag ${d.kind === "advisor" ? "advisor" : d.kind === "bench" ? "bench" : ""}" style="${d.kind === "agency" || d.kind === "etc" ? "background:var(--accent-soft);color:var(--accent-strong)" : ""}">${KINDNAME[d.kind] || "기타"}</span>
+        <span class="num">${d.createdAt ? d.createdAt.slice(0,10) : ""}</span>
+        ${canWrite ? (confirming
+          ? `<span class="confirm"><span>이 메모를 지울까요?</span><button class="linkbtn danger" data-del="${n.id}">지우기</button><button class="linkbtn" data-cancel="1">취소</button></span>`
+          : `<button class="linkbtn" data-ask="${n.id}" style="margin-left:auto">삭제</button>`) : ""}
+      </div>
+      <div class="note-text">${esc(d.text || "")}</div>
+    </li>`;
+  }).join("");
+}
+
+const won = n => (Math.round(n)||0).toLocaleString("ko-KR") + "원";
+function renderExpenses(){
+  const rows = state.expenses.map(d => ({id:d.id, ...d.data()}));
+  const total = rows.reduce((a,r) => a + (+r.amount||0), 0);
+  const y27 = rows.filter(r => (r.date||"") >= "2027-01-01").reduce((a,r) => a + (+r.amount||0), 0);
+  const by = (key, names) => { const m = {}; rows.forEach(r => { m[r[key]] = (m[r[key]]||0) + (+r.amount||0); });
+    return Object.entries(m).sort((a,b) => b[1]-a[1]).map(([k,v]) => `<li><span>${esc(names[k]||k)}</span><span class="num">${won(v)}</span></li>`).join("") || "<li class='empty'>-</li>"; };
+  const months = {}; rows.forEach(r => { const k = (r.date||"").slice(0,7); months[k] = (months[k]||0) + (+r.amount||0); });
+  const monthList = Object.entries(months).sort((a,b) => b[0].localeCompare(a[0])).slice(0,6).map(([k,v]) => `<li><span class="num">${esc(k)}</span><span class="num">${won(v)}</span></li>`).join("") || "<li class='empty'>-</li>";
+  const noInv = rows.filter(r => !r.invoice).length;
+  $("#exSum").innerHTML = `<div class="ex-box"><span class="eyebrow">합계</span><span class="big num">${won(total)}</span>
+      <span class="saved">${rows.length}건 · 인보이스 없는 것 ${noInv}건</span><span class="saved">2027년부터 쓴 돈 <span class="num">${won(y27)}</span></span></div>
+    <div class="ex-box"><span class="eyebrow">월별</span><ul>${monthList}</ul></div>
+    <div class="ex-box"><span class="eyebrow">분류별 · 사업별</span><ul>${by("category", CATNAME)}</ul><ul style="border-top:1px solid var(--line);padding-top:4px">${by("project", PROJNAME)}</ul></div>`;
+  $("#exRows").innerHTML = rows.length ? rows.map(r => {
+    const c = state.confirmEx === r.id;
+    return `<tr><td class="num">${esc(r.date||"")}</td><td>${esc(r.item||"")}${r.memo ? `<div class="saved">${esc(r.memo)}</div>` : ""}</td>
+      <td>${esc(CATNAME[r.category]||"")}</td><td>${esc(PROJNAME[r.project]||"")}</td><td>${esc(METHODNAME[r.method]||"")}</td>
+      <td class="amt num">${won(+r.amount)}</td>
+      <td><input type="checkbox" data-inv="${r.id}" ${r.invoice ? "checked" : ""} ${canWrite ? "" : "disabled"} aria-label="인보이스 받음"></td>
+      <td>${canWrite ? (c ? `<span class="confirm"><button class="linkbtn danger" data-exdel="${r.id}">지우기</button><button class="linkbtn" data-excancel="1">취소</button></span>` : `<button class="linkbtn" data-exask="${r.id}">삭제</button>`) : ""}</td></tr>`;
+  }).join("") : `<tr><td colspan="8" class="empty">아직 기록이 없어요. 위에서 첫 지출을 추가해 보세요.</td></tr>`;
+  ["exDate","exItem","exAmount","exCat","exProj","exMethod","exMemo","exAdd"].forEach(i => { $("#"+i).disabled = !canWrite; });
+}
+
+function renderAll(){
+  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.f === state.filter)));
+  renderSummary(); renderStages(); renderNotes(); renderExpenses();
+  $("#noteAdd").disabled = !canWrite; $("#noteText").disabled = !canWrite; $("#noteKind").disabled = !canWrite;
+}
+
+// 입력
+document.addEventListener("change", async e => {
+  const inv = e.target.dataset && e.target.dataset.inv;
+  if (inv && db) {
+    try { await db.doc("expenses/" + inv).update({invoice: e.target.checked}); }
+    catch(err) { e.target.checked = !e.target.checked; showBanner("인보이스 표시를 저장하지 못했어요. 다시 눌러 주세요."); }
+    return;
+  }
+  const id = e.target.dataset && e.target.dataset.id;
+  if (!id || !db) return;
+  const done = e.target.checked;
+  const prev = state.tasks[id] || {};
+  const next = {...prev, done, doneAt: done ? new Date().toISOString() : null};
+  state.tasks[id] = next; renderAll();
+  try { await db.doc("tasks/" + id).set(next); }
+  catch(err) { state.tasks[id] = prev; renderAll(); showBanner("체크를 저장하지 못했어요. 잠시 뒤 다시 눌러 주세요."); }
+});
+
+document.addEventListener("click", async e => {
+  const t = e.target;
+  if (t.classList.contains("chip")) {
+    state.filter = t.dataset.f; try { localStorage.setItem("toffee-filter", state.filter); } catch(err) {}
+    renderAll(); return;
+  }
+  if (t.dataset.memo) { state.openMemo = state.openMemo === t.dataset.memo ? null : t.dataset.memo; renderStages(); return; }
+  if (t.dataset.ask) { state.confirmDel = t.dataset.ask; renderNotes(); return; }
+  if (t.dataset.cancel) { state.confirmDel = null; renderNotes(); return; }
+  if (t.dataset.exask) { state.confirmEx = t.dataset.exask; renderExpenses(); return; }
+  if (t.dataset.excancel) { state.confirmEx = null; renderExpenses(); return; }
+  if (t.dataset.exdel && db) {
+    const id = t.dataset.exdel; state.confirmEx = null;
+    try { await db.doc("expenses/" + id).delete(); } catch(err) { showBanner("지출을 지우지 못했어요. 다시 시도해 주세요."); renderExpenses(); }
+    return;
+  }
+  if (t.id === "exCopy") {
+    const head = ["날짜","항목","분류","사업","결제 수단","금액(원)","인보이스","메모"];
+    const lines = [head, ...state.expenses.map(d => { const r = d.data();
+      return [r.date||"", r.item||"", CATNAME[r.category]||"", PROJNAME[r.project]||"", METHODNAME[r.method]||"", String(Math.round(+r.amount||0)), r.invoice ? "있음" : "없음", r.memo||""]; })]
+      .map(a => a.map(v => String(v).replace(/[\t\n]/g, " ")).join("\t")).join("\n");
+    try { await navigator.clipboard.writeText(lines); t.textContent = "복사했어요"; }
+    catch(err) { t.textContent = "복사하지 못했어요"; }
+    setTimeout(() => { t.textContent = "표 복사(엑셀에 붙여넣기)"; }, 2000);
+    return;
+  }
+  if (t.dataset.del && db) {
+    const id = t.dataset.del; state.confirmDel = null;
+    try { await db.doc("notes/" + id).delete(); } catch(err) { showBanner("메모를 지우지 못했어요. 다시 시도해 주세요."); renderNotes(); }
+  }
+});
+
+const memoTimers = {};
+document.addEventListener("input", e => {
+  const id = e.target.dataset && e.target.dataset.memoinput;
+  if (!id || !db) return;
+  clearTimeout(memoTimers[id]);
+  const text = e.target.value;
+  const s = document.getElementById("saved-" + id); if (s) s.textContent = "입력 중…";
+  memoTimers[id] = setTimeout(async () => {
+    const next = {...(state.tasks[id] || {done:false}), note: text};
+    state.tasks[id] = next;
+    try { await db.doc("tasks/" + id).set(next); const s2 = document.getElementById("saved-" + id); if (s2) s2.textContent = "저장됨"; }
+    catch(err) { const s2 = document.getElementById("saved-" + id); if (s2) s2.textContent = "저장하지 못했어요. 조금 뒤 다시 입력해 주세요."; }
+  }, 800);
+});
+
+$("#noteForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const text = $("#noteText").value.trim();
+  if (!text || !db) return;
+  $("#noteAdd").disabled = true;
+  try {
+    await db.collection("notes").add({kind: $("#noteKind").value, text, createdAt: new Date().toISOString()});
+    $("#noteText").value = "";
+  } catch(err) { showBanner(err && err.code === "quota_exceeded" ? "메모 저장 공간이 가득 찼어요. 오래된 메모를 지워 주세요." : "메모를 저장하지 못했어요. 다시 시도해 주세요."); }
+  $("#noteAdd").disabled = !canWrite;
+});
+
+$("#exForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!db) return;
+  const date = $("#exDate").value, item = $("#exItem").value.trim(), amount = Math.round(+$("#exAmount").value);
+  if (!date || !item || !(amount >= 0)) return;
+  $("#exAdd").disabled = true;
+  try {
+    await db.collection("expenses").add({date, item, amount, category: $("#exCat").value, project: $("#exProj").value,
+      method: $("#exMethod").value, memo: $("#exMemo").value.trim(), invoice: false, createdAt: new Date().toISOString()});
+    $("#exItem").value = ""; $("#exAmount").value = ""; $("#exMemo").value = ""; $("#exItem").focus();
+  } catch(err) { showBanner(err && err.code === "quota_exceeded" ? "저장 공간이 가득 찼어요." : "지출을 저장하지 못했어요. 다시 시도해 주세요."); }
+  $("#exAdd").disabled = !canWrite;
+});
+$("#exDate").value = today();
+
+function showBanner(msg){ const b = $("#banner"); b.textContent = msg; b.hidden = false; }
+
+renderAll();
+
+(async () => {
+  if (!window.claude || !window.claude.use) { showBanner("이 화면에서는 체크 상태를 불러올 수 없어요. claude.ai에서 열면 저장돼요."); return; }
+  db = await window.claude.use("db");
+  if (!db) { showBanner("체크 상태를 저장할 수 없는 화면이에요. claude.ai에 로그인한 상태로 열어 주세요."); return; }
+  const user = await window.claude.use("user");
+  const cw = user ? await user.can("data.write") : null;
+  canWrite = cw !== false;
+  if (!canWrite) showBanner("보기 전용이에요. 체크와 메모는 소유자만 바꿀 수 있어요.");
+  renderAll();
+  db.collection("tasks").onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); });
+    state.tasks = m;
+    if (!state.openMemo) renderAll(); else { renderSummary(); }
+  }, err => showBanner("체크 상태 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+  db.collection("notes").orderBy("createdAt", "desc").onSnapshot(snap => {
+    state.notes = snap.docs; renderNotes();
+  }, err => showBanner("메모 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+  db.collection("expenses").orderBy("date", "desc").onSnapshot(snap => {
+    state.expenses = snap.docs; renderExpenses();
+  }, err => showBanner("지출 장부 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+})();
+</script>
+
+</body></html>

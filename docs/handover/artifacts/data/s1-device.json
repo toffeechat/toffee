@@ -1,0 +1,5 @@
+{
+  "done": false,
+  "doneAt": null,
+  "note": "10/2: iOS는 TestFlight 전에 EAS 내부 배포(등록한 아이폰에 링크로 설치)로 먼저. 빌드 설정(데모 서버 연결)·카카오 로그인 설정 누락 수정·절차서(docs/engineering/device-build.md) 준비 완료.\n끝낸 것: 네이버 Secret → Expo, 서버 Sentry(DSN·demo) → Railway, 푸시(APNs 키 Toffee APNs → Firebase, 서비스 계정 → Railway, 서버 정상 확인).\n남은 것: (맥) eas login → eas device:create → eas build -p ios --profile preview → 설치·개발자 모드 → 확인. 안드로이드는 테스트 기기 생기면"
+}

@@ -1,0 +1,353 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>토피 실기기 테스트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 한 줄 세로 흐름 — 시작 전 안내(계정·초기화) → 역할 탭 → 항목별 통과/문제/건너뜀 + 메모. 토피 브랜드 색(Periwinkle) */
+:root{
+  --bg:#FFFFFF; --surface:#F4F6FB; --line:#E3E6F0; --fg:#0F1115; --muted:#5B6172;
+  --accent:#7C8CFF; --accent-strong:#5566F2; --accent-soft:#DCE1FF; --on-accent:#FFFFFF;
+  --ok:#1C8A5A; --ok-soft:#DAF2E6; --bad:#C2334B; --bad-soft:#FBE1E6; --skip:#8A6A12; --skip-soft:#F8EECF;
+  --font:"Pretendard","IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1115; --surface:#181B22; --line:#2A2E39; --fg:#EEF0F6; --muted:#9CA3B5;
+  --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
+  --ok:#5BD39A; --ok-soft:#15301F; --bad:#FF7B90; --bad-soft:#3A1A21; --skip:#E9C46A; --skip-soft:#33291A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1115; --surface:#181B22; --line:#2A2E39; --fg:#EEF0F6; --muted:#9CA3B5;
+  --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
+  --ok:#5BD39A; --ok-soft:#15301F; --bad:#FF7B90; --bad-soft:#3A1A21; --skip:#E9C46A; --skip-soft:#33291A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;padding:0 16px}
+.wrap{max-width:820px;margin:0 auto;padding-block:24px 64px;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance}
+h1{font-size:24px;font-weight:700}
+h2{font-size:17px;font-weight:700}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent-strong);text-transform:uppercase}
+.sub{color:var(--muted);margin:6px 0 0;font-size:14px}
+.mono{font-family:var(--mono);font-size:13px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.panel{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel p{margin:0;font-size:14px}
+.warn{background:var(--skip-soft);border-radius:var(--r);padding:12px 14px;font-size:14px}
+.warn strong{color:var(--skip)}
+table.acc{width:100%;border-collapse:collapse;font-size:13.5px}
+.tblwrap{overflow-x:auto}
+table.acc th,table.acc td{text-align:left;padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+table.acc th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
+.copy{background:none;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:12px;cursor:pointer;color:var(--muted);margin-left:4px}
+.progress{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.progress b{color:var(--fg);font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:2}
+.tab{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:6px 14px;font-size:14px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tab .n{font-size:12px;opacity:.75;font-variant-numeric:tabular-nums}
+.section{display:flex;flex-direction:column;gap:10px}
+.who{font-size:14px;color:var(--muted)}
+.who code{font-family:var(--mono);font-size:13px;color:var(--fg)}
+.group{font-size:13px;font-weight:600;color:var(--muted);margin-top:8px}
+.item{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.item[data-s="ok"]{border-color:var(--ok)}
+.item[data-s="bad"]{border-color:var(--bad)}
+.item-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.item-title{font-weight:600;flex:1;min-width:200px}
+.tag{font-size:11.5px;font-weight:600;border-radius:99px;padding:1px 8px;background:var(--accent-soft);color:var(--accent-strong);white-space:nowrap}
+.tag.device{background:var(--skip-soft);color:var(--skip)}
+.steps{font-size:13.5px;color:var(--muted);margin:0;padding-left:18px}
+.expect{font-size:13.5px}
+.expect b{color:var(--muted);font-weight:600}
+.choices{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.ch{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 12px;font-size:13.5px;cursor:pointer}
+.ch[aria-pressed="true"][data-v="ok"]{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:600}
+.ch[aria-pressed="true"][data-v="bad"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:600}
+.ch[aria-pressed="true"][data-v="skip"]{background:var(--skip-soft);border-color:var(--skip);color:var(--skip);font-weight:600}
+.ch:disabled{opacity:.5;cursor:default}
+textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-height:54px;resize:vertical}
+.saved{font-size:12px;color:var(--muted)}
+.banner{background:var(--bad-soft);border-radius:8px;padding:10px 14px;font-size:13.5px}
+.foot{font-size:12.5px;color:var(--muted)}
+.code-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.code-row input{font:inherit;font-family:var(--mono);font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;flex:1;min-width:160px}
+.btn{background:var(--accent-strong);color:var(--on-accent);border:0;border-radius:8px;padding:7px 14px;font-weight:600;cursor:pointer}
+.btn.ghost{background:var(--bg);color:var(--fg);border:1px solid var(--line);font-weight:500}
+.steps-big{margin:0;padding-left:20px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Toffee Dev · 데모 서버</div>
+    <h1>토피 실기기 테스트</h1>
+    <p class="sub">항목마다 통과 / 문제 / 건너뜀을 누르고, 문제면 메모에 무슨 일이 있었는지 적어 주세요. 바로 저장되고 Claude가 읽어서 고칩니다.</p>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="panel" aria-label="진행 상황">
+    <div class="progress" id="progress"></div>
+    <div class="bar" id="bar" aria-hidden="true"></div>
+  </section>
+
+  <section class="panel" aria-label="시작 전">
+    <h2>시작 전에</h2>
+    <p><b>폰</b>: 설치한 Toffee Dev 앱 · <b>PC</b>: <span class="mono">demo.toffeechat.app</span> (같은 데모 서버라 서로 연결돼요). 폰으로 팬, PC로 아티스트를 같이 켜 두면 푸시·실시간 확인이 쉬워요.</p>
+    <p>데모 계정은 로그인 화면의 <b>입장 코드 로그인</b>으로 들어가요. 이메일만 넣고, 입장 코드는 Railway → toffee → Variables → <span class="mono">DEV_LOGIN_CODE</span>(눈 아이콘)에 있어요.</p>
+    <div class="code-row" aria-label="입장 코드">
+      <input id="code-input" type="text" autocomplete="off" spellcheck="false" placeholder="입장 코드를 한 번 붙여넣어 두세요">
+      <button class="btn" id="code-save" type="button">저장</button>
+      <button class="btn ghost" id="code-copy" type="button">복사</button>
+    </div>
+    <p class="sub" id="code-hint" style="margin:0">이 칸은 <b>본인만</b> 볼 수 있는 곳에 저장돼요(공유해도 다른 사람에겐 안 보임). Claude에게도 보내지 않아요.</p>
+    <div class="tblwrap"><table class="acc">
+      <tr><th>역할</th><th>이메일</th><th>상태</th></tr>
+      <tr><td>운영자</td><td><span class="mono">admin@toffee.demo</span><button class="copy" data-copy="admin@toffee.demo">복사</button></td><td>모든 관리 화면</td></tr>
+      <tr><td>소속사</td><td><span class="mono">staff@toffee.demo</span><button class="copy" data-copy="staff@toffee.demo">복사</button></td><td>(가상) 데모 엔터 — 캐러멜·누가 관리</td></tr>
+      <tr><td>이전 소속사</td><td><span class="mono">former-staff@toffee.demo</span><button class="copy" data-copy="former-staff@toffee.demo">복사</button></td><td>누가가 30일 전 떠난 소속사</td></tr>
+      <tr><td>아티스트</td><td><span class="mono">caramel-self@toffee.demo</span><button class="copy" data-copy="caramel-self@toffee.demo">복사</button></td><td>캐러멜 본인(여성) · CP방 "캐러멜 &amp; 누가" 멤버</td></tr>
+      <tr><td>팬 1</td><td><span class="mono">fan1@toffee.demo</span><button class="copy" data-copy="fan1@toffee.demo">복사</button></td><td>닉네임 캐러멜바라기 · 캐러멜 구독 중, 누가는 해지</td></tr>
+      <tr><td>팬 2</td><td><span class="mono">fan2@toffee.demo</span><button class="copy" data-copy="fan2@toffee.demo">복사</button></td><td>닉네임 누가누가 · 캐러멜+누가 묶음 구독</td></tr>
+    </table></div>
+    <div class="warn"><strong>사진·음성·영상 보내기</strong>는 데모 서버에 파일 저장소(Cloudflare R2)가 아직 연결 안 돼서 "파일 저장소가 설정되지 않았어요" 같은 오류가 날 거예요. 그러면 <b>문제</b>가 아니라 <b>건너뜀</b>을 누르고, 카메라·마이크 권한 창이 뜨는지만 메모해 주세요.</div>
+    <div class="warn"><strong>다 하고 나면 운영자 → 데모 초기화</strong>로 처음 상태로 돌아가요. 대신 테스트 중에 소셜 로그인으로 새로 생긴 계정도 같이 지워지니, 폰 앱은 한 번 로그아웃 후 다시 로그인하세요(푸시 기기 등록도 다시 돼요). 이 체크리스트 결과는 지워지지 않아요.</div>
+  </section>
+
+  <section class="panel" aria-label="데모 초기화 방법">
+    <h2>데모 초기화 방법</h2>
+    <p>테스트로 생긴 메시지·구독·계정을 지우고 처음 데모 상태로 돌려요. 테스트를 다 하고 맨 마지막에 하세요.</p>
+    <ol class="steps-big">
+      <li>PC에서 <span class="mono">demo.toffeechat.app</span> → 입장 코드 로그인 → <span class="mono">admin@toffee.demo</span></li>
+      <li>운영자 첫 화면을 <b>맨 아래까지</b> 내려서 <b>데모 초기화</b> 누르기</li>
+      <li>확인 창에서 <b>초기화</b> → "초기화하는 중…"이 끝날 때까지 기다리기(10초 안팎)</li>
+      <li>폰 앱: 프로필 → <b>로그아웃</b> → 다시 로그인(소셜 계정은 새로 만들어지고 푸시 등록도 다시 됨)</li>
+      <li>원하면 이 체크리스트에서 <b>결과 모두 지우기</b>(맨 아래)로 새로 시작</li>
+    </ol>
+    <p class="sub" style="margin:0"><b>지워지는 것</b>: 메시지·답장·신고·차단·구독·환불·정산 마감, 새로 만든 아티스트·CP·묶음·소속사, 소셜 로그인으로 생긴 계정, 폰 푸시 등록. <b>그대로</b>: 데모 계정 6개(같은 이메일로 다시 로그인), 앱 설치, 서버 설정, 이 체크리스트 결과.</p>
+    <p class="sub" style="margin:0"><b>버튼이 안 보이거나 실패할 때</b>: Railway → toffee → Variables → <span class="mono">DEMO_SEED</span>를 <span class="mono">reset</span>으로 바꾸고 Deploy → 배포가 끝나면 다시 <span class="mono">true</span>로 바꾸고 Deploy(이걸 안 하면 배포할 때마다 초기화됨).</p>
+  </section>
+
+  <nav class="tabs" role="tablist" id="tabs" aria-label="역할"></nav>
+  <div id="sections"></div>
+
+  <div class="code-row"><button class="btn ghost" id="clear-all" type="button">결과 모두 지우기</button><span class="sub" id="clear-hint" style="margin:0"></span></div>
+  <p class="foot">문제가 생긴 화면은 캡처해서 대화에도 같이 보내 주시면 더 빨리 고칠 수 있어요.</p>
+</div>
+
+<script>
+// [id, 제목, 단계[], 기대 결과, 태그("폰"/"PC"/"폰·PC"), 실기기전용?, 그룹]
+const ROLES = [
+  {key:"fan", name:"팬 (폰)", who:"폰 앱 — 새 소셜 계정, 또는 <code>fan1@toffee.demo</code>", items:[
+    ["f-apple","애플로 로그인",["로그인 화면 → Apple로 계속","Face ID / 암호"],"약관 동의 → 생년월일 → 닉네임 순서로 가입되고 홈이 나옴","폰",true,"로그인·가입"],
+    ["f-google","구글로 로그인",["로그아웃 후 Google로 계속"],"구글 계정 선택 후 돌아와서 로그인됨","폰",true,"로그인·가입"],
+    ["f-kakao","카카오로 로그인",["로그아웃 후 카카오로 계속","카카오톡 앱이 열리면 동의"],"카카오톡 → 토피 앱으로 돌아와 로그인됨. 동의 화면에 T 로고","폰",true,"로그인·가입"],
+    ["f-naver","네이버로 로그인",["로그아웃 후 네이버로 계속"],"네이버 앱/웹 동의 후 돌아와 로그인됨. 동의 화면에 T 로고","폰",true,"로그인·가입"],
+    ["f-line","LINE으로 로그인",["로그아웃 후 LINE으로 계속"],"LINE 동의 후 돌아와 로그인됨","폰",true,"로그인·가입"],
+    ["f-code","입장 코드 로그인 (fan1)",["로그아웃 → 입장 코드 로그인","fan1@toffee.demo + 입장 코드"],"캐러멜 대화방이 메시지 목록에 있음","폰",false,"로그인·가입"],
+    ["f-pushperm","알림 허용 창",["로그인 직후 뜨는 알림 허용 창 → 허용"],"허용 창이 한 번 뜨고, 허용 후 아이폰 설정 → Toffee Dev → 알림이 켜져 있음","폰",true,"로그인·가입"],
+    ["f-discover","둘러보기",["둘러보기 탭","새로 온 아티스트·CP / 여성·남성 / 소속사별 / CP 줄 확인","검색에 '캐러멜'"],"목록·사진이 깨지지 않고 넘어감, 검색 결과 나옴","폰",false,"둘러보기·구독"],
+    ["f-subscribe","구독하기 (새 소셜 계정)",["누가 프로필 → 구독","테스트 구독(결제 없음) 진행"],"\"이제 더 가까워졌어요\" 완료 화면 → 대화방 열림","폰",false,"둘러보기·구독"],
+    ["f-chat","대화방 보기",["캐러멜 대화방 열기","헤더 이름 / 메시지 옆 사진 누르기"],"같은 시·분 메시지는 한 묶음, 프로필 카드가 열림","폰",false,"대화"],
+    ["f-reply","답장 보내기",["메시지 아래 답장 입력 → 보내기","같은 메시지에 4번 보내 보기"],"3번까지 보내지고 4번째는 \"메시지당 3개\" 안내","폰",false,"대화"],
+    ["f-photo","사진 전체 화면",["대화방 셀카 사진 누르기","두 손가락 확대·두 번 탭·좌우 넘기기·아래로 끌어 닫기"],"손가락을 잘 따라오고 버벅이지 않음","폰",true,"대화"],
+    ["f-save","사진 저장",["전체 화면 → 저장","안내 → 동의하고 저장 → 사진 권한 허용"],"사진 앱에 저장됨","폰",true,"대화"],
+    ["f-voice","음성 메시지 재생",["아티스트가 보낸 음성 누르기","재생 중 무음 스위치 켜기 / 화면 끄기"],"무음·화면 꺼짐에도 계속 들림, 다음 음성 이어 듣기 (음성이 없으면 건너뜀)","폰",true,"대화"],
+    ["f-push","푸시 알림 받기",["폰 앱을 홈으로 내리기(또는 완전히 끄기)","PC에서 아티스트로 캐러멜 메시지 보내기"],"몇 초 안에 알림이 오고, 누르면 그 대화방으로 감","폰",true,"알림"],
+    ["f-mute","대화방 알림 끄기",["대화방 ⋯ → 알림 끄기","PC에서 다시 메시지 보내기"],"알림은 안 오고 메시지는 대화방에 들어옴","폰",true,"알림"],
+    ["f-translate","번역 보기",["프로필 → 언어 → ไทย(또는 Tiếng Việt)","한국어 메시지 아래 번역 보기"],"자연스러운 번역이 원문 아래에 나옴, ㅋㅋ·ㅠㅠ가 그대로 남지 않음","폰·PC",false,"기타"],
+    ["f-lang","언어 7개 바꾸기",["프로필 → 언어에서 하나씩"],"화면 전체가 그 언어로 바뀌고 글자가 잘리거나 깨지지 않음","폰",false,"기타"],
+    ["f-dark","다크 모드",["아이폰 설정 → 디스플레이 → 다크"],"글자·버튼이 다 보이고 흰 박스가 튀지 않음","폰",true,"기타"],
+    ["f-report","신고",["아티스트 메시지 길게 누르기 → 신고"],"사유 선택 후 \"신고했어요\"","폰",false,"기타"],
+    ["f-offline","오프라인 표시",["비행기 모드 켜기"],"\"오프라인이에요\" 배너, 끄면 사라짐","폰",true,"기타"],
+    ["f-manage","구독 관리·해지",["프로필 → 구독 관리 → (새 계정의) 누가 → 해지"],"해지 후 지난 구독에 나옴, 대화방은 닫힘","폰",false,"구독 관리"],
+    ["f-delete","회원 탈퇴 (마지막에)",["새 소셜 계정으로 프로필 → 회원 탈퇴"],"탈퇴 후 로그인 화면으로","폰",false,"구독 관리"],
+  ]},
+  {key:"web", name:"팬 (PC 웹)", who:"PC 브라우저 <code>demo.toffeechat.app</code>", items:[
+    ["w-social","웹 소셜 로그인",["구글(공식 버튼)·카카오·네이버·LINE·애플 중 몇 개"],"회사 로그인 페이지에 갔다가 돌아와 로그인됨","PC",false,"로그인"],
+    ["w-same","같은 계정 확인",["폰에서 가입한 소셜 계정으로 웹 로그인"],"폰과 같은 구독·대화가 보임","PC",false,"로그인"],
+    ["w-photo","사진 넘기기",["사진 전체 화면 → 좌우 화살표"],"이전·다음 사진으로 넘어감","PC",false,"대화"],
+    ["w-live","실시간 도착",["폰 팬 + PC 아티스트 동시에 열기","아티스트가 보내기"],"새로고침 없이 폰 대화방에 바로 뜸","폰·PC",false,"대화"],
+  ]},
+  {key:"artist", name:"아티스트", who:"<code>caramel-self@toffee.demo</code> — 폰 앱(카메라·녹음) + PC 웹",
+   items:[
+    ["a-login","스튜디오 열기",["입장 코드 로그인 → caramel-self@toffee.demo"],"스튜디오(내 채널: 캐러멜 / 캐러멜 & 누가)가 나옴","폰·PC",false,"보내기"],
+    ["a-text","글 보내기 + 팬 이름",["캐러멜 채널 → 팬 이름 넣기 → 글 입력 → 보내기"],"팬 화면에선 〈팬 닉네임〉 자리에 각자 닉네임이 보임","폰·PC",false,"보내기"],
+    ["a-photo","사진 고르기",["사진/영상 → 사진 선택 → 보내기"],"팬 화면에 사진 도착 (저장소 없으면 건너뜀)","폰",true,"보내기"],
+    ["a-camera","카메라 촬영",["카메라 → 권한 허용 → 촬영 → 보내기"],"카메라 권한 창이 한국어 안내로 뜨고 촬영됨","폰",true,"보내기"],
+    ["a-voice","음성 녹음",["음성 → 마이크 권한 허용 → 녹음 → 정지 → 보내기"],"녹음 중 음파·초가 움직임, 팬이 재생 가능","폰",true,"보내기"],
+    ["a-video","영상 + 썸네일",["사진/영상 → 영상 선택 → 보내기"],"팬 화면에 첫 장면 썸네일과 함께 도착","폰",true,"보내기"],
+    ["a-cp","CP방에서 보내기",["캐러멜 & 누가 채널 → 글 보내기"],"fan2(묶음 구독) 화면 CP방에 도착","폰·PC",false,"보내기"],
+    ["a-replies","팬 답장 보기",["메시지 아래 답장 줄 → 답장 화면","답장 하나 인용해서 보내기"],"답장이 순서대로 넘어가고, 인용 메시지에 팬 닉네임 표시","폰·PC",false,"팬 답장"],
+    ["a-block","팬 차단·해제",["답장 옆 ⋯ → 차단","차단 목록 → 해제"],"차단된 팬은 답장 입력이 막히고, 해제하면 다시 됨","폰·PC",false,"팬 답장"],
+    ["a-delete","메시지 삭제",["내 메시지 → 삭제"],"팬 화면에서 사라짐","폰·PC",false,"관리"],
+    ["a-profile","내 프로필",["내 프로필 → 닉네임 바꾸기","대화방 사진 → 기본 이미지로"],"팬 대화방 헤더에 새 닉네임, 사람 모양 기본 이미지","폰·PC",false,"관리"],
+  ]},
+  {key:"agency", name:"소속사", who:"<code>staff@toffee.demo</code> — PC 웹 권장(정산은 PC 전용)", items:[
+    ["s-list","관리 아티스트 목록",["입장 코드 로그인 → staff@toffee.demo"],"캐러멜·누가가 보임, 활성 구독자·마지막 발송 표시","PC",false,"모니터링"],
+    ["s-monitor","모니터링 탭",["캐러멜 → 모니터링"],"아티스트가 보낸 메시지·삭제한 메시지(표시) 보임","PC",false,"모니터링"],
+    ["s-replies","답장·통계 탭",["답장 탭 / 통계 탭"],"팬 답장 목록, 숫자가 나옴","PC",false,"모니터링"],
+    ["s-settle","정산",["정산 → 이번 달","테스트 결제 포함 켜기 → CSV 받기"],"표와 CSV가 나옴 (데모는 테스트 구독이라 금액이 작거나 0)","PC",false,"정산"],
+    ["s-phone","폰에서 소속사 화면",["폰 앱으로 staff 로그인 → 정산 누르기"],"\"PC 웹에서 확인해 주세요\" 안내","폰",false,"정산"],
+    ["s-former","이전 소속사 계정",["former-staff@toffee.demo로 로그인"],"누가(이적한 아티스트)가 목록에 안 보임","PC",false,"권한"],
+  ]},
+  {key:"admin", name:"운영자", who:"<code>admin@toffee.demo</code> — PC 웹 권장", items:[
+    ["o-home","운영자 첫 화면",["입장 코드 로그인 → admin@toffee.demo"],"대기 신고·오늘 가입·활성 구독·오늘 접속 숫자","PC",false,"현황"],
+    ["o-stats","통계",["통계 메뉴"],"가입·구독·언어별(베트남어 포함) 막대","PC",false,"현황"],
+    ["o-reports","신고 처리",["신고 → 데모 신고 1건 → 처리"],"처리됨으로 바뀌고 대기 신고 숫자가 줄어듦","PC",false,"안전"],
+    ["o-users","회원 관리",["회원 → 폰에서 만든 소셜 계정 찾기 → 정지 → 해제"],"정지 중엔 그 폰 앱이 정지 안내를 보여 줌","폰·PC",false,"안전"],
+    ["o-banned","금칙어",["금칙어 → '테스트금칙어' 있는지","팬으로 그 단어 넣어 답장"],"답장이 막히고 안내가 나옴","폰·PC",false,"안전"],
+    ["o-actor","아티스트 등록",["아티스트 → 새 아티스트(가상 이름, 성별, 가격)"],"둘러보기 '새로 온' 줄과 여성/남성 줄에 나타남","PC",false,"상품"],
+    ["o-cp","CP방 만들기",["아티스트 → CP 만들기 → 두 명 고르기"],"둘러보기 CP 줄에 나타남","PC",false,"상품"],
+    ["o-bundle","묶음 상품",["묶음 → 새 묶음"],"아티스트 프로필에 '묶음으로 아끼기' 표시","PC",false,"상품"],
+    ["o-agency","소속사 관리",["소속사 → 새 소속사 → 로고 올리기"],"둘러보기 소속사별 줄에 로고와 함께 나옴","PC",false,"상품"],
+    ["o-refund","환불·정산",["환불 메뉴 / 정산 메뉴(전체)"],"목록이 열림 (데모는 비어 있을 수 있음)","PC",false,"돈"],
+    ["o-actions","운영자 활동 기록",["활동 기록 메뉴"],"위에서 한 정지·신고 처리가 기록돼 있음","PC",false,"돈"],
+    ["o-reset","데모 초기화 (맨 마지막)",["운영자 첫 화면 맨 아래 데모 초기화 → 초기화"],"데모 데이터로 돌아감, 새로 만든 아티스트·소셜 계정은 사라짐. 폰은 로그아웃 후 다시 로그인","PC",false,"마무리"],
+  ]},
+];
+
+const LABEL = {ok:"통과", bad:"문제", skip:"건너뜀"};
+const state = {results:{}, tab:"fan"};
+let db = null, canWrite = false;
+try { const t = localStorage.getItem("toffee-test-tab"); if (t && ROLES.some(r => r.key === t)) state.tab = t; } catch(e) {}
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const allItems = () => ROLES.flatMap(r => r.items);
+
+function renderProgress(){
+  const items = allItems(); const n = items.length;
+  const c = {ok:0, bad:0, skip:0};
+  items.forEach(x => { const s = state.results[x[0]]?.status; if (c[s] !== undefined) c[s]++; });
+  const left = n - c.ok - c.bad - c.skip;
+  $("#progress").innerHTML = `<span>전체 <b>${n}</b></span><span style="color:var(--ok)">통과 <b>${c.ok}</b></span><span style="color:var(--bad)">문제 <b>${c.bad}</b></span><span style="color:var(--skip)">건너뜀 <b>${c.skip}</b></span><span>남음 <b>${left}</b></span>`;
+  $("#bar").innerHTML = ["ok","bad","skip"].map(k => `<i style="width:${c[k]/n*100}%;background:var(--${k})"></i>`).join("");
+}
+
+function renderTabs(){
+  $("#tabs").innerHTML = ROLES.map(r => {
+    const done = r.items.filter(x => state.results[x[0]]?.status).length;
+    return `<button class="tab" role="tab" data-tab="${r.key}" aria-selected="${r.key === state.tab}">${esc(r.name)} <span class="n">${done}/${r.items.length}</span></button>`;
+  }).join("");
+}
+
+function renderItem(x){
+  const [id, title, steps, expect, tag, device] = x;
+  const r = state.results[id] || {};
+  return `<div class="item" data-s="${r.status || ""}" id="item-${id}">
+    <div class="item-head"><span class="item-title">${esc(title)}</span>
+      <span class="tag">${esc(tag)}</span>${device ? '<span class="tag device">실기기에서만</span>' : ""}</div>
+    <ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+    <div class="expect"><b>되면:</b> ${esc(expect)}</div>
+    <div class="choices">${["ok","bad","skip"].map(v => `<button class="ch" data-id="${id}" data-v="${v}" aria-pressed="${r.status === v}" ${canWrite ? "" : "disabled"}>${LABEL[v]}</button>`).join("")}</div>
+    ${(r.status === "bad" || r.note) ? `<textarea id="note-${id}" data-note="${id}" placeholder="무슨 일이 있었나요? (어떤 화면에서, 무엇을 눌렀더니, 무엇이 나왔는지)" ${canWrite ? "" : "disabled"}>${esc(r.note || "")}</textarea><span class="saved" id="saved-${id}"></span>`
+      : (canWrite ? `<button class="ch" data-addnote="${id}" style="align-self:flex-start;font-size:12.5px">메모 남기기</button>` : "")}
+  </div>`;
+}
+
+function renderSections(){
+  const role = ROLES.find(r => r.key === state.tab);
+  let html = `<section class="section" role="tabpanel"><p class="who">${role.who}</p>`;
+  let last = "";
+  role.items.forEach(x => { if (x[6] !== last) { html += `<div class="group">${esc(x[6])}</div>`; last = x[6]; } html += renderItem(x); });
+  $("#sections").innerHTML = html + "</section>";
+}
+
+function renderAll(){ renderProgress(); renderTabs(); renderSections(); }
+
+async function save(id, patch){
+  const prev = state.results[id] || {};
+  const next = {...prev, ...patch, updatedAt: new Date().toISOString()};
+  state.results[id] = next;
+  try { await db.doc("results/" + id).set(next); return true; }
+  catch(e) { state.results[id] = prev; showBanner("저장하지 못했어요. 잠시 뒤 다시 눌러 주세요."); return false; }
+}
+
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.tab) { state.tab = t.dataset.tab; try { localStorage.setItem("toffee-test-tab", state.tab); } catch(err) {} renderTabs(); renderSections(); return; }
+  if (t.dataset.copy) {
+    try { await navigator.clipboard.writeText(t.dataset.copy); t.textContent = "복사됨"; setTimeout(() => t.textContent = "복사", 1200); }
+    catch(err) { t.textContent = "길게 눌러 복사"; }
+    return;
+  }
+  if (t.dataset.addnote) { state.results[t.dataset.addnote] = {...(state.results[t.dataset.addnote] || {}), note: state.results[t.dataset.addnote]?.note || " "}; renderSections(); const ta = document.getElementById("note-" + t.dataset.addnote); if (ta) { ta.value = ""; ta.focus(); } return; }
+  if (t.dataset.id && db && canWrite) {
+    const id = t.dataset.id, v = t.dataset.v;
+    const cur = state.results[id]?.status;
+    await save(id, {status: cur === v ? null : v});
+    renderAll();
+    if (v === "bad" && cur !== v) { const ta = document.getElementById("note-" + id); if (ta) ta.focus(); }
+  }
+});
+
+const timers = {};
+document.addEventListener("input", e => {
+  const id = e.target.dataset && e.target.dataset.note; if (!id || !db) return;
+  clearTimeout(timers[id]);
+  const s = document.getElementById("saved-" + id); if (s) s.textContent = "입력 중…";
+  const text = e.target.value;
+  timers[id] = setTimeout(async () => {
+    const ok = await save(id, {note: text});
+    const s2 = document.getElementById("saved-" + id); if (s2) s2.textContent = ok ? "저장됨" : "저장하지 못했어요";
+  }, 800);
+});
+
+let codeDoc = null, clearArmed = false;
+async function setupCode(user){
+  const input = $("#code-input");
+  if (!db || !user) { $("#code-hint").textContent = "입장 코드 저장은 claude.ai에 로그인한 상태에서만 돼요."; return; }
+  try {
+    const id = await user.id();
+    codeDoc = db.collection("data/users/" + id).doc("demo-code");
+    const snap = await codeDoc.get();
+    if (snap.exists && snap.data().code) input.value = snap.data().code;
+  } catch(e) { $("#code-hint").textContent = "입장 코드를 불러오지 못했어요."; }
+}
+document.getElementById("code-save").addEventListener("click", async () => {
+  if (!codeDoc) return;
+  try { await codeDoc.set({code: $("#code-input").value.trim()}); $("#code-save").textContent = "저장됨"; setTimeout(() => $("#code-save").textContent = "저장", 1200); }
+  catch(e) { showBanner("입장 코드를 저장하지 못했어요. 다시 눌러 주세요."); }
+});
+document.getElementById("code-copy").addEventListener("click", async () => {
+  const v = $("#code-input").value.trim(); if (!v) return;
+  try { await navigator.clipboard.writeText(v); $("#code-copy").textContent = "복사됨"; setTimeout(() => $("#code-copy").textContent = "복사", 1200); }
+  catch(e) { $("#code-input").select(); }
+});
+document.getElementById("clear-all").addEventListener("click", async () => {
+  if (!db || !canWrite) return;
+  if (!clearArmed) { clearArmed = true; $("#clear-all").textContent = "한 번 더 누르면 지워요"; $("#clear-hint").textContent = "모든 항목의 통과·문제·메모가 지워져요."; setTimeout(() => { clearArmed = false; $("#clear-all").textContent = "결과 모두 지우기"; $("#clear-hint").textContent = ""; }, 4000); return; }
+  clearArmed = false; $("#clear-all").textContent = "지우는 중…";
+  try { for (const id of Object.keys(state.results)) await db.doc("results/" + id).delete(); }
+  catch(e) { showBanner("일부를 지우지 못했어요. 다시 눌러 주세요."); }
+  $("#clear-all").textContent = "결과 모두 지우기"; $("#clear-hint").textContent = "";
+});
+
+function showBanner(m){ const b = $("#banner"); b.textContent = m; b.hidden = false; }
+
+renderAll();
+
+(async () => {
+  if (!window.claude || !window.claude.use) { showBanner("이 화면에서는 결과를 저장할 수 없어요. claude.ai에서 열면 저장돼요."); return; }
+  db = await window.claude.use("db");
+  if (!db) { showBanner("결과를 저장할 수 없는 화면이에요. claude.ai에 로그인한 상태로 열어 주세요."); return; }
+  const user = await window.claude.use("user");
+  const cw = user ? await user.can("data.write") : null;
+  canWrite = cw !== false;
+  if (!canWrite) showBanner("보기 전용이에요. 결과는 소유자만 바꿀 수 있어요.");
+  renderAll();
+  setupCode(user);
+  db.collection("results").onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); });
+    const typing = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.note;
+    state.results = {...m, ...(typing ? {[typing]: state.results[typing]} : {})};
+    if (typing) { renderProgress(); renderTabs(); } else renderAll();
+  }, () => showBanner("저장 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+})();
+</script>
+
+</body></html>
