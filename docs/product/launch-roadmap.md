@@ -1,6 +1,6 @@
 # 사업화 일정 — 지금부터 첫 매출까지
 
-> 체크리스트 페이지: [토피 사업화 일정](https://claude.ai/artifact/KfGKHugZEmWsavMYkbwYV7) · 계정·비용: [사업화 장부](https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST) — Claude가 진행될 때마다 같이 갱신
+> 체크리스트 페이지: [토피 사업화 일정](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) · 계정·비용: [사업화 장부](https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR) — Claude가 진행될 때마다 같이 갱신
 
 2026-09-29 작성. **"이제 뭘 해야 하지?"를 이 문서 하나로 답하는 것**이 목적이다. 기능이 어디까지 됐는지는
 [`STATUS.md`](../../STATUS.md), 계정·인프라 결정의 자세한 이유는 [`ops-infra-backlog.md`](./ops-infra-backlog.md),
@@ -9,7 +9,7 @@
 - 날짜는 **직장을 다니며 주 15시간 정도** 쓴다는 가정의 목표치다. 밀리면 기능·범위를 줄이고 기한은 되도록 지킨다.
 - 지원사업 일정(공고·발표 시기)은 "보통 그렇다"는 기준이라, 그해 공고문으로 반드시 다시 확인한다.
 - 한 단계를 마치면 이 문서의 체크박스를 갱신한다(GitHub에서 연필 버튼으로 직접 고쳐도 됨).
-- **체크리스트 페이지**(2026-09-30): https://claude.ai/artifact/KfGKHugZEmWsavMYkbwYV7 — 이 문서를 옮긴 페이지로, 체크·메모가 바로 저장된다(본인만 열림).
+- **체크리스트 페이지**(2026-09-30): https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 — 이 문서를 옮긴 페이지로, 체크·메모가 바로 저장된다(본인만 열림).
   문구·단계의 원본은 이 문서. 페이지에서 체크한 내용은 Claude에게 "로드맵 반영해 줘"라고 하면 여기 체크박스로 옮긴다.
 
 ---
@@ -50,7 +50,7 @@
 
 - [x] **도메인 구매**(연 1~2만 원) — 앱 번들 ID(`com.toffeechat.app`, 잠정)도 도메인에 맞춰 이때 확정
   — 2026-10-01: `toffeechat.app` 구매 완료(Cloudflare, 첫해 8.20달러·이후 연 14.20달러 자동 갱신, 만료 2027-10-01). 번들 ID `com.toffeechat.app`은 그대로 유지
-- [x] 토피 전용 Gmail 생성 + 2단계 인증(2026-10-01) — 가입 현황·비용은 [사업화 장부](https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST)
+- [x] 토피 전용 Gmail 생성 + 2단계 인증(2026-10-01) — 가입 현황·비용은 [사업화 장부](https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR)
 - [x] **회사 메일**(`hello@`, `support@` 등) — Cloudflare 메일 전달(무료)로 시작, 보내기까지 필요하면 Google Workspace
   — 2026-10-01: `support@`·`dev@`·`privacy@toffeechat.app` → 전용 Gmail 전달 설정 완료
 - [x] 비밀번호 관리자 + 모든 계정 2단계 인증 — 2026-10-01: 비밀번호는 아이폰 암호 앱, 만든 계정 전부 2단계 인증

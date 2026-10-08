@@ -22,6 +22,28 @@
 
 ---
 
+## 2026-10-08 (이어서) — 새 Claude 계정으로 아티팩트 복원
+
+- **원인**: 같은 날 준비한 인수인계(아래 항목)대로 새 계정에서 첫 세션을 열고, 사용자가 개인 백업 zip(옛 아티팩트 DB 내보내기)을 첨부해
+  `docs/handover/README.md` 2단계 프롬프트로 복원을 요청.
+- **게시**(페이지 HTML은 `docs/handover/artifacts/` 백업 그대로, 내용 수정 없음):
+  - 사업화 장부 https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR — capabilities `db`, 규칙 `[{"path":"","read":"view","write":"admin"}]`
+  - 사업화 일정 https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 — `db`
+  - 실기기 테스트 체크리스트 https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc — `db` + `user`, 데이터 없음(옛 결과 0건)
+  - 세 서비스 운영비 https://claude.ai/artifact/BLYi5jU21RPAiwr87eBWWc — `db`(페이지는 젤리 저장소)
+  - (같이) 젤리 아이디어함 https://claude.ai/artifact/Dz9LefxRRa24gz4h6er7ra — 정적 페이지
+- **데이터**: zip의 JSON(파일 이름 = 문서 id)을 `ArtifactData` batch로 같은 컬렉션·같은 id에 넣음(장부 27건, 일정 11건, 운영비 15건, 각각 한 번에
+  원자적으로). zip의 일정 `tasks`·운영비 데이터는 저장소 백업(`artifacts/data/`, 젤리 `data/opcosts/`)과 바이트 단위로 같았음.
+- **확인**: 각 아티팩트를 다시 읽어 개수가 장부 `accounts` 16·`expenses` 10·`meta` 1, 일정 `tasks` 11, 운영비 `costs` 14·`settings` 1인 것과
+  53건 전부 백업 파일과 필드 단위로 같은 것을 확인. 장부는 보기 전용(`view`) 권한으로도 읽히는지 확인(쓰기는 `admin` 이상).
+- **링크 교체**: `CLAUDE.md` 5번 규칙(장부·일정), `docs/product/launch-roadmap.md`(맨 위·체크리스트 페이지 안내·Gmail 줄),
+  `docs/product/ops-infra-backlog.md`(장부), `docs/handover/README.md` 3번 표에 "새 주소" 칸. 이 로그의 지난 항목 속 옛 링크는 기록이라 그대로 둠.
+  장부 데이터의 로그인 이메일 등은 저장소 파일에 옮기지 않음.
+- **남은 일**: 사용자가 새 장부·일정·운영비 페이지를 열어 숫자(계정 16개, 쓴 돈 $18.70, 다음 정기 결제 2026-11-01 Railway, 1단계 체크 상태)를
+  눈으로 확인 → 그 뒤에 옛 계정 정리(Pro는 10/11까지). 새 아티팩트는 비공개라, 다른 사람과 보려면 페이지 공유 메뉴에서 따로 공유.
+
+---
+
 ## 2026-10-08 — Claude 계정 이전 준비(인수인계)
 
 - 사용자가 지금 Claude 계정을 더 이상 쓰지 않고 다른 계정에서 이어 가기로 함 → 계정에 묶인 것(아티팩트·아티팩트 DB·세션 기록·

@@ -94,17 +94,21 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
 
 ## 3. 아티팩트 복원 방법 (새 계정의 Claude가 따라 할 것)
 
-| 아티팩트(옛 주소) | 백업 파일 | 데이터 | 복원 |
-|---|---|---|---|
-| 사업화 장부 https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST | `artifacts/toffee-ledger.html` | `accounts`(16건)·`expenses`(10건)·`meta/roadmap` — **개인 백업 파일** | 페이지를 그대로 게시(capabilities `db`, 규칙 `[{"path":"","read":"view","write":"admin"}]`) → `ArtifactData` batch로 문서 id 그대로 넣기 |
-| 사업화 일정 https://claude.ai/artifact/KfGKHugZEmWsavMYkbwYV7 | `artifacts/toffee-launch-schedule.html` | `tasks`(11건) — `artifacts/data/*.json`(파일 이름 = 문서 id). `notes`·`expenses`는 비어 있었음 | 같은 방식(capabilities `db`) |
-| 실기기 테스트 체크리스트 https://claude.ai/artifact/6oRVkwDdAgZiJtY75Yf8uV | `artifacts/toffee-device-test-checklist.html` | `results` **0건**(아직 아무 항목도 체크 안 함), 입장 코드 칸(`data/users/me/demo-code`)도 비어 있었음 | 페이지만 게시(capabilities `db` + `user`) |
-| 초기 사업 로드맵(9월, Copy 포함) https://claude.ai/artifact/EDRpSJv6qkY51xUYqSfJYg | `artifacts/toffee-business-roadmap-early.html` | 체크 상태는 브라우저(localStorage)에만 있어 백업 불가 | 지금은 `launch-roadmap.md`가 대체 — 복원 불필요 |
-| 초기 개발 로드맵(9월) https://claude.ai/artifact/2SSV2exLhYfW7zx7jsZP5o | `artifacts/toffee-dev-roadmap-early.html` | 위와 같음 | 지금은 `STATUS.md`가 대체 — 복원 불필요 |
-| 세 서비스 운영비(젤리·KNOU·토피) https://claude.ai/artifact/NwaEj4dRqQHrCLtB4mo1vA | 젤리 저장소 `docs/handover/artifacts/three-services-opcosts.html` | 젤리 저장소(비공개) `docs/handover/artifacts/data/opcosts/` | 젤리 쪽 인수인계 참고 |
+| 아티팩트(옛 주소) | 새 주소(2026-10-08 복원) | 백업 파일 | 데이터 | 복원 |
+|---|---|---|---|---|
+| 사업화 장부 https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST | https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR | `artifacts/toffee-ledger.html` | `accounts`(16건)·`expenses`(10건)·`meta/roadmap` — **개인 백업 파일** | 페이지를 그대로 게시(capabilities `db`, 규칙 `[{"path":"","read":"view","write":"admin"}]`) → `ArtifactData` batch로 문서 id 그대로 넣기 |
+| 사업화 일정 https://claude.ai/artifact/KfGKHugZEmWsavMYkbwYV7 | https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 | `artifacts/toffee-launch-schedule.html` | `tasks`(11건) — `artifacts/data/*.json`(파일 이름 = 문서 id). `notes`·`expenses`는 비어 있었음 | 같은 방식(capabilities `db`) |
+| 실기기 테스트 체크리스트 https://claude.ai/artifact/6oRVkwDdAgZiJtY75Yf8uV | https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc | `artifacts/toffee-device-test-checklist.html` | `results` **0건**(아직 아무 항목도 체크 안 함), 입장 코드 칸(`data/users/me/demo-code`)도 비어 있었음 | 페이지만 게시(capabilities `db` + `user`) |
+| 초기 사업 로드맵(9월, Copy 포함) https://claude.ai/artifact/EDRpSJv6qkY51xUYqSfJYg | — (복원 안 함) | `artifacts/toffee-business-roadmap-early.html` | 체크 상태는 브라우저(localStorage)에만 있어 백업 불가 | 지금은 `launch-roadmap.md`가 대체 — 복원 불필요 |
+| 초기 개발 로드맵(9월) https://claude.ai/artifact/2SSV2exLhYfW7zx7jsZP5o | — (복원 안 함) | `artifacts/toffee-dev-roadmap-early.html` | 위와 같음 | 지금은 `STATUS.md`가 대체 — 복원 불필요 |
+| 세 서비스 운영비(젤리·KNOU·토피) https://claude.ai/artifact/NwaEj4dRqQHrCLtB4mo1vA | https://claude.ai/artifact/BLYi5jU21RPAiwr87eBWWc | 젤리 저장소 `docs/handover/artifacts/three-services-opcosts.html` | 젤리 저장소(비공개) `docs/handover/artifacts/data/opcosts/` | 젤리 쪽 인수인계 참고 |
 
 - 게시 전 `CLAUDE.md` 5번 규칙대로 **비밀번호·인증 코드·API 키는 절대 넣지 않는다**(백업에도 없음).
 - 게시 후 바꿀 곳: 토피 `CLAUDE.md`(5번 규칙의 두 링크), `docs/product/launch-roadmap.md` 맨 위 링크, 작업 로그의 링크는 기록이라 그대로 둬도 됨.
+- **2026-10-08 복원 완료**(새 계정 첫 세션): 위 "새 주소" 4개(+ 젤리 아이디어함 — 젤리 쪽 인수인계 2번)를 게시하고, 개인 백업 zip의 데이터를
+  문서 id 그대로 넣은 뒤 다시 읽어 개수(장부 `accounts` 16·`expenses` 10·`meta` 1, 일정 `tasks` 11, 운영비 `costs` 14·`settings` 1)와
+  내용(53건 전부 백업 파일과 필드 단위 일치)을 확인했다. `CLAUDE.md` 5번 규칙, `launch-roadmap.md`(맨 위·체크리스트 안내·Gmail 줄),
+  `ops-infra-backlog.md`의 장부 링크를 새 주소로 바꿈. 실기기 체크리스트는 데이터 없이 페이지만.
 - "Design System"(https://claude.ai/artifact/7VV1nWvFzpd9mTcCt7MTPD)은 빈 시스템(내용 파일 없음)이라 백업할 것이 없다.
 
 ---

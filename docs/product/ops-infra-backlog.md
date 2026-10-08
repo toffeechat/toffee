@@ -37,7 +37,7 @@
     가입), `privacy@`(개인정보처리방침)를 만들고 전부 Gmail 하나로 전달한다. Cloudflare 로그인 이메일은
     도메인 주소로 바꾸지 말고 Gmail로 유지(도메인이 끊기면 계정 복구 메일도 못 받으므로).
   - **어떤 서비스에 어떤 계정으로 가입했는지, 단계별로 쓴 돈은 "사업화 장부"에 정리**:
-    https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST (비공개, 비밀번호는 적지 않음). 계정을 만들 때마다
+    https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR (비공개, 비밀번호는 적지 않음). 계정을 만들 때마다
     결제할 때마다 Claude가 자동으로 갱신한다.
 - **GitHub**: 무료 Organization(사업자 없이 만들 수 있음)을 만들어 `toffee` 저장소를 옮긴다. **2026-10-01 완료** — 조직 `toffeechat`(개인 소유로 등록, 법인 후 변경), 저장소 `toffeechat/toffee`.
   이력·이슈는 그대로 유지되고 예전 주소는 자동 연결된다. 인력이 생기면 Organization 멤버로

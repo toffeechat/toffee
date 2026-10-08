@@ -5,7 +5,7 @@
 ## 문서 구조
 
 - [`docs/handover/README.md`](./docs/handover/README.md) — **2026-10-08 Claude 계정 이전 인수인계**. 아래 5번의
-  아티팩트 링크(사업화 장부·일정)는 옛 계정 소유라, 새 계정에서 쓰기가 안 되면 이 문서 3번대로 복원하고 링크를 바꿀 것.
+  아티팩트 링크(사업화 장부·일정)는 2026-10-08 새 계정으로 복원한 주소다(옛 주소·복원 방법은 이 문서 3번). 계정을 또 옮기면 3번대로 다시 복원하고 링크를 바꿀 것.
 - [`STATUS.md`](./STATUS.md) — **진행 현황 한눈에 보기**(1차 완성/2차/보류, 기능별 ✅🔶⬜👤).
   사용자가 "어디까지 됐지?"를 매번 묻지 않아도 되게 하는 게 목적(2026-09-28 도입). 기능을
   만들거나 상태가 바뀌면 **같은 커밋에서** 해당 줄을 갱신하고 "마지막 갱신" 날짜를 바꿀 것.
@@ -43,7 +43,7 @@
    추가할 것(2026-09-28 사용자 방침: 기능 개발 먼저). 기능 개발이 외부 계정 때문에 막히면
    로컬 대체품(가짜 S3, 키 없는 Sentry 등)으로 우회하고 계정 정보만 나중에 넣게 만든다.
 5. **외부 서비스 계정을 만들었거나 돈을 썼다는 말을 들으면**(가입, 2단계 인증 설정, 로그인 이메일 변경, 결제,
-   정기 결제 갱신 등) 묻지 않고 **사업화 장부** 아티팩트 https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST 를
+   정기 결제 갱신 등) 묻지 않고 **사업화 장부** 아티팩트 https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR 를
    `ArtifactData`로 갱신한다(2026-10-01 사용자 요청).
    - `accounts`(문서 하나 = 서비스 하나): `service`, `category`, `stage`(사업화 단계 1~8, `launch-roadmap.md`),
      `status`(`done`/`todo`), `when`, `login`, `method`, `purpose`, `recovery`, `twofa`(`on`/`off`/`unknown`),
@@ -53,7 +53,7 @@
      `date`, `renews` + `renewAmount`(정기 결제면), `payer`, `receipt`, `note`, `order`. 정기 결제가 갱신되면 새
      문서를 추가(연도별 기록 유지).
    - `meta/roadmap`: `current`(지금 단계) + `stages`. 단계가 넘어가면 `current`를 바꾼다.
-   - **사업화 일정** 아티팩트 https://claude.ai/artifact/KfGKHugZEmWsavMYkbwYV7 (`docs/product/launch-roadmap.md`를 옮긴
+   - **사업화 일정** 아티팩트 https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 (`docs/product/launch-roadmap.md`를 옮긴
      체크리스트)도 같이 갱신한다: 할 일이 끝나거나 진행되면 `tasks/<할 일 id>`(예: `s1-domain`, `s1-mail`, `s1-accounts` —
      id는 아티팩트 HTML의 `STAGES` 배열)에 `{done, doneAt(ISO), note}`를 쓰고(일부만 했으면 `done: false` + 진행 메모),
      `launch-roadmap.md`의 체크박스도 같은 커밋에서 맞춘다. 사용자가 페이지에서 직접 체크·메모한 것도 있으니 쓰기 전에 읽고
