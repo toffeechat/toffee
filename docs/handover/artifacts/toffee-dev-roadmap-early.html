@@ -1,0 +1,569 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Toffee 개발 로드맵</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #FBF3E6;
+    --surface: #FFFDF8;
+    --surface-raised: #FFFFFF;
+    --ink: #2E2013;
+    --ink-muted: #8A755C;
+    --ink-faint: #B8A588;
+    --line: #E6D6BC;
+    --line-soft: #EFE3CE;
+    --mint: #3F7A64;
+    --mint-deep: #2C5B49;
+    --mint-tint: #DDE9E1;
+    --moss: #6B7A4A;
+    --moss-tint: #E3E8D6;
+    --wine: #A8482F;
+    --wine-tint: #F3DED6;
+    --shadow: 0 1px 2px rgba(46,32,19,0.04), 0 6px 20px rgba(46,32,19,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14201B;
+      --surface: #1A2820;
+      --surface-raised: #203127;
+      --ink: #E9F1EA;
+      --ink-muted: #A8C2B4;
+      --ink-faint: #6F8A7A;
+      --line: #2E4438;
+      --line-soft: #253A2F;
+      --mint: #7FC4AC;
+      --mint-deep: #9CDABF;
+      --mint-tint: #24382F;
+      --moss: #9CB177;
+      --moss-tint: #263323;
+      --wine: #D57A5D;
+      --wine-tint: #3A241E;
+      --shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 28px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14201B;
+    --surface: #1A2820;
+    --surface-raised: #203127;
+    --ink: #E9F1EA;
+    --ink-muted: #A8C2B4;
+    --ink-faint: #6F8A7A;
+    --line: #2E4438;
+    --line-soft: #253A2F;
+    --mint: #7FC4AC;
+    --mint-deep: #9CDABF;
+    --mint-tint: #24382F;
+    --moss: #9CB177;
+    --moss-tint: #263323;
+    --wine: #D57A5D;
+    --wine-tint: #3A241E;
+    --shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 28px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans KR', -apple-system, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 64px 24px 120px; }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mint);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow .sep { color: var(--ink-faint); }
+  .eyebrow .cross-link {
+    margin-left: auto;
+    color: var(--ink-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1px;
+    font-family: 'IBM Plex Sans KR', sans-serif;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 13px;
+  }
+  .eyebrow .cross-link:hover { color: var(--mint); border-color: var(--mint); }
+
+  h1 {
+    font-family: 'Hahmlet', serif;
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 18px 0 14px;
+    letter-spacing: -0.01em;
+  }
+  .sub { color: var(--ink-muted); font-size: 16px; max-width: 62ch; margin: 0 0 40px; }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow);
+  }
+  .summary-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    background: var(--mint-tint);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+  .chip b { font-weight: 600; color: var(--ink); }
+  .chip span { color: var(--ink-muted); font-size: 12px; }
+
+  /* benchmark matrix */
+  .matrix-section { margin-bottom: 56px; }
+  .matrix-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
+  .matrix-head h2 { font-family: 'Hahmlet', serif; font-size: 22px; font-weight: 600; margin: 0; }
+  .matrix-note { font-size: 13px; color: var(--ink-muted); margin: 0 0 18px; max-width: 64ch; }
+  .matrix-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+  table.matrix { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+  table.matrix th, table.matrix td { padding: 11px 16px; text-align: left; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  table.matrix thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--line);
+  }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  table.matrix td.feature { font-weight: 500; }
+  table.matrix td.src { color: var(--ink-muted); font-size: 13px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+  .status.in { color: var(--mint-deep); }
+  .status.later { color: var(--wine); }
+  .status.out { color: var(--ink-faint); }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  .stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 20px;
+    padding-bottom: 44px;
+  }
+  .stage:last-child { padding-bottom: 0; }
+  .stage::before {
+    content: "";
+    position: absolute;
+    left: 21px;
+    top: 44px;
+    bottom: -4px;
+    width: 2px;
+    background: var(--line);
+  }
+  .stage:last-child::before { display: none; }
+
+  .node {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface-raised);
+    border: 2px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .stage.current .node { background: var(--mint); border-color: var(--mint); color: var(--surface-raised); }
+  .stage.done .node { background: var(--moss); border-color: var(--moss); color: var(--surface-raised); }
+
+  .stage-body { padding-top: 3px; }
+  .stage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .stage-title { font-family: 'Hahmlet', serif; font-weight: 600; font-size: 21px; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .badge.current { background: var(--mint-tint); color: var(--mint-deep); }
+  .badge.later { background: var(--wine-tint); color: var(--wine); }
+  .badge.done { background: var(--moss-tint); color: var(--moss); }
+
+  .stage-desc { color: var(--ink-muted); font-size: 14.5px; margin-bottom: 14px; max-width: 58ch; }
+
+  .checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+  .checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; }
+  .checklist input[type="checkbox"] {
+    appearance: none;
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface);
+    flex-shrink: 0; margin-top: 2px; cursor: pointer; position: relative;
+  }
+  .checklist input[type="checkbox"]:checked { background: var(--mint); border-color: var(--mint); }
+  .checklist input[type="checkbox"]:checked::after {
+    content: ""; position: absolute; left: 5px; top: 1px; width: 5px; height: 9px;
+    border: solid var(--surface-raised); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .checklist input[type="checkbox"]:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+  .checklist label { cursor: pointer; }
+  .checklist .src { display: block; font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+  .checklist li.checked label { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
+
+  .note {
+    margin-top: 14px; font-size: 13px; color: var(--ink-muted);
+    background: var(--surface); border: 1px solid var(--line-soft);
+    border-left: 3px solid var(--mint); border-radius: 0 8px 8px 0; padding: 10px 14px;
+  }
+  .note.warn { border-left-color: var(--wine); }
+  .note.good { border-left-color: var(--moss); }
+
+  .later-box {
+    margin-top: 64px;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .later-box h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 14px;
+  }
+  .later-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+  .later-item { font-size: 13.5px; color: var(--ink-muted); }
+  .later-item b { color: var(--ink); font-weight: 500; }
+  .later-item span.src { display: block; font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
+
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-faint);
+  }
+  footer a { color: var(--mint); text-decoration: none; border-bottom: 1px solid var(--mint); }
+
+  @media (max-width: 520px) {
+    h1 { font-size: 32px; }
+    .stage { grid-template-columns: 34px 1fr; gap: 14px; }
+    .node { width: 34px; height: 34px; font-size: 13px; }
+    .stage::before { left: 16px; top: 34px; }
+    .later-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">
+    <span>TOFFEE</span><span class="sep">·</span><span>개발 로드맵</span>
+    <a class="cross-link" href="https://claude.ai/code/artifact/6b0305ba-57a9-4bd3-afb9-385c6b0f0951">← 사업 로드맵</a>
+  </div>
+  <h1>개발 로드맵</h1>
+  <p class="sub">뼈대는 Bubble(디어유), 세부 기능 아이디어는 Weverse까지 참고했습니다. 화면마다 어느 앱의 어떤 기능을 벤치마킹했는지 표시해뒀어요 — 실제로 써본 적 없어도 이 문서만 보고 판단할 수 있게요.</p>
+
+  <div class="summary">
+    <div class="summary-title">확정된 것들</div>
+    <div class="chips">
+      <div class="chip"><b>Bubble 모델</b><span>공개 커뮤니티 없이 DM 중심</span></div>
+      <div class="chip"><b>배우 개인 구독</b><span>과금 단위 · CP는 내부 할인 로직으로만 존재</span></div>
+      <div class="chip"><b>배우 1명</b><span>파일럿 규모</span></div>
+      <div class="chip"><b>Gelly는 참고용</b><span>코드는 새로 작성, 패턴만 참고</span></div>
+      <div class="chip"><b>소셜로그인 5종</b><span>기존 4종 + LINE 신규 추가</span></div>
+      <div class="chip"><b>이모지 미사용</b><span>아티스트는 이름 + 이미지만</span></div>
+      <div class="chip"><b>가상 데이터</b><span>계약 전까지 실제 배우 정보 금지</span></div>
+      <div class="chip"><b>구독일 기준 열람</b><span>구독 전 대화는 소급 열람 불가 — Bubble 정책 그대로</span></div>
+      <div class="chip"><b>미디어는 배우→팬 단방향</b><span>팬은 텍스트(+이모티콘)만 전송</span></div>
+    </div>
+  </div>
+
+  <div class="matrix-section">
+    <div class="matrix-head"><h2>벤치마킹 매트릭스</h2></div>
+    <p class="matrix-note">Bubble·Weverse의 기능을 항목별로 대조해서, Toffee MVP에 넣을지 나중으로 미룰지 결정한 근거예요. "비공개"는 공식 자료로 확인이 안 돼 업계에 알려진 정황만 있는 항목.</p>
+    <div class="matrix-scroll">
+      <table class="matrix">
+        <thead>
+          <tr><th>기능</th><th>Bubble</th><th>Weverse</th><th>Toffee MVP</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feature">이름 삽입 개인화 메시지<span class="src src">"OO야, 오늘 뭐해?" 식 변수 삽입</span></td>
+            <td class="src">핵심 기능</td>
+            <td class="src">—</td>
+            <td><span class="status in">포함</span></td>
+          </tr>
+          <tr>
+            <td class="feature">아티스트 표시 닉네임<span class="src src">실명과 별도로, 메신저 대화명처럼 자유롭게 설정·변경</span></td>
+            <td class="src">있다고 알려짐 (공식 확인 안 됨)</td>
+            <td class="src">확인 안 됨</td>
+            <td><span class="status in">포함</span></td>
+          </tr>
+          <tr>
+            <td class="feature">팬 답장 전체 모아보기<span class="src src">배우(스태프)가 모든 답장을 한 화면에서 확인</span></td>
+            <td class="src">있음</td>
+            <td class="src">DM에 있음</td>
+            <td><span class="status in">포함</span></td>
+          </tr>
+          <tr>
+            <td class="feature">채팅 실시간 자동 번역</td>
+            <td class="src">답장 번역 지원</td>
+            <td class="src">Quick Translation</td>
+            <td><span class="status in">포함 (LLM 기반)</span></td>
+          </tr>
+          <tr>
+            <td class="feature">구독 전 과거 대화 열람<span class="src src">구독하기 전 아티스트가 이미 보낸 메시지를 소급해서 볼 수 있는지</span></td>
+            <td class="src">불가 — 구독 시작 시점부터만 열람</td>
+            <td class="src">구독 만료 시 열람 제한 (공식 FAQ 존재, 유사 정책 추정)</td>
+            <td><span class="status out">제외 — 구독일 이후만 노출</span></td>
+          </tr>
+          <tr>
+            <td class="feature">팬의 사진·영상 전송<span class="src src">팬이 채팅에 미디어를 첨부해 보낼 수 있는지</span></td>
+            <td class="src">불가 — 팬은 텍스트만, 사진·영상·음성은 아티스트만 전송</td>
+            <td class="src">확인 안 됨 (Bubble과 유사한 구조로 추정)</td>
+            <td><span class="status out">제외 — 팬은 텍스트(+이모티콘)만</span></td>
+          </tr>
+          <tr>
+            <td class="feature">공개 커뮤니티 피드<span class="src src">배우가 팬 게시물에 댓글, HOT 100</span></td>
+            <td class="src">없음</td>
+            <td class="src">핵심 기능</td>
+            <td><span class="status out">제외</span></td>
+          </tr>
+          <tr>
+            <td class="feature">라이브 방송 + 실시간 텍스팅</td>
+            <td class="src">bubble LIVE</td>
+            <td class="src">Weverse LIVE</td>
+            <td><span class="status later">나중에</span></td>
+          </tr>
+          <tr>
+            <td class="feature">OUR BOX<span class="src src">마음에 든 메시지·사진 보관함</span></td>
+            <td class="src">있음</td>
+            <td class="src">없음</td>
+            <td><span class="status later">나중에</span></td>
+          </tr>
+          <tr>
+            <td class="feature">기념일 연출<span class="src src">구독 시작일 기준 "함께한 날"</span></td>
+            <td class="src">있음</td>
+            <td class="src">없음</td>
+            <td><span class="status later">나중에</span></td>
+          </tr>
+          <tr>
+            <td class="feature">커머스<span class="src src">굿즈·앨범·티켓 판매</span></td>
+            <td class="src">없음</td>
+            <td class="src">Weverse Shop</td>
+            <td><span class="status out">제외</span></td>
+          </tr>
+          <tr>
+            <td class="feature">발송 예약</td>
+            <td class="src">비공개</td>
+            <td class="src">—</td>
+            <td><span class="status later">나중에</span></td>
+          </tr>
+          <tr>
+            <td class="feature">다중 배우 콘솔 전환</td>
+            <td class="src">비공개</td>
+            <td class="src">—</td>
+            <td><span class="status later">나중에</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="stages">
+
+    <div class="stage done" data-stage="1">
+      <div class="node">✓</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">저장소 셋업</span><span class="badge done">완료</span></div>
+        <ul class="checklist" data-key="d1">
+          <li><input type="checkbox" id="d1-0"><label for="d1-0">새 레포 생성 — Gelly 레포는 복사하지 않고 참고용으로만 열람</label></li>
+          <li><input type="checkbox" id="d1-1"><label for="d1-1"><code>backend/</code>, <code>app/</code> 폴더 구조는 Gelly를 참고해 새로 설계</label></li>
+          <li><input type="checkbox" id="d1-2"><label for="d1-2">Render / Supabase / Firebase 신규 프로젝트 — 무료 티어로 시작</label></li>
+        </ul>
+        <div class="note warn">Render/Supabase/Firebase 계정은 실제 크리덴셜이 필요해서 사용자가 직접 만들어야 함 — 나머지는 완료</div>
+      </div>
+    </div>
+
+    <div class="stage done" data-stage="2">
+      <div class="node">✓</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">핵심 모듈 구현</span><span class="badge done">완료</span></div>
+        <p class="stage-desc">Gelly를 그대로 가져오지 않고, 설계 패턴만 참고해서 새로 작성해요.</p>
+        <ul class="checklist" data-key="d2">
+          <li><input type="checkbox" id="d2-0"><label for="d2-0">소셜 로그인(Google/Apple/네이버/카카오/LINE) + JWT 모듈 — <b>LINE 로그인 신규 추가</b></label></li>
+          <li><input type="checkbox" id="d2-1"><label for="d2-1"><code>Actor</code> / <code>GlCp</code> 스키마를 Gelly 설계 참고해 새로 작성 — <code>GlCp</code>는 내부 페어링용, 팬에게 노출되는 화면 없음</label></li>
+          <li><input type="checkbox" id="d2-2"><label for="d2-2">FCM 푸시 인프라 — 새 메시지 알림용 (Gelly 구현 참고)</label></li>
+          <li><input type="checkbox" id="d2-3"><label for="d2-3">관리자 승인 큐 패턴 → 신고/모더레이션 큐로 응용 (Gelly 패턴 참고)</label></li>
+          <li><input type="checkbox" id="d2-4"><label for="d2-4">코드 컨벤션은 Gelly 참고 — 단 이모지 표시(<code>emojiPrefix</code>)는 <b>미적용</b>, 아티스트는 이름+이미지만 사용</label></li>
+        </ul>
+        <div class="note">개발 중 실제로 필요해진 <code>POST /auth/dev-login</code>(비프로덕션 전용, DevOnlyGuard로 404 처리)도 여기서 같이 추가함 — 실 소셜 크리덴셜 없이 전체 플로우 테스트 가능</div>
+      </div>
+    </div>
+
+    <div class="stage done" data-stage="3">
+      <div class="node">✓</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">가상 데이터 시딩</span><span class="badge done">완료</span></div>
+        <ul class="checklist" data-key="d3">
+          <li><input type="checkbox" id="d3-0"><label for="d3-0">가상의 배우 프로필(이름·사진 모두 가상) 시드 데이터</label></li>
+          <li><input type="checkbox" id="d3-1"><label for="d3-1">가상의 CP 페어링 데이터 — 화면으로 노출하지 않고 동시구독 할인 로직 테스트용으로만 사용</label></li>
+        </ul>
+        <div class="note good">로컬 Postgres를 직접 띄워서 마이그레이션 적용 + 시드 스크립트 실행까지 실제로 검증함 — 더 이상 "미실행" 상태 아님</div>
+      </div>
+    </div>
+
+    <div class="stage done" data-stage="4">
+      <div class="node">✓</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">신규 도메인 모델</span><span class="badge done">완료</span></div>
+        <ul class="checklist" data-key="d4">
+          <li><input type="checkbox" id="d4-0"><label for="d4-0"><code>Subscription</code> — 배우 개인 단위, 구독시작일·최근발송일·최근답장일 필드<span class="src">환불 판정(30일 미발송 룰)에 그대로 씀. 대화 조회 API도 <code>message.createdAt >= subscription.startedAt</code> 조건으로 이 필드를 그대로 재사용 — 구독 전 메시지는 애초에 응답에서 제외</span></label></li>
+          <li><input type="checkbox" id="d4-1"><label for="d4-1"><code>Message</code> — 텍스트/사진/음성, 발신자(배우 vs 팬) 구분, <b>수신자 이름 변수</b> 필드<span class="src">Bubble의 개인화 메시지 벤치마킹. 사진·음성·영상 타입은 발신자가 배우일 때만 허용 — 팬 발신 메시지는 DTO 단에서 텍스트(+이모티콘)로 타입 제한</span></label></li>
+          <li><input type="checkbox" id="d4-2"><label for="d4-2">Role 확장 — <code>AGENCY_STAFF</code> 추가</label></li>
+          <li><input type="checkbox" id="d4-3"><label for="d4-3"><code>Actor</code>에 표시 닉네임 필드 추가 — 실명과 별도로 소속사가 자유롭게 설정/변경<span class="src">실명이 있어도 대화명처럼 바꿀 수 있게</span></label></li>
+          <li><input type="checkbox" id="d4-4"><label for="d4-4">동시구독 할인 로직 — <code>GlCp</code> 페어링 기반, 탐색 화면 없이 결제 시 자동 적용</label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage done" data-stage="5">
+      <div class="node">✓</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">팬 사이드 화면</span><span class="badge done">완료</span></div>
+        <p class="stage-desc">API는 메시지/구독 모듈로 상당 부분 미리 만들어졌고, 여기서부터는 앱(화면) 작업이었어요.</p>
+        <ul class="checklist" data-key="d5">
+          <li><input type="checkbox" id="d5-0"><label for="d5-0">온보딩/로그인</label></li>
+          <li><input type="checkbox" id="d5-1"><label for="d5-1">배우 탐색/선택 (검색 포함, <code>useActors(query)</code> 재사용)</label></li>
+          <li><input type="checkbox" id="d5-2"><label for="d5-2">구독 결제 화면 (샌드박스/더미)</label></li>
+          <li><input type="checkbox" id="d5-3"><label for="d5-3">채팅 목록</label></li>
+          <li><input type="checkbox" id="d5-4"><label for="d5-4">채팅방 — 텍스트/사진/음성 수신, 답장 입력, 자동번역 표시<span class="src">Bubble 개인화 메시지 + Weverse Quick Translation 벤치마킹. 답장 입력창은 텍스트 전용(첨부 버튼 없음), 목록은 구독시작일 이후 메시지만 로드</span></label></li>
+          <li><input type="checkbox" id="d5-5"><label for="d5-5">마이페이지 — 구독 관리, 해지/환불 신청</label></li>
+        </ul>
+        <div class="note good">화면만이 아니라 실제로 로컬 Postgres + 백엔드를 띄우고 Expo 웹 빌드를 Playwright로 조작해서 로그인 → 탐색 → 구독(번들 할인 계산 확인) → 채팅(구독 전 메시지 숨김·{{name}} 치환 실동작 확인) → 대화 목록 → 마이페이지까지 전체 플로우를 눈으로 검증함. 이 과정에서 백엔드에 CORS가 빠진 것도 발견해서 같이 고침(<code>app.enableCors()</code>).</div>
+      </div>
+    </div>
+
+    <div class="stage done" data-stage="6">
+      <div class="node">✓</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">콘솔 사이드 화면</span><span class="badge done">완료</span></div>
+        <p class="stage-desc">소속사 스태프가 실제로 배우를 대신해(또는 배우 본인이) 쓰는 발행 도구예요.</p>
+        <ul class="checklist" data-key="d6">
+          <li><input type="checkbox" id="d6-0"><label for="d6-0">소속사 스태프 로그인</label></li>
+          <li><input type="checkbox" id="d6-1"><label for="d6-1">메시지 작성/발송 — 수신자별 이름 자동 삽입 옵션, 텍스트/사진/음성 첨부<span class="src">Bubble 개인화 메시지 벤치마킹. 미디어 첨부는 콘솔(배우/스태프) 쪽에만 존재</span></label></li>
+          <li><input type="checkbox" id="d6-2"><label for="d6-2">구독자 답장 모아보기<span class="src">Bubble/Weverse 모두 스태프가 전체 답장을 한 화면에서 봄</span></label></li>
+          <li><input type="checkbox" id="d6-3"><label for="d6-3">구독자 통계 대시보드 — 마지막 발송일 지표 포함</label></li>
+        </ul>
+        <div class="note good">우리 시드 데이터가 스태프 1명이 배우 2명을 같이 관리하는 구조라, "콘솔 진입 시 관리 배우 목록" 화면이 나중 확장이 아니라 지금 당장 필요했음 — 발송/답장/통계를 세그먼트 컨트롤로 묶은 배우별 화면으로 구현. 로그인 직후 role 따라 콘솔로 라우팅하는 로직에서 진짜 레이스 컨디션 버그(토큰은 세팅됐는데 role은 아직 null인 틈에 팬 화면으로 리다이렉트)를 발견해서 고침. 콘솔에서 실제로 {{name}} 포함 메시지를 발송하고, fan1 계정으로 전환해서 이름이 치환되어 도착하는 것까지 실제로 확인함.</div>
+      </div>
+    </div>
+
+    <div class="stage current" data-stage="7">
+      <div class="node">7</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">운영 사이드 화면</span><span class="badge current">지금 여기</span></div>
+        <ul class="checklist" data-key="d7">
+          <li><input type="checkbox" id="d7-0"><label for="d7-0">배우/소속사 계정 관리</label></li>
+          <li><input type="checkbox" id="d7-1"><label for="d7-1">구독/결제 현황 조회</label></li>
+          <li><input type="checkbox" id="d7-2"><label for="d7-2">환불 처리 — 7일/30일 무사용 룰 반자동화</label></li>
+          <li><input type="checkbox" id="d7-3"><label for="d7-3">신고/모더레이션 큐</label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage" data-stage="8">
+      <div class="node">8</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">번역 파이프라인 (MVP)</span></div>
+        <ul class="checklist" data-key="d8">
+          <li><input type="checkbox" id="d8-0"><label for="d8-0">원문 저장 + 언어별 번역본 lazy 생성·캐싱</label></li>
+          <li><input type="checkbox" id="d8-1"><label for="d8-1">LLM API 기반 번역 — 구어체·애교체가 통계 기반 MT보다 자연스러움</label></li>
+          <li><input type="checkbox" id="d8-2"><label for="d8-2">UI 언어는 별도 i18n 리소스 파일 분리 (react-i18next / expo-localization), 태국어+영어부터</label></li>
+        </ul>
+        <div class="note">UI 다국어(정적 리소스)와 메시지 번역(동적 API+캐싱)은 서로 다른 시스템으로 분리 설계</div>
+      </div>
+    </div>
+
+    <div class="stage" data-stage="9">
+      <div class="node">9</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">데모 완성 체크</span></div>
+        <ul class="checklist" data-key="d9">
+          <li><input type="checkbox" id="d9-0"><label for="d9-0">위 화면 전부 가상 데이터로 끝까지 시연 가능</label></li>
+          <li><input type="checkbox" id="d9-1"><label for="d9-1">여기서 멈추고 컨택으로 전환 — 무한 다듬기 금지</label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage" data-stage="10">
+      <div class="node">10</div>
+      <div class="stage-body">
+        <div class="stage-head"><span class="stage-title">프로덕션 전환</span><span class="badge later">계약 성사 후</span></div>
+        <ul class="checklist" data-key="d10">
+          <li><input type="checkbox" id="d10-0"><label for="d10-0">실제 배우 데이터로 교체</label></li>
+          <li><input type="checkbox" id="d10-1"><label for="d10-1">실시간 메시징 스케일링 — WebSocket + Redis pub/sub</label></li>
+          <li><input type="checkbox" id="d10-2"><label for="d10-2">인앱결제(IAP) 정식 연동</label></li>
+          <li><input type="checkbox" id="d10-3"><label for="d10-3">미디어 CDN 파이프라인 정비</label></li>
+          <li><input type="checkbox" id="d10-4"><label for="d10-4">모더레이션 인력 투입</label></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="later-box">
+    <h2>나중으로 미룬 것 — 왜 지금은 아닌지</h2>
+    <div class="later-grid">
+      <div class="later-item"><b>공개 커뮤니티 피드</b> — 위버스형 확장<span class="src">모더레이션 부담이 커서 파일럿 규모(배우 1명)엔 과함</span></div>
+      <div class="later-item"><b>커머스(굿즈/티켓)</b> — 위버스형 확장<span class="src">결제·재고·배송이 또 다른 사업 도메인</span></div>
+      <div class="later-item"><b>라이브 방송</b> — 버블/위버스 공통<span class="src">실시간 스트리밍 인프라는 개발 난이도 대비 초기 임팩트가 낮음</span></div>
+      <div class="later-item"><b>OUR BOX</b> — 버블 벤치마킹<span class="src">코어 경험 검증 후에 붙여도 늦지 않음</span></div>
+      <div class="later-item"><b>기념일 연출</b> — 버블 벤치마킹<span class="src">구독 데이터가 쌓여야 의미 있는 기능</span></div>
+      <div class="later-item"><b>발송 예약 / 다중 배우 콘솔</b><span class="src">배우 1명 파일럿엔 불필요한 편의 기능</span></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>진행 상태는 이 브라우저에만 저장됩니다</span>
+    <a href="https://claude.ai/code/artifact/6b0305ba-57a9-4bd3-afb9-385c6b0f0951">사업 로드맵 보기 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var KEY = 'toffee-dev-roadmap-v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
+
+  var boxes = document.querySelectorAll('.checklist input[type=checkbox]');
+  boxes.forEach(function(box){
+    if (state[box.id]) { box.checked = true; box.closest('li').classList.add('checked'); }
+    box.addEventListener('change', function(){
+      state[box.id] = box.checked;
+      box.closest('li').classList.toggle('checked', box.checked);
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {}
+    });
+  });
+})();
+</script>
+
+</body></html>

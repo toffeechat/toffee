@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-08 — Claude 계정 이전 준비(인수인계)
+
+- 사용자가 지금 Claude 계정을 더 이상 쓰지 않고 다른 계정에서 이어 가기로 함 → 계정에 묶인 것(아티팩트·아티팩트 DB·세션 기록·
+  클라우드 환경)을 점검하고 [`docs/handover/README.md`](./handover/README.md)에 정리. 코드·문서·`CLAUDE.md`는 GitHub에 있어 그대로 이어짐.
+- 아티팩트 페이지를 `docs/handover/artifacts/`에 백업(사업화 장부·사업화 일정·실기기 테스트 체크리스트·초기 로드맵 2개), 사업화 일정 체크 상태
+  (`tasks` 11건)는 `artifacts/data/`. 장부 데이터(계정 16건·비용 10건)는 로그인 이메일 등이 있어 저장소에 넣지 않고 사용자에게 파일로 전달.
+- 점검 중 발견: main에 안 들어간 작업 브랜치 3개(`keen-shannon-g2x32m` — `eas.json` channel 제거·첫 실기기 빌드 성공 기록 포함,
+  `adoring-turing-t1kcnp` — 사업화 문서 5커밋, `zealous-sagan-1x5no1`). 다른 세션 브랜치를 합치는 건 권한 확인에서 막혀 사용자 결정으로 남김.
+  실기기 테스트 체크리스트 결과는 0건, R2 연결은 10/4 안내 후 사용자 진행 대기.
+- **남은 일**: 새 계정에서 아티팩트 복원 → `CLAUDE.md`·`launch-roadmap.md` 링크 교체, 위 브랜치 3개 main 반영 여부 결정.
+
+---
+
 ## 2026-10-04 — 첫 iOS 실기기 빌드(EAS) 진행
 
 - 사용자가 맥에서 진행: 저장소 clone(`~/dev/IntellijProject/toffee`), EAS 로그인(처음엔 젤리 개인 계정 `ddururiiiiiii`로 로그인돼 있어서

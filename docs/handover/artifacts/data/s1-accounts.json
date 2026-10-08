@@ -1,0 +1,5 @@
+{
+  "done": true,
+  "doneAt": "2026-10-01T06:10:00.000Z",
+  "note": "Cloudflare, Expo(조직 toffeechat-team, 앱 설정 연결), Sentry(조직 toffeechat, 앱 DSN 연결), Firebase(프로젝트 toffee-c6cba) 가입 완료. 남은 것: Firebase에 앱 등록·설정 파일, 서버 키. 상세는 사업화 장부"
+}

@@ -1,0 +1,5 @@
+{
+  "done": true,
+  "doneAt": "2026-10-02T00:00:00.000Z",
+  "note": "호스팅: Railway(서버+DB, 싱가포르, Hobby 월 $5, 상한 $15) + 웹 화면 Cloudflare Pages(무료).\n10/1: 서버·DB 배포, 입장 코드, 가짜 배우 데이터, 운영자 '데모 초기화' 버튼.\n10/2: 웹 데모 배포, 주소 연결 — 화면 https://demo.toffeechat.app · 서버 https://api-demo.toffeechat.app. 입장 코드 로그인·초기화 확인.\n주소·데모 계정·입장 코드 위치는 사업화 장부 Railway·Cloudflare Pages 항목에."
+}
