@@ -44,6 +44,13 @@
   RNFirebase 26의 SPM 방식이 충돌. `app.config.ts`에서 `['@react-native-firebase/app', { ios: { disableSPM: true } }]`로 Firebase를
   CocoaPods로 받게 함(Podfile에 `$RNFirebaseDisableSPM = true` 들어가는 것 prebuild로 확인). 다시 빌드 예정.
 - 사용자가 Expo 비밀번호로 보이는 값을 대화에 붙여넣음 → 비밀번호 변경 안내.
+- 다시 빌드 — expo-updates 설치 질문에 Y를 눌러 맥에서 패키지가 깔리고 멈춤(`git checkout package.json package-lock.json` 후 재시도).
+  원인인 `eas.json`의 `channel`(expo-updates 없이 채널만 있음)을 preview·production에서 뺌 — OTA 도입 때 다시. **빌드 성공**, 아이폰 설치.
+- 소셜 로그인 동의 화면 로고: 카카오·네이버·LINE에 앱 아이콘(T Spark) 업로드(앱 빌드와 무관, 각 회사 서버에 저장). 구글은 로고를 올리면
+  OAuth 앱 심사가 시작돼서 출시 준비 때(ops-infra-backlog).
+- **실기기 테스트 체크리스트** 아티팩트 https://claude.ai/artifact/6oRVkwDdAgZiJtY75Yf8uV — 팬(폰)·팬(PC 웹)·아티스트·소속사·운영자별
+  56개 항목, 항목마다 통과/문제/건너뜀 + 메모(`results/<항목 id>`에 저장, Claude가 `ArtifactData`로 읽어 고침). 데모 서버엔 파일 저장소(R2)가
+  아직 없어 사진·음성·영상 보내기는 실패 예상 — 건너뜀 처리. 다 하면 운영자 "데모 초기화"(소셜 로그인으로 생긴 계정·푸시 기기도 지워짐).
 
 ---
 
