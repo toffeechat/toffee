@@ -1,6 +1,6 @@
 # 사업화 일정 — 지금부터 첫 매출까지
 
-> 체크리스트 페이지: [토피 사업화 일정](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) · 계정·비용: [사업화 장부](https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR) — Claude가 진행될 때마다 같이 갱신
+> 체크리스트 페이지: [토피 사업화 일정](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) · 계정·비용: [사업화 장부](https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR) · 사업·자금: [토피 사업 계획](https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR) · 제안: [토피 소속사 제안](https://claude.ai/artifact/GZbpqSonTvDbY6vRbhzAkE) — Claude가 진행될 때마다 같이 갱신
 
 2026-09-29 작성. **"이제 뭘 해야 하지?"를 이 문서 하나로 답하는 것**이 목적이다. 기능이 어디까지 됐는지는
 [`STATUS.md`](../../STATUS.md), 계정·인프라 결정의 자세한 이유는 [`ops-infra-backlog.md`](./ops-infra-backlog.md),

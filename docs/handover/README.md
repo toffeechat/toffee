@@ -109,6 +109,19 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
   문서 id 그대로 넣은 뒤 다시 읽어 개수(장부 `accounts` 16·`expenses` 10·`meta` 1, 일정 `tasks` 11, 운영비 `costs` 14·`settings` 1)와
   내용(53건 전부 백업 파일과 필드 단위 일치)을 확인했다. `CLAUDE.md` 5번 규칙, `launch-roadmap.md`(맨 위·체크리스트 안내·Gmail 줄),
   `ops-infra-backlog.md`의 장부 링크를 새 주소로 바꿈. 실기기 체크리스트는 데이터 없이 페이지만.
+- **2026-10-12 정리 — 지금 쓰는 토피 페이지는 아래 7개뿐**(모두 이 Claude 프로젝트에 게시, 계정을 옮기면 이것만 복원):
+  | 분류 | 페이지 | 백업 파일 | 데이터 |
+  |---|---|---|---|
+  | 사업 계획·자금 | 토피 사업 계획 https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR | `artifacts/toffee-business-plan.html` | 없음(정적). 옛 "토피 자금·가격 계획" Claude Doc을 합침 |
+  | 소속사 제안 | 토피 소속사 제안 https://claude.ai/artifact/GZbpqSonTvDbY6vRbhzAkE | `artifacts/toffee-agency-proposal.html` | 없음(정적). 옛 "토피 소속사 제안 준비" Claude Doc을 옮김 |
+  | 일정 | 토피 사업화 일정 https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 | `artifacts/toffee-launch-schedule.html` | `tasks`, `notes`. 비어 있던 "지출 장부" 칸은 장부와 겹쳐서 뺌 |
+  | 돈 기록 | Toffee 사업화 장부 https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR | `artifacts/toffee-ledger.html` | `accounts`, `expenses`, `meta/roadmap` |
+  | 돈 기록 | 설립 전 지출 처리 https://claude.ai/artifact/GSj89sPKMn6mQVSHZ3GPtz | 없음(정적, 원본 표는 프로젝트 파일 `toffee-business/설립전_지출기록.xlsx`) | 없음 |
+  | 돈 기록 | 세 서비스 운영비 https://claude.ai/artifact/BLYi5jU21RPAiwr87eBWWc | 젤리 저장소 | `costs`, `settings` |
+  | 테스트 | 토피 실기기 테스트 https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc | `artifacts/toffee-device-test-checklist.html` | `results` 등. 여러 스레드가 항목을 추가하니 고치기 직전 최신본을 다시 읽을 것 |
+
+  런칭 검수 문서는 아티팩트가 아니라 프로젝트 파일 `toffee-review/bubble-gap-review.md`와 저장소 `STATUS.md`에 있다.
+  더 이상 쓰지 않는 것: "토피 자금 계획"(LzDuJSjSDoCxj7DbPoC9FS), "토피 소속사 제안 준비"(NGNkVDZdi3wpTioRzz8dbE) — 내용은 위로 옮김, 사용자가 직접 삭제.
 - "Design System"(https://claude.ai/artifact/7VV1nWvFzpd9mTcCt7MTPD)은 빈 시스템(내용 파일 없음)이라 백업할 것이 없다.
 
 ---
