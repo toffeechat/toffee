@@ -405,10 +405,26 @@ export class AuthService {
   async getMe(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { id: true, role: true, locale: true, nickname: true, nicknameChangedAt: true, createdAt: true },
+      select: {
+        id: true,
+        role: true,
+        locale: true,
+        nickname: true,
+        nicknameChangedAt: true,
+        createdAt: true,
+        birthDate: true,
+        birthdayGreetingsEnabled: true,
+      },
     });
-    const { nicknameChangedAt: _changedAt, createdAt: _createdAt, ...rest } = user;
-    return { ...rest, nicknameChangeAvailableAt: nextNicknameChangeAt(user) };
+    // 생년월일은 내려주지 않고 "있는지"만(생일 축하 켜기 화면 안내용)
+    const { nicknameChangedAt: _changedAt, createdAt: _createdAt, birthDate, ...rest } = user;
+    return { ...rest, hasBirthDate: !!birthDate, nicknameChangeAvailableAt: nextNicknameChangeAt(user) };
+  }
+
+  // 생일 축하 메시지 받기 켜기/끄기(2026-10-12) — 생년월일을 연령 확인 외 목적으로 쓰는 거라 본인이 켤 때만
+  async updateBirthdayGreetings(userId: string, enabled: boolean) {
+    await this.prisma.user.update({ where: { id: userId }, data: { birthdayGreetingsEnabled: enabled } });
+    return this.getMe(userId);
   }
 
   /**

@@ -83,7 +83,9 @@
     "copy": "複製",
     "copied": "已複製",
     "copyFailed": "複製失敗",
-    "more": "更多"
+    "more": "更多",
+    "welcomeLabel": "歡迎訊息",
+    "birthdayLabel": "🎂 生日祝福"
   },
   "chatProfile": {
     "open": "查看個人資料",
@@ -602,5 +604,28 @@
     "email": "電子郵件",
     "registrationNumber": "營業登記號",
     "mailOrderNumber": "通信銷售業申報號"
+  },
+  "greetings": {
+    "welcomeTitle": "歡迎訊息",
+    "welcomeHint": "顯示在新訂閱粉絲聊天的最開頭。寫 {{name}} 會替換成粉絲暱稱。留空則不傳送。",
+    "birthdayTitle": "生日祝福",
+    "birthdayHint": "會在生日當天早上（泰國時間9點）自動傳給開啟生日祝福的粉絲。你看不到粉絲的生日。留空則不傳送。",
+    "placeholder": "例如：{{name}}，歡迎你！"
+  },
+  "notices": {
+    "title": "公告",
+    "empty": "目前沒有公告。"
+  },
+  "faq": {
+    "title": "常見問題"
+  },
+  "birthday": {
+    "toggle": "接收生日祝福",
+    "hint": "開啟後，你訂閱的藝人會在你生日當天早上傳來祝福。只使用註冊時填寫的出生日期中的月和日，藝人看不到。"
+  },
+  "screenshot": {
+    "title": "偵測到截圖",
+    "body": "藝人的訊息、照片、語音和影片僅限訂閱者觀看。將截圖發布或分享到社群媒體等外部，可能會依使用條款被限制使用。",
+    "ok": "確定"
   }
 }

@@ -31,6 +31,7 @@ import { RealtimeModule } from './realtime/realtime.module.js';
 import { BundlesModule } from './bundles/bundles.module.js';
 import { LegalModule } from './legal/legal.module.js';
 import { DemoModule } from './demo/demo.module.js';
+import { NoticesModule } from './notices/notices.module.js';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { DemoModule } from './demo/demo.module.js';
     BundlesModule,
     LegalModule,
     DemoModule,
+    NoticesModule,
     ModerationModule,
     AdminModule,
     ParentalConsentModule,

@@ -484,3 +484,27 @@ export function useResetDemo() {
     onSuccess: () => queryClient.invalidateQueries(),
   });
 }
+
+// 공지사항(2026-10-12) — 목록은 팬 화면과 같은 GET /notices
+export interface NoticeInput {
+  title: string;
+  body: string;
+  pinned: boolean;
+}
+
+export function useSaveNotice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: NoticeInput & { id?: string }) =>
+      id ? apiClient.patch(`/admin/notices/${id}`, input) : apiClient.post('/admin/notices', input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices'] }),
+  });
+}
+
+export function useDeleteNotice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/admin/notices/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices'] }),
+  });
+}

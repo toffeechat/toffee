@@ -30,12 +30,13 @@ import { VoiceMessage } from '@/components/voice-message';
 import { ApiError } from '@/lib/api-client';
 import { saveMedia } from '@/lib/save-media';
 import { useActor } from '@/hooks/use-actors';
-import { useActorMessages, useChatSearch, useReplyQuota, useSendReply, type ChatMessage } from '@/hooks/use-messages';
+import { useActorMessages, useChatExtras, useChatSearch, useReplyQuota, useSendReply, type ChatMessage } from '@/hooks/use-messages';
 import { useMySubscriptions, useSetNotificationsMuted } from '@/hooks/use-subscriptions';
 import { useTheme } from '@/hooks/use-theme';
 import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { confirm } from '@/lib/confirm';
 import { useAcceptReplyRules, useOnboardingStatus } from '@/hooks/use-onboarding';
+import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 메시지를 따라감
 const AT_BOTTOM_PX = 80;
@@ -45,6 +46,20 @@ const MAX_FOCUS_PAGES = 20;
 const sameDay = (a: string, b: string) => new Date(a).toDateString() === new Date(b).toDateString();
 // 카톡처럼 같은 사람이 같은 시:분에 이어 보낸 메시지가 한 묶음 — 프로필 사진·이름은 묶음 첫 메시지 위, 시간은 마지막 메시지에 한 번
 const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
+
+// 환영 메시지·생일 축하 — 서버 메시지가 아니라 목록에만 끼워 넣는 말풍선(신고·번역 없음, 복사만)
+type ChatItem = ChatMessage & { extra?: 'welcome' | 'birthday' };
+const extraMessage = (actorId: string, id: string, body: string, createdAt: string, extra: ChatItem['extra']): ChatItem => ({
+  id,
+  actorId,
+  senderType: 'ARTIST',
+  fanUserId: null,
+  mediaType: 'TEXT',
+  body,
+  mediaUrl: null,
+  createdAt,
+  extra,
+});
 
 /**
  * 팬 채팅방 — 시안 2A Minimal Premium(docs/product/brand/exploration/2a-chat-minimal-premium.png) + DESIGN_GUIDE §9.
@@ -81,12 +96,24 @@ export default function ChatRoomScreen() {
   );
 
   // 최신 → 오래된 순(서버 순서) — 뒤집힌 목록이라 첫 항목이 맨 아래
+  // 화면 캡처하면 "구독자 전용, 외부 공유 금지" 안내(막지는 않음)
+  useScreenshotWarning(!notSubscribed);
+  const { data: extras } = useChatExtras(actorId, !!data && !notSubscribed);
   const messages = useMemo(() => {
     const seen = new Set<string>();
-    return (data?.pages.flat() ?? []).filter((m) => !seen.has(m.id) && seen.add(m.id));
-  }, [data]);
+    const loaded: ChatItem[] = (data?.pages.flat() ?? []).filter((m) => !seen.has(m.id) && seen.add(m.id));
+    if (!extras) return loaded;
+    const extraItems: ChatItem[] = [
+      ...(extras.welcome ? [extraMessage(actorId, 'extra-welcome', extras.welcome.body, extras.welcome.createdAt, 'welcome')] : []),
+      ...extras.birthdays.map((b) => extraMessage(actorId, `extra-birthday-${b.id}`, b.body, b.createdAt, 'birthday')),
+    ];
+    // 아직 안 불러온 예전 구간에 속하는 건 그 구간을 불러올 때 끼움(중간에 엉뚱하게 보이지 않게)
+    const oldestLoaded = loaded[loaded.length - 1]?.createdAt;
+    const visible = extraItems.filter((item) => !hasNextPage || !oldestLoaded || item.createdAt >= oldestLoaded);
+    return [...loaded, ...visible].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  }, [data, extras, hasNextPage, actorId]);
 
-  const listRef = useRef<FlatList<ChatMessage>>(null);
+  const listRef = useRef<FlatList<ChatItem>>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [seenNewestId, setSeenNewestId] = useState<string | undefined>(undefined);
   const newestId = messages[0]?.id;
@@ -301,7 +328,7 @@ export default function ChatRoomScreen() {
           const newer = messages[index - 1];
           const older = messages[index + 1];
           // 커플방은 보낸 배우가 바뀌어도 묶음을 나눔(누가 보냈는지 보이게)
-          const sameSender = (a: ChatMessage, b: ChatMessage) => a.senderType === b.senderType && (!isCouple || a.sender?.id === b.sender?.id);
+          const sameSender = (a: ChatItem, b: ChatItem) => !a.extra && !b.extra && a.senderType === b.senderType && (!isCouple || a.sender?.id === b.sender?.id);
           const endsGroup = !newer || !sameSender(newer, item) || !sameMinute(newer.createdAt, item.createdAt);
           const dayChanged = !older || !sameDay(older.createdAt, item.createdAt);
           const startsGroup = !older || !sameSender(older, item) || !sameMinute(item.createdAt, older.createdAt);
@@ -502,7 +529,7 @@ function MessageRow({
   actorId,
   nextVoiceId,
 }: {
-  message: ChatMessage;
+  message: ChatItem;
   avatarUri?: string | null;
   actorName?: string;
   startsGroup: boolean;
@@ -525,6 +552,7 @@ function MessageRow({
   const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
   // 길게 누르면: 글이 있으면 복사(카톡처럼, 내 답장도), 스타 메시지면 신고
   const hasMenu = isArtist || !!message.body;
+  const canReport = isArtist && !message.extra;
 
   const bubble = (
     <Pressable
@@ -533,7 +561,7 @@ function MessageRow({
       accessibilityHint={hasMenu ? t('chat.messageActions') : undefined}
       accessibilityActions={[
         ...(message.body ? [{ name: 'copy', label: t('chat.copy') }] : []),
-        ...(isArtist ? [{ name: 'report', label: t('chat.report') }] : []),
+        ...(canReport ? [{ name: 'report', label: t('chat.report') }] : []),
       ]}
       onAccessibilityAction={(event) => {
         if (event.nativeEvent.actionName === 'report') onReport();
@@ -573,7 +601,12 @@ function MessageRow({
             />
           ) : null}
           {/* 스타 메시지는 다른 언어면 "번역 보기"(내 답장은 번역 안 함) */}
-          {message.body ? isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} /> : <ThemedText>{message.body}</ThemedText> : null}
+          {message.extra ? (
+            <ThemedText type="captionBold" style={{ color: theme.tint }}>
+              {message.extra === 'welcome' ? t('chat.welcomeLabel') : t('chat.birthdayLabel')}
+            </ThemedText>
+          ) : null}
+          {message.body ? message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} /> : <ThemedText>{message.body}</ThemedText> : null}
         </View>
       )}
     </Pressable>
@@ -606,7 +639,7 @@ function MessageRow({
                   <ThemedText type="smallBold">{t('chat.copy')}</ThemedText>
                 </Pressable>
               ) : null}
-              {isArtist ? (
+              {canReport ? (
                 <Pressable onPress={onReport} style={styles.menuItem} accessibilityRole="button">
                   <Icon as={Flag} size={16} color={theme.danger} />
                   <ThemedText type="smallBold" themeColor="danger">

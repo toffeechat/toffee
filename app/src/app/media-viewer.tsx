@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Download, Play, X } from 'lucide-react-nativ
 import { IconButton } from '@/components/ui/icon-button';
 import { ThemedText } from '@/components/themed-text';
 import { ZoomablePage } from '@/components/zoomable-page';
+import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
 import { useChatMedia, type ChatMediaItem } from '@/hooks/use-messages';
 import { SavePermissionError, saveMedia } from '@/lib/save-media';
 import { Spacing } from '@/constants/theme';
@@ -48,6 +49,8 @@ export default function MediaViewerScreen() {
   const { width, height } = useWindowDimensions();
   const params = useLocalSearchParams<{ id: string; url: string; type: 'PHOTO' | 'VIDEO'; actorId?: string; thumbhash?: string }>();
   const media = useChatMedia(params.actorId);
+  // 팬 채팅방에서 연 사진·영상만(스튜디오·콘솔에서 연 건 경고 안 함)
+  useScreenshotWarning(!!params.actorId);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [zoomed, setZoomed] = useState(false);

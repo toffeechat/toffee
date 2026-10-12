@@ -46,12 +46,16 @@ let fanToken;
 let actorId;
 let actorToken;
 let broadcastId;
+let savedGreetings;
 
 try {
   // 배우 본인 계정(시드: caramel-self)이 보내는 쪽
   actorToken = await devLogin('caramel-self@toffee.demo');
   actorId = (await api('/actors/mine', { token: actorToken })).find((actor) => actor.kind !== 'COUPLE')?.id;
   if (!actorId) throw new Error('시드 데이터에 배우 본인 계정이 연결된 배우가 없어요(npm run db:seed)');
+  // 환영 메시지(2026-10-12) — 테스트 동안만 바꾸고 끝나면 원래대로
+  savedGreetings = await api(`/actors/${actorId}/messages/greetings`, { token: actorToken });
+  await api(`/actors/${actorId}/messages/greetings`, { token: actorToken, method: 'PUT', body: { welcomeMessage: `e2e 환영 ${stamp} {{name}}` } });
 
   await step('새 팬 로그인', async () => {
     await page.goto(`${WEB}/login`);
@@ -103,6 +107,11 @@ try {
     await page.waitForURL(`**/chat/${actorId}`);
   });
 
+  await step('구독 직후 환영 메시지(이름 자리 → 내 닉네임)', async () => {
+    await page.getByText(`e2e 환영 ${stamp} ${nickname}`).waitFor({ timeout: 20_000 });
+    await page.getByText('환영 메시지', { exact: true }).waitFor({ timeout: 5_000 });
+  });
+
   const broadcast = `e2e 인사 ${stamp} {{name}}`;
   await step('배우 메시지가 채팅방에 보임(이름 자리 → 내 닉네임)', async () => {
     broadcastId = (await api(`/actors/${actorId}/messages/broadcast`, { token: actorToken, method: 'POST', body: { mediaType: 'TEXT', body: broadcast } })).id;
@@ -139,6 +148,12 @@ try {
   // 정리 — 테스트로 보낸 배우 메시지 삭제, 테스트 팬 구독 해지·탈퇴(실패해도 무시)
   if (broadcastId) await api(`/actors/${actorId}/messages/${broadcastId}`, { token: actorToken, method: 'DELETE' }).catch(() => {});
   if (fanToken && actorId) await api(`/actors/${actorId}/subscribe`, { token: fanToken, method: 'DELETE' }).catch(() => {});
+  if (savedGreetings)
+    await api(`/actors/${actorId}/messages/greetings`, {
+      token: actorToken,
+      method: 'PUT',
+      body: { welcomeMessage: savedGreetings.welcomeMessage ?? '', birthdayMessage: savedGreetings.birthdayMessage ?? '' },
+    }).catch(() => {});
   if (fanToken) await api('/auth/me', { token: fanToken, method: 'DELETE' }).catch(() => {});
   await browser.close();
 }

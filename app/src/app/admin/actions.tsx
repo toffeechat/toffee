@@ -24,12 +24,16 @@ const ACTION_LABELS: Record<string, string> = {
   SETTLEMENT_REOPEN: '정산 마감 취소',
   SETTLEMENT_PAYOUT: '정산 지급 기록',
   SETTLEMENT_PAYOUT_DELETE: '정산 지급 기록 삭제',
+  NOTICE_CREATE: '공지 올리기',
+  NOTICE_UPDATE: '공지 고치기',
+  NOTICE_DELETE: '공지 삭제',
 };
 
 function detailText(entry: AdminActionEntry): string {
   const d = entry.detail ?? {};
   const parts: string[] = [];
   if (typeof d.category === 'string') parts.push(`사유 ${d.category}`);
+  if (typeof d.title === 'string') parts.push(`"${d.title}"`);
   if (typeof d.note === 'string' && d.note) parts.push(`메모 "${d.note}"`);
   if (typeof d.until === 'string') parts.push(`해제 ${new Date(d.until).toLocaleString('ko-KR')}`);
   if (typeof d.from === 'string' && typeof d.to === 'string') parts.push(`${d.from} → ${d.to}`);

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, CreditCard, FileText, Globe, LifeBuoy, LogOut, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { Bell, CircleHelp, CreditCard, FileText, Globe, LifeBuoy, LogOut, Megaphone, ShieldCheck, Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -104,6 +104,8 @@ export default function ProfileScreen() {
         </Section>
 
         <Section label={t('profile.support')}>
+          <ListRow icon={Megaphone} title={t('notices.title')} onPress={() => router.push('/notices')} />
+          <ListRow icon={CircleHelp} title={t('faq.title')} onPress={() => router.push('/faq')} />
           <ListRow
             icon={LifeBuoy}
             title={t('profile.help')}

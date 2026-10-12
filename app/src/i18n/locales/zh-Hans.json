@@ -83,7 +83,9 @@
     "copy": "复制",
     "copied": "已复制",
     "copyFailed": "复制失败",
-    "more": "更多"
+    "more": "更多",
+    "welcomeLabel": "欢迎消息",
+    "birthdayLabel": "🎂 生日祝福"
   },
   "chatProfile": {
     "open": "查看资料",
@@ -602,5 +604,28 @@
     "email": "邮箱",
     "registrationNumber": "营业登记号",
     "mailOrderNumber": "通信销售业申报号"
+  },
+  "greetings": {
+    "welcomeTitle": "欢迎消息",
+    "welcomeHint": "显示在新订阅粉丝聊天的最开头。写 {{name}} 会替换成粉丝昵称。留空则不发送。",
+    "birthdayTitle": "生日祝福",
+    "birthdayHint": "会在生日当天早上（泰国时间9点）自动发给开启了生日祝福的粉丝。你看不到粉丝的生日。留空则不发送。",
+    "placeholder": "例如：{{name}}，欢迎你！"
+  },
+  "notices": {
+    "title": "公告",
+    "empty": "暂无公告。"
+  },
+  "faq": {
+    "title": "常见问题"
+  },
+  "birthday": {
+    "toggle": "接收生日祝福",
+    "hint": "开启后，你订阅的艺人会在你生日当天早上发来祝福。只使用注册时填写的出生日期中的月和日，艺人看不到。"
+  },
+  "screenshot": {
+    "title": "检测到截屏",
+    "body": "艺人的消息、照片、语音和视频仅限订阅者观看。将截图发布或分享到社交媒体等外部，可能会根据使用条款被限制使用。",
+    "ok": "确定"
   }
 }

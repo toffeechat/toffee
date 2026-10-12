@@ -23,7 +23,11 @@ export type AdminActionType =
   | 'SETTLEMENT_REOPEN'
   // 정산 지급 기록·기록 삭제(2026-09-29)
   | 'SETTLEMENT_PAYOUT'
-  | 'SETTLEMENT_PAYOUT_DELETE';
+  | 'SETTLEMENT_PAYOUT_DELETE'
+  // 공지사항 쓰기·고치기·지우기(2026-10-12)
+  | 'NOTICE_CREATE'
+  | 'NOTICE_UPDATE'
+  | 'NOTICE_DELETE';
 
 /**
  * 운영자 작업 기록(AdminAction) — 제재·역할 변경·신고 처리·배우 활동 종료를 누가 언제 했는지. 유료 서비스 분쟁·문의 대응용.
@@ -33,7 +37,7 @@ export type AdminActionType =
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async record(adminId: string, action: AdminActionType, targetType: 'USER' | 'REPORT' | 'ACTOR' | 'BUNDLE' | 'AGENCY' | 'SETTLEMENT', targetId: string, detail?: Prisma.InputJsonValue) {
+  async record(adminId: string, action: AdminActionType, targetType: 'USER' | 'REPORT' | 'ACTOR' | 'BUNDLE' | 'AGENCY' | 'SETTLEMENT' | 'NOTICE', targetId: string, detail?: Prisma.InputJsonValue) {
     await this.prisma.adminAction.create({ data: { adminId, action, targetType, targetId, detail } });
   }
 

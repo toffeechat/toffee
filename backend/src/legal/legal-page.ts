@@ -1,6 +1,7 @@
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../common/i18n/locales.js';
 import { escapeHtml } from '../parental-consent/consent-texts.js';
 import { businessInfoHtml, type BusinessInfo } from './business-info.js';
+import { FAQ, FAQ_TITLES } from './faq-texts.js';
 import { DRAFT_NOTICE, LEGAL_SECTIONS, LEGAL_TITLES, LEGAL_VERSION, type LegalDoc } from './legal-texts.js';
 
 const NATIVE_NAMES: Record<SupportedLocale, string> = {
@@ -79,7 +80,16 @@ export function supportPage(locale: SupportedLocale, email: string | null, busin
     t.title,
     `<h1>${escapeHtml(t.title)}</h1>
 <p>${escapeHtml(t.body)}</p>
+<p style="margin-top:16px"><a href="/faq?lang=${locale}">${escapeHtml(FAQ_TITLES[locale])} →</a></p>
 <p style="margin-top:20px">${email ? `<a class="mail" href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : escapeHtml(t.noEmail)}</p>
 ${businessInfoHtml(business, locale)}`,
   );
+}
+
+/** 공개 FAQ 페이지(고객센터에서 링크) — 앱 FAQ 화면과 같은 글 */
+export function faqPage(locale: SupportedLocale, business: BusinessInfo | null = null): string {
+  const sections = FAQ[locale]
+    .map((section) => `<h2>${escapeHtml(section.title)}</h2>${section.items.map((item) => `<div class="notice"><strong>${escapeHtml(item.q)}</strong><br>${escapeHtml(item.a)}</div>`).join('')}`)
+    .join('\n');
+  return shell(locale, FAQ_TITLES[locale], `<h1>${escapeHtml(FAQ_TITLES[locale])}</h1>\n${sections}\n${businessInfoHtml(business, locale)}`);
 }

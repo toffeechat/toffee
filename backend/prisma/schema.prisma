@@ -89,52 +89,56 @@ enum ParentalConsentStatus {
 model User {
   // email은 로그인 제공자가 달라도 같은 사람이면 계정을 하나로 합치는 데 씀
   // (예: 구글로 먼저 가입 후 나중에 카카오로 로그인해도 AuthIdentity만 추가되고 User는 그대로)
-  id                    String                @id @default(uuid())
-  role                  Role                  @default(USER)
-  displayName           String
+  id                       String                @id @default(uuid())
+  role                     Role                  @default(USER)
+  displayName              String
   // 팬끼리·스타에게 보이는 이름(앱 전체 하나, 중복 허용 — 버블 방식). displayName은 소셜 로그인에서 받은
   // 이름이라 실명일 수 있어서 화면·푸시·인용에는 쓰지 않음. 같은 닉네임 구분은 스타·소속사·운영자 화면에서만
   // id 끝 4자리 태그(#A1B2)로. 변경은 7일에 한 번(잠정, STATUS.md 출시 전 확정 정책).
-  nickname              String?
-  nicknameChangedAt     DateTime?
-  email                 String?               @unique
+  nickname                 String?
+  nicknameChangedAt        DateTime?
+  email                    String?               @unique
   // 앱 표시 언어(ko/th/en/ja/zh-Hans/zh-Hant/vi) — 푸시 알림처럼 서버가 만드는 문구의 언어를 고르는 데 씀.
   // 앱이 기기 언어/설정 변경 시 PATCH /auth/me/locale로 동기화. null이면 기본 언어(en).
-  locale                String?
-  status                UserStatus            @default(ACTIVE)
-  suspendedUntil        DateTime?
-  bannedAt              DateTime?
+  locale                   String?
+  status                   UserStatus            @default(ACTIVE)
+  suspendedUntil           DateTime?
+  bannedAt                 DateTime?
   // 제재(정지·영구차단) 사유 — 분류는 당사자에게 안내(번역), 메모는 운영자 내부용(2026-09-28)
-  sanctionCategory      ReportCategory?
-  sanctionNote          String?
+  sanctionCategory         ReportCategory?
+  sanctionNote             String?
   // 생년월일 미입력 상태(null)면 앱이 온보딩에서 먼저 물어봄 — 만 14세 미만 판정에만 씀
-  birthDate             DateTime?
-  parentalConsentStatus ParentalConsentStatus @default(NOT_REQUIRED)
-  parentEmail           String?
+  birthDate                DateTime?
+  parentalConsentStatus    ParentalConsentStatus @default(NOT_REQUIRED)
+  parentEmail              String?
   // AGENCY_STAFF 계정이 속한 소속사 — 같은 소속사 배우 전원을 모니터링할 수 있음
   // (소속사 안에서 직원별로 담당 배우를 나누지 않기로 확정, 2026-09-28)
-  agencyId              String?
+  agencyId                 String?
   // 가입 시 이용약관·개인정보 수집 동의 기록 — 동의한 약관 버전과 시각. 약관 버전이 바뀌면(CURRENT_TERMS_VERSION)
   // 앱 온보딩에서 다시 동의받음. 역할과 상관없이 모든 계정.
-  termsVersion          String?
-  termsAcceptedAt       DateTime?
+  termsVersion             String?
+  termsAcceptedAt          DateTime?
   // 첫 답장 전 "아티스트 명예훼손·사생활 침해·불쾌한 메시지 금지, 위반 시 제재·법적 책임" 안내에 동의한 시각(버블 방식,
   // 2026-10-12). 제재·환불 분쟁 때 근거로 남김 — 한 번 동의하면 다시 묻지 않음. null이면 앱이 첫 답장 전에 물어봄.
-  replyRulesAcceptedAt  DateTime?
+  replyRulesAcceptedAt     DateTime?
+  // 생일 축하 메시지 받기(2026-10-12) — 켜면 생년월일의 월·일에 구독 중인 방의 생일 축하 메시지가 옴. 생년월일을 연령 확인 외 목적에
+  // 쓰는 거라 본인이 켜야 함(기본 꺼짐). 아티스트·소속사에겐 날짜를 보여 주지 않음.
+  birthdayGreetingsEnabled Boolean               @default(false)
   // 가입할 때 기기의 지역 설정(ISO 국가 코드, 예: TH·KR) — 미성년자 기준 나이를 국가별로 적용하고(minor-age.ts)
   // 통계(국가별 가입자)에 씀. 가입 기기(ios/android/web)도 통계용. 약관 동의 때 앱이 보냄.
-  countryCode           String?
-  signupPlatform        String?
+  countryCode              String?
+  signupPlatform           String?
   // 마지막 접속(한 시간 단위로만 갱신) — 일간·월간 이용자 수 통계용
-  lastActiveAt          DateTime?
+  lastActiveAt             DateTime?
   // 회원 탈퇴 시각 — 탈퇴하면 개인정보(이메일·이름·닉네임·생년월일 등)를 지우고 이 값만 남김. 결제·구독 기록은
   // 법정 보관 기간 동안 유지, 팬 답장은 "탈퇴한 팬"으로 표시(잠정, STATUS.md 출시 전 확정 정책).
-  deletedAt             DateTime?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
+  deletedAt                DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
 
   authIdentities     AuthIdentity[]
   subscriptions      Subscription[]
+  birthdayGreetings  BirthdayGreeting[]
   subscriptionEvents SubscriptionEvent[]
   purchases          Purchase[]
   fanMessages        Message[]           @relation("FanMessages")
@@ -240,6 +244,11 @@ model Actor {
   agencyId                String?
   // 활동 종료(계약 종료 등) — 둘러보기·검색에서 숨기고 신규 구독을 막음. 기존 구독 팬은 대화 유지(잠정, STATUS 정책 표)
   retiredAt               DateTime?
+  // 구독 직후 대화방 첫 줄에 보이는 환영 메시지(아티스트가 미리 써 둠, {{name}} = 팬 닉네임, 2026-10-12). 메시지 행이 아니라
+  // 보여 줄 때 만들어서 미발송 환불·답장 대상·통계엔 안 셈(버블도 웰컴메시지는 환불 판단에서 뺌). null이면 안 보임
+  welcomeMessage          String?
+  // 생일 축하 메시지(2026-10-12) — 생일 알림을 켠 구독 팬의 생일(태국 날짜) 아침에 그 팬 대화방에만 들어감(BirthdayGreeting)
+  birthdayMessage         String?
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
@@ -259,6 +268,7 @@ model Actor {
   bundles            BundleActor[]
   allocationsAsRoom  ChargeAllocation[]   @relation("AllocationRoom")
   allocationsAsActor ChargeAllocation[]   @relation("AllocationActor")
+  birthdayGreetings  BirthdayGreeting[]
 
   @@index([agencyId])
 }
@@ -698,4 +708,34 @@ model RefundRequest {
 
   @@unique([chargeId, reason])
   @@index([userId])
+}
+
+// 팬에게 보낸 생일 축하 메시지 한 건(2026-10-12) — 매일 아침 작업이 그날 생일인 팬 × 구독 중인 방마다 하나 만듦(그때의 문구를
+// 이름까지 채워 저장, 해마다 한 번). 그 팬 대화방에만 보이고 아티스트 메시지(Message)가 아니라 환불·답장 대상·통계엔 안 셈.
+model BirthdayGreeting {
+  id        String   @id @default(uuid())
+  userId    String
+  actorId   String
+  year      Int
+  body      String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actor Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, actorId, year])
+}
+
+// 공지사항(2026-10-12) — 운영자가 쓰고 팬·아티스트 모두 마이페이지 "공지사항"에서 봄(점검·약관 변경·아티스트 종료 등).
+// 언어별로 따로 쓰지 않음 — 필요하면 본문에 여러 언어를 같이 적음. 고정한 공지가 맨 위.
+model Notice {
+  id          String   @id @default(uuid())
+  title       String
+  body        String
+  pinned      Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([pinned, createdAt])
 }

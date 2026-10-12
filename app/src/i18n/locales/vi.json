@@ -83,7 +83,9 @@
     "copy": "Sao chép",
     "copied": "Đã sao chép",
     "copyFailed": "Không sao chép được",
-    "more": "Thêm"
+    "more": "Thêm",
+    "welcomeLabel": "Tin nhắn chào mừng",
+    "birthdayLabel": "🎂 Lời chúc sinh nhật"
   },
   "chatProfile": {
     "open": "Xem hồ sơ",
@@ -602,5 +604,28 @@
     "email": "Email",
     "registrationNumber": "Số đăng ký kinh doanh",
     "mailOrderNumber": "Số đăng ký bán hàng từ xa"
+  },
+  "greetings": {
+    "welcomeTitle": "Tin nhắn chào mừng",
+    "welcomeHint": "Hiện ở đầu cuộc trò chuyện của người hâm mộ mới đăng ký. Viết {{name}} sẽ được thay bằng biệt danh của họ. Để trống nếu không muốn gửi.",
+    "birthdayTitle": "Lời chúc sinh nhật",
+    "birthdayHint": "Tự động gửi vào sáng ngày sinh nhật (9 giờ giờ Thái Lan) cho người hâm mộ đã bật nhận lời chúc. Bạn sẽ không thấy ngày sinh của họ. Để trống nếu không muốn gửi.",
+    "placeholder": "VD: Chào {{name}}, rất vui được gặp bạn!"
+  },
+  "notices": {
+    "title": "Thông báo",
+    "empty": "Chưa có thông báo."
+  },
+  "faq": {
+    "title": "Câu hỏi thường gặp"
+  },
+  "birthday": {
+    "toggle": "Nhận lời chúc sinh nhật",
+    "hint": "Khi bật, các nghệ sĩ bạn đăng ký sẽ gửi lời chúc vào sáng ngày sinh nhật của bạn. Chỉ dùng ngày và tháng trong ngày sinh bạn nhập khi đăng ký, và nghệ sĩ không thấy được."
+  },
+  "screenshot": {
+    "title": "Đã phát hiện chụp màn hình",
+    "body": "Tin nhắn, ảnh, giọng nói và video của nghệ sĩ là nội dung chỉ dành cho người đăng ký. Đăng hoặc chia sẻ ảnh chụp màn hình ra bên ngoài như mạng xã hội có thể bị hạn chế sử dụng theo Điều khoản dịch vụ.",
+    "ok": "OK"
   }
 }

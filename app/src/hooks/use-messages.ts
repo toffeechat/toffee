@@ -155,3 +155,22 @@ export function useMessageTranslation(actorId: string, messageId: string, langua
     retry: false,
   });
 }
+
+export interface ChatExtras {
+  welcome: { body: string; createdAt: string } | null;
+  birthdays: { id: string; body: string; createdAt: string }[];
+}
+
+/**
+ * 대화방에 끼워 넣는 환영 메시지(구독 시작 시각)·생일 축하(2026-10-12) — 메시지 행이 아니라 따로 받아서 목록에 합침
+ * (미발송 환불·답장 대상·검색엔 안 들어감). 생일 축하는 하루에 한 번 생기니 1분 캐시.
+ */
+export function useChatExtras(actorId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['chat-extras', actorId],
+    queryFn: () => apiClient.get<ChatExtras>(`/actors/${actorId}/messages/extras`),
+    enabled: !!actorId && enabled,
+    staleTime: 60 * 1000,
+    retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 3,
+  });
+}

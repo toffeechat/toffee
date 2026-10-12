@@ -83,7 +83,9 @@
     "copy": "Copy",
     "copied": "Copied",
     "copyFailed": "Couldn't copy",
-    "more": "More"
+    "more": "More",
+    "welcomeLabel": "Welcome message",
+    "birthdayLabel": "🎂 Birthday message"
   },
   "chatProfile": {
     "open": "View profile",
@@ -602,5 +604,28 @@
     "email": "Email",
     "registrationNumber": "Business registration no.",
     "mailOrderNumber": "Mail-order business report no."
+  },
+  "greetings": {
+    "welcomeTitle": "Welcome message",
+    "welcomeHint": "Shown at the start of a new subscriber’s chat. {{name}} is replaced with the fan’s nickname. Leave empty to turn it off.",
+    "birthdayTitle": "Birthday message",
+    "birthdayHint": "Sent automatically on the morning of their birthday (9 AM Thailand time) to fans who turned on birthday messages. You won’t see their birth date. Leave empty to turn it off.",
+    "placeholder": "e.g. Hi {{name}}, so glad you’re here!"
+  },
+  "notices": {
+    "title": "Notices",
+    "empty": "No notices yet."
+  },
+  "faq": {
+    "title": "FAQ"
+  },
+  "birthday": {
+    "toggle": "Get birthday messages",
+    "hint": "When on, the artists you subscribe to send you a message on the morning of your birthday. Only the month and day of the birth date you entered at sign-up are used, and artists never see it."
+  },
+  "screenshot": {
+    "title": "Screenshot detected",
+    "body": "Artist messages, photos, voice and videos are for subscribers only. Posting or sharing screenshots outside the app, such as on social media, may lead to restrictions under the Terms of Service.",
+    "ok": "OK"
   }
 }

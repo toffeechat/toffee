@@ -5,8 +5,9 @@ import type { Response } from 'express';
 import { Public } from '../common/decorators/public.decorator.js';
 import { matchAcceptLanguage, SUPPORTED_LOCALES, type SupportedLocale } from '../common/i18n/locales.js';
 import { LEGAL_SECTIONS, LEGAL_VERSION, type LegalDoc } from './legal-texts.js';
-import { legalPage, supportPage } from './legal-page.js';
+import { faqPage, legalPage, supportPage } from './legal-page.js';
 import { readBusinessInfo } from './business-info.js';
+import { FAQ, FAQ_TITLES } from './faq-texts.js';
 
 const DOCS: readonly LegalDoc[] = ['terms', 'privacy'];
 
@@ -52,6 +53,18 @@ export class LegalController {
   support(@Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined, @Res() res: Response) {
     const email = this.config.get<string>('SUPPORT_EMAIL') || null;
     res.set({ 'Cache-Control': 'public, max-age=300' }).type('html').send(supportPage(pickLocale(lang, acceptLanguage), email, this.businessInfo()));
+  }
+
+  @Get('faq')
+  faq(@Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined, @Res() res: Response) {
+    res.set({ 'Cache-Control': 'public, max-age=300' }).type('html').send(faqPage(pickLocale(lang, acceptLanguage), this.businessInfo()));
+  }
+
+  // 앱 FAQ 화면 — 앱 언어(lang)로
+  @Get('faq/items')
+  faqItems(@Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined) {
+    const locale = pickLocale(lang, acceptLanguage);
+    return { title: FAQ_TITLES[locale], sections: FAQ[locale] };
   }
 
   private businessInfo() {

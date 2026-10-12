@@ -1413,3 +1413,30 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `_MAIL_ORDER_NUMBER` + `SUPPORT_EMAIL`. 상호가 없으면 `null`. 공개 `GET /legal/business-info`(JSON — `legal/:doc`보다 먼저 선언해야 함),
   `/legal/:doc`·`/support` HTML 아래, 앱 마이페이지 아래(`useBusinessInfo`). 운영 서버 켤 때 비어 있으면 경고(`env-check`).
 - 약관 버전: 서버 `CURRENT_TERMS_VERSION`·앱 `TERMS_VERSION` = `2026-10-12`, 공개 문서 `LEGAL_VERSION` = `2026-10-12-draft`.
+
+## FAQ·공지사항·환영/생일 메시지·캡처 경고 (2026-10-12)
+
+- **FAQ**: `backend/src/legal/faq-texts.ts`(`FAQ: Record<SupportedLocale, FaqSection[]>`) — 공개 `GET /faq`(HTML, `faqPage` in
+  `legal-page.ts`, `/support`에서 링크)와 `GET /faq/items?lang=`(JSON, 앱 `useFaq`). `faq-texts.spec.ts`가 언어별 섹션·문항 수가 ko와
+  같은지 검사(번역 빠짐 방지). `LegalController`는 `@Public()`이라 로그인 전에도 됨.
+- **공지사항**: `Notice`(title/body/pinned/createdById), `src/notices/`. `GET /notices`(로그인한 누구나, pinned desc → createdAt desc,
+  100개), `POST|PATCH|DELETE /admin/notices[/:id]`(ADMIN, 감사 로그 `NOTICE_CREATE|UPDATE|DELETE`, targetType `NOTICE`). 앱
+  `app/src/app/notices.tsx`·`admin/notices.tsx`.
+- **환영 메시지**: `Actor.welcomeMessage`. `GET /actors/:id/messages/extras`(`GreetingsService.extrasForFan`) → `{welcome: {body,
+  createdAt: subscription.startedAt} | null, birthdays: BirthdayGreeting[](이번 구독 시작 이후)}`, `{{name}}`은 서버가 채움. 앱 채팅방은
+  `useChatExtras`를 받아 `ChatItem.extra`로 목록에 합치고 createdAt 내림차순 정렬 — 아직 안 불러온 예전 구간(hasNextPage && 가장 오래된
+  로드 메시지보다 이전)에 속하는 건 그 구간을 불러올 때까지 숨김. extra 말풍선은 번역·신고 없음, 묶음(sameSender)에서 제외.
+  Message 행이 아니라서 미발송 환불(`IdleRefund`)·답장 대상·검색·통계에 영향 없음.
+- **생일 축하**: `User.birthdayGreetingsEnabled`(기본 false, `PATCH /auth/me/birthday-greetings`), `Actor.birthdayMessage`,
+  `BirthdayGreeting @@unique([userId, actorId, year])`. `GreetingsService.scheduled` — `@Cron('0 9 * * *', Asia/Bangkok)`,
+  `BIRTHDAY_GREETINGS_ENABLED=false`로 끔. `birthdayToday(now)`(`messages/birthday.ts`)가 방콕 날짜와 평년 2/28이면 [28, 29]를 주고,
+  `$queryRaw`로 `EXTRACT(MONTH/DAY FROM birthDate)` 매칭. 유일 제약 덕분에 서버가 여러 대이거나 다시 돌려도 (팬, 방, 연도)당 한 번 —
+  create가 실패하면 푸시도 건너뜀. 푸시 data `{type:'birthday', actorId}`(채팅방으로 열림), 문구 `pushStrings().birthdayTitle/Body`.
+  `getMe`는 `birthDate` 대신 `hasBirthDate`만 내려줌. 편집은 `GET|PUT /actors/:id/messages/greetings`(ACTOR·ADMIN,
+  `ensureIsActorSelf` — CP방이면 멤버 누구나), 빈 문자열 = 끔. 앱은 스튜디오 "내 프로필"의 `GreetingsForm`.
+- **캡처 경고**: `expo-screen-capture@~57.0.2`(`npx expo install`이 프록시에 막혀 `bundledNativeModules.json` 버전으로 직접 설치).
+  `useScreenshotWarning(enabled)`(`.web.ts`는 no-op) — `useScreenshotListener` + Alert 하나만. 채팅방(구독 중일 때)·media-viewer
+  (`actorId`가 있을 때 = 팬 채팅방에서 연 것). 라이브러리 매니페스트가 `DETECT_SCREEN_CAPTURE`(API 34+, 일반 권한)와
+  `READ_MEDIA_IMAGES`(33)·`READ_EXTERNAL_STORAGE`(≤32)를 넣는데, 뒤의 둘은 expo-media-library가 이미 넣고 있어서 새로 늘어나는 권한은
+  사실상 `DETECT_SCREEN_CAPTURE`뿐. 13 이하에서 감지를 위해 런타임 권한을 요청하지는 않음.
+- e2e(`app/e2e/run.mjs`)에 "구독 직후 환영 메시지" 단계 추가 — 테스트 동안만 caramel의 환영 메시지를 바꾸고 끝나면 되돌림.

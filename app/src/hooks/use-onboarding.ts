@@ -76,6 +76,9 @@ export interface Me {
   nickname: string | null;
   /** 다음에 닉네임을 바꿀 수 있는 시각(없으면 지금 바로 가능) */
   nicknameChangeAvailableAt: string | null;
+  /** 생일 축하 메시지 받기(2026-10-12) — 생년월일 자체는 안 내려오고 있는지만 */
+  birthdayGreetingsEnabled?: boolean;
+  hasBirthDate?: boolean;
 }
 
 export function useMe() {
@@ -94,6 +97,15 @@ export function useUpdateNickname() {
       // 채팅방의 {{name}} 자리도 새 닉네임으로
       void queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
+  });
+}
+
+// 생일 축하 메시지 받기 켜기/끄기 — 생년월일을 연령 확인 외 목적으로 쓰는 거라 본인이 켤 때만(기본 꺼짐)
+export function useSetBirthdayGreetings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => apiClient.patch<Me>('/auth/me/birthday-greetings', { enabled }),
+    onSuccess: (me) => queryClient.setQueryData(['me'], me),
   });
 }
 
