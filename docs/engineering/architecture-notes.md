@@ -1122,7 +1122,7 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 - API: `GET /settlements?month=YYYY-MM[&agencyId&includeSandbox]`, `GET /settlements/export?...&detail=true`(text/csv) — ADMIN·AGENCY_STAFF,
   `scopeFor`가 직원이면 자기 agencyId로 강제(요청의 agencyId 무시). `PATCH /admin/agencies/:id`에 `revenueSharePercent`(0~100, null = 기본값),
   변경 시 감사 기록 `AGENCY_SHARE`(targetType AGENCY, 이름 해석 추가). 운영자 작업 기록 화면에 빠져 있던 ACTOR_PRICE·BUNDLE_*·COUPLE_CREATE 라벨도 추가.
-- 설정: `STORE_FEE_PERCENT`(15), `AGENCY_REVENUE_SHARE_PERCENT`(70).
+- 설정: `STORE_FEE_PERCENT`(15), `AGENCY_REVENUE_SHARE_PERCENT`(60, 2026-10-12 — 창립 파트너 3곳은 소속사별 70으로 12개월).
 - 앱: `hooks/use-settlements.ts`(`apiClient.getText`로 CSV → Blob 다운로드, 웹에서만 enabled), `components/settlement-report.tsx`(i18n 6개
   언어 — 소속사 콘솔이 태국어일 수 있어서), `admin/settlements`, `console/settlements`. `components/wide-shell.tsx`: 웹 && 폭 ≥ 1024 && 경로가
   /admin·/console이면 루트 Stack을 왼쪽 메뉴(248px) + 내용으로 감쌈(라우트 구조는 그대로). 운영자 메뉴는 `constants/admin-menu.ts`로 분리해

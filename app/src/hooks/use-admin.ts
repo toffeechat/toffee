@@ -144,7 +144,7 @@ export interface AdminAgency {
   id: string;
   name: string;
   logoUrl: string | null;
-  // 정산 배분율(%) — null이면 서버 기본값(잠정 70)
+  // 정산 배분율(%) — null이면 서버 기본값(잠정 60)
   revenueSharePercent: number | null;
   createdAt: string;
   actorCount: number;
