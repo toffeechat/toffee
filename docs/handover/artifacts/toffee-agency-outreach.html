@@ -141,6 +141,7 @@ td{padding:12px 10px 12px 0;border-bottom:1px solid var(--line);vertical-align:t
       <div class="card">
         <span class="label">첫 메일</span><h3>짧게, 숫자 하나</h3>
         <ol>
+          <li>나는 누구인지 한 줄(GL 팬, 젤리 운영)</li>
           <li>토피가 무엇인지 두 줄</li>
           <li>제안 조건: 비용 없음, 비독점, 60%(창립 파트너 70%)</li>
           <li>수익 예시 하나: 팬 1,000명이면 월 약 ฿83,000</li>
@@ -220,6 +221,7 @@ const MAILS = {
       body: `เรียน คุณ[ชื่อผู้ติดต่อ]
 
 [ชื่อ] ผู้ก่อตั้ง Toffee จากประเทศเกาหลีใต้ ขออนุญาตแนะนำตัว[ค่ะ/ครับ]
+[ชื่อ] เป็นแฟนซีรีส์ GL ไทยชาวเกาหลี และดูแลแอปชุมชนแฟน GL ชื่อ Gelly ซึ่งมีผู้ใช้ [N] คน
 
 Toffee เป็นแอปสมัครสมาชิกรายเดือน ที่แฟน ๆ จะได้รับข้อความ รูปภาพ ข้อความเสียง และวิดีโอจากนักแสดงที่ชื่นชอบ เหมือนได้แชตกันแบบส่วนตัว 1:1 แฟน ๆ อ่านทุกข้อความได้ในภาษาของตัวเอง [ชื่อนักแสดง] จึงสื่อสารกับแฟน ๆ ทั้งในไทยและต่างประเทศได้
 
@@ -240,13 +242,13 @@ Toffee เป็นแอปสมัครสมาชิกรายเดื�
 ขอแสดงความนับถือ
 [ชื่อ] · Toffee
 [อีเมล]`,
-      hint: "[ค่ะ/ครับ]는 여성이면 ค่ะ, 남성이면 ครับ 하나만 남깁니다. 보내기 전에 태국어를 하는 사람에게 한 번 확인받으세요."
+      hint: "[ค่ะ/ครับ]는 여성이면 ค่ะ, 남성이면 ครับ 하나만 남깁니다. BL 위주 소속사에는 \"ซีรีส์ GL ไทย\"를 \"ซีรีส์ไทย\"(태국 드라마)로 바꿉니다. 보내기 전에 태국어를 하는 사람에게 한 번 확인받으세요."
     },
     en: {
       subject: "Partnership proposal: a paid 1:1 fan channel for [Actor] (3-month pilot, no cost)",
       body: `Dear [Contact name],
 
-My name is [Name], founder of Toffee, based in Korea.
+My name is [Name], founder of Toffee, based in Korea. I'm a Korean fan of Thai GL series, and I already run Gelly, a GL fan community app with [N] users.
 
 Toffee is a subscription app where fans receive personal messages, photos, voice notes and videos from their favorite actors, like a private 1:1 chat. Fans read every message in their own language, so [Actor] can reach fans in Thailand and abroad.
 
@@ -267,13 +269,13 @@ The same message is included in Thai above and in Korean below.
 Best regards,
 [Name] · Toffee
 [Email]`,
-      hint: "태국어 다음, 한국어 앞에 넣습니다."
+      hint: "태국어 다음, 한국어 앞에 넣습니다. BL 위주 소속사에는 \"Thai GL series\"를 \"Thai dramas\"로 바꿉니다."
     },
     ko: {
       subject: "[배우 이름] 유료 1:1 팬 채널 제안 (3개월 파일럿, 비용 없음)",
       body: `[담당자 이름]님께
 
-안녕하세요. 한국에서 Toffee를 만들고 있는 [이름]입니다.
+안녕하세요. 한국에서 Toffee를 만들고 있는 [이름]입니다. 저는 태국 GL 드라마를 좋아하는 한국인 팬이고, GL 팬 커뮤니티 앱 '젤리'를 운영하고 있습니다(사용자 [N]명).
 
 Toffee는 팬이 좋아하는 배우에게서 메시지, 사진, 음성, 영상을 1:1 채팅처럼 받는 월 구독 앱입니다. 팬은 모든 메시지를 자기 언어로 읽을 수 있어서, [배우 이름]님이 태국과 해외 팬 모두와 소통할 수 있습니다.
 
@@ -294,7 +296,7 @@ Toffee는 팬이 좋아하는 배우에게서 메시지, 사진, 음성, 영상�
 감사합니다.
 [이름] · Toffee
 [메일]`,
-      hint: "맨 아래에 넣습니다. 한국어를 아는 담당자가 있을 때 도움이 됩니다."
+      hint: "맨 아래에 넣습니다. BL 위주 소속사에는 \"태국 GL 드라마\"를 \"태국 드라마\"로 바꿉니다."
     }
   },
   follow: {
