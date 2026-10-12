@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, CreditCard, FileText, Globe, LifeBuoy, LogOut, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { Bell, CircleHelp, CreditCard, FileText, Globe, LifeBuoy, LogOut, Megaphone, ShieldCheck, Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -17,6 +17,7 @@ import { openSupportMail } from '@/lib/support';
 import { openStoreSubscriptions } from '@/lib/store-links';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { useDeleteAccount, useMe } from '@/hooks/use-onboarding';
+import { BUSINESS_FIELDS, useBusinessInfo } from '@/hooks/use-business-info';
 import { useTheme } from '@/hooks/use-theme';
 import { LANGUAGE_NATIVE_NAMES } from '@/i18n/languages';
 import { useLocalePreference } from '@/i18n/locale-preference-context';
@@ -30,6 +31,8 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  // 전자상거래법 사업자 정보 표시 — 법인 설립 후 서버 설정값(BUSINESS_*)을 넣으면 나옴(2026-10-12)
+  const { data: businessInfo } = useBusinessInfo();
   const { logout } = useAuth();
   const { data: me } = useMe();
   const { data: subscriptions } = useMySubscriptions();
@@ -101,6 +104,8 @@ export default function ProfileScreen() {
         </Section>
 
         <Section label={t('profile.support')}>
+          <ListRow icon={Megaphone} title={t('notices.title')} onPress={() => router.push('/notices')} />
+          <ListRow icon={CircleHelp} title={t('faq.title')} onPress={() => router.push('/faq')} />
           <ListRow
             icon={LifeBuoy}
             title={t('profile.help')}
@@ -121,6 +126,18 @@ export default function ProfileScreen() {
           </ThemedText>
         ) : null}
         <Button title={t('deleteAccount.title')} variant="ghost" size="md" onPress={startDelete} loading={deleteAccount.isPending} style={styles.delete} />
+        {businessInfo ? (
+          <View style={styles.business}>
+            <ThemedText type="captionBold" themeColor="textTertiary">
+              {t('business.title')}
+            </ThemedText>
+            {BUSINESS_FIELDS.filter((field) => businessInfo[field]).map((field) => (
+              <ThemedText key={field} type="caption" themeColor="textTertiary">
+                {`${t(`business.${field}`)}: ${businessInfo[field]}`}
+              </ThemedText>
+            ))}
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -156,4 +173,5 @@ const styles = StyleSheet.create({
   sectionLabel: { paddingHorizontal: Spacing.four, marginBottom: Spacing.one, letterSpacing: 0.6 },
   center: { textAlign: 'center', marginTop: Spacing.three },
   delete: { alignSelf: 'center', marginTop: Spacing.three },
+  business: { gap: 2, marginTop: Spacing.four, paddingHorizontal: Spacing.two },
 });

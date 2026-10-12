@@ -46,12 +46,16 @@ let fanToken;
 let actorId;
 let actorToken;
 let broadcastId;
+let savedGreetings;
 
 try {
   // 배우 본인 계정(시드: caramel-self)이 보내는 쪽
   actorToken = await devLogin('caramel-self@toffee.demo');
   actorId = (await api('/actors/mine', { token: actorToken })).find((actor) => actor.kind !== 'COUPLE')?.id;
   if (!actorId) throw new Error('시드 데이터에 배우 본인 계정이 연결된 배우가 없어요(npm run db:seed)');
+  // 환영 메시지(2026-10-12) — 테스트 동안만 바꾸고 끝나면 원래대로
+  savedGreetings = await api(`/actors/${actorId}/messages/greetings`, { token: actorToken });
+  await api(`/actors/${actorId}/messages/greetings`, { token: actorToken, method: 'PUT', body: { welcomeMessage: `e2e 환영 ${stamp} {{name}}` } });
 
   await step('새 팬 로그인', async () => {
     await page.goto(`${WEB}/login`);
@@ -95,9 +99,17 @@ try {
   await step('배우 구독(테스트 구독)', async () => {
     await page.goto(`${WEB}/actor/${actorId}`);
     await page.getByText('구독하고 메시지 받기', { exact: true }).click();
+    // 결제 고지(자동 갱신·해지 방법·청약철회·약관 링크, 2026-10-12)가 결제 버튼 아래에 있어야 함
+    await page.getByText(/24시간 전까지/).waitFor({ timeout: 10_000 });
+    await page.getByText(/청약철회/).waitFor({ timeout: 10_000 });
     await page.getByText(/에 구독하기$/).click();
     await page.getByText('메시지 시작하기', { exact: true }).click();
     await page.waitForURL(`**/chat/${actorId}`);
+  });
+
+  await step('구독 직후 환영 메시지(이름 자리 → 내 닉네임)', async () => {
+    await page.getByText(`e2e 환영 ${stamp} ${nickname}`).waitFor({ timeout: 20_000 });
+    await page.getByText('환영 메시지', { exact: true }).waitFor({ timeout: 5_000 });
   });
 
   const broadcast = `e2e 인사 ${stamp} {{name}}`;
@@ -109,8 +121,15 @@ try {
   await step('답장 보내기', async () => {
     const reply = `e2e 답장 ${stamp}`;
     await page.getByPlaceholder('메시지 보내기').fill(reply);
+    // 첫 답장 전 메시지 이용 규칙 동의(웹은 브라우저 확인창, 2026-10-12) — 뜨지 않으면 실패
+    let askedRules = false;
+    page.once('dialog', (dialog) => {
+      askedRules = dialog.message().includes('동의가 필요해요');
+      void dialog.accept();
+    });
     await page.getByLabel('보내기', { exact: true }).click();
     await page.getByText(reply).waitFor({ timeout: 15_000 });
+    if (!askedRules) throw new Error('첫 답장 전 동의 확인창이 뜨지 않음');
   });
 
   await step('방 안 검색', async () => {
@@ -129,6 +148,12 @@ try {
   // 정리 — 테스트로 보낸 배우 메시지 삭제, 테스트 팬 구독 해지·탈퇴(실패해도 무시)
   if (broadcastId) await api(`/actors/${actorId}/messages/${broadcastId}`, { token: actorToken, method: 'DELETE' }).catch(() => {});
   if (fanToken && actorId) await api(`/actors/${actorId}/subscribe`, { token: fanToken, method: 'DELETE' }).catch(() => {});
+  if (savedGreetings)
+    await api(`/actors/${actorId}/messages/greetings`, {
+      token: actorToken,
+      method: 'PUT',
+      body: { welcomeMessage: savedGreetings.welcomeMessage ?? '', birthdayMessage: savedGreetings.birthdayMessage ?? '' },
+    }).catch(() => {});
   if (fanToken) await api('/auth/me', { token: fanToken, method: 'DELETE' }).catch(() => {});
   await browser.close();
 }

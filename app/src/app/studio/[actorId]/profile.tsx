@@ -3,7 +3,7 @@ import { Image, Pressable, ScrollView, StyleSheet, TextInput } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -67,6 +67,64 @@ function NicknameForm({ actor }: { actor: Actor }) {
   );
 }
 
+type Greetings = { welcomeMessage: string | null; birthdayMessage: string | null };
+
+/**
+ * 환영 메시지·생일 축하 메시지(2026-10-12) — 한 번 써 두면 새로 구독한 팬 대화방 맨 처음, 생일 알림을 켠 팬의 생일 아침에
+ * 자동으로 보임. {{name}}은 팬 닉네임으로 바뀜. 비우면 안 보냄. 팬의 생일 날짜는 아티스트에게 보이지 않음.
+ */
+function GreetingsForm({ actorId }: { actorId: string }) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { data } = useQuery({ queryKey: ['greetings', actorId], queryFn: () => apiClient.get<Greetings>(`/actors/${actorId}/messages/greetings`) });
+  const [draft, setDraft] = useState<{ welcomeMessage: string; birthdayMessage: string } | null>(null);
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+  const value = draft ?? { welcomeMessage: data?.welcomeMessage ?? '', birthdayMessage: data?.birthdayMessage ?? '' };
+  const save = useMutation({
+    mutationFn: (input: typeof value) => apiClient.put<Greetings>(`/actors/${actorId}/messages/greetings`, input),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(['greetings', actorId], saved);
+      setDraft(null);
+      setMessage({ text: t('studioProfile.saved'), error: false });
+    },
+    onError: (e) => setMessage({ text: e instanceof ApiError ? e.message : t('studioProfile.saveFailed'), error: true }),
+  });
+  const edit = (key: keyof typeof value) => (text: string) => (setDraft({ ...value, [key]: text }), setMessage(null));
+  const inputStyle = [styles.input, styles.multiline, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }];
+
+  return (
+    <ThemedView style={[styles.section, { backgroundColor: theme.backgroundElement }]}>
+      <ThemedText type="smallBold">{t('greetings.welcomeTitle')}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('greetings.welcomeHint')}
+      </ThemedText>
+      <TextInput value={value.welcomeMessage} onChangeText={edit('welcomeMessage')} multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+      <ThemedText type="smallBold" style={styles.spaced}>
+        {t('greetings.birthdayTitle')}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('greetings.birthdayHint')}
+      </ThemedText>
+      <TextInput value={value.birthdayMessage} onChangeText={edit('birthdayMessage')} multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+      {message && (
+        <ThemedText type="small" themeColor={message.error ? 'danger' : 'textSecondary'}>
+          {message.text}
+        </ThemedText>
+      )}
+      <Pressable
+        accessibilityRole="button"
+        disabled={!draft || save.isPending}
+        onPress={() => save.mutate(value)}
+        style={[styles.button, { backgroundColor: theme.tint }, (!draft || save.isPending) && styles.disabled]}>
+        <ThemedText type="smallBold" style={styles.buttonText}>
+          {t('studioProfile.save')}
+        </ThemedText>
+      </Pressable>
+    </ThemedView>
+  );
+}
+
 export default function StudioProfileScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -86,6 +144,8 @@ export default function StudioProfileScreen() {
             <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
           </ThemedView>
           <NicknameForm key={actor.id} actor={actor} />
+          {/* 커플방이면 방 하나에 한 벌 — 두 멤버 누구나 고칠 수 있음 */}
+          <GreetingsForm key={`greetings-${actor.id}`} actorId={actor.id} />
           <ThemedText type="small" themeColor="textSecondary">
             {t('studioProfile.officialNote', { name: actor.legalName })}
           </ThemedText>
@@ -111,5 +171,7 @@ const styles = StyleSheet.create({
   button: { borderRadius: 10, paddingVertical: Spacing.two + 2, alignItems: 'center' },
   buttonText: { color: '#fff' },
   disabled: { opacity: 0.5 },
+  multiline: { minHeight: 88, textAlignVertical: 'top' },
+  spaced: { marginTop: Spacing.two },
   logout: { borderWidth: 1, borderRadius: 10, paddingVertical: Spacing.three, alignItems: 'center', marginTop: Spacing.two },
 });

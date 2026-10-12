@@ -206,6 +206,7 @@ function RootLayout() {
               <Stack.Screen name="admin/settlements" options={{ headerShown: true, title: '정산' }} />
               <Stack.Screen name="admin/actions" options={{ headerShown: true, title: '작업 기록' }} />
               <Stack.Screen name="admin/refunds" options={{ headerShown: true, title: '환불 요청' }} />
+              <Stack.Screen name="admin/notices" options={{ headerShown: true, title: '공지사항' }} />
               <Stack.Screen name="onboarding/terms" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding/birth-date" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding/nickname" options={{ headerShown: false }} />
@@ -213,6 +214,8 @@ function RootLayout() {
               <Stack.Screen name="onboarding/underage" options={{ headerShown: false }} />
               <Stack.Screen name="terms" options={{ headerShown: true, title: t('screens.terms') }} />
               <Stack.Screen name="privacy" options={{ headerShown: true, title: t('screens.privacy') }} />
+              <Stack.Screen name="faq" options={{ headerShown: true, title: t('faq.title') }} />
+              <Stack.Screen name="notices" options={{ headerShown: true, title: t('notices.title') }} />
             </Stack>
             </WideShell>
             <InAppBanner />

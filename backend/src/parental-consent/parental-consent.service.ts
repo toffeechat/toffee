@@ -35,19 +35,37 @@ export class ParentalConsentService {
   async getOnboardingStatus(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { birthDate: true, parentalConsentStatus: true, role: true, nickname: true, termsVersion: true, countryCode: true },
+      select: {
+        birthDate: true,
+        parentalConsentStatus: true,
+        role: true,
+        nickname: true,
+        termsVersion: true,
+        countryCode: true,
+        replyRulesAcceptedAt: true,
+      },
     });
     // 생년월일 화면 안내 문구·가입 불가 화면에 쓸 기준 나이
     const minimumAge = this.adultsOnly ? adultAgeFor(user.countryCode) : null;
     // 약관 동의는 모든 계정, 연령 확인·닉네임은 구독하는 팬(USER)에게만 — 배우 본인/소속사/운영자 계정은 그 뒤 온보딩 없이 진입
     const needsTerms = user.termsVersion !== CURRENT_TERMS_VERSION;
+    // 온보딩 단계는 아님 — 앱이 팬의 첫 답장 직전에만 물어봄
+    const needsReplyRules = !user.replyRulesAcceptedAt;
     if (user.role !== Role.USER) {
-      return { needsTerms, needsBirthDate: false, needsNickname: false, parentalConsentStatus: user.parentalConsentStatus, minimumAge };
+      return {
+        needsTerms,
+        needsBirthDate: false,
+        needsNickname: false,
+        needsReplyRules,
+        parentalConsentStatus: user.parentalConsentStatus,
+        minimumAge,
+      };
     }
     return {
       needsTerms,
       needsBirthDate: !user.birthDate,
       needsNickname: !user.nickname,
+      needsReplyRules,
       parentalConsentStatus: user.parentalConsentStatus,
       minimumAge,
     };
@@ -72,6 +90,12 @@ export class ParentalConsentService {
         signupPlatform: user.signupPlatform ?? (device.platform?.slice(0, 20) || null),
       },
     });
+    return this.getOnboardingStatus(userId);
+  }
+
+  // 첫 답장 전 메시지 이용 규칙 동의(버블 방식, 2026-10-12) — 처음 동의한 시각을 남기고 다시 눌러도 바꾸지 않음
+  async acceptReplyRules(userId: string) {
+    await this.prisma.user.updateMany({ where: { id: userId, replyRulesAcceptedAt: null }, data: { replyRulesAcceptedAt: new Date() } });
     return this.getOnboardingStatus(userId);
   }
 

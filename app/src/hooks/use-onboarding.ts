@@ -10,6 +10,8 @@ export interface OnboardingStatus {
   needsTerms: boolean;
   needsBirthDate: boolean;
   needsNickname: boolean;
+  /** 첫 답장 전 메시지 이용 규칙 동의가 아직 없음 — 온보딩 단계가 아니라 채팅방에서 첫 답장 직전에 물어봄 */
+  needsReplyRules?: boolean;
   parentalConsentStatus: ParentalConsentStatus;
   /** 성인만 가입일 때 가입 가능한 나이(그 나라 성년 나이). 부모 동의 방식이면 null */
   minimumAge: number | null;
@@ -25,7 +27,16 @@ export function useOnboardingStatus() {
 }
 
 // 약관 버전 — 서버 CURRENT_TERMS_VERSION(backend/src/common/legal/terms.ts)과 같게. 약관 화면 내용을 바꾸면 둘 다 올릴 것
-export const TERMS_VERSION = '2026-09-28';
+export const TERMS_VERSION = '2026-10-12';
+
+// 첫 답장 전 "명예훼손·사생활 침해 금지, 위반 시 제재·처벌" 안내 동의(버블 방식, 2026-10-12) — 서버에 시각 기록
+export function useAcceptReplyRules() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.post<OnboardingStatus>('/me/reply-rules-agreement', {}),
+    onSuccess: (status) => queryClient.setQueryData(['onboarding-status'], status),
+  });
+}
 
 export function useAcceptTerms() {
   const queryClient = useQueryClient();
@@ -65,6 +76,9 @@ export interface Me {
   nickname: string | null;
   /** 다음에 닉네임을 바꿀 수 있는 시각(없으면 지금 바로 가능) */
   nicknameChangeAvailableAt: string | null;
+  /** 생일 축하 메시지 받기(2026-10-12) — 생년월일 자체는 안 내려오고 있는지만 */
+  birthdayGreetingsEnabled?: boolean;
+  hasBirthDate?: boolean;
 }
 
 export function useMe() {
@@ -83,6 +97,15 @@ export function useUpdateNickname() {
       // 채팅방의 {{name}} 자리도 새 닉네임으로
       void queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
+  });
+}
+
+// 생일 축하 메시지 받기 켜기/끄기 — 생년월일을 연령 확인 외 목적으로 쓰는 거라 본인이 켤 때만(기본 꺼짐)
+export function useSetBirthdayGreetings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => apiClient.patch<Me>('/auth/me/birthday-greetings', { enabled }),
+    onSuccess: (me) => queryClient.setQueryData(['me'], me),
   });
 }
 

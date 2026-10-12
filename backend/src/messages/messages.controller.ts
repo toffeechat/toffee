@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query } from '@nestjs/common';
 import { MessagesService } from './messages.service.js';
 import { ListMessagesQueryDto, ListRepliesQueryDto, SearchMessagesQueryDto } from './dto/list-replies-query.dto.js';
 import { SendReplyDto } from './dto/send-reply.dto.js';
 import { SendBroadcastDto } from './dto/send-broadcast.dto.js';
+import { UpdateGreetingsDto } from './dto/update-greetings.dto.js';
+import { GreetingsService } from './greetings.service.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
@@ -10,7 +12,29 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
 @Controller('actors/:actorId/messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly messagesService: MessagesService,
+    private readonly greetingsService: GreetingsService,
+  ) {}
+
+  // 팬 대화방에 끼워 넣을 환영 메시지·생일 축하(2026-10-12)
+  @Get('extras')
+  extras(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string) {
+    return this.greetingsService.extrasForFan(user.id, actorId);
+  }
+
+  // 환영·생일 축하 메시지 편집 — 보내기와 같이 배우 본인만(소속사는 대신 못 씀)
+  @Roles(Role.ACTOR, Role.ADMIN)
+  @Get('greetings')
+  greetings(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string) {
+    return this.greetingsService.settings(user.id, actorId);
+  }
+
+  @Roles(Role.ACTOR, Role.ADMIN)
+  @Put('greetings')
+  updateGreetings(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string, @Body() dto: UpdateGreetingsDto) {
+    return this.greetingsService.updateSettings(user.id, actorId, dto);
+  }
 
   @Get()
   listForFan(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string, @Query() query: ListMessagesQueryDto) {

@@ -8,6 +8,7 @@ import { KakaoLoginDto } from './dto/kakao-login.dto.js';
 import { LineLoginDto } from './dto/line-login.dto.js';
 import { WebCodeLoginDto } from './dto/web-code-login.dto.js';
 import { DevLoginDto } from './dto/dev-login.dto.js';
+import { UpdateBirthdayGreetingsDto } from './dto/update-birthday-greetings.dto.js';
 import { UpdateLocaleDto } from './dto/update-locale.dto.js';
 import { PushDeviceDto } from './dto/push-device.dto.js';
 import { UpdateNicknameDto } from './dto/update-nickname.dto.js';
@@ -136,6 +137,12 @@ export class AuthController {
   @Patch('me/nickname')
   updateNickname(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateNicknameDto) {
     return this.authService.updateNickname(user.id, dto.nickname);
+  }
+
+  // 생일 축하 메시지 받기(2026-10-12)
+  @Patch('me/birthday-greetings')
+  updateBirthdayGreetings(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateBirthdayGreetingsDto) {
+    return this.authService.updateBirthdayGreetings(user.id, dto.enabled);
   }
 
   // 회원 탈퇴(팬 본인) — 성공하면 앱이 로그아웃

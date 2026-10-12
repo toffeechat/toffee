@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight, ChevronLeft, Sparkle } from 'lucide-react-native';
 
 import { MembershipBenefits } from '@/components/membership-benefits';
+import { PurchaseDisclosure } from '@/components/purchase-disclosure';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
@@ -128,9 +129,7 @@ export default function SubscribeScreen() {
             </ThemedText>
           )}
           <Button title={t('subscribeFlow.cta', { price })} variant="accent" loading={busy} onPress={confirm} />
-          <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
-            {t('subscribeFlow.autoRenew')}
-          </ThemedText>
+          <PurchaseDisclosure />
           {store.available ? null : (
             <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
               {t('subscribeFlow.sandboxNote')}

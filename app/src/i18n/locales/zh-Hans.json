@@ -83,7 +83,9 @@
     "copy": "复制",
     "copied": "已复制",
     "copyFailed": "复制失败",
-    "more": "更多"
+    "more": "更多",
+    "welcomeLabel": "欢迎消息",
+    "birthdayLabel": "🎂 生日祝福"
   },
   "chatProfile": {
     "open": "查看资料",
@@ -291,7 +293,12 @@
     "terms": "（必选）同意服务条款",
     "privacy": "（必选）同意个人信息的收集与使用",
     "view": "查看",
-    "submit": "同意并开始"
+    "submit": "同意并开始",
+    "permissionsTitle": "应用访问权限说明",
+    "permissionsBody": "Toffee 仅使用以下可选权限。不允许也可以使用（仅该功能无法使用），可随时在 设置 > Toffee 中更改。",
+    "permNotifications": "通知（可选）— 新消息提醒",
+    "permPhotos": "照片（可选）— 保存收到的照片和视频",
+    "permCamera": "相机和麦克风（可选）— 艺人发送照片、视频或语音时"
   },
   "support": {
     "contact": "联系我们",
@@ -371,14 +378,18 @@
   "subscribeFlow": {
     "subscribeTo": "订阅",
     "cta": "以 {{price}}/月 订阅",
-    "autoRenew": "每月自动续订，可随时在账户设置中取消。",
+    "autoRenew": "这是按月自动续订的订阅。如未在当期结束前至少24小时于{{store}}的订阅管理中取消，将自动按相同金额扣费。取消后仍可使用至已付费期间结束。",
     "sandboxNote": "测试版——不会实际扣款。",
     "discount": "组合优惠：{{base}} → {{effective}}",
     "doneTitle": "现在，你们更近了。",
     "doneBody": "你对 {{name}} 的订阅已生效。",
     "start": "开始聊天",
     "goProfile": "前往 {{name}} 的主页",
-    "failed": "订阅失败"
+    "failed": "订阅失败",
+    "refundNote": "付款后7天内可申请撤回（全额退款）。如当期内艺人未发送任何消息，或艺人停止活动，也可申请退款。",
+    "messageNote": "艺人会根据自身情况不定期发送消息。消息、照片、语音和视频仅供订阅者观看，禁止对外分享。",
+    "bundleNote": "套餐中的艺人可能因艺人或经纪公司的情况而变动。",
+    "storeAny": "App Store 或 Google Play"
   },
   "profile": {
     "title": "我的",
@@ -577,5 +588,44 @@
     "guidedBefore": "已为你打开过 Apple 退款页面。如果还没申请，可以再次打开。",
     "failed": "无法处理退款申请。请稍后再试。",
     "reasonRetired": "艺人已于 {{date}} 结束活动，在付款后 14 天内，因此可以全额退还本期费用。"
+  },
+  "replyRules": {
+    "title": "向艺人发送消息前需要您的同意",
+    "body": "发送诋毁艺人名誉、侵犯隐私或令人不适、恐惧的消息，可能会依据服务条款被限制使用，并依据相关法律受到处罚。",
+    "agree": "同意",
+    "failed": "未能保存同意，请重试。"
+  },
+  "business": {
+    "title": "经营者信息",
+    "name": "公司名称",
+    "representative": "代表人",
+    "address": "地址",
+    "phone": "电话",
+    "email": "邮箱",
+    "registrationNumber": "营业登记号",
+    "mailOrderNumber": "通信销售业申报号"
+  },
+  "greetings": {
+    "welcomeTitle": "欢迎消息",
+    "welcomeHint": "显示在新订阅粉丝聊天的最开头。写 {{name}} 会替换成粉丝昵称。留空则不发送。",
+    "birthdayTitle": "生日祝福",
+    "birthdayHint": "会在生日当天早上（泰国时间9点）自动发给开启了生日祝福的粉丝。你看不到粉丝的生日。留空则不发送。",
+    "placeholder": "例如：{{name}}，欢迎你！"
+  },
+  "notices": {
+    "title": "公告",
+    "empty": "暂无公告。"
+  },
+  "faq": {
+    "title": "常见问题"
+  },
+  "birthday": {
+    "toggle": "接收生日祝福",
+    "hint": "开启后，你订阅的艺人会在你生日当天早上发来祝福。只使用注册时填写的出生日期中的月和日，艺人看不到。"
+  },
+  "screenshot": {
+    "title": "检测到截屏",
+    "body": "艺人的消息、照片、语音和视频仅限订阅者观看。将截图发布或分享到社交媒体等外部，可能会根据使用条款被限制使用。",
+    "ok": "确定"
   }
 }

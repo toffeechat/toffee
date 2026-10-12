@@ -5,7 +5,9 @@ import type { Response } from 'express';
 import { Public } from '../common/decorators/public.decorator.js';
 import { matchAcceptLanguage, SUPPORTED_LOCALES, type SupportedLocale } from '../common/i18n/locales.js';
 import { LEGAL_SECTIONS, LEGAL_VERSION, type LegalDoc } from './legal-texts.js';
-import { legalPage, supportPage } from './legal-page.js';
+import { faqPage, legalPage, supportPage } from './legal-page.js';
+import { readBusinessInfo } from './business-info.js';
+import { FAQ, FAQ_TITLES } from './faq-texts.js';
 
 const DOCS: readonly LegalDoc[] = ['terms', 'privacy'];
 
@@ -29,9 +31,16 @@ function ensureDoc(doc: string): LegalDoc {
 export class LegalController {
   constructor(private readonly config: ConfigService) {}
 
+  // 앱 마이페이지 아래 사업자 정보 — 사업자 등록 전이면 null(앱이 안 보여 줌).
+  // legal/:doc보다 먼저 선언해야 함(아니면 :doc으로 잡혀 404)
+  @Get('legal/business-info')
+  businessInfoJson() {
+    return { info: this.businessInfo() };
+  }
+
   @Get('legal/:doc')
   page(@Param('doc') doc: string, @Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined, @Res() res: Response) {
-    const html = legalPage(ensureDoc(doc), pickLocale(lang, acceptLanguage));
+    const html = legalPage(ensureDoc(doc), pickLocale(lang, acceptLanguage), this.businessInfo());
     res.set({ 'Cache-Control': 'public, max-age=300' }).type('html').send(html);
   }
 
@@ -43,6 +52,22 @@ export class LegalController {
   @Get('support')
   support(@Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined, @Res() res: Response) {
     const email = this.config.get<string>('SUPPORT_EMAIL') || null;
-    res.set({ 'Cache-Control': 'public, max-age=300' }).type('html').send(supportPage(pickLocale(lang, acceptLanguage), email));
+    res.set({ 'Cache-Control': 'public, max-age=300' }).type('html').send(supportPage(pickLocale(lang, acceptLanguage), email, this.businessInfo()));
+  }
+
+  @Get('faq')
+  faq(@Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined, @Res() res: Response) {
+    res.set({ 'Cache-Control': 'public, max-age=300' }).type('html').send(faqPage(pickLocale(lang, acceptLanguage), this.businessInfo()));
+  }
+
+  // 앱 FAQ 화면 — 앱 언어(lang)로
+  @Get('faq/items')
+  faqItems(@Query('lang') lang: string | undefined, @Headers('accept-language') acceptLanguage: string | undefined) {
+    const locale = pickLocale(lang, acceptLanguage);
+    return { title: FAQ_TITLES[locale], sections: FAQ[locale] };
+  }
+
+  private businessInfo() {
+    return readBusinessInfo((key) => this.config.get<string>(key));
   }
 }

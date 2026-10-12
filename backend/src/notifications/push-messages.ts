@@ -22,6 +22,9 @@ interface PushStrings {
   // 배우 활동 종료·입대 — 구독 팬에게(환불 안내)
   retiredFanTitle: (actor: string) => string;
   retiredFanBody: (days: number) => string;
+  // 생일 축하 메시지(2026-10-12) — 생일 알림을 켠 팬에게, 생일 아침
+  birthdayTitle: (actor: string) => string;
+  birthdayBody: string;
 }
 
 const STRINGS: Record<SupportedLocale, PushStrings> = {
@@ -39,6 +42,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `${days}일째 메시지가 없어요. 30일 동안 메시지가 없으면 팬 ${fans}명이 그 달 구독료 환불을 요청할 수 있어요. 지금 한 마디 남겨 주세요.`,
     retiredFanTitle: (actor) => `${actor}님의 활동이 종료됐어요`,
     retiredFanBody: (days) => `지난 대화는 계속 볼 수 있어요. 결제한 지 ${days}일 안이라면 구독 관리에서 이번 달 환불을 요청할 수 있어요.`,
+    birthdayTitle: (actor) => `${actor}님이 생일 축하 메시지를 보냈어요`,
+    birthdayBody: '생일 축하해요! 지금 확인해 보세요 🎂',
   },
   en: {
     media: { TEXT: 'You have a new message', PHOTO: 'Sent a photo', AUDIO: 'Sent a voice message', VIDEO: 'Sent a video' },
@@ -54,6 +59,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `No messages for ${days} days. After 30 days without a message, ${fans} fans can request a refund for that month. Please send a message now.`,
     retiredFanTitle: (actor) => `${actor} has ended their activity`,
     retiredFanBody: (days) => `You can still read past messages. If you paid within the last ${days} days, you can request a refund for this month in Manage subscriptions.`,
+    birthdayTitle: (actor) => `${actor} sent you a birthday message`,
+    birthdayBody: 'Happy birthday! Check it out now 🎂',
   },
   th: {
     media: { TEXT: 'มีข้อความใหม่', PHOTO: 'ส่งรูปภาพ', AUDIO: 'ส่งข้อความเสียง', VIDEO: 'ส่งวิดีโอ' },
@@ -69,6 +76,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `ไม่มีข้อความมา ${days} วันแล้ว หากไม่มีข้อความครบ 30 วัน แฟน ${fans} คนจะขอคืนเงินค่าสมาชิกของเดือนนั้นได้ ส่งข้อความสักประโยคตอนนี้เลย`,
     retiredFanTitle: (actor) => `${actor} ยุติกิจกรรมแล้ว`,
     retiredFanBody: (days) => `ยังดูข้อความเก่าได้ตามปกติ หากชำระเงินภายใน ${days} วันที่ผ่านมา สามารถขอคืนเงินของเดือนนี้ได้ที่จัดการการสมัครสมาชิก`,
+    birthdayTitle: (actor) => `${actor} ส่งข้อความอวยพรวันเกิดถึงคุณ`,
+    birthdayBody: 'สุขสันต์วันเกิด! เปิดดูได้เลย 🎂',
   },
   ja: {
     media: {
@@ -89,6 +98,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `${days}日間メッセージがありません。30日間メッセージがないと、ファン${fans}人がその月の購読料の返金を申請できます。今ひとこと送ってください。`,
     retiredFanTitle: (actor) => `${actor}さんの活動が終了しました`,
     retiredFanBody: (days) => `これまでのメッセージは引き続き見られます。お支払いから${days}日以内なら、購読管理から今月分の返金を申請できます。`,
+    birthdayTitle: (actor) => `${actor}さんから誕生日メッセージが届きました`,
+    birthdayBody: 'お誕生日おめでとう！今すぐチェック 🎂',
   },
   'zh-Hans': {
     media: { TEXT: '你有一条新消息', PHOTO: '发送了一张照片', AUDIO: '发送了一条语音消息', VIDEO: '发送了一段视频' },
@@ -104,6 +115,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `已 ${days} 天没有消息。30 天没有消息的话，${fans} 位粉丝可以申请当月订阅费退款。现在就发一句吧。`,
     retiredFanTitle: (actor) => `${actor} 已结束活动`,
     retiredFanBody: (days) => `仍可查看以往的消息。如果是 ${days} 天内付款的，可以在订阅管理中申请本月退款。`,
+    birthdayTitle: (actor) => `${actor} 给你发来了生日祝福`,
+    birthdayBody: '生日快乐！快去看看吧 🎂',
   },
   'zh-Hant': {
     media: { TEXT: '你有一則新訊息', PHOTO: '傳送了一張照片', AUDIO: '傳送了一則語音訊息', VIDEO: '傳送了一段影片' },
@@ -119,6 +132,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `已 ${days} 天沒有訊息。30 天沒有訊息的話，${fans} 位粉絲可以申請當月訂閱費退款。現在就傳一句吧。`,
     retiredFanTitle: (actor) => `${actor} 已結束活動`,
     retiredFanBody: (days) => `仍可查看以往的訊息。如果是 ${days} 天內付款的，可以在訂閱管理中申請本月退款。`,
+    birthdayTitle: (actor) => `${actor} 傳來了生日祝福`,
+    birthdayBody: '生日快樂！快去看看吧 🎂',
   },
   vi: {
     media: { TEXT: 'Bạn có tin nhắn mới', PHOTO: 'Đã gửi một ảnh', AUDIO: 'Đã gửi một tin nhắn thoại', VIDEO: 'Đã gửi một video' },
@@ -134,6 +149,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `Đã ${days} ngày không có tin nhắn. Nếu 30 ngày không có tin nhắn, ${fans} fan có thể yêu cầu hoàn phí đăng ký của tháng đó. Hãy gửi một tin nhắn ngay nhé.`,
     retiredFanTitle: (actor) => `${actor} đã ngừng hoạt động`,
     retiredFanBody: (days) => `Bạn vẫn xem được các tin nhắn cũ. Nếu bạn thanh toán trong ${days} ngày qua, bạn có thể yêu cầu hoàn tiền tháng này trong Quản lý gói đăng ký.`,
+    birthdayTitle: (actor) => `${actor} đã gửi lời chúc mừng sinh nhật cho bạn`,
+    birthdayBody: 'Chúc mừng sinh nhật! Xem ngay nhé 🎂',
   },
 };
 
