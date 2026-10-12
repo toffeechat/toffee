@@ -13,5 +13,6 @@
 - [`launch-roadmap.md`](./launch-roadmap.md) — **사업화 일정**(지금부터 첫 매출까지 단계별 체크리스트)
 - [`cost-overview.md`](./cost-overview.md) — 비용 한눈에 보기(기술 비용·운영/사업 비용, 1회·연간)
 - 한 장 요약(공유용): [토피 사업 계획](https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR) — 일정·출시 국가·가격·정산·필요 자금(원본 HTML `docs/handover/artifacts/toffee-plan.html`). 아래 문서들이 바뀌면 같이 맞춘다
+- 소속사 연락 키트: [토피 소속사 제안](https://claude.ai/artifact/YAkyTszUxSK5ViWwwVgxPk) — 연락 흐름, 대상 우선순위, 미팅 구성, 메일 초안(태·영·한)(원본 `docs/handover/artifacts/toffee-agency-outreach.html`)
 - [`funding-plan.md`](./funding-plan.md) — **자금 계획**(첫 매출까지 비용 추산, 본전 구독자 수, 돈 마련 순서, IR 자료 뼈대, 지분 설명)
 - [`brand/`](./brand/) — 원본 디자인 가이드·로고 파일·화면 목업 이미지(레퍼런스 자료)

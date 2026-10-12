@@ -61,6 +61,11 @@
 - **같은 날 이어서**: 사용자 요청으로 남에게 보여 줄 한 장 요약 [토피 사업 계획 한눈에 보기](https://claude.ai/artifact/VMsJxYahZJrx8D4nWSHanK) 작성(일정·국가·가격·정산·자금, 상세 페이지 링크). `docs/product/README.md`에 링크.
   → Docs 형식이 밋밋하다는 피드백으로 브랜드 색(라벤더·차콜)으로 디자인한 HTML 한 장 페이지 [토피 사업 계획](https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR)으로 다시 만듦(정산 막대, 일정 트랙, 국가 단계 카드). README 링크 교체.
 
+- **같은 날 이어서(소속사 연락 키트)**: 10월 일정에 "실기기 테스트·버그 수정" 추가(요약 페이지·일정 페이지 `s2-qa`). 사용자가 태국어를 못 하고 전화가 어려워
+  연락은 메일(태·영·한 한 통) → 7일 뒤 후속 → 화상 미팅 또는 방콕 방문(통역 동반)으로 정함. [토피 소속사 제안](https://claude.ai/artifact/YAkyTszUxSK5ViWwwVgxPk) 페이지:
+  대상 우선순위(1차 중소 GL·BL 제작사 Idol Factory·Snap25·NorthStar·Star Hunter·VelCurve, 2차 Domundi·Copy A Bangkok·TV Thunder, 나중 GMMTV·CH3 — 공개 자료 기준, 직접 확인 필요),
+  배우 고르는 기준, 첫 메일·1장 소개서·30분 미팅 구성, 첫 메일·후속 메일 초안 3개 언어(복사 버튼). 태국어 초안은 원어민 확인 필요.
+
 ## 2026-10-08 (이어서) — 새 Claude 계정으로 아티팩트 복원
 
 - **원인**: 같은 날 준비한 인수인계(아래 항목)대로 새 계정에서 첫 세션을 열고, 사용자가 개인 백업 zip(옛 아티팩트 DB 내보내기)을 첨부해
