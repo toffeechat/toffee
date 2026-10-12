@@ -95,6 +95,9 @@ try {
   await step('배우 구독(테스트 구독)', async () => {
     await page.goto(`${WEB}/actor/${actorId}`);
     await page.getByText('구독하고 메시지 받기', { exact: true }).click();
+    // 결제 고지(자동 갱신·해지 방법·청약철회·약관 링크, 2026-10-12)가 결제 버튼 아래에 있어야 함
+    await page.getByText(/24시간 전까지/).waitFor({ timeout: 10_000 });
+    await page.getByText(/청약철회/).waitFor({ timeout: 10_000 });
     await page.getByText(/에 구독하기$/).click();
     await page.getByText('메시지 시작하기', { exact: true }).click();
     await page.waitForURL(`**/chat/${actorId}`);
@@ -109,8 +112,15 @@ try {
   await step('답장 보내기', async () => {
     const reply = `e2e 답장 ${stamp}`;
     await page.getByPlaceholder('메시지 보내기').fill(reply);
+    // 첫 답장 전 메시지 이용 규칙 동의(웹은 브라우저 확인창, 2026-10-12) — 뜨지 않으면 실패
+    let askedRules = false;
+    page.once('dialog', (dialog) => {
+      askedRules = dialog.message().includes('동의가 필요해요');
+      void dialog.accept();
+    });
     await page.getByLabel('보내기', { exact: true }).click();
     await page.getByText(reply).waitFor({ timeout: 15_000 });
+    if (!askedRules) throw new Error('첫 답장 전 동의 확인창이 뜨지 않음');
   });
 
   await step('방 안 검색', async () => {

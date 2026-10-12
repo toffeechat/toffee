@@ -34,6 +34,8 @@ import { useActorMessages, useChatSearch, useReplyQuota, useSendReply, type Chat
 import { useMySubscriptions, useSetNotificationsMuted } from '@/hooks/use-subscriptions';
 import { useTheme } from '@/hooks/use-theme';
 import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { confirm } from '@/lib/confirm';
+import { useAcceptReplyRules, useOnboardingStatus } from '@/hooks/use-onboarding';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 메시지를 따라감
 const AT_BOTTOM_PX = 80;
@@ -67,6 +69,8 @@ export default function ChatRoomScreen() {
   const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useActorMessages(actorId);
   const notSubscribed = error instanceof ApiError && error.status === 403;
   const sendReply = useSendReply(actorId);
+  const { data: onboarding } = useOnboardingStatus();
+  const acceptReplyRules = useAcceptReplyRules();
   const [draft, setDraft] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -199,10 +203,21 @@ export default function ChatRoomScreen() {
       .catch(() => setNotice(t('media.saveFailed')));
   };
 
-  // 실패하면 쓴 글을 되돌려 놓고 이유를 보여줌(금칙어·차단·답장 한도 등)
-  const handleSend = () => {
+  // 실패하면 쓴 글을 되돌려 놓고 이유를 보여줌(금칙어·차단·답장 한도 등).
+  // 첫 답장 전엔 메시지 이용 규칙 동의를 한 번 받음(버블 방식, 2026-10-12) — 취소하면 쓴 글은 그대로 둠
+  const handleSend = async () => {
     const body = draft.trim();
     if (!body) return;
+    if (onboarding?.needsReplyRules) {
+      const agreed = await confirm(t('replyRules.title'), t('replyRules.body'), t('replyRules.agree'), t('common.cancel'), false);
+      if (!agreed) return;
+      try {
+        await acceptReplyRules.mutateAsync();
+      } catch {
+        setNotice(t('replyRules.failed'));
+        return;
+      }
+    }
     setDraft('');
     setNotice(null);
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -433,7 +448,7 @@ export default function ChatRoomScreen() {
                   maxLength={1000}
                 />
                 <Pressable
-                  onPress={handleSend}
+                  onPress={() => void handleSend()}
                   disabled={sendReply.isPending || !draft.trim()}
                   accessibilityRole="button"
                   accessibilityLabel={t('chat.send')}

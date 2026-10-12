@@ -1400,3 +1400,16 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 언어 선택은 기기 언어(`getDeviceLanguage`) → 없으면 en, 사용자가 프로필에서 바꿈. 서버는 Accept-Language·`User.locale`.
 - **2026-10-04**: RNFirebase 26은 기본이 SPM이라 `useFrameworks: 'static'`과 같이 쓰면 pod install이 막힘 → `@react-native-firebase/app`
   플러그인 옵션 `ios.disableSPM: true`(Podfile `$RNFirebaseDisableSPM = true`)로 CocoaPods 사용.
+
+## 결제 고지·첫 답장 동의·사업자 정보 (2026-10-12)
+
+- 결제 고지: `app/src/components/purchase-disclosure.tsx`(구독·묶음 구독 화면 공용). 스토어 이름은 `Platform.OS`로(웹은 "App Store·Google Play").
+  문구는 `subscribeFlow.autoRenew({{store}})`·`refundNote`·`messageNote`·`bundleNote`, 링크는 `/terms`·`/privacy`.
+- 첫 답장 동의: `User.replyRulesAcceptedAt`(마이그레이션 `20261012000000_reply_rules_consent`). `GET /me/onboarding-status`가
+  `needsReplyRules`를 같이 주고(온보딩 단계로는 안 씀), `POST /me/reply-rules-agreement`가 처음 한 번만 시각을 남김(`updateMany ... where null`).
+  앱 채팅방 `handleSend`가 보내기 전에 `confirm()`(웹은 `window.confirm`) → 동의 저장 → 전송. 서버는 답장을 막지 않음(앱 게이트) —
+  필요해지면 `MessagesService` 답장 전송에서 막으면 됨.
+- 사업자 정보: `backend/src/legal/business-info.ts` — `BUSINESS_NAME`·`_REPRESENTATIVE`·`_ADDRESS`·`_PHONE`·`_REGISTRATION_NUMBER`·
+  `_MAIL_ORDER_NUMBER` + `SUPPORT_EMAIL`. 상호가 없으면 `null`. 공개 `GET /legal/business-info`(JSON — `legal/:doc`보다 먼저 선언해야 함),
+  `/legal/:doc`·`/support` HTML 아래, 앱 마이페이지 아래(`useBusinessInfo`). 운영 서버 켤 때 비어 있으면 경고(`env-check`).
+- 약관 버전: 서버 `CURRENT_TERMS_VERSION`·앱 `TERMS_VERSION` = `2026-10-12`, 공개 문서 `LEGAL_VERSION` = `2026-10-12-draft`.

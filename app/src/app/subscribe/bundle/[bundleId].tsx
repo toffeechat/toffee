@@ -9,6 +9,7 @@ import { ArrowRight, ChevronLeft, SearchX, Sparkle } from 'lucide-react-native';
 
 import { BundleAvatars } from '@/components/bundle-card';
 import { MembershipBenefits } from '@/components/membership-benefits';
+import { PurchaseDisclosure } from '@/components/purchase-disclosure';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -147,9 +148,7 @@ export default function SubscribeBundleScreen() {
           loading={subscribe.isPending || storeBuy.isPending}
           onPress={() => (store.available ? storeBuy.mutate() : subscribe.mutate(undefined, { onSuccess: () => setDone(true) }))}
         />
-        <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
-          {t('subscribeFlow.autoRenew')}
-        </ThemedText>
+        <PurchaseDisclosure bundle />
         {store.available ? null : (
           <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
             {t('subscribeFlow.sandboxNote')}

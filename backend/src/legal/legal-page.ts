@@ -1,5 +1,6 @@
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../common/i18n/locales.js';
 import { escapeHtml } from '../parental-consent/consent-texts.js';
+import { businessInfoHtml, type BusinessInfo } from './business-info.js';
 import { DRAFT_NOTICE, LEGAL_SECTIONS, LEGAL_TITLES, LEGAL_VERSION, type LegalDoc } from './legal-texts.js';
 
 const NATIVE_NAMES: Record<SupportedLocale, string> = {
@@ -56,7 +57,7 @@ ${body}
 }
 
 /** 공개 약관·개인정보처리방침 페이지 — 초안 안내는 선택 언어, 본문은 한국어(최종본 나오면 번역) */
-export function legalPage(doc: LegalDoc, locale: SupportedLocale): string {
+export function legalPage(doc: LegalDoc, locale: SupportedLocale, business: BusinessInfo | null = null): string {
   const notice = DRAFT_NOTICE[locale];
   const sections = LEGAL_SECTIONS[doc].map((s) => `<h2>${escapeHtml(s.title)}</h2><p>${escapeHtml(s.body)}</p>`).join('\n');
   return shell(
@@ -65,18 +66,20 @@ export function legalPage(doc: LegalDoc, locale: SupportedLocale): string {
     `<h1>${escapeHtml(LEGAL_TITLES[doc][locale])}</h1>
 <div class="notice"><strong>${escapeHtml(notice.title)}</strong><br>${escapeHtml(notice.body)}</div>
 ${sections}
-<div class="meta">${escapeHtml(LEGAL_VERSION)}</div>`,
+<div class="meta">${escapeHtml(LEGAL_VERSION)}</div>
+${businessInfoHtml(business, locale)}`,
   );
 }
 
 /** 스토어 "지원 URL"용 고객센터 페이지 */
-export function supportPage(locale: SupportedLocale, email: string | null): string {
+export function supportPage(locale: SupportedLocale, email: string | null, business: BusinessInfo | null = null): string {
   const t = SUPPORT_TITLES[locale];
   return shell(
     locale,
     t.title,
     `<h1>${escapeHtml(t.title)}</h1>
 <p>${escapeHtml(t.body)}</p>
-<p style="margin-top:20px">${email ? `<a class="mail" href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : escapeHtml(t.noEmail)}</p>`,
+<p style="margin-top:20px">${email ? `<a class="mail" href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : escapeHtml(t.noEmail)}</p>
+${businessInfoHtml(business, locale)}`,
   );
 }

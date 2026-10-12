@@ -118,6 +118,9 @@ model User {
   // 앱 온보딩에서 다시 동의받음. 역할과 상관없이 모든 계정.
   termsVersion          String?
   termsAcceptedAt       DateTime?
+  // 첫 답장 전 "아티스트 명예훼손·사생활 침해·불쾌한 메시지 금지, 위반 시 제재·법적 책임" 안내에 동의한 시각(버블 방식,
+  // 2026-10-12). 제재·환불 분쟁 때 근거로 남김 — 한 번 동의하면 다시 묻지 않음. null이면 앱이 첫 답장 전에 물어봄.
+  replyRulesAcceptedAt  DateTime?
   // 가입할 때 기기의 지역 설정(ISO 국가 코드, 예: TH·KR) — 미성년자 기준 나이를 국가별로 적용하고(minor-age.ts)
   // 통계(국가별 가입자)에 씀. 가입 기기(ios/android/web)도 통계용. 약관 동의 때 앱이 보냄.
   countryCode           String?

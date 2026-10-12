@@ -24,6 +24,12 @@ export class ParentalConsentController {
     return this.parentalConsentService.acceptTerms(user.id, dto.version, { countryCode: dto.countryCode, platform: dto.platform });
   }
 
+  @Post('me/reply-rules-agreement')
+  @HttpCode(HttpStatus.OK)
+  acceptReplyRules(@CurrentUser() user: AuthenticatedUser) {
+    return this.parentalConsentService.acceptReplyRules(user.id);
+  }
+
   @Patch('me/birth-date')
   setBirthDate(@CurrentUser() user: AuthenticatedUser, @Body() dto: SetBirthDateDto) {
     return this.parentalConsentService.setBirthDate(user.id, dto.birthDate);

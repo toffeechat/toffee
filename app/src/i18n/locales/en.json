@@ -291,7 +291,12 @@
     "terms": "(Required) Terms of Service",
     "privacy": "(Required) Collection and use of personal information",
     "view": "View",
-    "submit": "Agree and start"
+    "submit": "Agree and start",
+    "permissionsTitle": "App permissions",
+    "permissionsBody": "Toffee only uses the optional permissions below. You can use the app without allowing them (only that feature won’t work), and change them anytime in Settings > Toffee.",
+    "permNotifications": "Notifications (optional) — new message alerts",
+    "permPhotos": "Photos (optional) — saving photos and videos you received",
+    "permCamera": "Camera and microphone (optional) — when artists send photos, videos or voice"
   },
   "support": {
     "contact": "Contact us",
@@ -371,14 +376,18 @@
   "subscribeFlow": {
     "subscribeTo": "Subscribe to",
     "cta": "Subscribe for {{price}} / month",
-    "autoRenew": "Auto-renews monthly. Cancel anytime in your account settings.",
+    "autoRenew": "This is a 1-month auto-renewing subscription. Unless you cancel in {{store}} subscription settings at least 24 hours before the period ends, you will be charged the same amount automatically. After canceling, you can keep using it until the paid period ends.",
     "sandboxNote": "Test build — you won't be charged.",
     "discount": "Bundle discount: {{base}} → {{effective}}.",
     "doneTitle": "You're closer now.",
     "doneBody": "Your subscription to {{name}} is active.",
     "start": "Start Messaging",
     "goProfile": "Go to {{name}}'s page",
-    "failed": "Couldn't subscribe"
+    "failed": "Couldn't subscribe",
+    "refundNote": "You can withdraw within 7 days of payment for a full refund. You can also request a refund if the artist sent no messages during the period or the artist stopped their activity.",
+    "messageNote": "Artists send messages irregularly, depending on their schedule. Messages, photos, voice and videos are for subscribers only and must not be shared outside the app.",
+    "bundleNote": "Artists in a bundle may change depending on the artist or agency.",
+    "storeAny": "App Store or Google Play"
   },
   "profile": {
     "title": "Profile",
@@ -577,5 +586,21 @@
     "guidedBefore": "We've shown you Apple's refund page. If you haven't requested yet, you can open it again.",
     "failed": "Couldn't process the refund request. Please try again in a moment.",
     "reasonRetired": "The artist ended their activity on {{date}}, within 14 days of your payment, so you can get a full refund for this period."
+  },
+  "replyRules": {
+    "title": "Please agree before messaging the artist",
+    "body": "Messages that defame the artist, invade their privacy, or cause discomfort or fear may lead to restrictions under the Terms of Service and penalties under applicable law.",
+    "agree": "Agree",
+    "failed": "Couldn’t save your agreement. Please try again."
+  },
+  "business": {
+    "title": "Business information",
+    "name": "Company",
+    "representative": "Representative",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "registrationNumber": "Business registration no.",
+    "mailOrderNumber": "Mail-order business report no."
   }
 }

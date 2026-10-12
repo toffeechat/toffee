@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -46,6 +46,21 @@ export default function TermsOnboardingScreen() {
         <Row checked={agreed.terms} label={t('termsConsent.terms')} onToggle={() => toggle('terms')} onView={() => router.push('/terms')} />
         <Row checked={agreed.privacy} label={t('termsConsent.privacy')} onToggle={() => toggle('privacy')} onView={() => router.push('/privacy')} />
       </View>
+      {/* 앱 접근 권한 고지(정보통신망법 제22조의2, 2026-10-12) — 전부 선택 권한이라 동의 체크는 없고 실제 허용은 각 기능을
+          처음 쓸 때 OS 팝업으로. 웹은 권한을 안 써서 안 보임 */}
+      {Platform.OS === 'web' ? null : (
+        <View style={[styles.permissions, { borderColor: theme.backgroundElement }]}>
+          <ThemedText type="smallMedium">{t('termsConsent.permissionsTitle')}</ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary">
+            {t('termsConsent.permissionsBody')}
+          </ThemedText>
+          {(['permNotifications', 'permPhotos', 'permCamera'] as const).map((key) => (
+            <ThemedText key={key} type="caption" themeColor="textSecondary">
+              {`• ${t(`termsConsent.${key}`)}`}
+            </ThemedText>
+          ))}
+        </View>
+      )}
     </OnboardingLayout>
   );
 }
@@ -69,4 +84,5 @@ const styles = StyleSheet.create({
   items: { paddingHorizontal: Spacing.three, gap: Spacing.two },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   view: { textDecorationLine: 'underline' },
+  permissions: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.one },
 });

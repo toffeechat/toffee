@@ -45,6 +45,8 @@ export function checkEnv(env: Env): EnvCheckResult {
     ['구글 결제 알림(갱신·만료·환불)', ['GOOGLE_RTDN_AUDIENCE', 'GOOGLE_RTDN_SERVICE_ACCOUNT_EMAIL']],
     ['구글 결제 확인', ['GOOGLE_PLAY_PACKAGE_NAME', 'GOOGLE_PLAY_SERVICE_ACCOUNT_JSON']],
     ['고객센터 페이지 이메일', ['SUPPORT_EMAIL']],
+    // 전자상거래법 사업자 정보 표시 — 법인·통신판매업 신고 후(launch-roadmap 5단계)
+    ['사업자 정보 표시', ['BUSINESS_NAME', 'BUSINESS_REPRESENTATIVE', 'BUSINESS_ADDRESS', 'BUSINESS_PHONE', 'BUSINESS_REGISTRATION_NUMBER', 'BUSINESS_MAIL_ORDER_NUMBER']],
   ];
   // 부모 동의 방식일 때만 메일이 필수(성인만 가입이면 안 씀)
   if (env.ADULTS_ONLY === 'false') groups.push(['부모 동의 메일', ['RESEND_API_KEY', 'EMAIL_FROM_ADDRESS']]);

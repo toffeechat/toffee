@@ -291,7 +291,12 @@
     "terms": "(Bắt buộc) Điều khoản dịch vụ",
     "privacy": "(Bắt buộc) Thu thập và sử dụng thông tin cá nhân",
     "view": "Xem",
-    "submit": "Đồng ý và bắt đầu"
+    "submit": "Đồng ý và bắt đầu",
+    "permissionsTitle": "Quyền truy cập của ứng dụng",
+    "permissionsBody": "Toffee chỉ dùng các quyền không bắt buộc dưới đây. Không cho phép vẫn dùng được (chỉ tính năng đó không hoạt động), và có thể thay đổi bất cứ lúc nào trong Cài đặt > Toffee.",
+    "permNotifications": "Thông báo (không bắt buộc) — báo tin nhắn mới",
+    "permPhotos": "Ảnh (không bắt buộc) — lưu ảnh và video đã nhận",
+    "permCamera": "Máy ảnh và micro (không bắt buộc) — khi nghệ sĩ gửi ảnh, video hoặc giọng nói"
   },
   "support": {
     "contact": "Liên hệ",
@@ -371,14 +376,18 @@
   "subscribeFlow": {
     "subscribeTo": "Đăng ký",
     "cta": "Đăng ký với {{price}} / tháng",
-    "autoRenew": "Tự động gia hạn hằng tháng. Hủy bất cứ lúc nào trong cài đặt tài khoản.",
+    "autoRenew": "Đây là gói đăng ký tự động gia hạn hằng tháng. Nếu không hủy trong phần quản lý gói đăng ký của {{store}} ít nhất 24 giờ trước khi kỳ hạn kết thúc, bạn sẽ bị tính cùng số tiền tự động. Sau khi hủy, bạn vẫn dùng được đến hết kỳ đã thanh toán.",
     "sandboxNote": "Bản thử nghiệm — bạn sẽ không bị trừ tiền.",
     "discount": "Giảm giá gói: {{base}} → {{effective}}.",
     "doneTitle": "Giờ bạn đã gần hơn rồi.",
     "doneBody": "Gói đăng ký {{name}} của bạn đã được kích hoạt.",
     "start": "Bắt đầu nhắn tin",
     "goProfile": "Đến trang của {{name}}",
-    "failed": "Không đăng ký được"
+    "failed": "Không đăng ký được",
+    "refundNote": "Bạn có thể yêu cầu rút lại (hoàn tiền toàn bộ) trong vòng 7 ngày sau khi thanh toán. Bạn cũng có thể yêu cầu hoàn tiền nếu nghệ sĩ không gửi tin nhắn nào trong kỳ hoặc nghệ sĩ ngừng hoạt động.",
+    "messageNote": "Nghệ sĩ gửi tin nhắn không định kỳ tùy theo lịch của mình. Tin nhắn, ảnh, giọng nói và video chỉ dành cho người đăng ký, không được chia sẻ ra bên ngoài.",
+    "bundleNote": "Nghệ sĩ trong gói có thể thay đổi tùy theo nghệ sĩ hoặc công ty quản lý.",
+    "storeAny": "App Store hoặc Google Play"
   },
   "profile": {
     "title": "Hồ sơ",
@@ -577,5 +586,21 @@
     "guidedBefore": "Chúng tôi đã hiển thị trang hoàn tiền của Apple. Nếu bạn chưa yêu cầu, bạn có thể mở lại.",
     "failed": "Không xử lý được yêu cầu hoàn tiền. Vui lòng thử lại sau giây lát.",
     "reasonRetired": "Nghệ sĩ đã ngừng hoạt động vào {{date}}, trong vòng 14 ngày kể từ khi bạn thanh toán, nên bạn có thể được hoàn toàn bộ tiền cho kỳ này."
+  },
+  "replyRules": {
+    "title": "Cần bạn đồng ý trước khi nhắn tin cho nghệ sĩ",
+    "body": "Gửi tin nhắn bôi nhọ danh dự, xâm phạm đời tư của nghệ sĩ hoặc gây khó chịu, sợ hãi có thể bị hạn chế sử dụng theo Điều khoản dịch vụ và bị xử lý theo pháp luật.",
+    "agree": "Đồng ý",
+    "failed": "Không lưu được sự đồng ý. Vui lòng thử lại."
+  },
+  "business": {
+    "title": "Thông tin doanh nghiệp",
+    "name": "Tên công ty",
+    "representative": "Người đại diện",
+    "address": "Địa chỉ",
+    "phone": "Điện thoại",
+    "email": "Email",
+    "registrationNumber": "Số đăng ký kinh doanh",
+    "mailOrderNumber": "Số đăng ký bán hàng từ xa"
   }
 }

@@ -291,7 +291,12 @@
     "terms": "（必選）同意服務條款",
     "privacy": "（必選）同意個人資料的蒐集與使用",
     "view": "查看",
-    "submit": "同意並開始"
+    "submit": "同意並開始",
+    "permissionsTitle": "App 存取權限說明",
+    "permissionsBody": "Toffee 只使用以下選擇性權限。不允許也可以使用（僅該功能無法使用），可隨時在 設定 > Toffee 中變更。",
+    "permNotifications": "通知（選擇）— 新訊息提醒",
+    "permPhotos": "照片（選擇）— 儲存收到的照片和影片",
+    "permCamera": "相機和麥克風（選擇）— 藝人傳送照片、影片或語音時"
   },
   "support": {
     "contact": "聯絡我們",
@@ -371,14 +376,18 @@
   "subscribeFlow": {
     "subscribeTo": "訂閱",
     "cta": "以 {{price}}/月 訂閱",
-    "autoRenew": "每月自動續訂，可隨時在帳戶設定中取消。",
+    "autoRenew": "這是按月自動續訂的訂閱。若未在當期結束前至少24小時於{{store}}的訂閱管理中取消，將自動以相同金額扣款。取消後仍可使用至已付費期間結束。",
     "sandboxNote": "測試版——不會實際扣款。",
     "discount": "組合優惠：{{base}} → {{effective}}",
     "doneTitle": "現在，你們更近了。",
     "doneBody": "你對 {{name}} 的訂閱已生效。",
     "start": "開始聊天",
     "goProfile": "前往 {{name}} 的主頁",
-    "failed": "訂閱失敗"
+    "failed": "訂閱失敗",
+    "refundNote": "付款後7天內可申請撤回（全額退款）。若當期內藝人未傳送任何訊息，或藝人停止活動，也可申請退款。",
+    "messageNote": "藝人會依自身情況不定期傳送訊息。訊息、照片、語音和影片僅供訂閱者觀看，禁止對外分享。",
+    "bundleNote": "組合方案中的藝人可能因藝人或經紀公司的情況而變動。",
+    "storeAny": "App Store 或 Google Play"
   },
   "profile": {
     "title": "我的",
@@ -577,5 +586,21 @@
     "guidedBefore": "已為你開啟過 Apple 退款頁面。如果還沒申請，可以再次開啟。",
     "failed": "無法處理退款申請。請稍後再試。",
     "reasonRetired": "藝人已於 {{date}} 結束活動，在付款後 14 天內，因此可以全額退還本期費用。"
+  },
+  "replyRules": {
+    "title": "傳送訊息給藝人前需要您的同意",
+    "body": "傳送毀損藝人名譽、侵犯隱私或令人不適、恐懼的訊息，可能會依服務條款被限制使用，並依相關法律受到處罰。",
+    "agree": "同意",
+    "failed": "無法儲存同意，請再試一次。"
+  },
+  "business": {
+    "title": "經營者資訊",
+    "name": "公司名稱",
+    "representative": "代表人",
+    "address": "地址",
+    "phone": "電話",
+    "email": "電子郵件",
+    "registrationNumber": "營業登記號",
+    "mailOrderNumber": "通信銷售業申報號"
   }
 }
