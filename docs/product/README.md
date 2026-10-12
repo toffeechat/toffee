@@ -12,4 +12,5 @@
   이후로 미뤄둔 작업 목록(계정 구조, 파일 저장소, 호스팅 등)
 - [`launch-roadmap.md`](./launch-roadmap.md) — **사업화 일정**(지금부터 첫 매출까지 단계별 체크리스트)
 - [`cost-overview.md`](./cost-overview.md) — 비용 한눈에 보기(기술 비용·운영/사업 비용, 1회·연간)
+- [`funding-plan.md`](./funding-plan.md) — **자금 계획**(첫 매출까지 비용 추산, 본전 구독자 수, 돈 마련 순서, IR 자료 뼈대, 지분 설명)
 - [`brand/`](./brand/) — 원본 디자인 가이드·로고 파일·화면 목업 이미지(레퍼런스 자료)
