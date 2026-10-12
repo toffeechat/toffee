@@ -59,6 +59,7 @@
   남은 일: 운영 서버 env 값 확인(데모 Railway에 70이 들어가 있으면 60으로).
 
 - **같은 날 이어서**: 사용자 요청으로 남에게 보여 줄 한 장 요약 [토피 사업 계획 한눈에 보기](https://claude.ai/artifact/VMsJxYahZJrx8D4nWSHanK) 작성(일정·국가·가격·정산·자금, 상세 페이지 링크). `docs/product/README.md`에 링크.
+  → Docs 형식이 밋밋하다는 피드백으로 브랜드 색(라벤더·차콜)으로 디자인한 HTML 한 장 페이지 [토피 사업 계획](https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR)으로 다시 만듦(정산 막대, 일정 트랙, 국가 단계 카드). README 링크 교체.
 
 ## 2026-10-08 (이어서) — 새 Claude 계정으로 아티팩트 복원
 

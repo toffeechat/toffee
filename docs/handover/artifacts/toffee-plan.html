@@ -1,0 +1,226 @@
+<title>토피 사업 계획</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 한 장 요약 — 핵심 숫자 3개 → 일정 트랙 → 출시 국가 3단계 → 가격·정산(구독 1명이 어디로 가는지 막대) → 돈 → 링크 */
+:root{
+  --bg:#FFFFFF; --surface:#F4F6FB; --line:#E3E6F0; --fg:#0F1115; --muted:#5B6172;
+  --accent:#7C8CFF; --accent-strong:#4F5FE8; --accent-soft:#DCE1FF; --on-accent:#FFFFFF;
+  --tax:#B9BFCC; --store:#8E95A6; --agency:#7C8CFF; --toffee:#0F1115; --on-toffee:#FFFFFF;
+  --font:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1115; --surface:#181B22; --line:#2A2E39; --fg:#EEF0F6; --muted:#9CA3B5;
+  --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
+  --tax:#3A3F4C; --store:#5A6070; --agency:#8E9BFF; --toffee:#EEF0F6; --on-toffee:#0F1115; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1115; --surface:#181B22; --line:#2A2E39; --fg:#EEF0F6; --muted:#9CA3B5;
+  --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
+  --tax:#3A3F4C; --store:#5A6070; --agency:#8E9BFF; --toffee:#EEF0F6; --on-toffee:#0F1115; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;padding:0 16px;margin:0}
+.wrap{max-width:880px;margin:0 auto;padding-block:40px 72px;display:flex;flex-direction:column;gap:44px}
+h1,h2{margin:0;line-height:1.25;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,38px);font-weight:700;letter-spacing:-.02em}
+h2{font-size:19px;font-weight:700;letter-spacing:-.01em}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;flex-direction:column;gap:4px}
+
+/* 머리 */
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;letter-spacing:.01em}
+.spark{width:14px;height:14px;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:14px}
+.lede{font-size:17px;color:var(--muted);max-width:60ch}
+.lede strong{color:var(--fg);font-weight:600}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:640px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--surface);border-radius:var(--r);padding:18px 18px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat .v{font-size:24px;font-weight:700;letter-spacing:-.01em}
+.stat.key{background:var(--accent);color:var(--on-accent)}
+.stat.key .label{color:var(--on-accent);opacity:.8}
+
+/* 일정 */
+.track{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:0;position:relative}
+.track li{position:relative;padding:28px 10px 0 0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.track li::before{content:"";position:absolute;top:9px;left:0;right:0;height:2px;background:var(--line)}
+.track li::after{content:"";position:absolute;top:4px;left:0;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.track li.done::after{background:var(--accent)}
+.track li.launch::after{width:16px;height:16px;top:2px;background:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
+.track .when{font-size:13px;font-weight:600;color:var(--accent-strong)}
+.track .what{font-size:14px}
+.track li.launch .what{font-weight:700}
+@media (max-width:720px){
+  .track{grid-template-columns:1fr;gap:14px}
+  .track li{padding:0 0 0 26px}
+  .track li::before{top:16px;bottom:-14px;left:5px;right:auto;width:2px;height:auto}
+  .track li:last-child::before{display:none}
+  .track li::after{top:4px}
+  .track li.launch::after{left:-2px}
+}
+
+/* 출시 국가 */
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:720px){.phases{grid-template-columns:1fr}}
+.phase{border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.phase.now{border-color:var(--accent);background:var(--accent-soft)}
+.phase-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.phase-top b{font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:2px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.phase.now .chip{background:var(--bg);border-color:transparent}
+.chip.main{background:var(--accent);color:var(--on-accent);border-color:transparent;font-weight:600}
+.lang{font-size:13px;color:var(--muted)}
+
+/* 가격 */
+.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:640px){.prices{grid-template-columns:1fr}}
+.price{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.price .p{font-size:22px;font-weight:700}
+.price .krw{font-size:13px;color:var(--muted)}
+.note{font-size:13.5px;color:var(--muted);max-width:68ch}
+
+/* 정산 막대 */
+.split{display:flex;flex-direction:column;gap:14px;border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.row{display:flex;flex-direction:column;gap:6px}
+.row-head{display:flex;justify-content:space-between;gap:8px;font-size:14px;flex-wrap:wrap}
+.bar{display:flex;height:34px;border-radius:8px;overflow:hidden;font-size:12px;font-weight:600}
+.bar span{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;min-width:0}
+.s-tax{background:var(--tax);color:var(--fg)}
+.s-store{background:var(--store);color:#fff}
+.s-agency{background:var(--agency);color:var(--on-accent)}
+.s-toffee{background:var(--toffee);color:var(--on-toffee)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.terms{display:flex;flex-wrap:wrap;gap:6px}
+.terms span{font-size:13px;padding:3px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent-strong);font-weight:500}
+
+/* 돈 */
+.money{width:100%;border-collapse:collapse;font-size:14.5px}
+.money td{padding:12px 0;border-top:1px solid var(--line);vertical-align:top}
+.money td:first-child{color:var(--muted);width:42%;padding-right:12px}
+.money td:last-child{font-weight:500}
+.order{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;counter-reset:o}
+@media (max-width:640px){.order{grid-template-columns:1fr}}
+.order li{background:var(--surface);border-radius:var(--r);padding:14px 16px;font-size:14px;counter-increment:o;display:flex;gap:10px;align-items:baseline}
+.order li::before{content:counter(o);font-family:var(--mono);font-weight:500;color:var(--accent-strong)}
+
+/* 링크 */
+.links{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.links a{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}
+.links a:hover .t{color:var(--accent-strong)}
+.links a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.links .t{font-weight:600}
+.links .d{font-size:13.5px;color:var(--muted);text-align:right}
+.foot{font-size:12.5px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0l1.6 6.4L16 8l-6.4 1.6L8 16l-1.6-6.4L0 8l6.4-1.6z"/></svg>Toffee</div>
+    <h1>토피 사업 계획</h1>
+    <p class="lede"><strong>태국 배우와 팬이 1:1 채팅처럼 소통하는 유료 구독 앱.</strong> 데모는 완성됐고, 2027년 2월 태국을 중심으로 5개국에서 출시합니다.</p>
+    <div class="stats">
+      <div class="stat key"><span class="label">출시</span><span class="v num">2027.02</span><span>5개국, 배우 5~10명</span></div>
+      <div class="stat"><span class="label">출시까지 필요한 돈</span><span class="v">390만~1,270만 원</span><span class="muted">2027년 6월까지</span></div>
+      <div class="stat"><span class="label">매달 본전</span><span class="v">구독자 120~290명</span><span class="muted">법인 고정비 월 23만~40만 원</span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-plan">
+    <div class="sec-head"><h2 id="h-plan">일정</h2></div>
+    <ol class="track">
+      <li class="done"><span class="when num">2026.10</span><span class="what">제안 자료 준비, 경쟁 서비스 써 보기</span></li>
+      <li><span class="when num">10월 말~11월</span><span class="what">태국 소속사 15곳에 파일럿 제안, IR 자료</span></li>
+      <li><span class="when num">11.30</span><span class="what">파일럿 의사 1곳 이상이면 진행</span></li>
+      <li><span class="when num">2026.12</span><span class="what">법인 설립, 소속사 계약</span></li>
+      <li><span class="when num">2027.01</span><span class="what">스토어 결제 연결, 심사</span></li>
+      <li class="launch"><span class="when num">2027.02</span><span class="what">출시, 3개월 시범 운영</span></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-country">
+    <div class="sec-head"><h2 id="h-country">출시 국가</h2><p class="muted">태국에서 검증한 뒤 아시아, 글로벌 순으로 엽니다. 앱은 7개 언어가 이미 준비돼 있습니다.</p></div>
+    <div class="phases">
+      <div class="phase now">
+        <div class="phase-top"><b>1단계</b><span class="num muted">2027.02</span></div>
+        <div class="chips"><span class="chip main">태국</span><span class="chip">한국</span><span class="chip">필리핀</span><span class="chip">싱가포르</span><span class="chip">말레이시아</span></div>
+        <span class="lang">태국어 · 한국어 · 영어</span>
+      </div>
+      <div class="phase">
+        <div class="phase-top"><b>2단계</b><span class="num muted">2027.05~</span></div>
+        <div class="chips"><span class="chip">일본</span><span class="chip">대만</span><span class="chip">홍콩</span><span class="chip">베트남</span><span class="chip">인도네시아</span></div>
+        <span class="lang">+ 일본어 · 중국어 · 베트남어</span>
+      </div>
+      <div class="phase">
+        <div class="phase-top"><b>3단계</b><span class="num muted">2027 하반기~</span></div>
+        <div class="chips"><span class="chip">미국 등 영어권</span><span class="chip">중남미</span><span class="chip">유럽</span></div>
+        <span class="lang">+ 스페인어 · 포르투갈어</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-price">
+    <div class="sec-head"><h2 id="h-price">가격</h2><p class="muted">태국 기준, 한 달. 버블(월 $3.99)과 비슷한 수준입니다.</p></div>
+    <div class="prices">
+      <div class="price"><span class="label">배우 1명</span><span class="p num">฿149</span><span class="krw">약 6,000원 · 첫 달 ฿99(약 4,000원)</span></div>
+      <div class="price"><span class="label">CP방 (배우 2명)</span><span class="p num">฿199</span><span class="krw">약 8,000원</span></div>
+      <div class="price"><span class="label">묶음 (배우 2명 + CP방)</span><span class="p num">฿349</span><span class="krw">약 14,000원 · 따로 사면 ฿497</span></div>
+    </div>
+    <p class="note">다른 나라는 그 나라 돈으로 비슷한 수준에 맞추고, 필리핀·인도네시아·베트남은 약 40% 낮게 받습니다.</p>
+  </section>
+
+  <section aria-labelledby="h-split">
+    <div class="sec-head"><h2 id="h-split">정산</h2><p class="muted">태국 팬 1명이 낸 ฿149(약 6,000원)가 나뉘는 방식</p></div>
+    <div class="split">
+      <div class="row">
+        <div class="row-head"><b>기본 · 소속사 60 / 토피 40</b><span class="muted">소속사 약 2,800원 · 토피 약 1,900원</span></div>
+        <div class="bar" role="img" aria-label="부가세 10바트, 스토어 수수료 21바트, 소속사 71바트, 토피 47바트">
+          <span class="s-tax" style="flex:10">세</span><span class="s-store" style="flex:21">스토어</span><span class="s-agency" style="flex:71">소속사 ฿71</span><span class="s-toffee" style="flex:47">토피 ฿47</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="row-head"><b>처음 함께하는 소속사 3곳 · 첫 12개월 70 / 30</b><span class="muted">소속사 약 3,300원 · 토피 약 1,400원</span></div>
+        <div class="bar" role="img" aria-label="부가세 10바트, 스토어 수수료 21바트, 소속사 83바트, 토피 35바트">
+          <span class="s-tax" style="flex:10">세</span><span class="s-store" style="flex:21">스토어</span><span class="s-agency" style="flex:83">소속사 ฿83</span><span class="s-toffee" style="flex:35">토피 ฿35</span>
+        </div>
+      </div>
+      <div class="legend"><span><i style="background:var(--tax)"></i>태국 부가세 7%</span><span><i style="background:var(--store)"></i>스토어 수수료 15%</span><span><i style="background:var(--agency)"></i>소속사</span><span><i style="background:var(--toffee)"></i>토피</span></div>
+    </div>
+    <div class="terms"><span>계약금 없음</span><span>소속사 비용 없음</span><span>비독점</span><span>3개월 파일럿 후 재협의</span><span>매달 정산</span></div>
+  </section>
+
+  <section aria-labelledby="h-money">
+    <div class="sec-head"><h2 id="h-money">돈</h2></div>
+    <table class="money">
+      <tr><td>출시·시범 운영까지 (2026.11~2027.06)</td><td>약 390만~1,270만 원</td></tr>
+      <tr><td>큰 항목</td><td>변호사 100만~300만, 세무 기장 월 16.5만, 번역 검수 30만~80만 원</td></tr>
+      <tr><td>서버비</td><td>구독자 1만 명일 때 월 20만~40만 원. 서버 1대로 구독자 약 1만~3만 명</td></tr>
+      <tr><td>인건비</td><td>0원. 채용 없이 AI로 운영</td></tr>
+    </table>
+    <ol class="order" aria-label="돈 마련 순서">
+      <li>내 돈으로 시작</li>
+      <li>필요하면 엔젤투자, 다음 단계까지만</li>
+      <li>법인 설립 후 정부지원금</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-links">
+    <div class="sec-head"><h2 id="h-links">자세한 문서</h2></div>
+    <nav class="links">
+      <a href="https://claude.ai/artifact/LzDuJSjSDoCxj7DbPoC9FS"><span class="t">자금 계획</span><span class="d">비용 항목, 서버비, 매출 예시</span></a>
+      <a href="https://claude.ai/artifact/NGNkVDZdi3wpTioRzz8dbE"><span class="t">소속사 제안 준비</span><span class="d">가격·정산 근거, 나라별 가격, 제안 메일</span></a>
+      <a href="https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6"><span class="t">사업화 일정</span><span class="d">주별 할 일 체크리스트</span></a>
+    </nav>
+  </section>
+
+  <p class="foot">2026년 10월 기준 어림값입니다. ฿1 ≈ 40원으로 계산했습니다.</p>
+</div>
