@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -130,6 +130,7 @@ export default function StudioProfileScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { logout } = useAuth();
+  const router = useRouter();
   const { actorId } = useLocalSearchParams<{ actorId: string }>();
   const { data: actor } = useActor(actorId);
 
@@ -149,6 +150,10 @@ export default function StudioProfileScreen() {
             {t('studioProfile.officialNote', { name: actor.legalName })}
           </ThemedText>
           <SupportLink />
+          {/* 알림·화면 모드·언어·로그인 정보(2026-10-12 역할별 설정) */}
+          <Pressable onPress={() => router.push('/settings/staff')} style={[styles.logout, { borderColor: theme.backgroundSelected }]}>
+            <ThemedText type="smallBold">{t('staffSettings.title')}</ThemedText>
+          </Pressable>
           <Pressable onPress={logout} style={[styles.logout, { borderColor: theme.backgroundSelected }]}>
             <ThemedText type="smallBold" themeColor="danger">
               {t('common.logout')}

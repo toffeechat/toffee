@@ -44,7 +44,7 @@ export class StoriesService {
       .notifyActorStaff(actorId, ({ locale }) => {
         const strings = pushStrings(locale);
         return { title: strings.staffNewStoryTitle(actor.chatDisplayName), body: strings.staffNewStoryBody };
-      })
+      }, undefined, 'notifyArtistMessages')
       .catch(() => {});
 
     return this.mediaService.withReadUrl(created);

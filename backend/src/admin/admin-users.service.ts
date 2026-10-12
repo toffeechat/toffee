@@ -22,6 +22,9 @@ const LIST_SELECT = {
   bannedAt: true,
   sanctionCategory: true,
   sanctionNote: true,
+  // 팬 프로필(2026-10-12) — 부적절하면 운영자가 지움(사진은 저장소 키라 "있는지"만 판단용)
+  statusMessage: true,
+  profileImageUrl: true,
   createdAt: true,
   deletedAt: true,
   agency: { select: { id: true, name: true } },
@@ -80,6 +83,19 @@ export class AdminUsersService {
       select: LIST_SELECT,
     });
     await this.audit.record(adminId, 'USER_REACTIVATE', 'USER', userId);
+    return user;
+  }
+
+  /** 팬 프로필 사진·상태메시지 지우기(2026-10-12) — 신고·민원 대응. 사진 파일은 하루 뒤 정리 작업이 지움 */
+  async clearProfile(adminId: string, userId: string) {
+    const before = await this.prisma.user.findUnique({ where: { id: userId }, select: { statusMessage: true } });
+    if (!before) throw new NotFoundException(appError('USER_NOT_FOUND'));
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { profileImageUrl: null, statusMessage: null },
+      select: LIST_SELECT,
+    });
+    await this.audit.record(adminId, 'USER_PROFILE_CLEAR', 'USER', userId, { statusMessage: before.statusMessage });
     return user;
   }
 

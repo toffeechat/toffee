@@ -2,7 +2,8 @@
   "common": {
     "cancel": "Cancel",
     "logout": "Log out",
-    "requestFailed": "Request failed ({{status}})"
+    "requestFailed": "Request failed ({{status}})",
+    "back": "Back"
   },
   "tabs": {
     "actors": "Artists",
@@ -33,7 +34,8 @@
       "kakao": "Continue with Kakao",
       "naver": "Continue with NAVER"
     },
-    "backToLogin": "Back to sign-in"
+    "backToLogin": "Back to sign-in",
+    "recent": "Last used"
   },
   "actors": {
     "title": "Find artists",
@@ -130,7 +132,12 @@
     "deletedByActor": "Deleted by the artist (not visible to fans)",
     "lastMessageDays": "Last message {{count}} days ago",
     "noMessagesYet": "No messages sent yet",
-    "lastMessageToday": "Sent a message today"
+    "lastMessageToday": "Sent a message today",
+    "deleteTitle": "Delete this message?",
+    "deleteBody": "It disappears from fans' screens right away and can't be undone. Notifications already sent can't be recalled. The artist will see it as \"Deleted by the agency\".",
+    "deleteConfirm": "Delete",
+    "deletedByAgency": "Deleted by the agency (hidden from fans)",
+    "allReplies": "All replies"
   },
   "onboarding": {
     "birthDateTitle": "What's your date of birth?",
@@ -202,7 +209,10 @@
     "profileButton": "My profile",
     "stopRecordingShort": "Stop recording",
     "cancelQuote": "Cancel quote",
-    "emptyTitle": "Send your first message"
+    "emptyTitle": "Send your first message",
+    "reRecord": "Re-record",
+    "voiceHint": "Tap Record to start. You can listen back before sending.",
+    "startRecording": "Record"
   },
   "media": {
     "save": "Save",
@@ -405,7 +415,9 @@
     "support": "Support",
     "languageSystem": "Use device language",
     "notificationsHint": "Turn new-message alerts on or off for each artist. You'll still receive messages.",
-    "noSubscriptions": "No active subscriptions"
+    "noSubscriptions": "No active subscriptions",
+    "loginInfo": "Login info",
+    "noEmail": "No email on file"
   },
   "manage": {
     "active": "Active",
@@ -623,5 +635,48 @@
     "title": "Screenshot detected",
     "body": "Artist messages, photos, voice and videos are for subscribers only. Posting or sharing screenshots outside the app, such as on social media, may lead to restrictions under the Terms of Service.",
     "ok": "OK"
+  },
+  "alerts": {
+    "artistMessages": "New artist messages",
+    "artistMessagesHint": "Get notified when your artists send a message or story.",
+    "idle": "Inactivity alerts",
+    "idleHintStaff": "Get notified when an artist hasn't sent a message for over 7 days.",
+    "idleHintArtist": "Get a \"your fans are waiting\" reminder when you haven't sent a message for a few days.",
+    "refundNote": "Warnings that you're close to the refund threshold (30 days without messages) can't be turned off."
+  },
+  "themeMode": {
+    "title": "Appearance",
+    "system": "Use device setting",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "profileEdit": {
+    "title": "Edit profile",
+    "failed": "Couldn't save. Please try again.",
+    "status": "Status message",
+    "statusPlaceholder": "Introduce yourself in one line",
+    "visibility": "Your profile photo and status message aren't shown to other fans — only to the artist (and agency) who read your replies.",
+    "save": "Save"
+  },
+  "staffSettings": {
+    "title": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subscribers": "Subscribers",
+    "newSubs": "New subscriptions (last {{days}} days)",
+    "cancellations": "Cancellations (last {{days}} days)",
+    "messages": "Messages sent (last {{days}} days)",
+    "replies": "Fan replies (last {{days}} days)",
+    "countPeople": "{{count}}",
+    "countItems": "{{count}}",
+    "rowSummary": "{{subscribers}} subscribers · {{newSubs}} new · {{replies}} replies",
+    "sort": {
+      "subscribers": "Most subscribers",
+      "idle": "Longest without a message",
+      "newSubs": "Most new subscriptions",
+      "replies": "Most replies",
+      "messages": "Most messages sent"
+    }
   }
 }

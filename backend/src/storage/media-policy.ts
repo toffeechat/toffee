@@ -72,6 +72,11 @@ export function profileImagePrefix(target: ProfileImageTarget, id: string): stri
   return target === 'ACTOR' ? `actors/${id}/profile/` : `agencies/${id}/logo/`;
 }
 
+// 팬 본인이 올리는 프로필 사진(2026-10-12) — 운영자 업로드 대상과 따로
+export function userProfileImagePrefix(userId: string): string {
+  return `users/${userId}/profile/`;
+}
+
 // 이미지 필드(Actor.*ProfileImageUrl, Agency.logoUrl)엔 외부 주소(http…, 데모 데이터) 또는 저장소 키가
 // 들어감 — 저장소 키면 조회할 때 임시 서명 URL로 바꿔서 내려줌(버킷은 계속 비공개)
 export function isStorageKey(value: string | null | undefined): value is string {

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ADMIN_MENU } from '@/constants/admin-menu';
 import { useAuth } from '@/lib/auth-context';
+import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
 
@@ -17,7 +18,10 @@ const SIDEBAR_WIDTH = 248;
 export function useWideLayout() {
   const { width } = useWindowDimensions();
   const pathname = usePathname();
-  return Platform.OS === 'web' && width >= WIDE_MIN_WIDTH && (pathname.startsWith('/admin') || pathname.startsWith('/console'));
+  const { role } = useAuth();
+  // 차단 관리·설정도 소속사·운영자면 왼쪽 메뉴를 유지(2026-10-12 실기기: 차단 관리에 들어가면 돌아갈 메뉴가 없었음)
+  const staffPage = (role === 'AGENCY_STAFF' || role === 'ADMIN') && (pathname.startsWith('/blocks') || pathname.startsWith('/settings'));
+  return Platform.OS === 'web' && width >= WIDE_MIN_WIDTH && (pathname.startsWith('/admin') || pathname.startsWith('/console') || staffPage);
 }
 
 /**
@@ -30,15 +34,18 @@ export function WideShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
+  const { data: me } = useMe();
   if (!wide) return <>{children}</>;
 
-  const isAdmin = pathname.startsWith('/admin');
+  const isAdmin = pathname.startsWith('/admin') || (role === 'ADMIN' && !pathname.startsWith('/console'));
   const items: { href: string; label: string }[] = isAdmin
     ? [{ href: '/admin', label: '홈' }, ...ADMIN_MENU.map((item) => ({ href: item.href, label: item.label }))]
     : [
         { href: '/console', label: t('console.title') },
+        { href: '/console/dashboard', label: t('dashboard.title') },
         { href: '/console/settlements', label: t('settlement.title') },
+        { href: '/settings/staff', label: t('staffSettings.title') },
       ];
   // 가장 길게 맞는 메뉴를 선택된 것으로(/console/<배우>는 "배우 모니터링")
   const active = items
@@ -51,8 +58,9 @@ export function WideShell({ children }: { children: ReactNode }) {
         <ThemedText type="title" style={{ color: theme.tint }}>
           Toffee
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.role}>
-          {isAdmin ? '운영자' : t('screens.console')}
+        {/* 소속사 이름(2026-10-12 사용자 요청) — 어느 소속사 계정으로 들어와 있는지 */}
+        <ThemedText type="small" themeColor="textSecondary" style={styles.role} numberOfLines={2}>
+          {isAdmin ? '운영자' : me?.agencyName ? `${me.agencyName} · ${t('screens.console')}` : t('screens.console')}
         </ThemedText>
         <ScrollView contentContainerStyle={styles.menu}>
           {items.map((item) => {

@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
-import { StyleSheet, useColorScheme } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeOut } from 'react-native-reanimated';
 
 // 네이티브 스플래시(app.config.ts expo-splash-screen: 흰/차콜 배경 + T Spark)와 똑같은 화면을 한 번 더 그려 두고,

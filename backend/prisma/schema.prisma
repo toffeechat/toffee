@@ -124,6 +124,14 @@ model User {
   // 생일 축하 메시지 받기(2026-10-12) — 켜면 생년월일의 월·일에 구독 중인 방의 생일 축하 메시지가 옴. 생년월일을 연령 확인 외 목적에
   // 쓰는 거라 본인이 켜야 함(기본 꺼짐). 아티스트·소속사에겐 날짜를 보여 주지 않음.
   birthdayGreetingsEnabled Boolean               @default(false)
+  // 팬 프로필 사진·상태메시지(2026-10-12 사용자 결정으로 1차) — 사진은 저장소 키(users/<id>/profile/), 상태메시지는 60자.
+  // 본인 마이페이지와 아티스트·소속사의 팬 답장 화면에만 보임(다른 팬에겐 안 보임). 운영자가 지울 수 있음(신고 대응).
+  profileImageUrl          String?
+  statusMessage            String?
+  // 역할별 알림 설정(2026-10-12) — 소속사 직원: 소속 아티스트 새 메시지·스토리 푸시 / 아티스트·소속사: 장기 미발송 알림.
+  // 팬의 아티스트별 끄기는 Subscription.notificationsMuted, 생일은 위 birthdayGreetingsEnabled
+  notifyArtistMessages     Boolean               @default(true)
+  notifyIdleAlerts         Boolean               @default(true)
   // 가입할 때 기기의 지역 설정(ISO 국가 코드, 예: TH·KR) — 미성년자 기준 나이를 국가별로 적용하고(minor-age.ts)
   // 통계(국가별 가입자)에 씀. 가입 기기(ios/android/web)도 통계용. 약관 동의 때 앱이 보냄.
   countryCode              String?
@@ -447,6 +455,9 @@ model Message {
   // 화면에선 사라짐. deletedByAdmin이면 운영자가 신고 승인으로 가린 것(스타 화면엔 "운영 정책으로 가려진 메시지").
   deletedAt        DateTime?
   deletedByAdmin   Boolean           @default(false)
+  // 소속사가 대신 지운 메시지(2026-10-12, 사고 대응) — 지운 직원 id. 팬 화면에선 아티스트가 지운 것과 똑같이 흔적 없이 사라지고,
+  // 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
+  deletedByStaffId String?
   createdAt        DateTime          @default(now())
 
   actor        Actor                @relation("MessageChannel", fields: [actorId], references: [id], onDelete: Cascade)

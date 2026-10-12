@@ -10,6 +10,11 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { ModerationService } from '../moderation/moderation.service.js';
 import { nextNicknameChangeAt, normalizeNickname } from '../common/nickname/nickname.js';
 import { appError } from '../common/i18n/app-error.js';
+import { MediaService } from '../storage/media.service.js';
+import { userProfileImagePrefix } from '../storage/media-policy.js';
+
+// 팬 상태메시지 최대 길이(2026-10-12, 카톡 60자 참고)
+export const STATUS_MESSAGE_MAX_LENGTH = 60;
 
 interface ExternalIdentity {
   providerId: string;
@@ -31,6 +36,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly moderationService: ModerationService,
+    private readonly media: MediaService,
   ) {
     this.googleClient = new OAuth2Client();
   }
@@ -391,6 +397,8 @@ export class AuthService {
           nicknameChangedAt: null,
           birthDate: null,
           parentEmail: null,
+          profileImageUrl: null,
+          statusMessage: null,
           locale: null,
           deletedAt: now,
         },
@@ -414,11 +422,66 @@ export class AuthService {
         createdAt: true,
         birthDate: true,
         birthdayGreetingsEnabled: true,
+        // 2026-10-12 실기기 피드백: 마이페이지에서 "무엇으로 가입했는지·가입 이메일" 확인, 팬 프로필, 역할별 알림 설정, 소속사 이름
+        email: true,
+        profileImageUrl: true,
+        statusMessage: true,
+        notifyArtistMessages: true,
+        notifyIdleAlerts: true,
+        agency: { select: { name: true } },
+        authIdentities: { select: { provider: true }, orderBy: { createdAt: 'asc' } },
       },
     });
     // 생년월일은 내려주지 않고 "있는지"만(생일 축하 켜기 화면 안내용)
-    const { nicknameChangedAt: _changedAt, createdAt: _createdAt, birthDate, ...rest } = user;
-    return { ...rest, hasBirthDate: !!birthDate, nicknameChangeAvailableAt: nextNicknameChangeAt(user) };
+    const { nicknameChangedAt: _changedAt, createdAt: _createdAt, birthDate, authIdentities, agency, profileImageUrl, ...rest } = user;
+    return {
+      ...rest,
+      // 처음 가입한 로그인 수단이 맨 앞, 나중에 같은 이메일로 합쳐진 수단이 뒤
+      loginProviders: [...new Set(authIdentities.map((identity) => identity.provider))],
+      agencyName: agency?.name ?? null,
+      profileImageUrl: await this.media.resolveImageUrl(profileImageUrl),
+      hasBirthDate: !!birthDate,
+      nicknameChangeAvailableAt: nextNicknameChangeAt(user),
+    };
+  }
+
+  // ── 팬 프로필(사진·상태메시지, 2026-10-12) ─────────────────────────
+  createProfileImageUpload(userId: string, contentType: string, sizeBytes: number) {
+    return this.media.createUploadAt(userProfileImagePrefix(userId), 'PHOTO', contentType, sizeBytes);
+  }
+
+  /** 상태메시지(빈 값이면 지움 — 길이·보이지 않는 문자·금칙어 검사), 사진(업로드 키 / null이면 기본 이미지). 바뀐 이전 사진 파일은 지움 */
+  async updateProfile(userId: string, changes: { statusMessage?: string; profileImageKey?: string | null }) {
+    const data: { statusMessage?: string | null; profileImageUrl?: string | null } = {};
+    if (changes.statusMessage !== undefined) {
+      const message = changes.statusMessage.normalize('NFC').trim().replace(/\s+/g, ' ');
+      if ([...message].length > STATUS_MESSAGE_MAX_LENGTH) {
+        throw new BadRequestException(appError('STATUS_MESSAGE_TOO_LONG', { max: STATUS_MESSAGE_MAX_LENGTH }));
+      }
+      if (/[\p{Cc}\p{Cf}]/u.test(message)) throw new BadRequestException(appError('STATUS_MESSAGE_INAPPROPRIATE'));
+      if (message) {
+        await this.moderationService.assertNoBannedWords(message).catch(() => {
+          throw new BadRequestException(appError('STATUS_MESSAGE_INAPPROPRIATE'));
+        });
+      }
+      data.statusMessage = message || null;
+    }
+    let previous: string | null = null;
+    if (changes.profileImageKey !== undefined) {
+      if (changes.profileImageKey !== null) await this.media.verifyAt(userProfileImagePrefix(userId), 'PHOTO', changes.profileImageKey);
+      const current = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { profileImageUrl: true } });
+      previous = current.profileImageUrl;
+      data.profileImageUrl = changes.profileImageKey;
+    }
+    await this.prisma.user.update({ where: { id: userId }, data });
+    if (previous && previous !== data.profileImageUrl) await this.media.deleteQuietly(previous);
+    return this.getMe(userId);
+  }
+
+  // 역할별 알림 설정(2026-10-12)
+  async updateNotificationSettings(userId: string, settings: { notifyArtistMessages?: boolean; notifyIdleAlerts?: boolean }) {
+    await this.prisma.user.update({ where: { id: userId }, data: settings });
+    return this.getMe(userId);
   }
 
   // 생일 축하 메시지 받기 켜기/끄기(2026-10-12) — 생년월일을 연령 확인 외 목적으로 쓰는 거라 본인이 켤 때만

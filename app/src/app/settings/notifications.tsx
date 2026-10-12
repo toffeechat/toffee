@@ -6,7 +6,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useMySubscriptions, useSetNotificationsMuted, type Subscription } from '@/hooks/use-subscriptions';
-import { useMe, useSetBirthdayGreetings } from '@/hooks/use-onboarding';
+import { useMe, useSetBirthdayGreetings, useUpdateNotificationSettings } from '@/hooks/use-onboarding';
+import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -14,7 +15,10 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 export default function NotificationSettingsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { role } = useAuth();
   const { data: subscriptions } = useMySubscriptions();
+  // 아티스트·소속사는 따로(2026-10-12 역할별 알림 설정)
+  if (role === 'ACTOR' || role === 'AGENCY_STAFF') return <StaffAlerts staff={role === 'AGENCY_STAFF'} />;
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.scroll}>
       <BirthdayToggle />
@@ -52,6 +56,49 @@ function BirthdayToggle() {
         {t('birthday.hint')}
       </ThemedText>
     </View>
+  );
+}
+
+/**
+ * 아티스트·소속사 알림 설정(2026-10-12) — 소속사: 소속 아티스트 새 메시지·스토리 알림, 둘 다: 장기 미발송 알림.
+ * 환불 기준 경고(30일 미발송 직전)는 놓치면 안 돼서 끌 수 없음(안내 문구로 알림)
+ */
+function StaffAlerts({ staff }: { staff: boolean }) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { data: me } = useMe();
+  const update = useUpdateNotificationSettings();
+  if (!me) return null;
+  const pending = update.isPending ? update.variables : {};
+  const rows: { key: 'notifyArtistMessages' | 'notifyIdleAlerts'; title: string; hint: string }[] = [
+    ...(staff ? [{ key: 'notifyArtistMessages' as const, title: t('alerts.artistMessages'), hint: t('alerts.artistMessagesHint') }] : []),
+    { key: 'notifyIdleAlerts', title: t('alerts.idle'), hint: t(staff ? 'alerts.idleHintStaff' : 'alerts.idleHintArtist') },
+  ];
+  return (
+    <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.scroll}>
+      {rows.map((row) => (
+        <View key={row.key} style={[styles.birthday, { borderBottomColor: theme.border }]}>
+          <View style={styles.row}>
+            <ThemedText type="defaultMedium" style={styles.name}>
+              {row.title}
+            </ThemedText>
+            <Switch
+              value={pending?.[row.key] ?? me[row.key] !== false}
+              onValueChange={(on) => update.mutate({ [row.key]: on })}
+              trackColor={{ true: theme.tint, false: theme.border }}
+              thumbColor="#ffffff"
+              accessibilityLabel={row.title}
+            />
+          </View>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+            {row.hint}
+          </ThemedText>
+        </View>
+      ))}
+      <ThemedText type="small" themeColor="textTertiary" style={styles.hint}>
+        {t('alerts.refundNote')}
+      </ThemedText>
+    </ScrollView>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,17 +13,17 @@ import { showNameToken } from '@/utils/name-token';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
 import { useActor } from '@/hooks/use-actors';
-import {
-  useActorStats,
-  useActorReplies,
-  useActorBroadcasts,
-  useActorStories,
-  type FanReply,
-  type ActorStory,
-} from '@/hooks/use-console';
-import type { ChatMessage } from '@/hooks/use-messages';
+import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory } from '@/hooks/use-console';
+import { useDeleteBroadcast, useStudioMessages, type StudioMessage } from '@/hooks/use-studio';
+import { MediaTile } from '@/components/media-tile';
+import { QuoteBlock } from '@/components/quote-block';
+import { VoiceMessage } from '@/components/voice-message';
+import { TranslatableText } from '@/components/translatable-text';
+import { IconButton } from '@/components/ui/icon-button';
+import { ApiError } from '@/lib/api-client';
+import { confirm } from '@/lib/confirm';
 import { useTheme } from '@/hooks/use-theme';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 
 type Section = 'monitor' | 'replies' | 'stats';
 
@@ -56,117 +57,230 @@ function SegmentedControl({ value, onChange }: { value: Section; onChange: (sect
   );
 }
 
-type MonitorItem =
-  | { kind: 'message'; id: string; mediaType: string; body: string | null; createdAt: string; removed: 'actor' | 'admin' | null }
-  | { kind: 'story'; id: string; mediaType: string; createdAt: string };
+// 날짜 구분 줄·같은 분 묶음 — 팬 채팅방과 같은 기준
+const sameDay = (a: string, b: string) => new Date(a).toDateString() === new Date(b).toDateString();
 
-// 소속사는 발송 권한이 없음 — 배우가 실제로 보낸 메시지/스토리를 읽기 전용으로만 확인
-function MonitorSection({ actorId }: { actorId: string }) {
+type MonitorItem =
+  | { kind: 'message'; createdAt: string; message: StudioMessage }
+  | { kind: 'story'; createdAt: string; story: ActorStory };
+
+/**
+ * 소속사 모니터링(2026-10-12 사용자 결정: 카드 목록 → 팬이 보는 대화방 모양) — 아티스트 메시지가 왼쪽 말풍선으로, 사진·영상·음성도
+ * 그대로 보임. 소속사는 보내기·답장은 못 하고, 사고 대응용으로 메시지를 대신 지울 수 있음(팬 화면에선 흔적 없이 사라짐).
+ * 지워진 메시지는 기록용으로 흐리게 + 누가 지웠는지.
+ */
+function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenReplies: (messageId: string) => void }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
-  const { data: broadcasts, isLoading: loadingBroadcasts } = useActorBroadcasts(actorId);
+  const { data: actor } = useActor(actorId);
+  const { data: broadcasts, isLoading: loadingBroadcasts } = useStudioMessages(actorId);
   const { data: stories, isLoading: loadingStories } = useActorStories(actorId);
+  const remove = useDeleteBroadcast(actorId);
+  const [failed, setFailed] = useState<string | null>(null);
 
   if (loadingBroadcasts || loadingStories) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
+  // 최신이 맨 아래(뒤집힌 목록이라 최신순 그대로)
   const items: MonitorItem[] = [
-    ...(broadcasts ?? []).map(
-      (m: ChatMessage): MonitorItem => ({
-        kind: 'message',
-        id: m.id,
-        mediaType: m.mediaType,
-        body: m.body,
-        createdAt: m.createdAt,
-        removed: m.deletedAt ? (m.deletedByAdmin ? 'admin' : 'actor') : null,
-      }),
-    ),
-    ...(stories ?? []).map(
-      (s: ActorStory): MonitorItem => ({ kind: 'story', id: s.id, mediaType: s.mediaType, createdAt: s.createdAt }),
-    ),
+    ...(broadcasts ?? []).map((message): MonitorItem => ({ kind: 'message', createdAt: message.createdAt, message })),
+    ...(stories ?? []).map((story): MonitorItem => ({ kind: 'story', createdAt: story.createdAt, story })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const removeMessage = async (messageId: string) => {
+    if (!(await confirm(t('console.deleteTitle'), t('console.deleteBody'), t('console.deleteConfirm'), t('common.cancel')))) return;
+    setFailed(null);
+    remove.mutate(messageId, { onError: (error) => setFailed(error instanceof ApiError ? error.message : t('common.requestFailed')) });
+  };
+
   return (
-    <FlatList
-      data={items}
-      keyExtractor={(item) => `${item.kind}-${item.id}`}
-      contentContainerStyle={styles.repliesList}
-      ListEmptyComponent={
-        <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
-          {t('console.monitorEmpty')}
+    <>
+      {failed ? (
+        <ThemedText type="small" themeColor="danger" style={styles.sectionNote}>
+          {failed}
         </ThemedText>
-      }
-      renderItem={({ item }) => (
-        <ThemedView style={[styles.replyRow, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText type="smallBold">
-            {t(`console.kind.${item.kind}`)} · {mediaLabel(t, item.mediaType)}
+      ) : null}
+      <FlatList
+        inverted
+        data={items}
+        keyExtractor={(item) => `${item.kind}-${item.kind === 'message' ? item.message.id : item.story.id}`}
+        contentContainerStyle={styles.chatList}
+        ListEmptyComponent={
+          <ThemedText type="small" themeColor="textSecondary" style={[styles.emptyMessage, styles.flip]}>
+            {t('console.monitorEmpty')}
           </ThemedText>
-          {/* 모니터링 기록이라 지워진 메시지도 표시(팬에게는 안 보임) */}
-          {item.kind === 'message' && item.removed && (
-            <ThemedText type="small" themeColor="danger">
-              {t(item.removed === 'admin' ? 'studio.hiddenByAdmin' : 'console.deletedByActor')}
-            </ThemedText>
-          )}
-          {item.kind === 'message' && item.body && <ThemedText type="small">{showNameToken(item.body, t('studio.fanNickname'))}</ThemedText>}
-          <ThemedText type="small" themeColor="textSecondary">
-            {new Date(item.createdAt).toLocaleString(i18n.language)}
-          </ThemedText>
-        </ThemedView>
-      )}
-    />
+        }
+        renderItem={({ item, index }) => {
+          const older = items[index + 1];
+          const dayChanged = !older || !sameDay(older.createdAt, item.createdAt);
+          return (
+            <View>
+              {dayChanged ? (
+                <ThemedText type="caption" themeColor="textTertiary" style={styles.day}>
+                  {new Date(item.createdAt).toLocaleDateString(i18n.language, { month: 'long', day: 'numeric', weekday: 'short' })}
+                </ThemedText>
+              ) : null}
+              {item.kind === 'story' ? (
+                <ThemedText type="caption" themeColor="textSecondary" style={styles.storyLine}>
+                  {`${t('console.kind.story')} · ${mediaLabel(t, item.story.mediaType)} · ${new Date(item.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' })}`}
+                </ThemedText>
+              ) : (
+                <MonitorBubble
+                  message={item.message}
+                  avatarUri={item.message.sender?.chatProfileImageUrl ?? actor?.chatProfileImageUrl}
+                  name={item.message.sender?.chatDisplayName ?? actor?.chatDisplayName ?? ''}
+                  onDelete={() => void removeMessage(item.message.id)}
+                  onOpenReplies={() => onOpenReplies(item.message.id)}
+                />
+              )}
+            </View>
+          );
+        }}
+      />
+    </>
   );
 }
 
-function ReplyRow({ reply, actorId }: { reply: FanReply; actorId: string }) {
+function MonitorBubble({
+  message,
+  avatarUri,
+  name,
+  onDelete,
+  onOpenReplies,
+}: {
+  message: StudioMessage;
+  avatarUri?: string | null;
+  name: string;
+  onDelete: () => void;
+  onOpenReplies: () => void;
+}) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
+  const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
+  const removedBy = message.deletedAt ? (message.deletedByAdmin ? 'admin' : message.deletedByStaffId ? 'agency' : 'actor') : null;
+  const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
   return (
-    <ThemedView style={[styles.replyRow, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText type="smallBold">{reply.fanUser ? `${reply.fanUser.nickname ?? t('console.noNickname')} ${reply.fanUser.tag}` : t('console.deletedFan')}</ThemedText>
-      <ThemedText type="small">{reply.body}</ThemedText>
-      <ThemedView style={styles.replyFooter}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {new Date(reply.createdAt).toLocaleString(i18n.language)}
+    <View style={styles.bubbleRow}>
+      <Avatar uri={avatarUri} size={36} />
+      <View style={styles.bubbleColumn}>
+        <ThemedText type="captionBold" themeColor="textSecondary">
+          {name}
         </ThemedText>
-        {reply.fanUser && (
-          <FanReplyActions
-            actorId={actorId}
-            messageId={reply.id}
-            fanUserId={reply.fanUser.id}
-            nickname={reply.fanUser.nickname ?? ''}
-          />
-        )}
-      </ThemedView>
-    </ThemedView>
+        {removedBy ? (
+          <ThemedText type="caption" themeColor="danger">
+            {t(removedBy === 'admin' ? 'studio.hiddenByAdmin' : removedBy === 'agency' ? 'console.deletedByAgency' : 'console.deletedByActor')}
+          </ThemedText>
+        ) : null}
+        <View style={[styles.bubbleLine, removedBy && styles.removed]}>
+          <View style={styles.bubbleBody}>
+            {isMedia ? (
+              <MediaTile
+                id={message.id}
+                url={message.mediaUrl}
+                mediaType={message.mediaType as 'PHOTO' | 'VIDEO'}
+                durationMs={message.mediaDurationMs}
+                thumbnailUrl={message.thumbnailUrl}
+                thumbhash={message.thumbhash}
+              />
+            ) : null}
+            {!isMedia || message.body ? (
+              <View style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
+                {message.replyTo ? <QuoteBlock quote={message.replyTo} tone="dark" /> : null}
+                {message.mediaType === 'AUDIO' ? (
+                  <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
+                ) : null}
+                {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
+              </View>
+            ) : null}
+          </View>
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
+            {time}
+          </ThemedText>
+        </View>
+        <View style={styles.bubbleMeta}>
+          <Pressable onPress={onOpenReplies} hitSlop={8} accessibilityRole="button">
+            <ThemedText type="captionBold" style={{ color: theme.tint }}>
+              {message.replyCount > 0 ? `${t('studio.replies', { count: message.replyCount })} ›` : t('studio.noReplies')}
+            </ThemedText>
+          </Pressable>
+          {!removedBy ? (
+            <IconButton icon={Trash2} size={15} label={t('console.deleteConfirm')} color={theme.textTertiary} onPress={onDelete} />
+          ) : null}
+        </View>
+      </View>
+    </View>
   );
 }
 
-function RepliesSection({ actorId }: { actorId: string }) {
+/** 팬 답장 — 대화방처럼 왼쪽 말풍선(팬 사진·닉네임·상태메시지), 소속사는 답장은 못 하고 신고·차단만(2026-10-12) */
+function ReplyBubble({ reply, actorId }: { reply: FanReply; actorId: string }) {
+  const theme = useTheme();
+  const { t, i18n } = useTranslation();
+  const fan = reply.fanUser;
+  return (
+    <View style={styles.bubbleRow}>
+      <Avatar uri={fan?.profileImageUrl} size={36} />
+      <View style={styles.bubbleColumn}>
+        <ThemedText type="captionBold" themeColor="textSecondary" numberOfLines={1}>
+          {fan ? `${fan.nickname ?? t('console.noNickname')} ${fan.tag}` : t('console.deletedFan')}
+        </ThemedText>
+        {fan?.statusMessage ? (
+          <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
+            {fan.statusMessage}
+          </ThemedText>
+        ) : null}
+        <View style={styles.bubbleLine}>
+          <View style={[styles.bubble, styles.bubbleBody, { backgroundColor: theme.backgroundElement }]}>
+            <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} />
+          </View>
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
+            {new Date(reply.createdAt).toLocaleString(i18n.language, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </ThemedText>
+          {fan ? <FanReplyActions actorId={actorId} messageId={reply.id} fanUserId={fan.id} nickname={fan.nickname ?? ''} /> : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function RepliesSection({ actorId, messageId, onClearFilter }: { actorId: string; messageId: string | null; onClearFilter: () => void }) {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const { data: replies, isLoading } = useActorReplies(actorId);
+  const { data: replies, isLoading } = useActorReplies(actorId, messageId);
 
   if (isLoading) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
   return (
-    <FlatList
-      data={replies}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.repliesList}
-      ListEmptyComponent={
-        <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
-          {t('console.repliesEmpty')}
-        </ThemedText>
-      }
-      ListHeaderComponent={
-        <Pressable onPress={() => router.push(`/blocks/${actorId}`)} hitSlop={8} style={styles.blocksLink}>
+    <>
+      <View style={styles.repliesHeader}>
+        {messageId ? (
+          <Pressable onPress={onClearFilter} hitSlop={8} accessibilityRole="button">
+            <ThemedText type="smallBold" style={{ color: theme.tint }}>
+              {`‹ ${t('console.allReplies')}`}
+            </ThemedText>
+          </Pressable>
+        ) : (
+          <View />
+        )}
+        <Pressable onPress={() => router.push(`/blocks/${actorId}`)} hitSlop={8}>
           <ThemedText type="small" themeColor="textSecondary">
             {t('block.manage')} ›
           </ThemedText>
         </Pressable>
-      }
-      renderItem={({ item }) => <ReplyRow reply={item} actorId={actorId} />}
-    />
+      </View>
+      <FlatList
+        inverted
+        data={replies}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.chatList}
+        ListEmptyComponent={
+          <ThemedText type="small" themeColor="textSecondary" style={[styles.emptyMessage, styles.flip]}>
+            {t('console.repliesEmpty')}
+          </ThemedText>
+        }
+        renderItem={({ item }) => <ReplyBubble reply={item} actorId={actorId} />}
+      />
+    </>
   );
 }
 
@@ -212,6 +326,8 @@ export default function ConsoleActorScreen() {
   const { actorId } = useLocalSearchParams<{ actorId: string }>();
   const { data: actor } = useActor(actorId);
   const [section, setSection] = useState<Section>('monitor');
+  // 모니터링에서 "답장 N개"를 누르면 답장 탭에서 그 메시지 답장만
+  const [replyFilter, setReplyFilter] = useState<string | null>(null);
 
   useEffect(() => {
     if (actor) navigation.setOptions({ title: actor.chatDisplayName });
@@ -219,7 +335,13 @@ export default function ConsoleActorScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <SegmentedControl value={section} onChange={setSection} />
+      <SegmentedControl
+        value={section}
+        onChange={(next) => {
+          setReplyFilter(null);
+          setSection(next);
+        }}
+      />
       {actor && (
         <ThemedView style={styles.actorPreview}>
           <Avatar uri={actor.chatProfileImageUrl} size={24} />
@@ -231,8 +353,16 @@ export default function ConsoleActorScreen() {
           </ThemedView>
         </ThemedView>
       )}
-      {section === 'monitor' && <MonitorSection actorId={actorId} />}
-      {section === 'replies' && <RepliesSection actorId={actorId} />}
+      {section === 'monitor' && (
+        <MonitorSection
+          actorId={actorId}
+          onOpenReplies={(messageId) => {
+            setReplyFilter(messageId);
+            setSection('replies');
+          }}
+        />
+      )}
+      {section === 'replies' && <RepliesSection actorId={actorId} messageId={replyFilter} onClearFilter={() => setReplyFilter(null)} />}
       {section === 'stats' && <StatsSection actorId={actorId} />}
     </SafeAreaView>
   );
@@ -240,16 +370,26 @@ export default function ConsoleActorScreen() {
 
 const styles = StyleSheet.create({
   actorPreviewBody: { flex: 1, gap: 4, backgroundColor: 'transparent' },
-  replyFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent' },
-  blocksLink: { alignSelf: 'flex-end' },
+  chatList: { paddingHorizontal: Spacing.four, paddingVertical: Spacing.three },
+  flip: { transform: [{ scaleY: -1 }] },
+  day: { textAlign: 'center', marginVertical: Spacing.three },
+  storyLine: { textAlign: 'center', marginVertical: Spacing.two },
+  sectionNote: { paddingHorizontal: Spacing.four },
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two, marginBottom: Spacing.three },
+  bubbleColumn: { flex: 1, gap: 4, alignItems: 'flex-start' },
+  bubbleLine: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, maxWidth: '100%' },
+  bubbleBody: { flexShrink: 1, gap: 4 },
+  bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
+  time: { flexShrink: 0, paddingBottom: 2 },
+  removed: { opacity: 0.45 },
+  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  repliesHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.four },
   container: { flex: 1 },
   segments: { flexDirection: 'row', margin: Spacing.four, borderRadius: 10, padding: 4, gap: 4 },
   segment: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 8 },
   segmentTextActive: { color: '#fff' },
   actorPreview: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.four, marginBottom: Spacing.two },
   section: { paddingHorizontal: Spacing.four, gap: Spacing.three },
-  repliesList: { padding: Spacing.four, gap: Spacing.three },
-  replyRow: { borderRadius: 12, padding: Spacing.three, gap: 4 },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.four },
   loading: { marginTop: Spacing.six },
   statCard: { borderRadius: 14, padding: Spacing.four, alignItems: 'center', gap: 4 },

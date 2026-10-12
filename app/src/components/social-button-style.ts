@@ -15,3 +15,12 @@ export function orderedProviders(providers: SocialProvider[], language: string):
   const order: SocialProvider[] = language.startsWith('ko') ? ['kakao', 'naver', 'google', 'apple', 'line'] : ['line', 'google', 'apple'];
   return order.filter((provider) => providers.includes(provider));
 }
+
+// 마이페이지 "로그인 정보"에 보이는 이름(서버 AuthProvider 값 → 회사 표기, 2026-10-12) — 브랜드 이름이라 번역하지 않음
+export const PROVIDER_NAMES: Record<'GOOGLE' | 'APPLE' | 'NAVER' | 'KAKAO' | 'LINE', string> = {
+  GOOGLE: 'Google',
+  APPLE: 'Apple',
+  NAVER: 'NAVER',
+  KAKAO: 'Kakao',
+  LINE: 'LINE',
+};

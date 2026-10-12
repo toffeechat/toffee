@@ -2,7 +2,8 @@
   "common": {
     "cancel": "취소",
     "logout": "로그아웃",
-    "requestFailed": "요청에 실패했어요 ({{status}})"
+    "requestFailed": "요청에 실패했어요 ({{status}})",
+    "back": "뒤로"
   },
   "tabs": {
     "actors": "아티스트",
@@ -33,7 +34,8 @@
       "kakao": "카카오로 계속하기",
       "naver": "네이버로 계속하기"
     },
-    "backToLogin": "로그인 화면으로"
+    "backToLogin": "로그인 화면으로",
+    "recent": "최근 로그인"
   },
   "actors": {
     "title": "아티스트 찾기",
@@ -130,7 +132,12 @@
     "deletedByActor": "아티스트가 삭제한 메시지(팬에게 보이지 않음)",
     "lastMessageDays": "마지막 메시지 {{count}}일 전",
     "noMessagesYet": "아직 보낸 메시지 없음",
-    "lastMessageToday": "오늘 메시지 보냄"
+    "lastMessageToday": "오늘 메시지 보냄",
+    "deleteTitle": "이 메시지를 삭제할까요?",
+    "deleteBody": "팬 화면에서 바로 사라지고 되돌릴 수 없어요. 이미 간 알림은 지울 수 없어요. 아티스트 화면엔 \"소속사가 삭제한 메시지\"로 남아요.",
+    "deleteConfirm": "삭제",
+    "deletedByAgency": "소속사가 삭제한 메시지(팬에게 보이지 않음)",
+    "allReplies": "모든 답장"
   },
   "onboarding": {
     "birthDateTitle": "생년월일을 알려주세요",
@@ -202,7 +209,10 @@
     "profileButton": "내 프로필",
     "stopRecordingShort": "녹음 끝내기",
     "cancelQuote": "인용 취소",
-    "emptyTitle": "첫 메시지를 보내 보세요"
+    "emptyTitle": "첫 메시지를 보내 보세요",
+    "reRecord": "다시 녹음",
+    "voiceHint": "녹음 버튼을 누르면 녹음이 시작돼요. 끝나면 들어 보고 보낼 수 있어요.",
+    "startRecording": "녹음 시작"
   },
   "media": {
     "save": "저장",
@@ -405,7 +415,9 @@
     "support": "지원",
     "languageSystem": "기기 언어 따르기",
     "notificationsHint": "아티스트별로 새 메시지 알림을 켜고 끌 수 있어요. 알림을 꺼도 메시지는 그대로 받아요.",
-    "noSubscriptions": "구독 중인 아티스트가 없어요"
+    "noSubscriptions": "구독 중인 아티스트가 없어요",
+    "loginInfo": "로그인 정보",
+    "noEmail": "이메일 정보 없음"
   },
   "manage": {
     "active": "구독 중",
@@ -623,5 +635,48 @@
     "title": "화면 캡처가 감지됐어요",
     "body": "아티스트 메시지·사진·음성·영상은 구독자만 볼 수 있는 콘텐츠예요. 캡처한 내용을 SNS 등 외부에 올리거나 공유하면 이용약관에 따라 이용이 제한될 수 있어요.",
     "ok": "확인"
+  },
+  "alerts": {
+    "artistMessages": "아티스트 새 메시지 알림",
+    "artistMessagesHint": "소속 아티스트가 메시지·스토리를 보내면 알려 드려요.",
+    "idle": "메시지 미발송 알림",
+    "idleHintStaff": "소속 아티스트가 7일 넘게 메시지를 보내지 않으면 알려 드려요.",
+    "idleHintArtist": "메시지를 며칠째 보내지 않았을 때 \"팬이 기다리고 있어요\" 알림을 보내 드려요.",
+    "refundNote": "구독료 환불 기준(30일 미발송)에 가까워졌다는 경고 알림은 끌 수 없어요."
+  },
+  "themeMode": {
+    "title": "화면 모드",
+    "system": "기기 설정 따르기",
+    "light": "라이트",
+    "dark": "다크"
+  },
+  "profileEdit": {
+    "title": "프로필 편집",
+    "failed": "저장하지 못했어요. 다시 시도해 주세요.",
+    "status": "상태메시지",
+    "statusPlaceholder": "나를 한 줄로 소개해 보세요",
+    "visibility": "프로필 사진과 상태메시지는 다른 팬에게는 보이지 않고, 내 답장을 보는 아티스트(와 소속사)에게만 보여요.",
+    "save": "저장"
+  },
+  "staffSettings": {
+    "title": "설정"
+  },
+  "dashboard": {
+    "title": "통계 대시보드",
+    "subscribers": "구독자",
+    "newSubs": "새 구독(최근 {{days}}일)",
+    "cancellations": "해지(최근 {{days}}일)",
+    "messages": "보낸 메시지(최근 {{days}}일)",
+    "replies": "팬 답장(최근 {{days}}일)",
+    "countPeople": "{{count}}명",
+    "countItems": "{{count}}개",
+    "rowSummary": "구독자 {{subscribers}} · 새 구독 {{newSubs}} · 답장 {{replies}}",
+    "sort": {
+      "subscribers": "구독자 많은 순",
+      "idle": "오래 안 보낸 순",
+      "newSubs": "새 구독 많은 순",
+      "replies": "답장 많은 순",
+      "messages": "메시지 많이 보낸 순"
+    }
   }
 }

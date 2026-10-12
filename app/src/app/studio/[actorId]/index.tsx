@@ -74,21 +74,24 @@ function MyMessage({
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const hiddenByAdmin = !!message.deletedAt && message.deletedByAdmin;
+  // 소속사가 대신 지운 메시지(2026-10-12) — 아티스트도 알 수 있게 이유와 함께 남김
+  const removedByAgency = !!message.deletedAt && !message.deletedByAdmin && !!message.deletedByStaffId;
+  const removed = hiddenByAdmin || removedByAgency;
   // 최근 메시지엔 서버가 recentReplies를 줌, 오래된 메시지는 숫자만. 답장이 없을 때 "팬 답장을 기다리는 중…"은 가장 최근 메시지에만
   // (2026-10-12 실기기: 최근 10개 메시지마다 붙어 있어 어수선했음) — 나머지는 "답장 없음" 링크로
-  const hasPreview = !!message.recentReplies && !hiddenByAdmin && (message.recentReplies.length > 0 || !!isLatest);
+  const hasPreview = !!message.recentReplies && !removed && (message.recentReplies.length > 0 || !!isLatest);
   const time = new Date(message.createdAt);
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
   return (
     <View style={styles.messageRow}>
-      {hiddenByAdmin && (
+      {removed && (
         <ThemedText type="small" themeColor="danger">
-          {t('studio.hiddenByAdmin')}
+          {t(hiddenByAdmin ? 'studio.hiddenByAdmin' : 'console.deletedByAgency')}
         </ThemedText>
       )}
       {/* 시간은 말풍선 왼쪽 아래(카톡처럼, 2026-10-12 — 예전엔 말풍선 밑 줄) */}
       <View style={styles.bubbleLine}>
-        <View style={[styles.column, hiddenByAdmin && styles.hidden]}>
+        <View style={[styles.column, removed && styles.hidden]}>
           {isMedia ? (
             <>
               {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
@@ -120,7 +123,7 @@ function MyMessage({
         </View>
       </View>
       <View style={styles.meta}>
-        {!hiddenByAdmin && (
+        {!removed && (
           <IconButton icon={Trash2} size={15} label={t('studio.delete')} color={theme.textTertiary} onPress={onDelete} style={styles.metaButton} />
         )}
         {!hasPreview && (
@@ -165,6 +168,8 @@ export default function StudioChannelScreen() {
   const uploadAbort = useRef<AbortController | null>(null);
   const [draft, setDraft] = useState('');
   const [attachment, setAttachment] = useState<Attachment | null>(null);
+  // 음성 녹음 패널(2026-10-12 실기기 피드백: 마이크를 누르자마자 녹음되지 말고 "녹음 → 다시 듣기·다시 녹음·취소 → 보내기")
+  const [voicePanel, setVoicePanel] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
 
@@ -202,7 +207,10 @@ export default function StudioChannelScreen() {
 
   const pickFromLibrary = async () => {
     const picked = toAttachment(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS));
-    if (picked) setAttachment(picked);
+    if (picked) {
+      setVoicePanel(false);
+      setAttachment(picked);
+    }
   };
 
   const takeWithCamera = async () => {
@@ -212,7 +220,15 @@ export default function StudioChannelScreen() {
       return;
     }
     const picked = toAttachment(await ImagePicker.launchCameraAsync(PICKER_OPTIONS));
-    if (picked) setAttachment(picked);
+    if (picked) {
+      setVoicePanel(false);
+      setAttachment(picked);
+    }
+  };
+
+  const closeVoicePanel = () => {
+    setVoicePanel(false);
+    if (attachment?.mediaType === 'AUDIO') setAttachment(null);
   };
 
   const toggleRecording = async () => {
@@ -252,6 +268,7 @@ export default function StudioChannelScreen() {
         onSuccess: () => {
           setDraft('');
           setAttachment(null);
+          setVoicePanel(false);
           if (quoteId) clearQuote();
         },
         onError: (error) =>
@@ -269,7 +286,8 @@ export default function StudioChannelScreen() {
   };
 
   const canSend = !send.isPending && !recorderState.isRecording && (!!draft.trim() || !!attachment);
-  const visible = messages?.filter((message) => !message.deletedAt || message.deletedByAdmin) ?? [];
+  // 내가 지운 메시지는 안 보임 — 운영자가 가렸거나 소속사가 대신 지운 건 이유와 함께 보임
+  const visible = messages?.filter((message) => !message.deletedAt || message.deletedByAdmin || !!message.deletedByStaffId) ?? [];
 
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
@@ -327,7 +345,7 @@ export default function StudioChannelScreen() {
           </View>
         )}
 
-        {(attachment || recorderState.isRecording) && (
+        {(attachment || recorderState.isRecording || voicePanel) && (
           <View style={[styles.tray, { backgroundColor: theme.backgroundElement }]}>
             {recorderState.isRecording ? (
               <>
@@ -335,6 +353,36 @@ export default function StudioChannelScreen() {
                 <ThemedText type="smallBold" style={styles.trayBody}>
                   {t('studio.recording', { seconds: Math.floor(recorderState.durationMillis / 1000) })}
                 </ThemedText>
+                <Pressable onPress={() => void toggleRecording()} accessibilityRole="button" style={[styles.voiceButton, { backgroundColor: theme.danger }]}>
+                  <Icon as={Square} size={14} color="#fff" fill="#fff" />
+                  <ThemedText type="smallBold" style={styles.voiceButtonText}>
+                    {t('studio.stopRecordingShort')}
+                  </ThemedText>
+                </Pressable>
+              </>
+            ) : voicePanel && attachment?.mediaType === 'AUDIO' && !send.isPending ? (
+              <>
+                {/* 녹음한 것 다시 듣기 — 보내기 전 확인 */}
+                <View style={styles.trayBody}>
+                  <VoiceMessage id="draft-voice" url={attachment.uri} durationMs={attachment.durationMs} waveform={attachment.waveform} tone="dark" />
+                </View>
+                <Pressable onPress={() => void toggleRecording()} accessibilityRole="button" style={[styles.voiceChip, { borderColor: theme.border }]}>
+                  <ThemedText type="smallBold">{t('studio.reRecord')}</ThemedText>
+                </Pressable>
+                <IconButton icon={X} size={18} label={t('studio.removeAttachment')} onPress={closeVoicePanel} />
+              </>
+            ) : voicePanel && !attachment ? (
+              <>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.trayBody}>
+                  {t('studio.voiceHint')}
+                </ThemedText>
+                <Pressable onPress={() => void toggleRecording()} accessibilityRole="button" style={[styles.voiceButton, { backgroundColor: theme.danger }]}>
+                  <Icon as={Mic} size={16} color="#fff" />
+                  <ThemedText type="smallBold" style={styles.voiceButtonText}>
+                    {t('studio.startRecording')}
+                  </ThemedText>
+                </Pressable>
+                <IconButton icon={X} size={18} label={t('common.cancel')} onPress={closeVoicePanel} />
               </>
             ) : attachment ? (
               <>
@@ -373,11 +421,16 @@ export default function StudioChannelScreen() {
           {Platform.OS !== 'web' && (
             <IconButton icon={Camera} label={t('studio.camera')} onPress={takeWithCamera} color={recorderState.isRecording ? theme.textTertiary : theme.text} />
           )}
+          {/* 마이크: 바로 녹음하지 않고 녹음 패널을 엶(패널의 "녹음 시작"으로 시작) */}
           <IconButton
-            icon={recorderState.isRecording ? Square : Mic}
-            label={recorderState.isRecording ? t('studio.stopRecordingShort') : t('studio.record')}
-            onPress={() => void toggleRecording()}
-            color={recorderState.isRecording ? theme.danger : theme.text}
+            icon={Mic}
+            label={t('studio.record')}
+            onPress={() => {
+              if (recorderState.isRecording) return;
+              if (attachment && attachment.mediaType !== 'AUDIO') setAttachment(null);
+              setVoicePanel(true);
+            }}
+            color={voicePanel || recorderState.isRecording ? theme.danger : theme.text}
           />
           {/* 받는 팬마다 그 팬의 닉네임으로 바뀌는 자리 — 버블처럼 "OO야" 하고 부를 때 */}
           <Pressable
@@ -432,6 +485,9 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.four },
   flip: { transform: [{ scaleY: -1 }] },
   messageRow: { alignItems: 'flex-end', gap: 6 },
+  voiceButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  voiceButtonText: { color: '#fff' },
+  voiceChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.two + 2, paddingVertical: 6 },
   bubbleLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, maxWidth: '92%' },
   column: { flexShrink: 1, alignItems: 'flex-end', gap: 4 },
   sideTime: { flexShrink: 0, alignItems: 'flex-end', paddingBottom: 2 },

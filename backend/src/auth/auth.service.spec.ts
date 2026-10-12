@@ -7,6 +7,7 @@ import type { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { ModerationService } from '../moderation/moderation.service.js';
+import type { MediaService } from '../storage/media.service.js';
 
 function setup() {
   const prisma = {
@@ -16,7 +17,7 @@ function setup() {
       create: vi.fn().mockResolvedValue({ id: 'new', role: 'USER' }),
     },
   };
-  const service = new AuthService({ get: () => undefined } as unknown as ConfigService, {} as JwtService, prisma as unknown as PrismaService, {} as ModerationService);
+  const service = new AuthService({ get: () => undefined } as unknown as ConfigService, {} as JwtService, prisma as unknown as PrismaService, {} as ModerationService, {} as MediaService);
   return { service, prisma };
 }
 
@@ -40,7 +41,7 @@ describe('소셜 로그인 계정 합치기', () => {
 
 describe('소셜 토큰 확인 보강(2026-09-29)', () => {
   const withConfig = (values: Record<string, string>) =>
-    new AuthService({ get: (key: string) => values[key] } as unknown as ConfigService, {} as JwtService, {} as PrismaService, {} as ModerationService);
+    new AuthService({ get: (key: string) => values[key] } as unknown as ConfigService, {} as JwtService, {} as PrismaService, {} as ModerationService, {} as MediaService);
 
   it('카카오: 다른 앱에서 발급된 토큰이면 거절(KAKAO_APP_ID)', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) =>
@@ -72,7 +73,7 @@ describe('소셜 토큰 확인 보강(2026-09-29)', () => {
 
 describe('PC 웹 소셜 로그인(code 교환)', () => {
   const withConfig = (values: Record<string, string>) =>
-    new AuthService({ get: (key: string) => values[key] } as unknown as ConfigService, {} as JwtService, {} as PrismaService, {} as ModerationService);
+    new AuthService({ get: (key: string) => values[key] } as unknown as ConfigService, {} as JwtService, {} as PrismaService, {} as ModerationService, {} as MediaService);
 
   it('허용한 웹 주소로 돌아온 code만 받음(설정이 없으면 웹 로그인 꺼짐)', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
@@ -158,6 +159,7 @@ describe('데모 입장 코드(2026-10-01)', () => {
       {} as JwtService,
       prisma as unknown as PrismaService,
       {} as ModerationService,
+      {} as MediaService,
     );
     return { service, prisma };
   };
@@ -173,5 +175,40 @@ describe('데모 입장 코드(2026-10-01)', () => {
   it('코드가 없으면 예전처럼 코드 없이(로컬 개발)', async () => {
     await expect(withCode(undefined).service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
     await expect(withCode('  ').service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
+  });
+});
+
+describe('팬 프로필 상태메시지(2026-10-12)', () => {
+  const setupProfile = (bannedHit = false) => {
+    const update = vi.fn().mockResolvedValue({});
+    const prisma = {
+      user: {
+        update,
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', nickname: null, nicknameChangedAt: null, createdAt: new Date(), authIdentities: [], agency: null, profileImageUrl: null, birthDate: null }),
+      },
+    };
+    const moderation = { assertNoBannedWords: vi.fn(() => (bannedHit ? Promise.reject(new Error('banned')) : Promise.resolve())) };
+    const media = { resolveImageUrl: vi.fn().mockResolvedValue(null) };
+    const service = new AuthService(
+      { get: () => undefined } as unknown as ConfigService,
+      {} as JwtService,
+      prisma as unknown as PrismaService,
+      moderation as unknown as ModerationService,
+      media as unknown as MediaService,
+    );
+    return { service, update };
+  };
+
+  it('공백을 정리해서 저장, 빈 값이면 지움', async () => {
+    const { service, update } = setupProfile();
+    await service.updateProfile('u1', { statusMessage: '  안녕   하세요 ' });
+    expect(update).toHaveBeenLastCalledWith({ where: { id: 'u1' }, data: { statusMessage: '안녕 하세요' } });
+    await service.updateProfile('u1', { statusMessage: '   ' });
+    expect(update).toHaveBeenLastCalledWith({ where: { id: 'u1' }, data: { statusMessage: null } });
+  });
+
+  it('60자 넘거나 금칙어면 거절', async () => {
+    await expect(setupProfile().service.updateProfile('u1', { statusMessage: '가'.repeat(61) })).rejects.toThrow();
+    await expect(setupProfile(true).service.updateProfile('u1', { statusMessage: '나쁜말' })).rejects.toThrow();
   });
 });

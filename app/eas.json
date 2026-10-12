@@ -45,6 +45,7 @@
       "autoIncrement": true,
       "env": {
         "APP_VARIANT": "production",
+        "EXPO_PUBLIC_SUPPORT_EMAIL": "support@toffeechat.app",
         "EXPO_PUBLIC_SENTRY_DSN": "https://5f9a9ea9b060b2a7305843c94f8895c2@o4512179342606336.ingest.us.sentry.io/4512179350274048",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "887521312316-q0gnbre54fcul8j3fujuusdem4npejrc.apps.googleusercontent.com"
       }

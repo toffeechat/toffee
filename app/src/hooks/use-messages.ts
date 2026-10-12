@@ -31,6 +31,8 @@ export interface ChatMessage {
   // 스타·소속사 화면용(팬 화면엔 지워진 메시지가 아예 안 옴) — 스타가 삭제했거나 운영자가 신고 승인으로 가림
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
+  /** 소속사가 대신 지운 메시지면 지운 직원 id(2026-10-12) — 아티스트·소속사 화면에 "소속사가 삭제한 메시지" */
+  deletedByStaffId?: string | null;
   createdAt: string;
 }
 

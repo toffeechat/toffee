@@ -7,6 +7,7 @@ import { availableProviders, signIn, SignInCancelledError, type SocialCredential
 import { Spacing } from '@/constants/theme';
 import { orderedProviders } from '@/components/social-button-style';
 import { SocialButton } from '@/components/social-button';
+import { useLastLoginProvider } from '@/lib/last-login';
 
 // 테스트 빌드(개발·preview)에선 실패 원인(SDK 오류 코드)을 문구 뒤에 붙임 — 2026-10-12 실기기에서 카카오·LINE이 "로그인하지 못했어요"만
 // 떠서 원인(콘솔 번들 ID 등록·계정 조건)을 알 수 없었음. 운영 빌드는 일반 문구만, 원인은 Sentry로
@@ -30,6 +31,7 @@ export function SocialLoginButtons({
 }) {
   const { t, i18n } = useTranslation();
   const [pending, setPending] = useState<SocialProvider | null>(null);
+  const last = useLastLoginProvider();
   const providers = orderedProviders(availableProviders(), i18n.language);
   if (providers.length === 0) return null;
 
@@ -57,6 +59,7 @@ export function SocialLoginButtons({
           onPress={() => start(provider)}
           disabled={!!pending || busy}
           loading={pending === provider}
+          recentLabel={provider === last ? t('login.recent') : undefined}
         />
       ))}
     </View>

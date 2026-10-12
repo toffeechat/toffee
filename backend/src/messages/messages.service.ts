@@ -5,7 +5,7 @@ import { PushService } from '../notifications/push.service.js';
 import { pushStrings } from '../notifications/push-messages.js';
 import { ModerationService } from '../moderation/moderation.service.js';
 import { MediaService } from '../storage/media.service.js';
-import { ActorKind, MessageMediaType, MessageSenderType, ReportStatus, UserStatus } from '../generated/prisma/enums.js';
+import { ActorKind, MessageMediaType, MessageSenderType, ReportStatus, Role, UserStatus } from '../generated/prisma/enums.js';
 import { ensureCanViewActor, ensureIsActorSelf } from '../common/authorization/actor-access.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
 import { fanTag } from '../common/nickname/nickname.js';
@@ -384,6 +384,7 @@ export class MessagesService {
           body: preview(locale),
         }),
         pushData,
+        'notifyArtistMessages',
       )
       .catch(() => {});
 
@@ -403,7 +404,7 @@ export class MessagesService {
         reports: { none: { status: ReportStatus.RESOLVED } },
         ...(messageId ? { replyToMessageId: messageId } : {}),
       },
-      include: { fanUser: { select: { id: true, nickname: true, deletedAt: true } } },
+      include: { fanUser: { select: { id: true, nickname: true, deletedAt: true, profileImageUrl: true, statusMessage: true } } },
       // 최신 → 오래된 순. 같은 시각이면 id로 순서를 고정해야 나눠 받을 때 빠지거나 겹치지 않음
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...(page.limit ? { take: page.limit } : {}),
@@ -411,9 +412,21 @@ export class MessagesService {
     });
     // 스타·소속사에겐 실명일 수 있는 로그인 이름 대신 닉네임 + 같은 닉네임 구분용 태그만. 탈퇴한 팬은 null
     // (앱이 "탈퇴한 팬"으로 표시)
+    // 팬 프로필 사진·상태메시지(2026-10-12)도 — 사진은 같은 팬이 여러 번 나와도 임시 주소를 한 번만 만듦
+    const photoKeys = [...new Set(replies.map((reply) => reply.fanUser?.profileImageUrl).filter((key): key is string => !!key))];
+    const photos = new Map(await Promise.all(photoKeys.map(async (key) => [key, await this.mediaService.resolveImageUrl(key)] as const)));
     return replies.map(({ fanUser, ...reply }) => ({
       ...reply,
-      fanUser: fanUser && !fanUser.deletedAt ? { id: fanUser.id, nickname: fanUser.nickname, tag: fanTag(fanUser.id) } : null,
+      fanUser:
+        fanUser && !fanUser.deletedAt
+          ? {
+              id: fanUser.id,
+              nickname: fanUser.nickname,
+              tag: fanTag(fanUser.id),
+              profileImageUrl: fanUser.profileImageUrl ? (photos.get(fanUser.profileImageUrl) ?? null) : null,
+              statusMessage: fanUser.statusMessage,
+            }
+          : null,
     }));
   }
 
@@ -495,7 +508,12 @@ export class MessagesService {
    * 이미 보낸 푸시 알림은 되돌릴 수 없음. 첨부 파일은 신고가 걸려 있지 않으면 지움(신고 증거는 남김).
    */
   async deleteBroadcast(requesterId: string, actorId: string, messageId: string) {
-    await ensureIsActorSelf(this.prisma, requesterId, actorId);
+    // 소속사 직원도 자기 소속 아티스트 메시지를 대신 지울 수 있음(2026-10-12 사용자 결정 — 아티스트 사고 시 급히 내리기).
+    // 팬 화면에선 아티스트가 지운 것과 똑같이 사라지고, 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
+    const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true } });
+    const byStaff = requester.role === Role.AGENCY_STAFF;
+    if (byStaff) await ensureCanViewActor(this.prisma, requesterId, actorId);
+    else await ensureIsActorSelf(this.prisma, requesterId, actorId);
     const message = await this.prisma.message.findFirst({
       where: { id: messageId, actorId, senderType: MessageSenderType.ARTIST },
       select: { id: true, deletedAt: true, mediaKey: true, thumbnailKey: true, _count: { select: { reports: true } } },
@@ -505,7 +523,11 @@ export class MessagesService {
     const keepFile = message._count.reports > 0;
     await this.prisma.message.update({
       where: { id: messageId },
-      data: { deletedAt: new Date(), ...(keepFile ? {} : { mediaKey: null, thumbnailKey: null }) },
+      data: {
+        deletedAt: new Date(),
+        ...(byStaff ? { deletedByStaffId: requesterId } : {}),
+        ...(keepFile ? {} : { mediaKey: null, thumbnailKey: null }),
+      },
     });
     void this.realtime.publish({ kind: 'message-removed', actorId });
     if (!keepFile) {
