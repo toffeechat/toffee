@@ -26,6 +26,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useActor } from '@/hooks/use-actors';
 import { useDeleteBroadcast, useStudioMessages, useStudioSend, type Attachment, type StudioMessage } from '@/hooks/use-studio';
 import { PLAYBACK_AUDIO_MODE } from '@/lib/audio-mode';
+import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { UploadCancelledError } from '@/lib/upload-media';
 import { useTheme } from '@/hooks/use-theme';
@@ -62,8 +63,10 @@ function MyMessage({
   onOpenReplies,
   onDelete,
   senderName,
+  isLatest,
 }: {
   message: StudioMessage;
+  isLatest?: boolean;
   onOpenReplies: () => void;
   onDelete: () => void;
   senderName?: string | null;
@@ -71,8 +74,10 @@ function MyMessage({
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const hiddenByAdmin = !!message.deletedAt && message.deletedByAdmin;
-  // 최근 메시지엔 서버가 recentReplies를 줌(답장이 없으면 빈 배열 → "기다리는 중" 줄), 오래된 메시지는 숫자만
-  const hasPreview = !!message.recentReplies && !hiddenByAdmin;
+  // 최근 메시지엔 서버가 recentReplies를 줌, 오래된 메시지는 숫자만. 답장이 없을 때 "팬 답장을 기다리는 중…"은 가장 최근 메시지에만
+  // (2026-10-12 실기기: 최근 10개 메시지마다 붙어 있어 어수선했음) — 나머지는 "답장 없음" 링크로
+  const hasPreview = !!message.recentReplies && !hiddenByAdmin && (message.recentReplies.length > 0 || !!isLatest);
+  const time = new Date(message.createdAt);
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
   return (
     <View style={styles.messageRow}>
@@ -81,28 +86,40 @@ function MyMessage({
           {t('studio.hiddenByAdmin')}
         </ThemedText>
       )}
-      <View style={[styles.column, hiddenByAdmin && styles.hidden]}>
-        {isMedia ? (
-          <>
-            {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-            <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
-          </>
-        ) : null}
-        {!isMedia || message.body ? (
-          <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
-            {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-            {message.mediaType === 'AUDIO' ? (
-              <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
-            ) : null}
-            {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
-          </View>
-        ) : null}
+      {/* 시간은 말풍선 왼쪽 아래(카톡처럼, 2026-10-12 — 예전엔 말풍선 밑 줄) */}
+      <View style={styles.bubbleLine}>
+        <View style={[styles.column, hiddenByAdmin && styles.hidden]}>
+          {isMedia ? (
+            <>
+              {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+              <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
+            </>
+          ) : null}
+          {!isMedia || message.body ? (
+            <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
+              {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+              {message.mediaType === 'AUDIO' ? (
+                <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
+              ) : null}
+              {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.sideTime}>
+          {senderName ? (
+            <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+              {senderName}
+            </ThemedText>
+          ) : null}
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+            {time.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })}
+          </ThemedText>
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+            {time.toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' })}
+          </ThemedText>
+        </View>
       </View>
       <View style={styles.meta}>
-        <ThemedText type="caption" themeColor="textTertiary">
-          {senderName ? `${senderName} · ` : ''}
-          {new Date(message.createdAt).toLocaleString(i18n.language, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-        </ThemedText>
         {!hiddenByAdmin && (
           <IconButton icon={Trash2} size={15} label={t('studio.delete')} color={theme.textTertiary} onPress={onDelete} style={styles.metaButton} />
         )}
@@ -241,7 +258,7 @@ export default function StudioChannelScreen() {
           setNotice(
             error instanceof UploadCancelledError
               ? { text: t('studio.uploadCancelled'), error: false }
-              : { text: t('studio.sendFailed'), error: true },
+              : { text: error instanceof ApiError && error.message ? error.message : t('studio.sendFailed'), error: true },
           ),
         onSettled: () => {
           setProgress(null);
@@ -272,9 +289,10 @@ export default function StudioChannelScreen() {
                 <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />
               </View>
             }
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <MyMessage
                 message={item}
+                isLatest={index === 0}
                 senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
                 onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
                 onDelete={() => void removeMessage(item.id)}
@@ -414,7 +432,10 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.four },
   flip: { transform: [{ scaleY: -1 }] },
   messageRow: { alignItems: 'flex-end', gap: 6 },
-  column: { maxWidth: '80%', alignItems: 'flex-end', gap: 4 },
+  bubbleLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, maxWidth: '92%' },
+  column: { flexShrink: 1, alignItems: 'flex-end', gap: 4 },
+  sideTime: { flexShrink: 0, alignItems: 'flex-end', paddingBottom: 2 },
+  sideTimeText: { textAlign: 'right' },
   hidden: { opacity: 0.45 },
   bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

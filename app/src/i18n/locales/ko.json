@@ -17,10 +17,6 @@
     "terms": "이용약관",
     "privacy": "개인정보처리방침"
   },
-  "price": {
-    "perMonth": "฿{{price}}/월",
-    "amount": "฿{{price}}"
-  },
   "login": {
     "tagline": "좋아하는 아티스트와 1:1로 대화해보세요",
     "demoTitle": "이메일로 데모 로그인",
@@ -269,10 +265,10 @@
     "more": "더보기"
   },
   "chatPhoto": {
-    "change": "대화방 사진 바꾸기",
+    "change": "프로필 사진 바꾸기",
     "remove": "기본 이미지로",
     "removeTitle": "기본 이미지로 바꾸기",
-    "removeConfirm": "대화방 사진을 지우고 사람 모양 기본 이미지로 바꿔요.",
+    "removeConfirm": "프로필 사진을 지우고 사람 모양 기본 이미지로 바꿔요.",
     "uploading": "올리는 중…",
     "failed": "사진을 바꾸지 못했어요. 다시 시도해 주세요."
   },

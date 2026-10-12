@@ -46,7 +46,7 @@ export function BundleCard({ bundle, onPress }: { bundle: Bundle; onPress: () =>
           {bundle.name}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {formatPrice(t, bundle.priceCents)} {t('actorProfile.perMonth')}
+          {formatPrice(bundle.priceCents)} {t('actorProfile.perMonth')}
           {discount > 0 ? ` · ${t('bundle.saveVsSingle', { percent: discount })}` : ''}
         </ThemedText>
       </View>

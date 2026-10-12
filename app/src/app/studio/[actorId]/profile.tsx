@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Avatar } from '@/components/ui/avatar';
 import { ChatPhotoEditor } from '@/components/chat-photo-editor';
 import { SupportLink } from '@/components/support-link';
 import { useActor, type Actor } from '@/hooks/use-actors';
@@ -137,10 +138,8 @@ export default function StudioProfileScreen() {
       {actor && (
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedView style={[styles.section, styles.photoSection, { backgroundColor: theme.backgroundElement }]}>
-            <Image
-              source={{ uri: actor.chatProfileImageUrl ?? undefined }}
-              style={[styles.photo, { backgroundColor: theme.backgroundSelected }]}
-            />
+            {/* 사진이 없으면 사람 모양 기본 이미지(예전엔 빈 남색 동그라미만 보였음, 2026-10-12 실기기 테스트) */}
+            <Avatar uri={actor.chatProfileImageUrl} size={96} />
             <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
           </ThemedView>
           <NicknameForm key={actor.id} actor={actor} />
@@ -166,7 +165,6 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.four, gap: Spacing.three },
   section: { borderRadius: 14, padding: Spacing.three, gap: Spacing.two },
   photoSection: { alignItems: 'center' },
-  photo: { width: 96, height: 96, borderRadius: 48 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 16 },
   button: { borderRadius: 10, paddingVertical: Spacing.two + 2, alignItems: 'center' },
   buttonText: { color: '#fff' },

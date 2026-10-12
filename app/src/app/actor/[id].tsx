@@ -102,7 +102,7 @@ export default function ActorProfileScreen() {
               <ThemedText type="headline">{t('actorProfile.membership')}</ThemedText>
               <View style={styles.price}>
                 <ThemedText type="title" style={{ color: theme.tint }}>
-                  {formatPrice(t, actor.monthlyPriceCents)}
+                  {formatPrice(actor.monthlyPriceCents)}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {' '}

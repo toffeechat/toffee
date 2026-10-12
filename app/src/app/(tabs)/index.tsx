@@ -19,6 +19,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { useActors, useAgencies, useCoupleRooms, type Actor } from '@/hooks/use-actors';
 import { CoupleCard } from '@/components/couple-card';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
+import { formatPrice } from '@/utils/price';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
@@ -283,7 +284,7 @@ function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; w
             {actor.legalName}
           </ThemedText>
           <ThemedText type="caption" numberOfLines={1} style={styles.onPhotoSoft}>
-            {[actor.agency?.name, t('price.perMonth', { price: (actor.monthlyPriceCents / 100).toFixed(0) })].filter(Boolean).join(' · ')}
+            {[actor.agency?.name, `${formatPrice(actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`].filter(Boolean).join(' · ')}
           </ThemedText>
         </View>
         {!subscribed && (

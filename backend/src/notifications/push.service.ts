@@ -102,11 +102,17 @@ export class PushService implements OnModuleInit {
     for (const batch of chunk(buildPushMessages(targets, compose, data), FCM_BATCH_SIZE)) {
       try {
         const result = await messaging.sendEach(batch);
+        const failureCodes = new Map<string, number>();
         result.responses.forEach((response, index) => {
           const code = response.error?.code;
+          if (code) failureCodes.set(code, (failureCodes.get(code) ?? 0) + 1);
           if (code && INVALID_TOKEN_ERROR_CODES.has(code)) deadTokens.push((batch[index] as { token: string }).token);
         });
-        if (result.failureCount > 0) this.logger.warn(`FCM 발송 ${batch.length}건 중 ${result.failureCount}건 실패`);
+        // 실패 코드도 같이 — 2026-10-12 실기기에서 푸시가 안 왔는데 "N건 실패"만으론 애플 키 문제(third-party-auth-error)인지 알 수 없었음
+        if (result.failureCount > 0) {
+          const codes = [...failureCodes].map(([code, count]) => `${code}×${count}`).join(', ');
+          this.logger.warn(`FCM 발송 ${batch.length}건 중 ${result.failureCount}건 실패 (${codes})`);
+        }
       } catch (error) {
         this.logger.warn(`FCM 발송 실패: ${error instanceof Error ? error.message : String(error)}`);
       }

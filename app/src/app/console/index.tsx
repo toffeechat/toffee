@@ -1,8 +1,9 @@
-import { ActivityIndicator, FlatList, Image, Platform, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMyActors } from '@/hooks/use-console';
@@ -18,10 +19,7 @@ function ActorRow({ actor, onPress }: { actor: Actor & { lastBroadcastAt?: strin
   const { t } = useTranslation();
   return (
     <Pressable onPress={onPress} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
-      <Image
-        source={{ uri: actor.chatProfileImageUrl ?? undefined }}
-        style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}
-      />
+      <Avatar uri={actor.chatProfileImageUrl} size={48} />
       <ThemedView style={styles.rowBody}>
         <ThemedText type="smallBold">{actor.chatDisplayName}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
@@ -101,7 +99,6 @@ const styles = StyleSheet.create({
   sectionLabel: { paddingHorizontal: Spacing.four, paddingTop: Spacing.three },
   list: { padding: Spacing.four, gap: Spacing.three },
   row: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: Spacing.three, gap: Spacing.three },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
   rowBody: { gap: 2, backgroundColor: 'transparent' },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.four },
   loading: { marginTop: Spacing.four },

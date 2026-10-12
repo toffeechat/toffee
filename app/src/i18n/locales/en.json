@@ -17,10 +17,6 @@
     "terms": "Terms of Service",
     "privacy": "Privacy Policy"
   },
-  "price": {
-    "perMonth": "฿{{price}}/mo",
-    "amount": "฿{{price}}"
-  },
   "login": {
     "tagline": "Chat one-on-one with the artists you love",
     "demoTitle": "Demo login with email",
@@ -269,10 +265,10 @@
     "more": "More"
   },
   "chatPhoto": {
-    "change": "Change chat photo",
+    "change": "Change profile photo",
     "remove": "Use default image",
     "removeTitle": "Switch to default image",
-    "removeConfirm": "Your chat photo will be removed and replaced with the default profile image.",
+    "removeConfirm": "Your profile photo will be removed and replaced with the default profile image.",
     "uploading": "Uploading…",
     "failed": "Couldn't change the photo. Please try again."
   },

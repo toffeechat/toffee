@@ -103,7 +103,7 @@ function MyBundlesSection({ bundles }: { bundles: MyBundle[] }) {
                 {item.bundle.name}
               </ThemedText>
               <ThemedText type="smallMedium">
-                {formatPrice(t, item.bundle.priceCents)} {t('actorProfile.perMonth')}
+                {formatPrice(item.bundle.priceCents)} {t('actorProfile.perMonth')}
               </ThemedText>
             </View>
           </View>
@@ -206,7 +206,7 @@ function SubscriptionCard({ sub, onPress }: { sub: Subscription; onPress: () => 
         <ThemedText type="smallMedium">
           {viaBundle
             ? t('bundle.viaShort')
-            : `${formatPrice(t, sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`}
+            : `${formatPrice(sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`}
         </ThemedText>
         <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
           {t('manage.since', { date: new Date(sub.startedAt).toLocaleDateString(i18n.language) })}

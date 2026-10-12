@@ -17,10 +17,6 @@
     "terms": "Điều khoản dịch vụ",
     "privacy": "Chính sách quyền riêng tư"
   },
-  "price": {
-    "perMonth": "฿{{price}}/tháng",
-    "amount": "฿{{price}}"
-  },
   "login": {
     "tagline": "Trò chuyện riêng với nghệ sĩ bạn yêu thích",
     "demoTitle": "Đăng nhập demo bằng email",
@@ -269,10 +265,10 @@
     "more": "Thêm"
   },
   "chatPhoto": {
-    "change": "Đổi ảnh trò chuyện",
+    "change": "Đổi ảnh hồ sơ",
     "remove": "Dùng ảnh mặc định",
     "removeTitle": "Chuyển sang ảnh mặc định",
-    "removeConfirm": "Ảnh trò chuyện của bạn sẽ bị xóa và thay bằng ảnh hồ sơ mặc định.",
+    "removeConfirm": "Ảnh hồ sơ của bạn sẽ bị xóa và thay bằng ảnh hồ sơ mặc định.",
     "uploading": "Đang tải lên…",
     "failed": "Không đổi được ảnh. Vui lòng thử lại."
   },

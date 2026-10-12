@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
+import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ChatPhotoEditor } from '@/components/chat-photo-editor';
 import { showNameToken } from '@/utils/name-token';
@@ -221,10 +222,7 @@ export default function ConsoleActorScreen() {
       <SegmentedControl value={section} onChange={setSection} />
       {actor && (
         <ThemedView style={styles.actorPreview}>
-          <Image
-            source={{ uri: actor.chatProfileImageUrl ?? undefined }}
-            style={styles.actorPreviewAvatar}
-          />
+          <Avatar uri={actor.chatProfileImageUrl} size={24} />
           <ThemedView style={styles.actorPreviewBody}>
             <ThemedText type="small" themeColor="textSecondary">
               {t('console.monitoring', { name: actor.legalName })}
@@ -249,7 +247,6 @@ const styles = StyleSheet.create({
   segment: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 8 },
   segmentTextActive: { color: '#fff' },
   actorPreview: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.four, marginBottom: Spacing.two },
-  actorPreviewAvatar: { width: 24, height: 24, borderRadius: 12 },
   section: { paddingHorizontal: Spacing.four, gap: Spacing.three },
   repliesList: { padding: Spacing.four, gap: Spacing.three },
   replyRow: { borderRadius: 12, padding: Spacing.three, gap: 4 },

@@ -630,7 +630,15 @@ function MessageRow({
               {actorName}
             </ThemedText>
           ) : null}
-          {bubble}
+          {/* 시간은 말풍선 옆 아래(카톡처럼 — 받은 메시지는 오른쪽, 내 답장은 왼쪽, 2026-10-12 사용자 요청. 예전엔 말풍선 밑) */}
+          <View style={[styles.bubbleLine, isArtist ? styles.bubbleLineLeft : styles.bubbleLineRight]}>
+            {bubble}
+            {endsGroup && (
+              <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
+                {time}
+              </ThemedText>
+            )}
+          </View>
           {menuOpen && (
             <View style={[styles.menu, { backgroundColor: theme.background, borderColor: theme.border }]}>
               {message.body ? (
@@ -649,11 +657,6 @@ function MessageRow({
               ) : null}
               <IconButton icon={X} size={16} label={t('chat.closeMenu')} onPress={onCloseMenu} style={styles.menuClose} />
             </View>
-          )}
-          {endsGroup && (
-            <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
-              {time}
-            </ThemedText>
           )}
         </View>
       </View>
@@ -704,13 +707,16 @@ const styles = StyleSheet.create({
   lineLeft: { justifyContent: 'flex-start' },
   lineRight: { justifyContent: 'flex-end' },
   avatarSlot: { width: 36 },
-  column: { maxWidth: '78%', gap: 4 },
+  column: { maxWidth: '86%', gap: 4 },
   columnLeft: { alignItems: 'flex-start' },
   columnRight: { alignItems: 'flex-end' },
-  bubbleWrap: { maxWidth: '100%' },
+  bubbleWrap: { maxWidth: '100%', flexShrink: 1 },
+  bubbleLine: { alignItems: 'flex-end', gap: 4, maxWidth: '100%' },
+  bubbleLineLeft: { flexDirection: 'row' },
+  bubbleLineRight: { flexDirection: 'row-reverse' },
   bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
   mediaGroup: { gap: 4 },
-  time: { paddingHorizontal: 4 },
+  time: { flexShrink: 0, paddingBottom: 2 },
   senderLabel: { paddingHorizontal: 4 },
   menu: {
     flexDirection: 'row',

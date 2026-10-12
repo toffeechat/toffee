@@ -17,10 +17,6 @@
     "terms": "服務條款",
     "privacy": "隱私權政策"
   },
-  "price": {
-    "perMonth": "฿{{price}}/月",
-    "amount": "฿{{price}}"
-  },
   "login": {
     "tagline": "和你喜歡的藝人一對一聊天",
     "demoTitle": "使用電子郵件進行示範登入",
@@ -269,10 +265,10 @@
     "more": "更多"
   },
   "chatPhoto": {
-    "change": "更換聊天頭像",
+    "change": "更換頭像",
     "remove": "使用預設頭像",
     "removeTitle": "改為預設頭像",
-    "removeConfirm": "將刪除聊天頭像，並換成預設的人形頭像。",
+    "removeConfirm": "將刪除頭像，並換成預設的人形頭像。",
     "uploading": "上傳中…",
     "failed": "無法更換照片，請重試。"
   },

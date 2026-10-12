@@ -61,7 +61,7 @@ export default function SubscribeBundleScreen() {
     );
   }
 
-  const price = formatPrice(t, bundle.priceCents);
+  const price = store.displayPrice ?? formatPrice(bundle.priceCents);
   const discount = bundleDiscountPercent(bundle);
   // 이미 개인 구독으로 열려 있는 배우 — 묶음으로 옮겨지고 대화는 이어짐
   const alreadySingle = bundle.actors.filter((actor) =>
@@ -106,7 +106,7 @@ export default function SubscribeBundleScreen() {
           {discount > 0 ? (
             <View style={[styles.save, { backgroundColor: theme.tintSoft }]}>
               <ThemedText type="captionBold" style={{ color: theme.tint }}>
-                {t('bundle.saveDetail', { regular: formatPrice(t, bundle.regularPriceCents), percent: discount })}
+                {t('bundle.saveDetail', { regular: formatPrice(bundle.regularPriceCents), percent: discount })}
               </ThemedText>
             </View>
           ) : null}
@@ -120,7 +120,7 @@ export default function SubscribeBundleScreen() {
               <View style={styles.flex}>
                 <ThemedText type="defaultSemiBold">{actor.legalName}</ThemedText>
                 <ThemedText type="caption" themeColor="textTertiary">
-                  {t('bundle.singlePrice', { price: formatPrice(t, actor.monthlyPriceCents) })}
+                  {t('bundle.singlePrice', { price: formatPrice(actor.monthlyPriceCents) })}
                 </ThemedText>
               </View>
             </View>
