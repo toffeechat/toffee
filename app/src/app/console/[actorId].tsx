@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { Trash2 } from 'lucide-react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Images, MessageCircle, Trash2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,9 @@ import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
 import { SideTime } from '@/components/side-time';
 import { useActor } from '@/hooks/use-actors';
-import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory } from '@/hooks/use-console';
+import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory, type StatsPeriod } from '@/hooks/use-console';
+import { DistributionBars, Panel } from '@/components/console-charts';
+import { AudiencePanels, KpiGrid, PeriodPills, ScreenIntro, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
 import { useDeleteBroadcast, useStudioMessages, type StudioMessage } from '@/hooks/use-studio';
 import { MediaTile } from '@/components/media-tile';
 import { QuoteBlock } from '@/components/quote-block';
@@ -284,39 +286,83 @@ function RepliesSection({ actorId, messageId, onClearFilter }: { actorId: string
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  const theme = useTheme();
-  return (
-    <ThemedView style={[styles.statCard, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText type="title" style={styles.statValue}>
-        {value}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-    </ThemedView>
-  );
-}
-
-function StatsSection({ actorId }: { actorId: string }) {
+/**
+ * 아티스트별 통계(2026-10-13 개편, 사용자 요청: "덜렁 카드 두 개 → 대시보드처럼 그래프로") — 대시보드와 같은 숫자 카드·추이 +
+ * 메시지 종류·답장이 많았던 메시지(누르면 그 답장) + 팬 나라·언어. GET /actors/:id/stats?days=
+ */
+function StatsSection({ actorId, onOpenReplies }: { actorId: string; onOpenReplies: (messageId: string) => void }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
-  const { data: stats, isLoading } = useActorStats(actorId);
-
-  if (isLoading || !stats) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
+  const [days, setDays] = useState<StatsPeriod>(30);
+  const [width, setWidth] = useState(0);
+  const { data: stats, isLoading } = useActorStats(actorId, days);
+  const half = cellStyle(width, width >= 900 ? 2 : 1);
 
   return (
-    <ThemedView style={styles.section}>
-      <StatCard label={t('console.activeSubscribers')} value={String(stats.subscriberCount)} />
-      <StatCard
-        label={t('console.lastBroadcast')}
-        value={
-          stats.lastBroadcastAt
-            ? new Date(stats.lastBroadcastAt).toLocaleDateString(i18n.language)
-            : t('console.noBroadcast')
-        }
-      />
-    </ThemedView>
+    <ScrollView contentContainerStyle={styles.statsContent} style={{ backgroundColor: theme.backgroundElement }}>
+      <View style={styles.statsInner} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+        <View style={statsStyles.filters}>
+          <PeriodPills value={days} onChange={setDays} />
+        </View>
+        {isLoading || !stats ? (
+          <ActivityIndicator style={styles.loading} color={theme.tint} />
+        ) : (
+          <>
+            <ThemedText type="caption" themeColor="textTertiary">
+              {`${t('dashboard.basis', { days })} · ${t('console.lastBroadcast')} ${
+                stats.lastBroadcastAt ? new Date(stats.lastBroadcastAt).toLocaleDateString(i18n.language) : t('console.noBroadcast')
+              }`}
+            </ThemedText>
+            <KpiGrid
+              width={width}
+              days={days}
+              subscribers={stats.subscriberCount}
+              netChange={stats.totals.newSubscriptions - stats.totals.cancellations}
+              totals={stats.totals}
+              previous={stats.previous}
+              daily={stats.daily}
+            />
+            <TrendPanels width={width} daily={stats.daily} />
+            <View style={styles.statsGrid}>
+              <Panel title={t('dashboard.mediaMix')} icon={Images} style={half}>
+                <DistributionBars rows={stats.mediaMix} labelOf={(key) => mediaLabel(t, key)} emptyText={t('dashboard.noMessages')} />
+              </Panel>
+              <Panel title={t('dashboard.topMessages')} icon={MessageCircle} style={half}>
+                {stats.topMessages.length === 0 ? (
+                  <ThemedText type="small" themeColor="textTertiary" style={styles.emptyMessage}>
+                    {t('dashboard.noReplies')}
+                  </ThemedText>
+                ) : (
+                  stats.topMessages.map((message, index) => (
+                    <Pressable
+                      key={message.id}
+                      onPress={() => onOpenReplies(message.id)}
+                      accessibilityRole="button"
+                      style={({ hovered, pressed }) => [styles.topMessage, (hovered || pressed) && { backgroundColor: theme.backgroundElement }]}>
+                      <ThemedText type="captionBold" style={[styles.topRank, { color: index === 0 ? theme.tint : theme.textTertiary }]}>
+                        {index + 1}
+                      </ThemedText>
+                      <View style={styles.topBody}>
+                        <ThemedText type="small" numberOfLines={2}>
+                          {message.body ? showNameToken(message.body, t('studio.fanNickname')) : `[${mediaLabel(t, message.mediaType)}]`}
+                        </ThemedText>
+                        <ThemedText type="caption" themeColor="textTertiary">
+                          {new Date(message.createdAt).toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })}
+                        </ThemedText>
+                      </View>
+                      <ThemedText type="smallBold" style={{ color: theme.tint }}>
+                        {t('dashboard.countItems', { count: message.replyCount })}
+                      </ThemedText>
+                    </Pressable>
+                  ))
+                )}
+              </Panel>
+            </View>
+            <AudiencePanels width={width} fans={stats.fans} countries={stats.countries} languages={stats.languages} />
+          </>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -342,7 +388,9 @@ export default function ConsoleActorScreen() {
           setSection(next);
         }}
       />
-      {actor && (
+      {/* 탭마다 무슨 화면인지 한 줄(2026-10-13 사용자 요청) */}
+      <ScreenIntro text={t(`console.tabHint.${section}`)} style={styles.intro} />
+      {actor && section === 'monitor' && (
         <ThemedView style={styles.actorPreview}>
           <Avatar uri={actor.chatProfileImageUrl} size={24} />
           <ThemedView style={styles.actorPreviewBody}>
@@ -363,7 +411,15 @@ export default function ConsoleActorScreen() {
         />
       )}
       {section === 'replies' && <RepliesSection actorId={actorId} messageId={replyFilter} onClearFilter={() => setReplyFilter(null)} />}
-      {section === 'stats' && <StatsSection actorId={actorId} />}
+      {section === 'stats' && (
+        <StatsSection
+          actorId={actorId}
+          onOpenReplies={(messageId) => {
+            setReplyFilter(messageId);
+            setSection('replies');
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -392,6 +448,11 @@ const styles = StyleSheet.create({
   section: { paddingHorizontal: Spacing.four, gap: Spacing.three },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.four },
   loading: { marginTop: Spacing.six },
-  statCard: { borderRadius: 14, padding: Spacing.four, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 36, lineHeight: 42 },
+  intro: { marginHorizontal: Spacing.four, marginBottom: Spacing.two },
+  statsContent: { padding: Spacing.three, paddingBottom: Spacing.five },
+  statsInner: { width: '100%', maxWidth: 1280, alignSelf: 'center', gap: Spacing.three },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  topMessage: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: 6, paddingHorizontal: 4, borderRadius: Radius.md },
+  topRank: { width: 18, textAlign: 'center' },
+  topBody: { flex: 1, gap: 2, minWidth: 0 },
 });

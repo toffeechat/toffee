@@ -11,7 +11,7 @@ import i18n from '@/i18n';
  * 앱은 신호를 받으면 해당 목록을 평소 API로 다시 불러옴(react-query invalidate). 연결이 살아 있는 동안엔
  * 폴링을 길게(30초, 혹시 놓친 신호 대비), 끊겨 있으면 예전처럼 짧게 — `useLiveInterval` (2026-09-29)
  */
-interface RealtimeEvent {
+export interface RealtimeEvent {
   kind: 'artist-message' | 'message-removed' | 'fan-reply' | 'access-changed';
   actorId?: string;
   messageId?: string;
@@ -38,7 +38,15 @@ export function useLiveInterval(fallbackMs: number): number {
   return useRealtimeConnected() ? 30_000 : fallbackMs;
 }
 
+// 목록 새로고침 말고 따로 반응해야 하는 곳(소속사 PC 웹 새 메시지 알림, 2026-10-13)이 듣는 곳
+const eventListeners = new Set<(event: RealtimeEvent) => void>();
+export function onRealtimeEvent(listener: (event: RealtimeEvent) => void): () => void {
+  eventListeners.add(listener);
+  return () => eventListeners.delete(listener);
+}
+
 function applyEvent(queryClient: QueryClient, event: RealtimeEvent) {
+  eventListeners.forEach((listener) => listener(event));
   // 내 구독이 바뀜(다른 기기에서 구독·해지 등) — 인박스·구독 관리. 서버도 이 연결이 받을 방 목록을 바로 다시 읽음
   if (event.kind === 'access-changed') {
     void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });

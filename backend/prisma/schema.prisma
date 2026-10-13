@@ -460,14 +460,15 @@ model Message {
   deletedByStaffId String?
   createdAt        DateTime          @default(now())
 
-  actor        Actor                @relation("MessageChannel", fields: [actorId], references: [id], onDelete: Cascade)
+  actor         Actor                @relation("MessageChannel", fields: [actorId], references: [id], onDelete: Cascade)
   // 스타 메시지를 실제로 보낸 배우 — 1인 방은 그 배우, 커플방은 두 멤버 중 보낸 쪽(말풍선에 이름·사진 표시). 팬 답장은 null
-  senderActor  Actor?               @relation("MessageSenderActor", fields: [senderActorId], references: [id], onDelete: SetNull)
-  fanUser      User?                @relation("FanMessages", fields: [fanUserId], references: [id])
-  replyTo      Message?             @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
-  replies      Message[]            @relation("MessageReplies")
-  translations MessageTranslation[]
-  reports      Report[]
+  senderActor   Actor?               @relation("MessageSenderActor", fields: [senderActorId], references: [id], onDelete: SetNull)
+  fanUser       User?                @relation("FanMessages", fields: [fanUserId], references: [id])
+  replyTo       Message?             @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies       Message[]            @relation("MessageReplies")
+  translations  MessageTranslation[]
+  reports       Report[]
+  blockTriggers ActorFanBlock[]
 
   @@index([replyToMessageId])
   // 팬 대화방 나눠 받기·방 안 검색·사진 모아보기가 전부 "이 방의 메시지를 시간순으로" 찾음(2026-09-29)
@@ -554,11 +555,14 @@ model ActorFanBlock {
   fanUserId   String
   blockedById String
   reason      String?
+  // 차단 계기가 된 팬 답장(2026-10-13, 소속사 "기록" 화면) — 차단하면 그 답장이 다른 화면에서 빠져서 여기서만 다시 볼 수 있음
+  messageId   String?
   createdAt   DateTime @default(now())
 
-  actor     Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  fanUser   User  @relation("BlockedInChannels", fields: [fanUserId], references: [id], onDelete: Cascade)
-  blockedBy User  @relation("BlocksIssued", fields: [blockedById], references: [id])
+  actor     Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  fanUser   User     @relation("BlockedInChannels", fields: [fanUserId], references: [id], onDelete: Cascade)
+  blockedBy User     @relation("BlocksIssued", fields: [blockedById], references: [id])
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@unique([actorId, fanUserId])
   @@index([fanUserId])

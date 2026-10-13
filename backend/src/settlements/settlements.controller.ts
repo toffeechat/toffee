@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { SettlementsService } from './settlements.service.js';
+import { SettlementsService, withoutPlatformShare } from './settlements.service.js';
 import { SettlementPayoutDto, SettlementQueryDto } from './dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
@@ -16,7 +16,9 @@ export class SettlementsController {
   @Get()
   async report(@CurrentUser() user: AuthenticatedUser, @Query() query: SettlementQueryDto) {
     const scope = await this.settlements.scopeFor(user.id);
-    return this.settlements.report(query.month, { agencyId: scope.agencyId ?? query.agencyId, includeSandbox: query.includeSandbox });
+    const report = await this.settlements.report(query.month, { agencyId: scope.agencyId ?? query.agencyId, includeSandbox: query.includeSandbox });
+    // 소속사 직원에겐 토피 몫을 빼고(2026-10-13)
+    return scope.agencyId ? withoutPlatformShare(report) : report;
   }
 
   // 마감·마감 취소는 운영자만(지급 근거를 고정하는 일)
@@ -53,6 +55,6 @@ export class SettlementsController {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="toffee-settlement-${query.month}${query.detail ? '-rooms' : ''}.csv"`);
     res.setHeader('Cache-Control', 'no-store');
-    res.send(this.settlements.toCsv(report, query.detail));
+    res.send(this.settlements.toCsv(report, query.detail, !scope.agencyId));
   }
 }

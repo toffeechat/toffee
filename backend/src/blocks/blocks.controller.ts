@@ -18,7 +18,7 @@ export class BlocksController {
 
   @Post()
   block(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string, @Body() dto: CreateBlockDto) {
-    return this.blocksService.block(user.id, actorId, dto.fanUserId, dto.reason);
+    return this.blocksService.block(user.id, actorId, dto.fanUserId, dto.reason, dto.messageId);
   }
 
   @Delete(':fanUserId')

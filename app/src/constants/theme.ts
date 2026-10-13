@@ -26,6 +26,10 @@ export const Colors = {
     danger: '#E5484D',
     // 사진 없는 기본 프로필의 사람 실루엣(바탕은 tintSoft)
     avatarFigure: '#FFFFFF',
+    // 그래프 계열색(2026-10-13 소속사 대시보드) — 1번 = 라벤더를 한 단계 진하게(흰 바탕 3:1 이상), 2번 = 대비용 주황(해지 등).
+    // 색약 시뮬레이션·밝기 검사를 통과한 쌍이라 마음대로 바꾸지 말 것(brand-guide.md "그래프 색")
+    chart1: '#5F6FEA',
+    chart2: '#EB6834',
   },
   dark: {
     text: '#ffffff',
@@ -41,6 +45,8 @@ export const Colors = {
     onPrimary: '#0F1115',
     danger: '#FF6369',
     avatarFigure: 'rgba(124, 140, 255, 0.45)',
+    chart1: '#6E7EF7',
+    chart2: '#D95926',
   },
 } as const;
 

@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ensureCanViewActor, ensureIsActorSelf, viewableActorsWhere } from '../common/authorization/actor-access.js';
 import { normalizeNickname } from '../common/nickname/nickname.js';
 import { ModerationService } from '../moderation/moderation.service.js';
-import { ActorKind, ArtistGender, MessageSenderType, Role, SubscriptionEventType } from '../generated/prisma/enums.js';
+import { ActorKind, ArtistGender, MessageSenderType, Role } from '../generated/prisma/enums.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { MediaService } from '../storage/media.service.js';
 import { appError } from '../common/i18n/app-error.js';
@@ -106,55 +106,6 @@ export class ActorsService {
     return Promise.all(actors.map(async (actor) => ({ ...(await this.withImageUrls(actor)), lastBroadcastAt: last.get(actor.id) ?? null })));
   }
 
-  /**
-   * 소속사 통계 대시보드(2026-10-12 사용자 결정으로 1차) — 볼 수 있는 방 전체를 한 표로: 구독자 수, 최근 N일 새 구독·해지·보낸 메시지·
-   * 받은 팬 답장, 마지막 메시지 시각. 순위(구독자 많은 순, 오래 안 보낸 순 등)는 앱이 이 표를 정렬해서 보여 줌.
-   */
-  async dashboard(userId: string, days = 30) {
-    const actors = await this.findMine(userId);
-    const ids = actors.map((actor) => actor.id);
-    if (ids.length === 0) return { days, actors: [] };
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    const [subscribers, events, sent, replies] = await Promise.all([
-      this.prisma.subscription.groupBy({ by: ['actorId'], where: { actorId: { in: ids }, cancelledAt: null }, _count: { _all: true } }),
-      this.prisma.subscriptionEvent.groupBy({
-        by: ['actorId', 'type'],
-        where: { actorId: { in: ids }, createdAt: { gte: since } },
-        _count: { _all: true },
-      }),
-      this.prisma.message.groupBy({
-        by: ['actorId'],
-        where: { actorId: { in: ids }, senderType: MessageSenderType.ARTIST, deletedAt: null, createdAt: { gte: since } },
-        _count: { _all: true },
-      }),
-      this.prisma.message.groupBy({
-        by: ['actorId'],
-        where: { actorId: { in: ids }, senderType: MessageSenderType.FAN, createdAt: { gte: since } },
-        _count: { _all: true },
-      }),
-    ]);
-    const count = (rows: { actorId: string; _count: { _all: number } }[], id: string) => rows.find((row) => row.actorId === id)?._count._all ?? 0;
-    const eventCount = (id: string, type: SubscriptionEventType) =>
-      events.find((row) => row.actorId === id && row.type === type)?._count._all ?? 0;
-    return {
-      days,
-      actors: actors.map((actor) => ({
-        id: actor.id,
-        kind: actor.kind,
-        chatDisplayName: actor.chatDisplayName,
-        legalName: actor.legalName,
-        chatProfileImageUrl: actor.chatProfileImageUrl,
-        retiredAt: actor.retiredAt,
-        lastBroadcastAt: actor.lastBroadcastAt,
-        subscriberCount: count(subscribers, actor.id),
-        newSubscriptions: eventCount(actor.id, SubscriptionEventType.STARTED),
-        cancellations: eventCount(actor.id, SubscriptionEventType.CANCELLED),
-        messagesSent: count(sent, actor.id),
-        fanReplies: count(replies, actor.id),
-      })),
-    };
-  }
-
   /** 방별 마지막 스타 메시지 시각(지운 메시지 제외) */
   async lastBroadcastMap(actorIds: string[]): Promise<Map<string, Date | null>> {
     if (actorIds.length === 0) return new Map();
@@ -164,19 +115,6 @@ export class ActorsService {
       _max: { createdAt: true },
     });
     return new Map(rows.map((row) => [row.actorId, row._max.createdAt]));
-  }
-
-  async getStats(userId: string, actorId: string) {
-    await ensureCanViewActor(this.prisma, userId, actorId);
-    const [subscriberCount, lastBroadcast] = await Promise.all([
-      this.prisma.subscription.count({ where: { actorId, cancelledAt: null } }),
-      this.prisma.message.findFirst({
-        where: { actorId, senderType: MessageSenderType.ARTIST },
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
-      }),
-    ]);
-    return { subscriberCount, lastBroadcastAt: lastBroadcast?.createdAt ?? null };
   }
 
   // 이미지 필드에 저장소 키가 들어 있으면 임시 조회 URL로 바꿔서 내려줌(MediaService.resolveImageUrl)

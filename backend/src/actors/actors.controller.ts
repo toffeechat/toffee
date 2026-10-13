@@ -1,5 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ActorsService } from './actors.service.js';
+import { AgencyStatsService } from './agency-stats.service.js';
+import { AgencyRecordsService } from './agency-records.service.js';
+import { ActorStatsQueryDto, AgencyDashboardQueryDto, AgencyRecordsQueryDto } from './dto/agency-stats-query.dto.js';
 import { ListActorsQueryDto } from './dto/list-actors-query.dto.js';
 import { CreateChatProfileUploadDto, SetChatProfileImageDto } from './dto/chat-profile-image.dto.js';
 import { UpdateActorNicknameDto } from './dto/update-actor-nickname.dto.js';
@@ -11,7 +14,11 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
 @Controller('actors')
 export class ActorsController {
-  constructor(private readonly actorsService: ActorsService) {}
+  constructor(
+    private readonly actorsService: ActorsService,
+    private readonly agencyStats: AgencyStatsService,
+    private readonly agencyRecords: AgencyRecordsService,
+  ) {}
 
   @Public()
   @Get()
@@ -26,11 +33,18 @@ export class ActorsController {
     return this.actorsService.findMine(user.id);
   }
 
-  // 소속사 통계 대시보드(2026-10-12) — 볼 수 있는 방 전체 비교. 'mine/dashboard'도 ':id'보다 먼저
+  // 소속사 통계 대시보드(2026-10-12, 10-13 개편: 기간·아티스트/CP·추이·팬 나라/언어). 'mine/…'은 ':id'보다 먼저
   @Roles(Role.AGENCY_STAFF, Role.ADMIN)
   @Get('mine/dashboard')
-  dashboard(@CurrentUser() user: AuthenticatedUser) {
-    return this.actorsService.dashboard(user.id);
+  dashboard(@CurrentUser() user: AuthenticatedUser, @Query() query: AgencyDashboardQueryDto) {
+    return this.agencyStats.dashboard(user.id, query.days, query.kind);
+  }
+
+  // 소속사 "기록"(2026-10-13) — 소속 아티스트 방의 차단·신고·메시지 삭제
+  @Roles(Role.AGENCY_STAFF, Role.ADMIN)
+  @Get('mine/records')
+  records(@CurrentUser() user: AuthenticatedUser, @Query() query: AgencyRecordsQueryDto) {
+    return this.agencyRecords.records(user.id, query.actorId);
   }
 
   // 이 배우가 든 커플방(배우 프로필 "커플방")
@@ -48,8 +62,8 @@ export class ActorsController {
 
   @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
   @Get(':id/stats')
-  getStats(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.actorsService.getStats(user.id, id);
+  getStats(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Query() query: ActorStatsQueryDto) {
+    return this.agencyStats.actorStats(user.id, id, query.days);
   }
 
   // 배우 닉네임(채팅방에 보이는 이름) — 배우 본인만(소속사는 발송 권한과 마찬가지로 대신 못 바꿈)
