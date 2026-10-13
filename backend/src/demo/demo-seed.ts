@@ -101,7 +101,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       officialProfileImageUrl: demoImage('nougat-official'),
       chatDisplayName: '누가',
       chatProfileImageUrl: demoImage('nougat-chat'),
-      gender: 'MALE',
+      gender: 'FEMALE',
       monthlyPriceCents: 9900,
       agencyId: demoAgency.id,
     },
@@ -115,20 +115,6 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       { actorId: nougat.id, agencyId: formerAgency.id, startedAt: daysAgo(120), endedAt: daysAgo(30) },
       { actorId: nougat.id, agencyId: demoAgency.id, startedAt: daysAgo(30) },
     ],
-  });
-
-  // 커플(CP)방 — 캐러멜 + 누가(2026-09-29). 방 이름·대화방 사진은 두 배우가 각자 바꿀 수 있음
-  await prisma.actor.create({
-    data: {
-      id: DEMO_IDS.couple,
-      kind: 'COUPLE',
-      legalName: '(가상) 데모 아티스트 A & B',
-      chatDisplayName: '캐러멜 & 누가',
-      officialProfileImageUrl: demoImage('couple-caramel-nougat'),
-      chatProfileImageUrl: demoImage('couple-caramel-nougat'),
-      monthlyPriceCents: 6900,
-      coupleMembers: { create: [{ memberId: caramel.id }, { memberId: nougat.id }] },
-    },
   });
 
   // 가상 아티스트 4명 더(2026-10-12) — 구독자는 없고 메시지만 몇 개(소속사 대시보드의 "오래 안 보낸 순" 등이 달라 보이게)
@@ -159,6 +145,21 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       ],
     });
   }
+
+  // 커플(CP)방 — 캐러멜 + 마카롱 GL(2026-10-13 변경: 태국 CP는 GL·BL이라 같은 성별로, 예전엔 캐러멜 + 누가).
+  // 방 이름·대화방 사진은 두 아티스트가 각자 바꿀 수 있음. 마카롱이 위 반복문에서 만들어진 뒤에 만든다
+  await prisma.actor.create({
+    data: {
+      id: DEMO_IDS.couple,
+      kind: 'COUPLE',
+      legalName: '(가상) 데모 아티스트 A & C',
+      chatDisplayName: '캐러멜 & 마카롱',
+      officialProfileImageUrl: demoImage('couple-caramel-macaron'),
+      chatProfileImageUrl: demoImage('couple-caramel-macaron'),
+      monthlyPriceCents: 6900,
+      coupleMembers: { create: [{ memberId: caramel.id }, { memberId: DEMO_IDS.macaron }] },
+    },
+  });
 
   // 데모 엔터 스태프 1명 — 같은 소속사라 두 배우 모두 모니터링 가능
   const staff = await prisma.user.create({
@@ -291,7 +292,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: [
       { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'สวัสดี {{name}}! วันนี้กินข้าวหรือยัง? คิดถึงนะ 555', createdAt: daysAgo(3) },
       { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'วันนี้ถ่ายละครเสร็จดึกมากเลย เหนื่อยแต่สนุกมาก ขอบคุณที่รอนะคะ 🥹', createdAt: daysAgo(2) },
-      { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ครับ พรุ่งนี้ผมมีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยครับ ㅠㅠ', createdAt: daysAgo(2) },
+      { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ค่ะ พรุ่งนี้มีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยค่ะ ㅠㅠ', createdAt: daysAgo(2) },
     ],
   });
   // 반대 방향 — 아티스트(한국어 화면)가 답장 목록에서 태국어 팬 답장의 "번역 보기"를 눌러 볼 수 있게

@@ -1480,7 +1480,7 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   - 업로드 실패는 `ApiError.message`(서버 번역 문구) 표시, 소셜 로그인 실패는 `Sentry.captureException` + 테스트 빌드(`__DEV__`/
     `EXPO_PUBLIC_ENABLE_DEV_LOGIN`)에서만 SDK `code · message`. 앱 아이콘 숫자: `AuthProvider`가 USER가 아니면·로그아웃 때 `setAppBadgeCount(0)`.
   - 음성: 스튜디오 `voicePanel` 상태 — 마이크는 패널만 열고, 패널의 녹음 시작/정지, 녹음 후 `VoiceMessage`(로컬 uri)로 미리 듣기·다시 녹음·취소.
-- **데모 이미지**: `app/public/demo/*.jpg`(SVG 일러스트를 Chromium으로 렌더, 실존 인물 아님) — 웹 데모(Pages)가 `/demo/...`로 서비스.
+- **데모 이미지**: `app/public/demo/*.jpg`(2026-10-13부터 **AI로 만든 실사풍 가상 인물** — 사용자가 이미지 생성 AI로 만들어 준 8장을 공식 600×800·대화방 400×400으로 잘라 넣음, 실존 인물 아님. 그 전엔 SVG 일러스트) — 웹 데모(Pages)가 `/demo/...`로 서비스.
   시드는 `DEMO_ASSET_BASE_URL`(기본 `https://demo.toffeechat.app/demo`). 가상 아티스트 4명(`DEMO_IDS.macaron|jellybean|cookie|choco`, id 14~17)·
   소속사 `sweetAgency`(id 3) 추가, 구독 없이 아티스트 메시지 2개씩.
 - **메일**: `eas.json` production에 `EXPO_PUBLIC_SUPPORT_EMAIL=support@toffeechat.app`, `.env.example` `SUPPORT_EMAIL` 예시값, 개인정보처리방침
