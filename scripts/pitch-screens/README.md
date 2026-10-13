@@ -8,8 +8,9 @@
 2. `app/`에서 `EXPO_PUBLIC_API_URL=http://localhost:3000 npx expo start --web --port 8081`
 3. 시드 직후 DB를 `pg_dump -Fc toffee > seed.dump`로 저장
 4. 언어마다: `pg_restore --clean --if-exists -d toffee seed.dump` → 가상 팬 4명 만들기
-   (`POST /auth/dev-login` `fan3`~`fan6@toffee.demo`) → `psql -f loc-<th|ko|en>.sql`
-   → `node capture.cjs <출력 폴더> <th-TH|ko-KR|en-US>`
+   (`POST /auth/dev-login` `fan3`~`fan6@toffee.demo`) 
+   → 답장을 붙일 메시지 id를 찾아(`P=$(psql -At -c "select \"replyToMessageId\" from \"Message\" where body like 'มาเลยค่ะ!%'")`)
+   `psql -v parent=$P -f loc-<언어>.sql` → `REPLY_ID=$P node capture.cjs <출력 폴더> <th-TH|ko-KR|en-US>`
    (Chromium 경로가 다르면 `CHROMIUM_PATH`)
 
 `loc-*.sql`은 가상 아티스트·소속사·팬 이름과 메시지를 그 언어로 바꾸고, 아티스트 화면 "팬 답장"이 비어 보이지 않게 가상 팬 답장 4개를

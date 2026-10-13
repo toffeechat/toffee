@@ -6,14 +6,14 @@ UPDATE "Agency" SET name = CASE id
 UPDATE "Actor" SET "legalName" = v.l, "chatDisplayName" = v.c FROM (VALUES
   ('00000000-0000-4000-8000-000000000011', 'Caramel (sample)', 'Caramel'),
   ('00000000-0000-4000-8000-000000000012', 'Nougat (sample)', 'Nougat'),
-  ('00000000-0000-4000-8000-000000000013', 'Caramel & Nougat (sample)', 'Caramel & Nougat'),
+  ('00000000-0000-4000-8000-000000000013', 'Caramel & Macaron (sample)', 'Caramel & Macaron'),
   ('00000000-0000-4000-8000-000000000014', 'Macaron (sample)', 'Macaron'),
   ('00000000-0000-4000-8000-000000000015', 'Jellybean (sample)', 'Jellybean'),
   ('00000000-0000-4000-8000-000000000016', 'Cookie (sample)', 'Cookie'),
   ('00000000-0000-4000-8000-000000000017', 'Choco (sample)', 'Choco')) AS v(id, l, c)
 WHERE "Actor".id = v.id;
 UPDATE "User" SET nickname = v.n, "displayName" = v.n FROM (VALUES
-  ('fan1@toffee.demo', 'caramel_love'), ('fan2@toffee.demo', 'nougat_fan'), ('fan3@toffee.demo', 'minnie'),
+  ('fan1@toffee.demo', 'caramel_love'), ('fan2@toffee.demo', 'nougat_lover'), ('fan3@toffee.demo', 'minnie'),
   ('fan4@toffee.demo', 'plai'), ('fan5@toffee.demo', 'skyblue'), ('fan6@toffee.demo', 'honey'),
   ('caramel-self@toffee.demo', 'Caramel'), ('staff@toffee.demo', 'Demo Staff')) AS v(e, n)
 WHERE "User".email = v.e;
@@ -27,11 +27,11 @@ UPDATE "Message" SET body = v.t FROM (VALUES
   ('มาเลยค่ะ! ต้องลองข้าวมันไก่ประตูน้ำนะคะ อร่อยมาก รอเจอนะคะ 💕', 'Come! You must try Pratunam chicken rice. Can''t wait 💕'),
   ('สวัสดี {{name}}! วันนี้กินข้าวหรือยัง? คิดถึงนะ 555', 'Hi {{name}}! Have you eaten yet? Miss you haha'),
   ('วันนี้ถ่ายละครเสร็จดึกมากเลย เหนื่อยแต่สนุกมาก ขอบคุณที่รอนะคะ 🥹', 'Finished filming super late today. Tired but so fun. Thanks for waiting 🥹'),
-  ('{{name}} ครับ พรุ่งนี้ผมมีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยครับ ㅠㅠ', '{{name}}, fan meeting in Bangkok tomorrow. So nervous 🥹')) AS v(o, t)
+  ('{{name}} ค่ะ พรุ่งนี้มีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยค่ะ ㅠㅠ', '{{name}}, fan meeting in Bangkok tomorrow. So nervous 🥹')) AS v(o, t)
 WHERE "Message".body = v.o;
 INSERT INTO "Message" (id, "actorId", "senderType", "fanUserId", body, "replyToMessageId", "createdAt")
-SELECT gen_random_uuid()::text, '00000000-0000-4000-8000-000000000011', 'FAN', u.id, v.t, 'ed3a9d2c-0633-4461-9071-0010a097eebd',
+SELECT gen_random_uuid()::text, '00000000-0000-4000-8000-000000000011', 'FAN', u.id, v.t, :'parent',
        p."createdAt" + (v.m || ' minutes')::interval
 FROM (VALUES ('fan3@toffee.demo', 'Go Ang chicken rice! Long queue but worth it', 2), ('fan4@toffee.demo', 'Send us photos when you go 📷', 3),
              ('fan5@toffee.demo', 'It''s so hot there, drink lots of water ☀️', 5), ('fan6@toffee.demo', 'Wish I could meet you there. Have fun 💕', 7)) AS v(e, t, m)
-JOIN "User" u ON u.email = v.e JOIN "Message" p ON p.id = 'ed3a9d2c-0633-4461-9071-0010a097eebd';
+JOIN "User" u ON u.email = v.e JOIN "Message" p ON p.id = :'parent';

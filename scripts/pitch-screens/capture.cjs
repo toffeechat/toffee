@@ -16,7 +16,7 @@ const SHOTS = [
   { name: 'profile', who: 'fan1@toffee.demo', path: `/actor/${CARAMEL}`, mobile: true },
   { name: 'chat', who: 'fan1@toffee.demo', path: `/chat/${CARAMEL}`, mobile: true },
   { name: 'chats', who: 'fan1@toffee.demo', path: '/chats', mobile: true },
-  { name: 'replies', who: 'caramel-self@toffee.demo', path: `/studio/${CARAMEL}/replies/ed3a9d2c-0633-4461-9071-0010a097eebd`, mobile: true },
+  { name: 'replies', who: 'caramel-self@toffee.demo', path: `/studio/${CARAMEL}/replies/${process.env.REPLY_ID}`, mobile: true },
   { name: 'studio', who: 'caramel-self@toffee.demo', path: `/studio/${CARAMEL}`, mobile: true },
   { name: 'console-dashboard', who: 'staff@toffee.demo', path: '/console/dashboard', mobile: false },
   { name: 'console-monitor', who: 'staff@toffee.demo', path: `/console/${CARAMEL}`, mobile: false },
