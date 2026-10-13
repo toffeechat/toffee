@@ -50,7 +50,7 @@ interface ActorRow {
   rooms: Map<string, { roomId: string; name: string; kind: string; grossCents: number }>;
 }
 
-interface Amounts {
+export interface Amounts {
   grossCents: number;
   adjustmentCents: number;
   storeFeeCents: number;
@@ -338,12 +338,12 @@ export class SettlementsService {
   }
 
   /** 엑셀에서 바로 열리는 CSV(한글 깨짐 방지 BOM) — 배우별 한 줄, detail이면 배우×방 한 줄 */
-  toCsv(report: SettlementReport, detail = false): string {
+  toCsv(report: SettlementReport, detail = false, includePlatform = true): string {
     const money = (cents: number) => (cents / 100).toFixed(2);
     const status = report.closed ? `closed ${report.closed.at}` : 'open';
     const header = detail
       ? ['month', 'status', 'agency', 'share_percent', 'actor', 'room', 'room_kind', 'gross']
-      : ['month', 'status', 'agency', 'share_percent', 'actor', 'charges', 'gross', 'adjustment', 'store_fee', 'net', 'payout', 'platform', 'refunded', 'paid_at'];
+      : ['month', 'status', 'agency', 'share_percent', 'actor', 'charges', 'gross', 'adjustment', 'store_fee', 'net', 'payout', ...(includePlatform ? ['platform'] : []), 'refunded', 'paid_at'];
     // 지급 기록 — 소속사는 소속사 단위, 무소속은 배우 단위로 보냄
     const paidAt = (agencyId: string | null, actorId: string) =>
       report.payouts.find((payout) => (agencyId ? payout.agencyId === agencyId : payout.actorId === actorId))?.paidAt ?? '';
@@ -364,7 +364,8 @@ export class SettlementsService {
                 money(actor.storeFeeCents),
                 money(actor.netCents),
                 money(actor.payoutCents),
-                money(actor.platformCents),
+                // 토피 몫은 운영자 CSV에만(소속사엔 안 보여 줌, 2026-10-13)
+                ...(includePlatform ? [money(actor.platformCents)] : []),
                 money(actor.refundedCents),
                 paidAt(agency.agencyId, actor.actorId),
               ],
@@ -379,6 +380,22 @@ export class SettlementsService {
     };
     return '﻿' + [header, ...rows].map((row) => row.map(escape).join(',')).join('\n') + '\n';
   }
+}
+
+/**
+ * 소속사 직원에게 보내는 정산표 — 토피 몫(platformCents)을 뺌(2026-10-13 사용자 결정: 우리 수익이라 소속사 화면엔 안 보여 줌).
+ * 소속사는 결제액 → 스토어 수수료 → 수수료 뺀 금액 → 배분 % → 지급액으로 자기 몫을 검산할 수 있음.
+ */
+export function withoutPlatformShare(report: SettlementReport) {
+  const strip = <T extends { platformCents: number }>({ platformCents, ...rest }: T): Omit<T, 'platformCents'> => {
+    void platformCents;
+    return rest;
+  };
+  return {
+    ...report,
+    totals: strip(report.totals),
+    agencies: report.agencies.map((agency) => ({ ...strip(agency), actors: agency.actors.map(strip) })),
+  };
 }
 
 /** 마감한 표에서 받는 쪽 찾기 — 소속사 합계, 또는 무소속 그룹 안의 배우 한 명 */

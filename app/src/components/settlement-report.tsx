@@ -168,6 +168,7 @@ export function SettlementReportView({ agencyFilter, canClose }: { agencyFilter?
               <AgencyTable
                 key={agency.agencyId ?? 'none'}
                 agency={agency}
+                columns={report.totals.platformCents === undefined ? COLUMNS.filter((column) => column.key !== 'platformCents') : COLUMNS}
                 // 지급 기록은 마감한 달에만(마감한 표 기준으로 보냄)
                 payouts={report.closed ? { month, list: report.payouts ?? [], canRecord: !!canClose } : undefined}
               />
@@ -207,7 +208,8 @@ function SummaryCards({ totals, storeFeePercent }: { totals: SettlementAmounts; 
     { label: t('settlement.storeFee', { percent: storeFeePercent }), value: totals.storeFeeCents },
     { label: t('settlement.net'), value: totals.netCents },
     { label: t('settlement.payout'), value: totals.payoutCents, strong: true },
-    { label: t('settlement.platform'), value: totals.platformCents },
+    // 토피 몫은 운영자 화면에만(소속사 응답엔 없음, 2026-10-13)
+    ...(totals.platformCents !== undefined ? [{ label: t('settlement.platform'), value: totals.platformCents }] : []),
     { label: t('settlement.refunded'), value: totals.refundedCents },
   ];
   return (
@@ -237,7 +239,11 @@ const COLUMNS: { key: keyof SettlementAmounts | 'chargeCount'; label: string }[]
   { key: 'refundedCents', label: 'settlement.refunded' },
 ];
 
-function AgencyTable({ agency, payouts }: { agency: SettlementAgency; payouts?: { month: string; list: SettlementPayout[]; canRecord: boolean } }) {
+function AgencyTable({ agency, payouts, columns }: {
+  agency: SettlementAgency;
+  payouts?: { month: string; list: SettlementPayout[]; canRecord: boolean };
+  columns: typeof COLUMNS;
+}) {
   const theme = useTheme();
   const { t } = useTranslation();
   const money = useMoney();
@@ -258,20 +264,20 @@ function AgencyTable({ agency, payouts }: { agency: SettlementAgency; payouts?: 
             <ThemedText type="smallBold" style={styles.nameCol}>
               {t('settlement.actor')}
             </ThemedText>
-            {COLUMNS.map((column) => (
+            {columns.map((column) => (
               <ThemedText key={column.key} type="smallBold" style={styles.numCol}>
                 {t(column.label)}
               </ThemedText>
             ))}
           </View>
           {agency.actors.map((actor) => (
-            <ActorRow key={actor.actorId} actor={actor} cell={cell} />
+            <ActorRow key={actor.actorId} actor={actor} cell={cell} columns={columns} />
           ))}
           <View style={[styles.tr, styles.totalRow, { borderTopColor: theme.border }]}>
             <ThemedText type="smallBold" style={styles.nameCol}>
               {t('settlement.total')}
             </ThemedText>
-            {COLUMNS.map((column) => (
+            {columns.map((column) => (
               <ThemedText key={column.key} type="smallBold" style={styles.numCol}>
                 {column.key === 'chargeCount' ? '' : cell(agency, column.key)}
               </ThemedText>
@@ -309,7 +315,7 @@ function AgencyTable({ agency, payouts }: { agency: SettlementAgency; payouts?: 
   );
 }
 
-function ActorRow({ actor, cell }: { actor: SettlementActor; cell: (row: SettlementActor, key: (typeof COLUMNS)[number]['key']) => string }) {
+function ActorRow({ actor, cell, columns }: { actor: SettlementActor; cell: (row: SettlementActor, key: (typeof COLUMNS)[number]['key']) => string; columns: typeof COLUMNS }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const money = useMoney();
@@ -324,7 +330,7 @@ function ActorRow({ actor, cell }: { actor: SettlementActor; cell: (row: Settlem
             .join(' · ')}
         </ThemedText>
       </View>
-      {COLUMNS.map((column) => (
+      {columns.map((column) => (
         <ThemedText key={column.key} type="small" style={styles.numCol}>
           {cell(actor, column.key)}
         </ThemedText>

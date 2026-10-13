@@ -1,20 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MessageSenderType, ReportStatus, Role, SubscriptionEventType } from '../generated/prisma/enums.js';
-
-// 통계의 "하루"는 태국 시간 기준(주 시장) — 날짜 경계를 서버 시간대에 맡기지 않음
-const STATS_TIME_ZONE = 'Asia/Bangkok';
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** 태국 시간 기준 오늘 0시(UTC Date) */
-function startOfTodayInZone(now = new Date()): Date {
-  const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: STATS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' })
-    .format(now)
-    .split('-')
-    .map(Number);
-  // Asia/Bangkok은 서머타임 없이 UTC+7 고정
-  return new Date(Date.UTC(y, m - 1, d) - 7 * 60 * 60 * 1000);
-}
+import { DAY_MS, STATS_TIME_ZONE, startOfTodayInZone } from '../common/utils/stats-time.js';
 
 // 팬 통계는 실제 팬 계정만(배우·소속사·운영자, 탈퇴 계정 제외)
 const FAN_WHERE = { role: Role.USER, deletedAt: null } as const;

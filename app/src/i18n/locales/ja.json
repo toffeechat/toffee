@@ -106,8 +106,8 @@
     "languageSystem": "端末の言語に合わせる"
   },
   "console": {
-    "title": "担当しているアーティスト",
-    "empty": "担当しているアーティストはいません。",
+    "title": "所属アーティスト",
+    "empty": "所属アーティストはいません。",
     "monitoring": "{{name}}をモニタリング中",
     "tabs": {
       "monitor": "モニタリング",
@@ -139,7 +139,13 @@
     "deleteBody": "ファンの画面からすぐに消え、元に戻せません。送信済みの通知は取り消せません。アーティストの画面には「事務所が削除したメッセージ」と表示されます。",
     "deleteConfirm": "削除",
     "deletedByAgency": "事務所が削除したメッセージ（ファンには非表示）",
-    "allReplies": "すべての返信"
+    "allReplies": "すべての返信",
+    "description": "所属アーティストの一覧です。タップすると送信メッセージ・ファンの返信・統計を確認できます。",
+    "tabHint": {
+      "monitor": "アーティストがファンに送ったメッセージを確認する画面です。問題のあるメッセージは代わりに削除できます。",
+      "replies": "ファンからの返信を確認する画面です。問題のある返信は通報したり、そのファンをブロックしたりできます。",
+      "stats": "このアーティストの購読・メッセージ・返信の推移とファンの分布を確認する画面です。"
+    }
   },
   "onboarding": {
     "birthDateTitle": "生年月日を入力してください",
@@ -670,21 +676,122 @@
     "title": "設定"
   },
   "dashboard": {
-    "title": "ダッシュボード",
-    "subscribers": "購読者",
-    "newSubs": "新規購読（直近{{days}}日）",
-    "cancellations": "解約（直近{{days}}日）",
-    "messages": "送信メッセージ（直近{{days}}日）",
-    "replies": "ファンの返信（直近{{days}}日）",
+    "title": "統計ダッシュボード",
     "countPeople": "{{count}}人",
     "countItems": "{{count}}件",
-    "rowSummary": "購読者 {{subscribers}} · 新規 {{newSubs}} · 返信 {{replies}}",
     "sort": {
       "subscribers": "購読者が多い順",
       "idle": "送っていない期間が長い順",
       "newSubs": "新規購読が多い順",
       "replies": "返信が多い順",
-      "messages": "送信が多い順"
-    }
+      "messages": "送信が多い順",
+      "cancellations": "解約が多い順",
+      "engagement": "反応が良い順"
+    },
+    "description": "所属アーティスト全体の購読・メッセージ・ファンの反応をひと目で確認できる画面です。ランキングのアーティストをタップするとその画面に移動します。",
+    "kind": {
+      "ALL": "すべて",
+      "SOLO": "アーティスト",
+      "COUPLE": "CP"
+    },
+    "period": "{{days}}日",
+    "basis": "タイ時間基準の直近{{days}}日 · 増減は直前の{{days}}日と比較",
+    "kpi": {
+      "subscribers": "購読中",
+      "newSubs": "新規購読",
+      "cancellations": "解約",
+      "messages": "送信メッセージ",
+      "replies": "ファンの返信",
+      "engagement": "メッセージあたりの返信"
+    },
+    "vsPrevious": "前の{{days}}日と比較",
+    "netChange": "直近{{days}}日の純増 {{value}}人",
+    "engagementHint": "1つのメッセージに届いた返信の平均数",
+    "same": "変化なし",
+    "fromZero": "+{{count}}",
+    "trendSubs": "新規購読・解約の推移",
+    "trendActivity": "ファンの返信・送信メッセージの推移",
+    "rankings": "アーティストランキング",
+    "more": "全ランキング",
+    "less": "閉じる",
+    "moreCount": "あと{{count}}件を表示",
+    "fullRanking": "全ランキング",
+    "audience": "ファンの分布",
+    "countries": "ファンの国",
+    "languages": "ファンの言語",
+    "audienceBasis": "現在購読中のファン{{count}}人が基準 · 複数のアーティストを購読しているファンは1回だけ · ファンが少ない国・言語は「その他」にまとめます",
+    "other": "その他",
+    "unknown": "不明",
+    "deviceLanguage": "端末の言語",
+    "noData": "まだデータがありません",
+    "noCancellations": "この期間に解約はありません",
+    "noMessages": "この期間に送信したメッセージはありません",
+    "noReplies": "この期間に返信が届いたメッセージはありません",
+    "retired": "活動終了",
+    "daysAgo": "{{count}}日前",
+    "perMessage": "1件あたり{{value}}件",
+    "mediaMix": "送信メッセージの種類",
+    "topMessages": "返信が多かったメッセージ"
+  },
+  "consoleNav": {
+    "dashboard": "ダッシュボード",
+    "artists": "所属アーティスト"
+  },
+  "consoleAlerts": {
+    "newMessage": "{{name}}さんが新しいメッセージを送りました",
+    "anArtist": "所属アーティスト",
+    "tapToView": "タップしてモニタリングを開く",
+    "unread": "新着メッセージ{{count}}件",
+    "newLabel": "新着"
+  },
+  "records": {
+    "title": "記録",
+    "description": "所属アーティストのルームでブロックしたファン、通報した返信、削除されたメッセージをまとめて確認する画面です。",
+    "tabs": {
+      "blocks": "ブロックしたファン",
+      "reports": "通報",
+      "deleted": "削除されたメッセージ"
+    },
+    "allArtists": "すべて",
+    "by": {
+      "ACTOR": "アーティスト",
+      "AGENCY_STAFF": "事務所",
+      "ADMIN": "Toffee運営"
+    },
+    "byMe": "自分",
+    "blockedMeta": "{{who}}がブロック · {{date}}",
+    "trigger": "ブロックのきっかけになった返信",
+    "noTrigger": "きっかけの返信の記録はありません",
+    "reportedMeta": "{{who}}が通報 · {{date}}",
+    "status": {
+      "PENDING": "対応待ち",
+      "RESOLVED": "対応済み",
+      "DISMISSED": "問題なし"
+    },
+    "deletedBy": "{{who}}が削除",
+    "hiddenByAdmin": "運営ポリシーによりToffee運営が非表示",
+    "deletedMeta": "送信 {{sent}} · 削除 {{deleted}}",
+    "empty": {
+      "blocks": "ブロックしたファンはいません。",
+      "reports": "通報した返信はありません。",
+      "deleted": "削除されたメッセージはありません。"
+    },
+    "limitNote": "最新{{count}}件まで表示しています。それより古い記録は上でアーティストを選んでください。",
+    "unblockTitle": "{{nickname}}さんのブロックを解除しますか？",
+    "unblockBody": "解除すると、このファンは再び返信を送れるようになります。"
+  },
+  "countries": {
+    "TH": "タイ",
+    "KR": "韓国",
+    "JP": "日本",
+    "TW": "台湾",
+    "HK": "香港",
+    "CN": "中国",
+    "VN": "ベトナム",
+    "SG": "シンガポール",
+    "MY": "マレーシア",
+    "PH": "フィリピン",
+    "ID": "インドネシア",
+    "US": "アメリカ"
   }
 }

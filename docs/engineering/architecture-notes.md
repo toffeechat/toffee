@@ -1531,3 +1531,29 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - EAS: `app.config.ts` `extra.eas.build.experimental.ios.appExtensions`에 같은 타깃·번들 ID(확장용 프로비저닝 프로파일). 확장은 Pods를 안 씀.
 - 이 환경(리눅스)에선 `expo prebuild -p ios --no-install`으로 pbxproj·entitlements·Info.plist까지만 확인 — Swift 컴파일·서명은 EAS 빌드에서.
 - 안드로이드는 FCM notification 메시지가 큰 아이콘(largeIcon)을 못 받아서, 하려면 data 메시지 + 앱이 직접 그리기(notifee 등) — 테스트 기기 생기면.
+
+## 소속사 대시보드·기록·웹 알림·정산 토피 몫 (2026-10-13)
+
+- **통계 API**: `backend/src/actors/agency-stats.service.ts`(`AgencyStatsService`). `GET /actors/mine/dashboard?days=7|30|90&kind=ALL|SOLO|COUPLE`,
+  `GET /actors/:id/stats?days=`(기존 응답 필드 `subscriberCount`·`lastBroadcastAt` 유지 + 확장). 기간 = 태국 날짜 기준 오늘 포함 N일, 비교 = 바로 앞 N일.
+  `activity()`가 SubscriptionEvent·Message를 `actorId, kind, 태국 날짜`로 raw SQL group by(앞 기간 시작부터 한 번에) → 방별·일별·합계·앞 기간으로 나눔.
+  메시지는 지운 아티스트 메시지 제외, 팬 답장은 전부. `audience()`는 구독 중(`cancelledAt IS NULL`)·탈퇴 안 한 팬의 `countryCode`/`locale`을
+  `count(DISTINCT u.id)`. `groupSmall()`이 `STATS_MIN_GROUP_SIZE`(기본 5) 미만 묶음을 `other`로. 태국 날짜 도우미는 `common/utils/stats-time.ts`로 빼서
+  운영자 통계와 같이 씀. 순위 정렬은 앱(`app/src/utils/dashboard-rank.ts`, 단위 테스트).
+- **기록 API**: `agency-records.service.ts` `GET /actors/mine/records?actorId=` — 볼 수 있는 방(`findMine`)의 `ActorFanBlock`(+ 계기 메시지),
+  `Report`(신고자 역할이 ACTOR/AGENCY_STAFF인 것만), 지운 ARTIST 메시지, 각 최근 200건. 행위자는 역할 + `byMe`만.
+  스키마: `ActorFanBlock.messageId`(FK → Message, SetNull) — `POST /actors/:id/blocks`에 `messageId`(선택)를 주면 그 방·그 팬의 메시지일 때만 저장.
+  마이그레이션 `20261013010000_block_trigger_message`.
+- **정산**: `withoutPlatformShare(report)`(settlements.service) — 컨트롤러가 소속사 직원(`scopeFor`에 agencyId)이면 응답에서 `platformCents`를 뺌,
+  CSV는 `toCsv(report, detail, includePlatform=false)`로 열 자체를 뺌. 앱은 `totals.platformCents === undefined`면 카드·열을 숨김.
+- **앱 라우팅**: `app/src/app/console/(tabs)/`(index=대시보드, artists, records, settings — settings는 `settings/staff` 재사용) + 스택 위 `console/[actorId]`,
+  `console/ranking`, `console/settlements`. 넓은 PC 화면은 탭 줄을 숨기고 `WideShell` 왼쪽 메뉴(`activeConsoleItem`이 선택 표시 결정).
+  예전 `/console/dashboard` 주소는 없어짐(`/console`이 대시보드).
+- **그래프 부품**: `components/console-charts.tsx`(Panel·SegmentedPills·DeltaBadge·Sparkline·KpiCard·TrendChart·RankCard·DistributionBars,
+  react-native-svg), 화면 구역은 `components/console-stats.tsx`. TrendChart는 투명 판에서 responder(터치)·`onPointerMove`(웹 마우스)로 날짜를 고름.
+  색은 테마 `chart1`·`chart2`만(brand-guide "그래프 색").
+- **웹 새 메시지 알림**: `lib/realtime.ts`에 `onRealtimeEvent` 구독 추가 → `lib/console-alerts.ts` `useConsoleWebAlerts()`(SessionEffects)가
+  웹·AGENCY_STAFF·`notifyArtistMessages !== false`일 때 `artist-message`마다 모듈 상태 카운트 + `showInAppBanner` + `document.title` 앞 "(N)".
+  `/console/<id>`로 가면 그 방 카운트 삭제. 새로고침하면 카운트는 사라짐(서버 저장 안 함).
+- **데모 시드**: `seedStatsCrowd()` — 고정 난수로 가상 팬 48명(id `demoId(200+i)`, 이메일 없음)·구독·SubscriptionEvent·팬 답장, 기록 예시 3건.
+

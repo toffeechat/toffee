@@ -41,16 +41,15 @@ export function WideShell({ children }: { children: ReactNode }) {
   const isAdmin = pathname.startsWith('/admin') || (role === 'ADMIN' && !pathname.startsWith('/console'));
   const items: { href: string; label: string }[] = isAdmin
     ? [{ href: '/admin', label: '홈' }, ...ADMIN_MENU.map((item) => ({ href: item.href, label: item.label }))]
-    : [
-        { href: '/console', label: t('console.title') },
-        { href: '/console/dashboard', label: t('dashboard.title') },
+    : // 소속사 — 앱 하단 탭과 같은 순서(대시보드가 첫 화면, 2026-10-13) + PC 전용 정산
+      [
+        { href: '/console', label: t('consoleNav.dashboard') },
+        { href: '/console/artists', label: t('consoleNav.artists') },
+        { href: '/console/records', label: t('records.title') },
         { href: '/console/settlements', label: t('settlement.title') },
-        { href: '/settings/staff', label: t('staffSettings.title') },
+        { href: '/console/settings', label: t('staffSettings.title') },
       ];
-  // 가장 길게 맞는 메뉴를 선택된 것으로(/console/<배우>는 "배우 모니터링")
-  const active = items
-    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
-    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const active = isAdmin ? activeAdminItem(items, pathname) : activeConsoleItem(pathname);
 
   return (
     <View style={styles.row}>
@@ -89,6 +88,21 @@ export function WideShell({ children }: { children: ReactNode }) {
       <View style={styles.content}>{children}</View>
     </View>
   );
+}
+
+// 운영자: 가장 길게 맞는 메뉴
+function activeAdminItem(items: { href: string }[], pathname: string) {
+  return items.filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+}
+
+// 소속사: 아티스트 화면(/console/<id>)은 "소속 아티스트", 전체 순위는 "대시보드", 설정 아래 화면(/settings/*)은 "설정"
+export function activeConsoleItem(pathname: string): string {
+  if (pathname === '/console' || pathname.startsWith('/console/ranking')) return '/console';
+  for (const href of ['/console/records', '/console/settlements', '/console/settings']) {
+    if (pathname === href || pathname.startsWith(`${href}/`)) return href;
+  }
+  if (pathname.startsWith('/settings')) return '/console/settings';
+  return '/console/artists';
 }
 
 const styles = StyleSheet.create({

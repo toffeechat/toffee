@@ -14,14 +14,18 @@ import { appError } from '../common/i18n/app-error.js';
 export class BlocksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async block(requesterId: string, actorId: string, fanUserId: string, reason?: string) {
+  async block(requesterId: string, actorId: string, fanUserId: string, reason?: string, messageId?: string) {
     await ensureCanViewActor(this.prisma, requesterId, actorId);
     const fan = await this.prisma.user.findUnique({ where: { id: fanUserId }, select: { role: true } });
     if (!fan) throw new NotFoundException(appError('USER_NOT_FOUND'));
     if (fan.role !== Role.USER) throw new BadRequestException(appError('BLOCK_FANS_ONLY'));
+    // 계기 답장은 이 방에 이 팬이 보낸 것만 남김(아니면 조용히 버림 — 차단 자체는 진행)
+    const trigger = messageId
+      ? await this.prisma.message.findFirst({ where: { id: messageId, actorId, fanUserId }, select: { id: true } })
+      : null;
     await this.prisma.actorFanBlock.upsert({
       where: { actorId_fanUserId: { actorId, fanUserId } },
-      create: { actorId, fanUserId, blockedById: requesterId, reason: reason?.trim() || null },
+      create: { actorId, fanUserId, blockedById: requesterId, reason: reason?.trim() || null, messageId: trigger?.id ?? null },
       update: {},
     });
     return this.list(requesterId, actorId);

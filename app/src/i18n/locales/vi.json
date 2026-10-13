@@ -106,8 +106,8 @@
     "languageSystem": "Dùng ngôn ngữ của thiết bị"
   },
   "console": {
-    "title": "Nghệ sĩ tôi quản lý",
-    "empty": "Bạn chưa quản lý nghệ sĩ nào.",
+    "title": "Nghệ sĩ trực thuộc",
+    "empty": "Chưa có nghệ sĩ trực thuộc.",
     "monitoring": "Đang theo dõi {{name}}",
     "tabs": {
       "monitor": "Theo dõi",
@@ -139,7 +139,13 @@
     "deleteBody": "Tin nhắn sẽ biến mất khỏi màn hình của fan ngay lập tức và không thể khôi phục. Thông báo đã gửi không thể thu hồi. Nghệ sĩ sẽ thấy \"Tin nhắn bị công ty quản lý xóa\".",
     "deleteConfirm": "Xóa",
     "deletedByAgency": "Công ty quản lý đã xóa tin nhắn này (fan không thấy)",
-    "allReplies": "Tất cả trả lời"
+    "allReplies": "Tất cả trả lời",
+    "description": "Danh sách nghệ sĩ trực thuộc. Chạm để xem tin nhắn đã gửi, phản hồi của fan và thống kê.",
+    "tabHint": {
+      "monitor": "Màn hình theo dõi tin nhắn nghệ sĩ gửi cho fan. Có thể xóa thay những tin nhắn có vấn đề.",
+      "replies": "Màn hình xem phản hồi của fan. Có thể báo cáo phản hồi có vấn đề hoặc chặn fan đó.",
+      "stats": "Màn hình xem xu hướng đăng ký, tin nhắn, phản hồi và phân bố fan của nghệ sĩ này."
+    }
   },
   "onboarding": {
     "birthDateTitle": "Ngày sinh của bạn là gì?",
@@ -671,20 +677,121 @@
   },
   "dashboard": {
     "title": "Bảng thống kê",
-    "subscribers": "Người đăng ký",
-    "newSubs": "Đăng ký mới ({{days}} ngày gần đây)",
-    "cancellations": "Hủy ({{days}} ngày gần đây)",
-    "messages": "Tin đã gửi ({{days}} ngày gần đây)",
-    "replies": "Trả lời của fan ({{days}} ngày gần đây)",
     "countPeople": "{{count}} người",
     "countItems": "{{count}}",
-    "rowSummary": "Người đăng ký {{subscribers}} · Mới {{newSubs}} · Trả lời {{replies}}",
     "sort": {
       "subscribers": "Nhiều người đăng ký nhất",
-      "idle": "Lâu chưa gửi nhất",
+      "idle": "Lâu chưa gửi tin nhất",
       "newSubs": "Nhiều đăng ký mới nhất",
-      "replies": "Nhiều trả lời nhất",
-      "messages": "Gửi nhiều nhất"
-    }
+      "replies": "Nhiều phản hồi nhất",
+      "messages": "Gửi nhiều tin nhắn nhất",
+      "cancellations": "Nhiều lượt hủy nhất",
+      "engagement": "Fan tương tác tốt nhất"
+    },
+    "description": "Xem nhanh lượt đăng ký, tin nhắn và mức độ tương tác của fan với tất cả nghệ sĩ trực thuộc. Chạm vào nghệ sĩ trong bảng xếp hạng để mở trang của họ.",
+    "kind": {
+      "ALL": "Tất cả",
+      "SOLO": "Nghệ sĩ",
+      "COUPLE": "CP"
+    },
+    "period": "{{days}} ngày",
+    "basis": "{{days}} ngày gần nhất (giờ Thái Lan) · so với {{days}} ngày trước đó",
+    "kpi": {
+      "subscribers": "Đang đăng ký",
+      "newSubs": "Đăng ký mới",
+      "cancellations": "Hủy đăng ký",
+      "messages": "Tin nhắn đã gửi",
+      "replies": "Phản hồi của fan",
+      "engagement": "Phản hồi mỗi tin nhắn"
+    },
+    "vsPrevious": "so với {{days}} ngày trước",
+    "netChange": "Tăng ròng {{value}} người trong {{days}} ngày gần nhất",
+    "engagementHint": "Số phản hồi trung bình mỗi tin nhắn nhận được",
+    "same": "Không đổi",
+    "fromZero": "+{{count}}",
+    "trendSubs": "Xu hướng đăng ký mới · hủy đăng ký",
+    "trendActivity": "Xu hướng phản hồi của fan · tin nhắn đã gửi",
+    "rankings": "Xếp hạng nghệ sĩ",
+    "more": "Xếp hạng đầy đủ",
+    "less": "Thu gọn",
+    "moreCount": "Xem thêm {{count}} mục",
+    "fullRanking": "Xếp hạng đầy đủ",
+    "audience": "Phân bố fan",
+    "countries": "Quốc gia của fan",
+    "languages": "Ngôn ngữ của fan",
+    "audienceBasis": "Dựa trên {{count}} fan đang đăng ký · fan đăng ký nhiều nghệ sĩ chỉ tính một lần · quốc gia và ngôn ngữ có ít fan được gộp vào \"Khác\"",
+    "other": "Khác",
+    "unknown": "Không rõ",
+    "deviceLanguage": "Ngôn ngữ thiết bị",
+    "noData": "Chưa có dữ liệu",
+    "noCancellations": "Không có lượt hủy trong khoảng này",
+    "noMessages": "Không có tin nhắn được gửi trong khoảng này",
+    "noReplies": "Không có tin nhắn nhận được phản hồi trong khoảng này",
+    "retired": "Ngừng hoạt động",
+    "daysAgo": "{{count}} ngày trước",
+    "perMessage": "{{value}} mỗi tin",
+    "mediaMix": "Loại tin nhắn đã gửi",
+    "topMessages": "Tin nhắn nhiều phản hồi nhất"
+  },
+  "consoleNav": {
+    "dashboard": "Bảng thống kê",
+    "artists": "Nghệ sĩ"
+  },
+  "consoleAlerts": {
+    "newMessage": "{{name}} vừa gửi tin nhắn mới",
+    "anArtist": "Nghệ sĩ trực thuộc",
+    "tapToView": "Chạm để mở theo dõi",
+    "unread": "{{count}} tin nhắn mới",
+    "newLabel": "Mới"
+  },
+  "records": {
+    "title": "Nhật ký",
+    "description": "Tổng hợp fan bị chặn, phản hồi bị báo cáo và tin nhắn đã xóa trong phòng của các nghệ sĩ trực thuộc.",
+    "tabs": {
+      "blocks": "Fan bị chặn",
+      "reports": "Báo cáo",
+      "deleted": "Tin nhắn đã xóa"
+    },
+    "allArtists": "Tất cả",
+    "by": {
+      "ACTOR": "Nghệ sĩ",
+      "AGENCY_STAFF": "Công ty quản lý",
+      "ADMIN": "Đội ngũ Toffee"
+    },
+    "byMe": "Bạn",
+    "blockedMeta": "{{who}} đã chặn · {{date}}",
+    "trigger": "Phản hồi dẫn đến việc chặn",
+    "noTrigger": "Không có phản hồi được ghi lại cho lần chặn này",
+    "reportedMeta": "{{who}} đã báo cáo · {{date}}",
+    "status": {
+      "PENDING": "Đang chờ xử lý",
+      "RESOLVED": "Đã xử lý",
+      "DISMISSED": "Không có vấn đề"
+    },
+    "deletedBy": "{{who}} đã xóa",
+    "hiddenByAdmin": "Đội ngũ Toffee đã ẩn theo chính sách",
+    "deletedMeta": "Gửi {{sent}} · xóa {{deleted}}",
+    "empty": {
+      "blocks": "Không có fan bị chặn.",
+      "reports": "Không có phản hồi bị báo cáo.",
+      "deleted": "Không có tin nhắn đã xóa."
+    },
+    "limitNote": "Chỉ hiển thị {{count}} mục gần nhất. Hãy chọn nghệ sĩ ở trên để xem nhật ký cũ hơn.",
+    "unblockTitle": "Bỏ chặn {{nickname}}?",
+    "unblockBody": "Fan này sẽ có thể gửi phản hồi trở lại."
+  },
+  "countries": {
+    "TH": "Thái Lan",
+    "KR": "Hàn Quốc",
+    "JP": "Nhật Bản",
+    "TW": "Đài Loan",
+    "HK": "Hồng Kông",
+    "CN": "Trung Quốc",
+    "VN": "Việt Nam",
+    "SG": "Singapore",
+    "MY": "Malaysia",
+    "PH": "Philippines",
+    "ID": "Indonesia",
+    "US": "Hoa Kỳ"
   }
 }

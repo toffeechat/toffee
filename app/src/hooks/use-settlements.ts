@@ -9,7 +9,8 @@ export interface SettlementAmounts {
   storeFeeCents: number;
   netCents: number;
   payoutCents: number;
-  platformCents: number;
+  // 토피 몫 — 운영자에게만 옴(소속사 직원 응답엔 서버가 뺌, 2026-10-13 사용자 결정)
+  platformCents?: number;
   refundedCents: number;
 }
 
