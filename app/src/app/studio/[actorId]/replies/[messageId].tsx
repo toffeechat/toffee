@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
+import { SideTime } from '@/components/side-time';
 import type { FanReply } from '@/hooks/use-console';
 import { useMessageReplies, useStudioMessages } from '@/hooks/use-studio';
 import { useTheme } from '@/hooks/use-theme';
@@ -28,7 +29,7 @@ const AT_BOTTOM_PX = 80;
 export default function MessageRepliesScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { actorId, messageId } = useLocalSearchParams<{ actorId: string; messageId: string }>();
   const { data: messages } = useStudioMessages(actorId);
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessageReplies(actorId, messageId);
@@ -112,7 +113,7 @@ export default function MessageRepliesScreen() {
               </ThemedText>
             }
             renderItem={({ item }) => (
-              <ReplyBubble item={item} locale={i18n.language} actorId={actorId} onQuote={() => quote(item)} />
+              <ReplyBubble item={item} actorId={actorId} onQuote={() => quote(item)} />
             )}
           />
           {unseen > 0 && (
@@ -131,7 +132,7 @@ export default function MessageRepliesScreen() {
   );
 }
 
-function ReplyBubble({ item, locale, actorId, onQuote }: { item: FanReply; locale: string; actorId: string; onQuote: () => void }) {
+function ReplyBubble({ item, actorId, onQuote }: { item: FanReply; actorId: string; onQuote: () => void }) {
   const theme = useTheme();
   const { t } = useTranslation();
   return (
@@ -148,13 +149,14 @@ function ReplyBubble({ item, locale, actorId, onQuote }: { item: FanReply; local
           </ThemedText>
         ) : null}
         <ThemedView style={styles.bubbleLine}>
-          <ThemedView style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-            {/* 태국·일본 팬 답장 등 다른 언어면 "번역 보기" */}
-            {item.body ? <TranslatableText actorId={actorId} messageId={item.id} text={item.body} /> : null}
+          {/* 말풍선 + 시간은 한 묶음(시간이 말풍선 아래로 밀려나지 않게, 2026-10-13) */}
+          <ThemedView style={styles.bubbleWithTime}>
+            <ThemedView style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
+              {/* 태국·일본 팬 답장 등 다른 언어면 "번역 보기" */}
+              {item.body ? <TranslatableText actorId={actorId} messageId={item.id} text={item.body} /> : null}
+            </ThemedView>
+            <SideTime at={item.createdAt} />
           </ThemedView>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.time}>
-            {new Date(item.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-          </ThemedText>
           {/* 시간 옆 ⋯ — 펼치면 답장하기·신고·차단(좁으면 다음 줄로) */}
           {item.fanUser && (
             <FanReplyActions
@@ -182,8 +184,8 @@ const styles = StyleSheet.create({
   fanRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two, backgroundColor: 'transparent' },
   row: { flex: 1, gap: 4, alignItems: 'flex-start', backgroundColor: 'transparent' },
   bubbleLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: Spacing.two, rowGap: Spacing.one, backgroundColor: 'transparent' },
-  bubble: { borderRadius: 16, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexShrink: 1, maxWidth: '75%' },
-  time: { flexShrink: 0 },
+  bubbleWithTime: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 6, flexShrink: 1, maxWidth: '88%', backgroundColor: 'transparent' },
+  bubble: { borderRadius: 16, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexShrink: 1 },
   newPill: {
     position: 'absolute',
     bottom: Spacing.three,

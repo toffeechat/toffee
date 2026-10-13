@@ -12,6 +12,7 @@ import { ChatPhotoEditor } from '@/components/chat-photo-editor';
 import { showNameToken } from '@/utils/name-token';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
+import { SideTime } from '@/components/side-time';
 import { useActor } from '@/hooks/use-actors';
 import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory } from '@/hooks/use-console';
 import { useDeleteBroadcast, useStudioMessages, type StudioMessage } from '@/hooks/use-studio';
@@ -214,7 +215,7 @@ function MonitorBubble({
 /** 팬 답장 — 대화방처럼 왼쪽 말풍선(팬 사진·닉네임·상태메시지), 소속사는 답장은 못 하고 신고·차단만(2026-10-12) */
 function ReplyBubble({ reply, actorId }: { reply: FanReply; actorId: string }) {
   const theme = useTheme();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const fan = reply.fanUser;
   return (
     <View style={styles.bubbleRow}>
@@ -232,9 +233,8 @@ function ReplyBubble({ reply, actorId }: { reply: FanReply; actorId: string }) {
           <View style={[styles.bubble, styles.bubbleBody, { backgroundColor: theme.backgroundElement }]}>
             <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} />
           </View>
-          <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
-            {new Date(reply.createdAt).toLocaleString(i18n.language, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-          </ThemedText>
+          {/* 날짜·시간 두 줄로 말풍선 옆에(2026-10-13, 아티스트 팬 답장 화면과 같은 모양) */}
+          <SideTime at={reply.createdAt} />
           {fan ? <FanReplyActions actorId={actorId} messageId={reply.id} fanUserId={fan.id} nickname={fan.nickname ?? ''} /> : null}
         </View>
       </View>
