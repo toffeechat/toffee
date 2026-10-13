@@ -284,6 +284,30 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: { lastArtistMessageAt: daysAgo(1), lastFanReplyAt: daysAgo(1) },
   });
 
+  // 번역 보기 확인용 태국어 메시지(2026-10-13 사용자 요청) — 한국어 화면의 팬(fan1·fan2)이 "번역 보기"를 눌러 볼 수 있게
+  // 두 팬의 구독 시작(5일·20일 전) 뒤에 넣음. {{name}}은 팬 이름으로 바뀐 뒤 번역되는지까지 확인됨
+  await prisma.message.createMany({
+    data: [
+      { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'สวัสดี {{name}}! วันนี้กินข้าวหรือยัง? คิดถึงนะ 555', createdAt: daysAgo(3) },
+      { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'วันนี้ถ่ายละครเสร็จดึกมากเลย เหนื่อยแต่สนุกมาก ขอบคุณที่รอนะคะ 🥹', createdAt: daysAgo(2) },
+      { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ครับ พรุ่งนี้ผมมีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยครับ ㅠㅠ', createdAt: daysAgo(2) },
+    ],
+  });
+  // 반대 방향 — 아티스트(한국어 화면)가 답장 목록에서 태국어 팬 답장의 "번역 보기"를 눌러 볼 수 있게
+  const thaiBroadcast = await prisma.message.create({
+    data: { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: '{{name}} 다음 달에 방콕 가! 추천할 맛집 있어?', createdAt: daysAgo(4) },
+  });
+  await prisma.message.create({
+    data: {
+      actorId: caramel.id,
+      senderType: MessageSenderType.FAN,
+      fanUserId: fan2.id,
+      replyToMessageId: thaiBroadcast.id,
+      body: 'มาเลยค่ะ! ต้องลองข้าวมันไก่ประตูน้ำนะคะ อร่อยมาก รอเจอนะคะ 💕',
+      createdAt: daysAgo(4),
+    },
+  });
+
   // 신고/모더레이션 큐 데모용
   await prisma.report.create({
     data: {
