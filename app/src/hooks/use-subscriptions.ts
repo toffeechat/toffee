@@ -17,6 +17,8 @@ export interface Subscription {
   coveredBy: { purchaseId: string; iapPlatform?: 'IOS' | 'ANDROID' | null; bundle: { id: string; name: string; priceCents: number } | null }[];
   /** 스토어에서 자동 갱신을 끈 방의 이용 종료 시각(2026-10-02) — 계속 갱신되면 null. "○월 ○일까지 이용" 표시 */
   endsAt?: string | null;
+  /** 마지막으로 채팅방을 본 시각 — 채팅방의 "여기까지 읽었어요" 줄(2026-10-13) */
+  lastReadAt: string | null;
   /** 마지막으로 채팅방을 본 뒤 온 아티스트 메시지 수 */
   unreadCount: number;
   /** 인박스 미리보기(서버가 최근 대화 순으로 정렬해서 줌) */

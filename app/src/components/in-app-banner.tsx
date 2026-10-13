@@ -3,6 +3,7 @@ import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -43,6 +44,8 @@ export function InAppBanner() {
     listener = (next) => {
       if (next.actorId && pathRef.current.includes(next.actorId)) return;
       setPayload(next);
+      // 앱을 보고 있을 땐 시스템 알림(소리·진동)이 안 나서 짧게 진동(2026-10-13, 카톡처럼). 보고 있는 채팅방이면 위에서 이미 빠짐
+      if (Platform.OS !== 'web') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     };
     return () => {
       listener = null;

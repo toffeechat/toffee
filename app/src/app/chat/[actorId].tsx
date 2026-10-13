@@ -113,11 +113,32 @@ export default function ChatRoomScreen() {
     return [...loaded, ...visible].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
   }, [data, extras, hasNextPage, actorId]);
 
+  // "여기까지 읽었어요"(2026-10-13, 카톡처럼) — 들어올 때의 마지막으로 읽은 시각. 대화방을 열면 서버가 바로 지금으로 바꾸므로
+  // 처음 본 값을 고정하고, 화면을 연 뒤에 받은 값(이미 지금으로 바뀐 값)은 버림. 처음 들어온 방(lastReadAt 없음)은 표시 안 함
+  const [openedAt] = useState(() => Date.now());
+  const [readMarker, setReadMarker] = useState<string | null | undefined>(undefined);
+  if (readMarker === undefined && subscription) {
+    const last = subscription.lastReadAt;
+    setReadMarker(last && new Date(last).getTime() < openedAt - 2000 ? last : null);
+  }
+  // 경계 바로 위(더 최신)의 가장 오래된 안 읽은 아티스트 메시지 — 불러온 것 전부가 새 메시지면 경계가 더 예전 쪽이라 표시 안 함
+  const firstUnreadId = useMemo(() => {
+    if (!readMarker) return undefined;
+    let candidate: string | undefined;
+    for (const message of messages) {
+      if (message.createdAt <= readMarker) return candidate;
+      if (message.senderType === 'ARTIST' && !message.extra) candidate = message.id;
+    }
+    return undefined;
+  }, [messages, readMarker]);
+
   const listRef = useRef<FlatList<ChatItem>>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [seenNewestId, setSeenNewestId] = useState<string | undefined>(undefined);
   const newestId = messages[0]?.id;
   const unseen = atBottom || !seenNewestId ? 0 : Math.max(messages.findIndex((m) => m.id === seenNewestId), 0);
+  // 위로 올려 읽는 중 새로 온 메시지 미리보기(2026-10-13) — 새 것 중 가장 최근 아티스트 메시지(없으면 가장 최근 것)
+  const unseenPreview = unseen > 0 ? (messages.slice(0, unseen).find((m) => m.senderType === 'ARTIST') ?? messages[0]) : undefined;
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const bottom = event.nativeEvent.contentOffset.y < AT_BOTTOM_PX;
     if (bottom !== atBottom) setAtBottom(bottom);
@@ -178,6 +199,16 @@ export default function ChatRoomScreen() {
     const scroll = setTimeout(() => listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: false }), 50);
     return () => clearTimeout(scroll);
   }, [target, messages, hasNextPage, isFetchingNextPage, fetchNextPage, searchOpen, t]);
+  // 안 읽은 메시지가 화면을 넘을 만큼 많으면 처음 열 때 "여기까지 읽었어요"로(알림·검색으로 들어왔으면 그쪽이 우선)
+  const handledMarker = useRef(false);
+  useEffect(() => {
+    if (handledMarker.current || focus || !firstUnreadId) return;
+    handledMarker.current = true;
+    const index = messages.findIndex((m) => m.id === firstUnreadId);
+    if (index < 4) return;
+    const scroll = setTimeout(() => listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: false }), 50);
+    return () => clearTimeout(scroll);
+  }, [firstUnreadId, focus, messages]);
   // 알림으로 온 강조는 잠깐만(검색 중엔 지금 결과를 계속 강조)
   useEffect(() => {
     if (!highlightId || searchOpen) return;
@@ -335,6 +366,7 @@ export default function ChatRoomScreen() {
           return (
             <View>
               {dayChanged && <DaySeparator iso={item.createdAt} locale={i18n.language} />}
+              {item.id === firstUnreadId && <ReadMarker label={t('chat.readMarker')} />}
               <MessageRow
                 message={item}
                 avatarUri={isCouple ? (item.sender?.chatProfileImageUrl ?? actor?.chatProfileImageUrl) : actor?.chatProfileImageUrl}
@@ -359,14 +391,31 @@ export default function ChatRoomScreen() {
           );
         }}
       />
-      {unseen > 0 && (
+      {unseenPreview && (
         <Pressable
           onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
-          style={[styles.newPill, { backgroundColor: theme.primary }]}
-          accessibilityRole="button">
-          <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
-            {t('chat.newMessages', { count: unseen })}
-          </ThemedText>
+          style={[styles.newPill, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('chat.newMessages', { count: unseen })}>
+          {unseenPreview.senderType === 'ARTIST' ? (
+            <Avatar uri={isCouple ? (unseenPreview.sender?.chatProfileImageUrl ?? actor?.chatProfileImageUrl) : actor?.chatProfileImageUrl} size={28} />
+          ) : null}
+          <View style={styles.newPillText}>
+            <ThemedText type="smallBold" numberOfLines={1}>
+              {unseenPreview.senderType === 'ARTIST'
+                ? (isCouple ? (unseenPreview.sender?.chatDisplayName ?? actor?.chatDisplayName) : actor?.chatDisplayName)
+                : t('chat.newMessagesShort', { count: unseen })}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              {unseenPreview.body || t(PREVIEW_MEDIA_TEXT[unseenPreview.mediaType] ?? 'chat.newMessagesShort', { count: unseen })}
+            </ThemedText>
+          </View>
+          {unseen > 1 ? (
+            <ThemedText type="caption" style={[styles.newPillCount, { backgroundColor: theme.primary, color: theme.onPrimary }]}>
+              {unseen > 99 ? '99+' : unseen}
+            </ThemedText>
+          ) : null}
+          <Icon as={ChevronDown} size={18} themeColor="textSecondary" />
         </Pressable>
       )}
       {notice && (
@@ -501,6 +550,22 @@ function MoreItem({ icon, label, onPress }: { icon: LucideIcon; label: string; o
       <Icon as={icon} size={18} color={theme.text} />
       <ThemedText type="smallMedium">{label}</ThemedText>
     </Pressable>
+  );
+}
+
+// 새 메시지 미리보기에서 글이 없는 메시지(사진·음성·영상)의 대신 문구 — 인박스와 같은 문구
+const PREVIEW_MEDIA_TEXT: Partial<Record<string, string>> = { PHOTO: 'inbox.sentPhoto', AUDIO: 'inbox.sentVoice', VIDEO: 'inbox.sentVideo' };
+
+function ReadMarker({ label }: { label: string }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.readMarker} accessibilityRole="text">
+      <View style={[styles.readMarkerLine, { backgroundColor: theme.tint }]} />
+      <ThemedText type="caption" style={{ color: theme.tint }}>
+        {label}
+      </ThemedText>
+      <View style={[styles.readMarkerLine, { backgroundColor: theme.tint }]} />
+    </View>
   );
 }
 
@@ -730,11 +795,22 @@ const styles = StyleSheet.create({
   newPill: {
     position: 'absolute',
     bottom: Spacing.three,
+    left: Spacing.three,
+    right: Spacing.three,
+    maxWidth: 480,
     alignSelf: 'center',
-    borderRadius: Radius.pill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
+  newPillText: { flex: 1, minWidth: 0 },
+  newPillCount: { borderRadius: Radius.pill, paddingHorizontal: 6, overflow: 'hidden', fontVariant: ['tabular-nums'] },
+  readMarker: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginVertical: Spacing.three },
+  readMarkerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   toast: {
     position: 'absolute',
     top: Spacing.three,

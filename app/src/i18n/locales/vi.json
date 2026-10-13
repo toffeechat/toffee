@@ -76,6 +76,8 @@
     "closeMenu": "Đóng",
     "messageActions": "Nhấn giữ để báo cáo",
     "newMessages": "{{count}} tin mới ↓",
+    "newMessagesShort": "{{count}} tin nhắn mới",
+    "readMarker": "Bạn đã đọc đến đây",
     "notSubscribedTitle": "Gói đăng ký của bạn đã kết thúc",
     "waitingTitle": "Bạn đã đăng ký",
     "copy": "Sao chép",

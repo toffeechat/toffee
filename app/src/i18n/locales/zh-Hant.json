@@ -76,6 +76,8 @@
     "closeMenu": "關閉",
     "messageActions": "長按可檢舉",
     "newMessages": "{{count}} 則新訊息 ↓",
+    "newMessagesShort": "{{count}} 則新訊息",
+    "readMarker": "以上為已讀訊息",
     "notSubscribedTitle": "訂閱已結束",
     "waitingTitle": "已開始訂閱",
     "copy": "複製",

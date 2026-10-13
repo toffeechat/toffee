@@ -76,6 +76,8 @@
     "closeMenu": "关闭",
     "messageActions": "长按可举报",
     "newMessages": "{{count}} 条新消息 ↓",
+    "newMessagesShort": "{{count}} 条新消息",
+    "readMarker": "以上为已读消息",
     "notSubscribedTitle": "订阅已结束",
     "waitingTitle": "已开始订阅",
     "copy": "复制",

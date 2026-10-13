@@ -76,6 +76,8 @@
     "closeMenu": "Close",
     "messageActions": "Long press to report",
     "newMessages": "{{count}} new ↓",
+    "newMessagesShort": "{{count}} new messages",
+    "readMarker": "You've read up to here",
     "notSubscribedTitle": "Your subscription has ended",
     "waitingTitle": "You're subscribed",
     "copy": "Copy",
