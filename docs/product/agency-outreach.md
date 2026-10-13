@@ -1,13 +1,23 @@
-# 태국 소속사 연락 자료 — 메일 초안·제안서
+# 태국 소속사 연락 자료 — 제안서·메일
 
-2026-10-13 작성. 사업화 일정 2단계("영문 제안서", "연락할 곳 목록")와 3단계("소속사 의견 듣기")에서 쓸 자료다.
+2026-10-13 작성. 사업화 일정 2단계("제안서", "연락할 곳 목록")와 3단계("소속사 의견 듣기")에서 쓸 자료다.
 일정·순서는 [`launch-roadmap.md`](./launch-roadmap.md), 정산 조건 배경은 [`feature-decisions.md`](./feature-decisions.md)
 "소속사 계약/정산 조건"과 `STATUS.md` "출시 전 확정할 정책" 표.
 
-- **제안서(슬라이드 9장, 영어 + 태국어 요약 1장)**: https://claude.ai/artifact/8cC6F5tRwug6QgkHSsEmoy
-  — 페이지에서 PDF로 내려받아 메일에 첨부한다. 링크는 본인만 열리므로 링크로 보낼 땐 공유 메뉴에서 먼저 공유할 것.
-- 아래 메일은 **영어가 기준**, 태국어는 같은 내용을 옮긴 것. 태국어는 보내기 전에 원어민 검수를 받는다(사업 내용 없이 문장만 맡김 — `launch-roadmap.md` "현지 조언" 절).
-- `[ ]` 대괄호는 보내기 전에 채울 자리.
+**기본은 태국어**(2026-10-13 사용자 결정) — 중소 소속사는 영어보다 태국어가 편하다. 영어본은 영어로 일하는 큰 소속사나
+해외 담당자가 있을 때만. 모든 태국어 문장엔 **한국어 번역을 바로 아래 붙인다**(보내는 사람이 무슨 말을 했는지 알아야 해서).
+
+| 자료 | 용도 | 링크 |
+|---|---|---|
+| 제안서 태국어판 (8장) | **보내는 기본본** | https://claude.ai/artifact/Asz8E6wZDbrWSua8DdpDMh |
+| 제안서 한국어판 (8장) | 내가 읽는 용 — 태국어판과 쪽 번호·내용이 같음, 슬라이드 메모에 의도 설명 | https://claude.ai/artifact/PL7ENDwuzCHg2YiYv9zgNg |
+| 제안서 영어판 (9장, 끝에 태국어 요약) | 영어 쓰는 소속사용 | https://claude.ai/artifact/8cC6F5tRwug6QgkHSsEmoy |
+
+- 페이지에서 PDF로 내려받아 메일에 첨부한다. 링크는 본인만 열리므로 링크로 보낼 땐 공유 메뉴에서 먼저 공유할 것.
+- **태국어는 Claude가 쓴 초안**이라 보내기 전에 원어민 검수를 받는다(사업 내용 없이 문장만 맡김 — `launch-roadmap.md` "현지 조언" 절).
+  제안서 태국어판과 아래 태국어 메일을 한 번에 맡기면 된다.
+- `[ ]` 대괄호는 보내기 전에 채울 자리. 태국어 존댓말 끝은 남자면 `ครับ`(크랍)·`ผม`(나), 여자면 `ค่ะ/คะ`(카)·`ดิฉัน`(나) — 둘 중 하나만 남긴다.
+- **통화는 영어로** — 태국어 메일 끝에 "통화는 영어로 해도 될까요"를 넣어 뒀다. 상대가 영어가 어렵다고 하면 통역(태국어 가능한 지인·유료)을 붙인다.
 
 ---
 
@@ -32,7 +42,97 @@
 
 ---
 
-## 메일 1. 첫 연락 (영어)
+## 메일 1. 첫 연락
+
+**제목** ข้อเสนอความร่วมมือสำหรับ [ชื่อศิลปิน]: แอปแชทกับแฟนคลับแบบสมัครสมาชิก
+→ *[아티스트 이름]을 위한 협업 제안: 구독형 팬 채팅 앱*
+
+| 🇹🇭 태국어 (보내는 글) | 🇰🇷 한국어 번역 |
+|---|---|
+| เรียน [ชื่อ / ทีมงาน ชื่อต้นสังกัด] | [이름 / ○○ 소속사 담당자]님께 |
+| ผม/ดิฉันชื่อ [ชื่อ] จากทีม **Toffee** แอปสมัครสมาชิกรายเดือน ที่ศิลปินไทยสามารถส่งข้อความ รูปภาพ เสียง และวิดีโอ ถึงแฟนคลับได้ในห้องแชทส่วนตัว คล้ายกับแอป Bubble ของเกาหลี แต่ออกแบบมาเพื่อศิลปินและแฟนคลับชาวไทยโดยเฉพาะ | 저는 **토피** 팀의 [이름]입니다. 토피는 태국 아티스트가 팬에게 메시지·사진·음성·영상을 개인 채팅방으로 보낼 수 있는 월 구독 앱입니다. 한국의 버블과 비슷하지만 태국 아티스트와 태국 팬을 위해 만들었습니다. |
+| ที่ติดต่อมาเพราะ [เหตุผลเฉพาะของต้นสังกัดนี้ 1 ประโยค] และเชื่อว่า Toffee จะช่วยสร้างรายได้รายเดือนใหม่ให้กับศิลปินของท่าน | 연락드린 이유는 [이 소속사만의 이유 한 문장]이고, 토피가 소속 아티스트분들께 새로운 월 수익을 만들어 드릴 수 있다고 믿기 때문입니다. |
+| **ตอนนี้เรากำลังมองหาต้นสังกัดจำนวนหนึ่ง เพื่อทดลองใช้งาน 3 เดือน** | **지금 3개월 시범 운영을 함께할 소속사 몇 곳을 찾고 있습니다** |
+| - ไม่มีค่าใช้จ่าย และไม่มีสัญญาผูกขาด | - 비용 없음, 독점 계약 없음 |
+| - แบ่งรายได้ ต้นสังกัด 70% / Toffee 30% (หลังหักค่าธรรมเนียมแอปสโตร์) | - 수익 배분: 소속사 70% / 토피 30% (앱스토어 수수료를 뺀 뒤) |
+| - ทีมเราดูแลแอป การชำระเงิน การแปลภาษา การดูแลแฟนคลับ และการตรวจสอบเนื้อหาทั้งหมด | - 앱, 결제, 번역, 팬 응대, 콘텐츠 관리는 전부 저희가 합니다 |
+| - ต้นสังกัดดูข้อความและสถิติทั้งหมด ได้ผ่านหน้าจอสำหรับต้นสังกัด | - 소속사는 소속사 전용 화면에서 모든 메시지와 통계를 볼 수 있습니다 |
+| แอปพร้อมใช้งานแล้ว สามารถทดลองได้เองภายในประมาณ 10 นาที ที่ **demo.toffeechat.app** (รหัสเข้าใช้: [รหัส]) และได้แนบเอกสารข้อเสนอโดยย่อมาด้วย | 앱은 이미 동작합니다. **demo.toffeechat.app**(입장 코드: [코드])에서 10분 정도면 직접 써 보실 수 있고, 간단한 제안서를 첨부했습니다. |
+| หากสะดวก ขอนัดคุยออนไลน์ประมาณ 30 นาที ภายในสองสัปดาห์นี้ได้ไหมครับ/คะ ยินดีปรับเงื่อนไขให้เหมาะกับศิลปินของท่าน (ขออนุญาตคุยเป็นภาษาอังกฤษนะครับ/คะ) | 괜찮으시다면 2주 안에 30분 정도 온라인으로 이야기 나눌 수 있을까요? 아티스트분들께 맞게 조건은 기꺼이 조정하겠습니다. (통화는 영어로 해도 될까요?) |
+| ขอแสดงความนับถือ<br>[ชื่อ]<br>Toffee Team · toffeechat.app<br>[name]@toffeechat.app · LINE: [ID] | 감사합니다(정중한 맺음말)<br>[이름]<br>토피 팀 · toffeechat.app<br>이메일 · LINE |
+
+**꼭 바꿀 것**: 둘째 문단의 "연락한 이유"는 **소속사마다 다르게** 쓴다(예: "○○ 배우가 X에서 팬과 대화하는 걸 보면 팬덤이 얼마나
+가까운지 느껴진다" / "소속 배우들의 해외 팬이 많다"). 복붙 메일은 바로 티 난다. 한국어로 써서 주면 태국어로 옮겨 준다.
+
+---
+
+## 짧은 메시지 (LINE·인스타그램 DM·페이스북 페이지용)
+
+태국은 소속사 연락을 LINE 공식 계정이나 페이스북 페이지로 받는 곳이 많다. 길게 쓰지 말고 메일 주소를 받아 메일 1로 넘어간다.
+
+| 🇹🇭 태국어 | 🇰🇷 한국어 번역 |
+|---|---|
+| สวัสดีครับ/ค่ะ [ชื่อ] จาก Toffee แอปแชทกับแฟนคลับแบบสมัครสมาชิก สำหรับศิลปินไทย (คล้าย Bubble ของเกาหลี) | 안녕하세요, 토피의 [이름]입니다. 태국 아티스트를 위한 구독형 팬 채팅 앱이에요(한국 버블과 비슷해요). |
+| อยากเชิญ [ต้นสังกัด] ร่วมทดลองใช้งาน 3 เดือน ไม่มีค่าใช้จ่าย และไม่ผูกขาด | [소속사]를 3개월 시범 운영에 초대하고 싶어요. 비용도 독점도 없어요. |
+| รบกวนขออีเมล สำหรับส่งเอกสารข้อเสนอสั้น ๆ ได้ไหมครับ/คะ ขอบคุณครับ/ค่ะ | 짧은 제안서를 보낼 이메일 주소를 알려 주실 수 있을까요? 감사합니다. |
+
+---
+
+## 메일 2. 답이 없을 때 (1주 뒤, 한 번만)
+
+**제목** Re: ข้อเสนอความร่วมมือสำหรับ [ชื่อศิลปิน] → *Re: [아티스트 이름]을 위한 협업 제안*
+
+| 🇹🇭 태국어 | 🇰🇷 한국어 번역 |
+|---|---|
+| สวัสดีครับ/ค่ะ คุณ[ชื่อ] | 안녕하세요, [이름]님 |
+| ขออนุญาตติดตามอีเมลเรื่อง Toffee ที่ส่งไปเมื่อสัปดาห์ที่แล้วครับ/ค่ะ ทราบดีว่าทีมงานยุ่งมาก จึงขอสรุปสั้น ๆ: **ทดลองใช้ 3 เดือน ไม่มีค่าใช้จ่าย ไม่ผูกขาด ศิลปินมีรายได้รายเดือนจากแฟนคลับ และเราดูแลทุกอย่างให้** | 지난주 보내 드린 토피 메일을 다시 여쭙니다. 바쁘신 걸 알아서 짧게 정리하면: **비용·독점 없는 3개월 시범 운영, 아티스트는 팬에게서 매달 수익을 얻고 운영은 저희가 다 합니다.** |
+| หากตอนนี้ยังไม่สะดวก ตอบกลับสั้น ๆ ว่า "ยังไม่สนใจ" ก็ได้เลยครับ/ค่ะ จะเป็นประโยชน์กับเรามาก | 지금은 어렵다면 "지금은 괜찮아요"라고 짧게만 답해 주셔도 저희에게 큰 도움이 됩니다. |
+| ขอบคุณครับ/ค่ะ<br>[ชื่อ] | 감사합니다<br>[이름] |
+
+두 번 보내도 답이 없으면 그 소속사는 멈추고, 연락 기록에 "연락, 무응답"으로 남긴다.
+
+## 메일 3. 누군가 소개해 줬을 때
+
+소개받은 경우가 콜드 메일보다 답장률이 훨씬 높다(KOTRA 등). 첫 줄에 소개한 사람 이름을 넣고, 나머지는 메일 1의 둘째 문단부터 그대로.
+
+**제목** แนะนำโดยคุณ[ชื่อผู้แนะนำ]: Toffee แอปแชทกับแฟนคลับ → *[소개해 준 분]님 소개로 연락드립니다: 토피 팬 채팅 앱*
+
+| 🇹🇭 태국어 | 🇰🇷 한국어 번역 |
+|---|---|
+| เรียน คุณ[ชื่อ] | [이름]님께 |
+| คุณ[ชื่อผู้แนะนำ] แนะนำให้ติดต่อมาครับ/ค่ะ ผม/ดิฉันชื่อ [ชื่อ] กำลังพัฒนา **Toffee** แอปแชทแบบสมัครสมาชิก ระหว่างศิลปินไทยกับแฟนคลับ | [소개해 준 분]님께서 연락해 보라고 해 주셨습니다. 저는 태국 아티스트와 팬을 잇는 구독형 채팅 앱 **토피**를 만들고 있는 [이름]입니다. |
+
+## 답장이 왔을 때 — 통화 잡기
+
+| 🇹🇭 태국어 | 🇰🇷 한국어 번역 |
+|---|---|
+| ขอบคุณมากสำหรับการตอบกลับครับ/ค่ะ ไม่ทราบว่าช่วงเวลาไหนต่อไปนี้ สะดวกสำหรับการคุยออนไลน์ 30 นาทีบ้างครับ/คะ (เวลากรุงเทพฯ) | 답장 정말 감사합니다! 아래 시간 중 30분 온라인 통화가 편하신 때가 있을까요? (방콕 시간) |
+| - [วันที่] [เวลา]<br>- [วันที่] [เวลา]<br>- [วันที่] [เวลา] | - [날짜] [시간] ×3 |
+| เมื่อเลือกเวลาแล้ว จะส่งลิงก์ Google Meet ให้ครับ/ค่ะ หากสะดวกคุยผ่าน LINE ก็ได้เช่นกัน | 시간을 골라 주시면 구글 미트 링크를 보내 드릴게요. LINE 통화가 편하시면 그것도 좋아요. |
+
+시간은 **방콕 시간**으로 적는다(한국보다 2시간 늦음). 퇴근 후 통화라면 한국 20~22시 = 방콕 18~20시.
+
+---
+
+## 자주 나올 질문과 답 (통화·답장용)
+
+통화는 영어로 하므로 영어 답도 같이 둔다. 메일로 물어 오면 한국어 답을 주면 태국어로 옮겨 준다.
+
+| 질문 | 답 (한국어) | 답 (영어, 통화용) | 메모 |
+|---|---|---|---|
+| 회사(법인)예요? | 아직 아닙니다. 정식 출시 전에 한국에 법인을 세우고, 모든 계약은 법인 이름으로 합니다. 준비 기간엔 서로 돈이 오가지 않습니다. | Not yet. We will incorporate in Korea before the public launch, and every contract will be signed by the company. During preparation there is no payment between us. | 사실대로. "회사 있어야 계약"이라고 하면 법인 설립을 앞당기는 신호(`launch-roadmap.md` 분기점) |
+| 언제 출시해요? | 스토어 심사를 거쳐 2027년 [시기]가 목표입니다. 파일럿은 아티스트 준비가 되면 시작합니다. | We are targeting [season] 2027, after store review. The pilot starts when your artists are ready. | 날짜 약속 금지 |
+| 콘텐츠 권리는 누구 거예요? | 아티스트와 소속사가 모든 권리를 가집니다. 토피는 앱 안에서 구독자에게 보여 줄 권한만 받습니다. | Your artist and agency keep all rights. Toffee only needs a licence to show it to subscribers in the app. | 계약서 단계에서 변호사 확인 |
+| 유출은 어떻게 막아요? | 돈을 낸 성인만 앱 안에서 볼 수 있고, 밖으로 공유하는 건 약관으로 금지하며, 어기면 계정을 정지합니다. | Content is only visible inside the app to paying adults, sharing outside is forbidden by our terms, and we can ban accounts. | 화면 캡처 자체를 완전히 막을 수는 없다는 점은 솔직하게 |
+| 정산은 언제, 어떻게? | 아티스트별 월 정산서를 드립니다. 스토어가 판매 후 1~2개월 뒤 저희에게 입금하면, 소속사 몫을 바트로 송금합니다. | Monthly statement per artist. Stores pay us about 1 to 2 months after the sale, then we transfer your share in THB. | 송금·원천징수 실무는 법인 설립 때 확정 |
+| 가격을 우리가 정할 수 있어요? | 네, 아티스트별로 함께 정합니다. | Yes, together per artist. | 스토어 가격표 단계에 맞춤 |
+| 그만둘 수 있어요? | 네. 독점이 없고, 파일럿 뒤엔 어느 쪽이든 끝낼 수 있습니다. | Yes. No exclusivity, and either side can end after the pilot. | |
+| 아티스트가 안 보내면요? | 팬은 환불 규칙으로 보호되고, 소속사 화면에서 오래 안 보낸 아티스트가 보입니다. | Fans are protected by our refund rules, and the agency console shows artists who have not sent in a while. | `STATUS.md` 환불 정책 |
+| 선급금(계약금) 주나요 / 우리가 내나요? | 소속사가 낼 돈은 없습니다. 파일럿 기간엔 선급금을 드리지 않습니다. | No fee from you. We do not offer an advance during the pilot. | 계약금 요구는 메모만 하고 그 자리에서 답하지 않는다 |
+
+---
+
+## 부록 — 영어판 메일 (영어 쓰는 소속사용)
 
 **제목**: Partnership idea for [Artist name]: a paid 1:1 fan messaging app in Thai
 
@@ -42,9 +142,8 @@
 > voice notes and videos to their fans in a private, chat-style room. It is the same kind of service as Bubble in
 > Korea, built for Thai artists and Thai fans.
 >
-> I am reaching out because [one specific sentence: e.g. "the way [Artist] talks with fans on X/IG shows how close
-> their fandom is" / "your artists have strong international fan bases"]. I believe your artists could open a new,
-> monthly source of income with Toffee.
+> I am reaching out because [one specific sentence]. I believe your artists could open a new, monthly source of
+> income with Toffee.
 >
 > **We are looking for a few agencies for a 3-month pilot:**
 > - No cost and no exclusivity for your agency
@@ -63,113 +162,7 @@
 > Toffee Team · toffeechat.app
 > [name]@toffeechat.app · LINE: [ID]
 
-**한국어 뜻(참고용)**: 토피 소개(태국 아티스트가 팬에게 메시지·사진·음성·영상을 보내는 구독 앱, 한국 버블 같은 서비스) →
-왜 이 소속사에 연락했는지 한 문장(**반드시 소속사마다 다르게** — 복붙 메일은 바로 티 난다) → 3개월 파일럿 조건 4줄 →
-데모 주소·제안서 첨부 → 2주 안에 30분 화상 통화 가능한지.
-
-## 메일 1. 첫 연락 (태국어)
-
-**제목**: ข้อเสนอความร่วมมือสำหรับ [ชื่อศิลปิน]: แอปแชทกับแฟนคลับแบบสมัครสมาชิก
-
-> เรียน [ชื่อ / ทีมงาน ชื่อต้นสังกัด]
->
-> ผม/ดิฉันชื่อ [ชื่อ] จากทีม **Toffee** แอปสมัครสมาชิกรายเดือนที่ศิลปินไทยสามารถส่งข้อความ รูปภาพ เสียง และวิดีโอ
-> ถึงแฟนคลับได้ในห้องแชทส่วนตัว คล้ายกับแอป Bubble ของเกาหลี แต่ออกแบบมาเพื่อศิลปินและแฟนคลับชาวไทยโดยเฉพาะ
->
-> ที่ติดต่อมาเพราะ [เหตุผลเฉพาะของต้นสังกัดนี้ 1 ประโยค] และเชื่อว่า Toffee จะช่วยสร้างรายได้รายเดือนใหม่ให้กับศิลปินของท่าน
->
-> **ตอนนี้เรากำลังมองหาต้นสังกัดจำนวนหนึ่งเพื่อทดลองใช้งาน 3 เดือน**
-> - ไม่มีค่าใช้จ่ายและไม่มีสัญญาผูกขาด
-> - แบ่งรายได้ ต้นสังกัด 70% / Toffee 30% (หลังหักค่าธรรมเนียมแอปสโตร์)
-> - ทีมเราดูแลแอป การชำระเงิน การแปลภาษา การดูแลแฟนคลับ และการตรวจสอบเนื้อหาทั้งหมด
-> - ต้นสังกัดดูข้อความและสถิติทั้งหมดได้ผ่านหน้าจอสำหรับต้นสังกัด
->
-> แอปพร้อมใช้งานแล้ว สามารถทดลองได้เองภายในประมาณ 10 นาทีที่ **demo.toffeechat.app** (รหัสเข้าใช้: [รหัส])
-> และได้แนบเอกสารข้อเสนอโดยย่อมาด้วย
->
-> หากสะดวก ขอนัดคุยออนไลน์ประมาณ 30 นาทีภายในสองสัปดาห์นี้ได้ไหมครับ/คะ ยินดีปรับเงื่อนไขให้เหมาะกับศิลปินของท่าน
->
-> ขอแสดงความนับถือ
-> [ชื่อ]
-> Toffee Team · toffeechat.app
-> [name]@toffeechat.app · LINE: [ID]
-
-(남성이면 ผม/ครับ, 여성이면 ดิฉัน/ค่ะ 하나만 남긴다.)
-
----
-
-## 짧은 메시지 (LINE·인스타그램 DM·페이스북 페이지용)
-
-태국은 소속사 연락을 LINE 공식 계정이나 페이스북 페이지로 받는 곳이 많다. 길게 쓰지 말고 메일로 넘어가게 한다.
-
-**영어**
-> Hello! I'm [Name] from Toffee, a paid 1:1-style fan messaging app for Thai artists (like Bubble in Korea).
-> We'd love to invite [Agency] to a free, non-exclusive 3-month pilot. Could you share the best email to send
-> a short proposal? Thank you!
-
-**태국어**
-> สวัสดีครับ/ค่ะ [ชื่อ] จาก Toffee แอปแชทกับแฟนคลับแบบสมัครสมาชิกสำหรับศิลปินไทย (คล้าย Bubble ของเกาหลี)
-> อยากเชิญ [ต้นสังกัด] ร่วมทดลองใช้งาน 3 เดือน ไม่มีค่าใช้จ่ายและไม่ผูกขาด
-> รบกวนขออีเมลสำหรับส่งเอกสารข้อเสนอสั้น ๆ ได้ไหมครับ/คะ ขอบคุณครับ/ค่ะ
-
----
-
-## 메일 2. 답이 없을 때 (1주 뒤, 한 번만)
-
-**제목**: Re: Partnership idea for [Artist name]
-
-> Hi [Name],
->
-> Just a short follow-up on my message last week about Toffee. I know your team is busy, so here is the
-> one-line version: **a free, non-exclusive 3-month pilot where your artists earn monthly income from fans,
-> and we run everything.**
->
-> If it is not a fit right now, a quick "not now" is completely fine. It helps me a lot.
->
-> Best,
-> [Your name]
-
-두 번 보내도 답이 없으면 그 소속사는 멈추고, 3단계 기록에 "연락, 무응답"으로 남긴다.
-
-## 메일 3. 누군가 소개해 줬을 때
-
-소개받은 경우가 콜드 메일보다 답장률이 훨씬 높다(`launch-roadmap.md` 3단계). 첫 줄에 소개한 사람 이름을 넣는다.
-
-**제목**: Introduction from [Introducer name]: Toffee fan messaging app
-
-> Dear [Name],
->
-> [Introducer name] kindly suggested I contact you. I am [Your name], building **Toffee**, a paid, chat-style
-> messaging app between Thai artists and their fans.
->
-> (이하 메일 1의 둘째 문단부터 같음)
-
-## 답장이 왔을 때 — 통화 잡기
-
-> Thank you so much for your reply! Would any of these times work for a 30-minute online call (Bangkok time)?
-> - [Date] [time]
-> - [Date] [time]
-> - [Date] [time]
->
-> I will send a Google Meet link once you choose. If LINE call is easier for you, that works too.
-
-시간은 **방콕 시간**으로 적는다(한국보다 2시간 늦음). 퇴근 후 통화라면 한국 20~22시 = 방콕 18~20시.
-
----
-
-## 자주 나올 질문과 답 (통화·답장용)
-
-| 질문 | 답 (영어) | 메모 |
-|---|---|---|
-| Are you a registered company? | Not yet. We will incorporate in Korea before the public launch, and every contract will be signed by the company. During the pilot preparation there is no payment between us. | 사실대로. "회사 있어야 계약"이라고 하면 법인 설립을 앞당기는 신호(`launch-roadmap.md` 분기점) |
-| When do you launch? | We are targeting [season] 2027, after store review. The pilot starts when your artists are ready. | 날짜 약속 금지 |
-| Who owns the content? | Your artist and agency keep all rights. Toffee only needs a licence to show it to subscribers in the app. | 계약서 단계에서 변호사 확인 |
-| How do you stop leaks? | Content is only visible inside the app to paying adults, sharing outside is forbidden by our terms, and we can ban accounts. | 화면 캡처 자체를 완전히 막을 수는 없다는 점은 솔직하게 |
-| How and when do we get paid? | Monthly statement per artist. Stores pay us about 1 to 2 months after the sale, then we transfer your share in THB. | 송금·원천징수 실무는 법인 설립 때 확정 |
-| Can we set the price? | Yes, together per artist. | 스토어 가격표 단계에 맞춤 |
-| Can we leave? | Yes. No exclusivity, and either side can end after the pilot. | |
-| What if the artist stops sending? | Fans are protected by our refund rules, and the agency console shows artists who have not sent in a while. | `STATUS.md` 환불 정책 |
-| Do you need an advance from us / will you pay an advance? | No fee from you. We do not offer an advance during the pilot. | 계약금 요구는 메모만 하고 그 자리에서 답하지 않는다 |
+뜻은 위 태국어 메일 1의 한국어 번역과 같다(통화 언어 문장만 없음). 후속·통화 잡기 영어 문구가 필요하면 태국어판 번역을 영어로 옮겨 쓴다.
 
 ---
 
