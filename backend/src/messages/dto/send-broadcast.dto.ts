@@ -1,6 +1,7 @@
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -49,6 +50,18 @@ export class SendBroadcastDto {
   @Min(0)
   @Max(30 * 60 * 1000)
   durationMs?: number;
+
+  // 여러 장 보내기(2026-10-13) — 같이 보낸 묶음 중 마지막이 아닌 것은 silent(팬·소속사 푸시 없음, 메시지·실시간은 그대로),
+  // 마지막 사진·영상엔 batchCount(묶음 개수)를 줘서 알림이 "사진·동영상 N개를 보냈어요" 한 건만 가게
+  @IsOptional()
+  @IsBoolean()
+  silent?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  @Max(10)
+  batchCount?: number;
 
   @IsOptional()
   @IsArray()

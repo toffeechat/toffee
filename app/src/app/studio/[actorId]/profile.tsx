@@ -3,12 +3,13 @@ import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Avatar } from '@/components/ui/avatar';
 import { ChatPhotoEditor } from '@/components/chat-photo-editor';
+import { GreetingsForm } from '@/components/greetings-form';
 import { SupportLink } from '@/components/support-link';
 import { useActor, type Actor } from '@/hooks/use-actors';
 import { useTheme } from '@/hooks/use-theme';
@@ -60,64 +61,6 @@ function NicknameForm({ actor }: { actor: Actor }) {
         disabled={unchanged || !nickname.trim() || save.isPending}
         onPress={() => save.mutate(nickname.trim())}
         style={[styles.button, { backgroundColor: theme.tint }, (unchanged || !nickname.trim() || save.isPending) && styles.disabled]}>
-        <ThemedText type="smallBold" style={styles.buttonText}>
-          {t('studioProfile.save')}
-        </ThemedText>
-      </Pressable>
-    </ThemedView>
-  );
-}
-
-type Greetings = { welcomeMessage: string | null; birthdayMessage: string | null };
-
-/**
- * 환영 메시지·생일 축하 메시지(2026-10-12) — 한 번 써 두면 새로 구독한 팬 대화방 맨 처음, 생일 알림을 켠 팬의 생일 아침에
- * 자동으로 보임. {{name}}은 팬 닉네임으로 바뀜. 비우면 안 보냄. 팬의 생일 날짜는 아티스트에게 보이지 않음.
- */
-function GreetingsForm({ actorId }: { actorId: string }) {
-  const theme = useTheme();
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { data } = useQuery({ queryKey: ['greetings', actorId], queryFn: () => apiClient.get<Greetings>(`/actors/${actorId}/messages/greetings`) });
-  const [draft, setDraft] = useState<{ welcomeMessage: string; birthdayMessage: string } | null>(null);
-  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
-  const value = draft ?? { welcomeMessage: data?.welcomeMessage ?? '', birthdayMessage: data?.birthdayMessage ?? '' };
-  const save = useMutation({
-    mutationFn: (input: typeof value) => apiClient.put<Greetings>(`/actors/${actorId}/messages/greetings`, input),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(['greetings', actorId], saved);
-      setDraft(null);
-      setMessage({ text: t('studioProfile.saved'), error: false });
-    },
-    onError: (e) => setMessage({ text: e instanceof ApiError ? e.message : t('studioProfile.saveFailed'), error: true }),
-  });
-  const edit = (key: keyof typeof value) => (text: string) => (setDraft({ ...value, [key]: text }), setMessage(null));
-  const inputStyle = [styles.input, styles.multiline, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }];
-
-  return (
-    <ThemedView style={[styles.section, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText type="smallBold">{t('greetings.welcomeTitle')}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {t('greetings.welcomeHint')}
-      </ThemedText>
-      <TextInput value={value.welcomeMessage} onChangeText={edit('welcomeMessage')} multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
-      <ThemedText type="smallBold" style={styles.spaced}>
-        {t('greetings.birthdayTitle')}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {t('greetings.birthdayHint')}
-      </ThemedText>
-      <TextInput value={value.birthdayMessage} onChangeText={edit('birthdayMessage')} multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
-      {message && (
-        <ThemedText type="small" themeColor={message.error ? 'danger' : 'textSecondary'}>
-          {message.text}
-        </ThemedText>
-      )}
-      <Pressable
-        accessibilityRole="button"
-        disabled={!draft || save.isPending}
-        onPress={() => save.mutate(value)}
-        style={[styles.button, { backgroundColor: theme.tint }, (!draft || save.isPending) && styles.disabled]}>
         <ThemedText type="smallBold" style={styles.buttonText}>
           {t('studioProfile.save')}
         </ThemedText>

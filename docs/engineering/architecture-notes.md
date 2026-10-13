@@ -1505,3 +1505,16 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 데모 R2 연결 때 `STORAGE_ENDPOINT`가 주소 형식이 아니어서(호스팅 변수 칸에 따옴표·공백 등) 서버는 정상으로 켜지고 첫 업로드에서야
 `TypeError: Invalid URL`(S3 클라이언트 endpoint 파싱, 앱엔 INTERNAL "일시적인 오류")이 났음. `checkEnv`에 경고 추가: `STORAGE_*` 값 앞뒤 공백·따옴표·
 `<…>`(예시 그대로), `STORAGE_ENDPOINT`가 http(s) URL이 아님. 값을 자동으로 다듬지는 않음(어디가 틀렸는지 보이게).
+
+## 여러 장 보내기·사진 격자·환영/생일 필수 (2026-10-13)
+
+- **여러 장**: 스키마 변경 없음. 스튜디오가 `allowsMultipleSelection`(최대 10, `orderedSelection`)으로 고르고 `useStudioSend`를 순서대로
+  `mutateAsync` — 앞쪽은 `silent: true`, 마지막 사진·영상은 `batchCount: N`(글이 있으면 사진은 전부 silent, 글 메시지가 일반 알림).
+  `SendBroadcastDto.silent`/`batchCount(2~10)`: silent면 메시지 저장·실시간·`lastArtistMessageAt`까지만 하고 팬·소속사 푸시를 건너뜀,
+  batchCount면 미리보기 `pushStrings.mediaBatch(n)`. 중간 실패 시 거기서 멈추고 못 보낸 것만 트레이에 남김(이미 보낸 건 그대로).
+- **격자**: `app/src/utils/chat-album.ts` `groupAlbumRows` — 팬 채팅 FlatList `data`를 메시지 → 줄(`album?: ChatMessage[]`, 시간순)로 바꿈.
+  조건: 아티스트·글 없음·인용 없음·환영/생일 아님·PHOTO/VIDEO·같은 보낸 사람(CP)·같은 분·최대 10. 줄 key는 `album-<가장 오래된 id>`(새 사진이 붙어도
+  안정). 알림·검색 이동·읽음 줄·강조는 `rowHas(row, id)`로 줄 안 메시지까지 찾음. 격자 칸은 `MediaTile size`, 누르면 기존 전체 화면(방 전체 넘겨보기).
+- **환영/생일 필수**: `UpdateGreetingsDto` 두 필드 필수 + `@Matches(/\S/)`, `sendBroadcast`가 `GREETINGS_REQUIRED`(400) — 앱 스튜디오는
+  `useGreetings`가 비어 있으면 보내기 화면 대신 `GreetingsForm`(공용 `components/greetings-form.tsx`, 프로필과 같은 양식). 데모 시드 아티스트·CP 모두
+  `DEMO_GREETINGS`. e2e는 둘 다 넣고 끝나면 원래 값(없으면 기본 문구)으로.

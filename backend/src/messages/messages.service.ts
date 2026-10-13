@@ -290,6 +290,9 @@ export class MessagesService {
   async sendBroadcast(actorSelfUserId: string, actorId: string, dto: SendBroadcastDto) {
     // 커플방이면 두 멤버 중 실제로 보낸 배우(말풍선·알림에 이름 표시)
     const senderActorId = await ensureIsActorSelf(this.prisma, actorSelfUserId, actorId);
+    // 환영·생일 메시지를 써 둬야 보낼 수 있음(2026-10-13 사용자 결정 — 앱은 첫 화면에서 먼저 쓰게 함, 여긴 우회 방지)
+    const greetings = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { welcomeMessage: true, birthdayMessage: true } });
+    if (!greetings.welcomeMessage || !greetings.birthdayMessage) throw new BadRequestException(appError('GREETINGS_REQUIRED'));
     const mediaKey = dto.mediaType === MessageMediaType.TEXT ? null : dto.mediaKey!;
     // 인용 답장: 같은 배우 채널의 팬 메시지만 인용 가능(다른 채널 메시지·스타 메시지 인용 불가)
     if (dto.replyToMessageId) {
@@ -349,7 +352,10 @@ export class MessagesService {
     const senderPrefix = actor.kind === ActorKind.COUPLE && message.sender ? `${message.sender.chatDisplayName}: ` : '';
     // 알림을 누르면 앱이 이 값으로 해당 채팅방(팬)/콘솔(소속사)로 이동
     const pushData = { type: 'NEW_MESSAGE', actorId, messageId: message.id };
+    // 여러 장 보내기의 앞쪽 것들 — 푸시 없이 끝(마지막 한 장이 묶음 알림 한 건을 보냄)
+    if (dto.silent) return message;
     const preview = (locale: string | null, fanName?: string) => {
+      if (!dto.body && dto.batchCount) return senderPrefix + pushStrings(locale).mediaBatch(dto.batchCount);
       if (!dto.body) return senderPrefix + pushStrings(locale).media[dto.mediaType];
       const text = fanName ? personalize(dto.body, fanName) : dto.body;
       return (senderPrefix + text).slice(0, PUSH_PREVIEW_LENGTH);

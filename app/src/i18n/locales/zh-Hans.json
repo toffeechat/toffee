@@ -179,6 +179,8 @@
     "record": "录音",
     "recording": "录音中 {{seconds}} 秒",
     "stopRecording": "结束录音",
+    "attachedMany": "{{count}} 张照片和视频",
+    "batchSending": "正在发送第 {{index}}/{{total}} 个",
     "attached": {
       "PHOTO": "已添加照片",
       "AUDIO": "已添加语音",
@@ -617,10 +619,14 @@
   },
   "greetings": {
     "welcomeTitle": "欢迎消息",
-    "welcomeHint": "显示在新订阅粉丝聊天的最开头。写 {{name}} 会替换成粉丝昵称。留空则不发送。",
+    "welcomeHint": "会显示在新订阅粉丝聊天室的最开头。写 {{name}} 会替换为粉丝的昵称。",
     "birthdayTitle": "生日祝福",
-    "birthdayHint": "会在生日当天早上（泰国时间9点）自动发给开启了生日祝福的粉丝。你看不到粉丝的生日。留空则不发送。",
-    "placeholder": "例如：{{name}}，欢迎你！"
+    "birthdayHint": "会在开启生日提醒的粉丝生日当天早上（泰国时间 9 点）自动发送。你看不到粉丝的生日日期。",
+    "placeholder": "例如：{{name}}，欢迎你！",
+    "birthdayPlaceholder": "例如：{{name}}，生日快乐！",
+    "bothRequired": "两条消息都填写后才能保存。",
+    "gateTitle": "开始之前",
+    "gateBody": "给粉丝发消息之前，请先写好欢迎消息和生日祝福消息。之后可随时在个人资料中修改。"
   },
   "notices": {
     "title": "公告",

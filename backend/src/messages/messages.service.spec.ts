@@ -25,7 +25,7 @@ function setup() {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     actor: {
-      findUniqueOrThrow: vi.fn().mockResolvedValue({ chatDisplayName: '캐러멜', kind: 'SOLO' }),
+      findUniqueOrThrow: vi.fn().mockResolvedValue({ chatDisplayName: '캐러멜', kind: 'SOLO', welcomeMessage: '환영', birthdayMessage: '축하' }),
       // 보낸 사람 확인(1인 방, 운영자 계정) · 보낸 배우 이름 조회
       findUnique: vi.fn().mockResolvedValue({ kind: 'SOLO', selfUserId: 'star', coupleMembers: [] }),
       findMany: vi.fn().mockResolvedValue([]),
@@ -73,7 +73,7 @@ describe('MessagesService.sendBroadcast 푸시 문구', () => {
       selfUserId: null,
       coupleMembers: [{ member: { id: 'nawin', selfUserId: 'u-nawin' } }, { member: { id: 'pakin', selfUserId: 'u-pakin' } }],
     });
-    actor.findUniqueOrThrow.mockResolvedValue({ chatDisplayName: 'Nawin & Pakin', kind: 'COUPLE' });
+    actor.findUniqueOrThrow.mockResolvedValue({ chatDisplayName: 'Nawin & Pakin', kind: 'COUPLE', welcomeMessage: '환영', birthdayMessage: '축하' });
     actor.findMany.mockResolvedValue([{ id: 'pakin', chatDisplayName: 'Pakin', chatProfileImageUrl: null }]);
     (prisma as unknown as { message: { create: ReturnType<typeof vi.fn> } }).message.create.mockResolvedValue({
       id: 'm1',
@@ -104,6 +104,27 @@ describe('MessagesService.sendBroadcast 푸시 문구', () => {
 
     expect(fanPushes[0]({ locale: 'th', displayName: 'fan' }).body).toBe('ส่งรูปภาพ');
     expect(fanPushes[0]({ locale: null, displayName: 'fan' }).body).toBe('Sent a photo');
+  });
+
+  it('환영·생일 메시지가 비어 있으면 보내기 거절(GREETINGS_REQUIRED)', async () => {
+    const { service, prisma } = setup();
+    const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;
+    actor.findUniqueOrThrow.mockResolvedValueOnce({ welcomeMessage: '환영', birthdayMessage: null });
+    await expect(service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' })).rejects.toThrow();
+    expect(prisma.message.create).not.toHaveBeenCalled();
+  });
+
+  it('여러 장 보내기: 앞쪽(silent)은 푸시 없음, 마지막 장은 "N개를 보냈어요" 한 건', async () => {
+    const { service, fanPushes, staffPushes, prisma } = setup();
+    const photo = { mediaType: MessageMediaType.PHOTO, mediaKey: 'actors/actor-1/message/a.jpg' };
+    await service.sendBroadcast('admin', 'actor-1', { ...photo, silent: true });
+    expect(fanPushes).toHaveLength(0);
+    expect(staffPushes).toHaveLength(0);
+    // 메시지 저장·마지막 발송 시각은 똑같이
+    expect(prisma.subscription.updateMany).toHaveBeenCalled();
+    await service.sendBroadcast('admin', 'actor-1', { ...photo, batchCount: 3 });
+    expect(fanPushes).toHaveLength(1);
+    expect(fanPushes[0]({ locale: 'ko', displayName: 'fan' }).body).toBe('사진·동영상 3개를 보냈어요');
   });
 });
 

@@ -179,6 +179,8 @@
     "record": "ボイス録音",
     "recording": "録音中 {{seconds}}秒",
     "stopRecording": "録音を終了",
+    "attachedMany": "写真・動画 {{count}}件",
+    "batchSending": "{{total}}件中{{index}}件目を送信中",
     "attached": {
       "PHOTO": "写真を添付しました",
       "AUDIO": "ボイスを添付しました",
@@ -617,10 +619,14 @@
   },
   "greetings": {
     "welcomeTitle": "ウェルカムメッセージ",
-    "welcomeHint": "新しく購読したファンのトークの最初に表示されます。{{name}}と書くとファンのニックネームに置き換わります。空欄にすると送りません。",
+    "welcomeHint": "新しく購読したファンのトークの最初に表示されます。{{name}}と書くとファンのニックネームに変わります。",
     "birthdayTitle": "誕生日メッセージ",
-    "birthdayHint": "誕生日メッセージをオンにしたファンに、誕生日の朝（タイ時間9時）自動で届きます。ファンの誕生日は表示されません。空欄にすると送りません。",
-    "placeholder": "例：{{name}}さん、ようこそ！"
+    "birthdayHint": "誕生日通知をオンにしたファンに、誕生日の朝（タイ時間9時）に自動で届きます。ファンの誕生日は表示されません。",
+    "placeholder": "例：{{name}}さん、ようこそ！",
+    "birthdayPlaceholder": "例：{{name}}さん、お誕生日おめでとう！",
+    "bothRequired": "両方のメッセージを書くと保存できます。",
+    "gateTitle": "始める前に",
+    "gateBody": "ファンにメッセージを送る前に、ウェルカムメッセージと誕生日メッセージを書いてください。あとからプロフィールでいつでも変更できます。"
   },
   "notices": {
     "title": "お知らせ",

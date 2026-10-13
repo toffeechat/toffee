@@ -179,6 +179,8 @@
     "record": "Thoại",
     "recording": "Đang ghi âm {{seconds}} giây",
     "stopRecording": "Dừng ghi âm",
+    "attachedMany": "{{count}} ảnh và video",
+    "batchSending": "Đang gửi {{index}}/{{total}}",
     "attached": {
       "PHOTO": "Đã đính kèm ảnh",
       "AUDIO": "Đã đính kèm tin nhắn thoại",
@@ -617,10 +619,14 @@
   },
   "greetings": {
     "welcomeTitle": "Tin nhắn chào mừng",
-    "welcomeHint": "Hiện ở đầu cuộc trò chuyện của người hâm mộ mới đăng ký. Viết {{name}} sẽ được thay bằng biệt danh của họ. Để trống nếu không muốn gửi.",
+    "welcomeHint": "Hiển thị ở đầu phòng chat của fan mới đăng ký. Viết {{name}} sẽ được thay bằng biệt danh của fan.",
     "birthdayTitle": "Lời chúc sinh nhật",
-    "birthdayHint": "Tự động gửi vào sáng ngày sinh nhật (9 giờ giờ Thái Lan) cho người hâm mộ đã bật nhận lời chúc. Bạn sẽ không thấy ngày sinh của họ. Để trống nếu không muốn gửi.",
-    "placeholder": "VD: Chào {{name}}, rất vui được gặp bạn!"
+    "birthdayHint": "Tự động gửi vào sáng ngày sinh nhật (9 giờ theo giờ Thái Lan) cho fan đã bật thông báo sinh nhật. Bạn sẽ không thấy ngày sinh của fan.",
+    "placeholder": "VD: Chào {{name}}, rất vui được gặp bạn!",
+    "birthdayPlaceholder": "Ví dụ: Chúc mừng sinh nhật {{name}}!",
+    "bothRequired": "Hãy viết cả hai tin nhắn để lưu.",
+    "gateTitle": "Trước khi bắt đầu",
+    "gateBody": "Trước khi nhắn tin cho fan, hãy viết tin nhắn chào mừng và tin nhắn chúc mừng sinh nhật. Bạn có thể sửa bất cứ lúc nào trong hồ sơ."
   },
   "notices": {
     "title": "Thông báo",

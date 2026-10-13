@@ -94,6 +94,8 @@ export function useStudioSend(actorId: string) {
       body,
       attachment,
       replyToMessageId,
+      silent,
+      batchCount,
       onProgress,
       signal,
     }: {
@@ -101,6 +103,9 @@ export function useStudioSend(actorId: string) {
       attachment: Attachment | null;
       /** 인용 답장할 팬 메시지 */
       replyToMessageId?: string;
+      /** 여러 장 보내기 — 묶음의 앞쪽(푸시 없음), 마지막 사진·영상엔 묶음 개수(알림 한 건) */
+      silent?: boolean;
+      batchCount?: number;
     } & UploadOptions) => {
       const [mediaKey, videoThumb, photoHash] = await Promise.all([
         attachment
@@ -123,6 +128,8 @@ export function useStudioSend(actorId: string) {
         durationMs: attachment?.durationMs,
         waveform: attachment?.waveform,
         replyToMessageId,
+        silent: silent || undefined,
+        batchCount,
       });
     },
     onSuccess: () => {
