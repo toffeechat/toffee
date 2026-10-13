@@ -37,6 +37,12 @@ export const DEMO_IDS = {
 const DEMO_ASSET_BASE = (process.env.DEMO_ASSET_BASE_URL || 'https://demo.toffeechat.app/demo').replace(/\/$/, '');
 const demoImage = (name: string) => `${DEMO_ASSET_BASE}/${name}.jpg`;
 
+// 환영·생일 메시지(2026-10-13부터 필수 — 없으면 아티스트가 메시지를 못 보냄) — 데모 아티스트 공통
+const DEMO_GREETINGS = {
+  welcomeMessage: '{{name}} 반가워! 구독해 줘서 고마워 💛 여기서 자주 이야기하자',
+  birthdayMessage: '{{name}} 생일 축하해! 🎂 오늘 하루 제일 행복했으면 좋겠어',
+};
+
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
 // PrismaClient나 트랜잭션(tx) 둘 다 받음 — 운영자 화면 초기화는 트랜잭션으로 한 번에(중간에 실패하면 원래대로)
@@ -89,6 +95,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       chatDisplayName: '캐러멜',
       chatProfileImageUrl: demoImage('caramel-chat'),
       gender: 'FEMALE',
+      ...DEMO_GREETINGS,
       monthlyPriceCents: 9900, // 데모 가격 — 실제 태국 시장 가격은 별도 검증 필요
       agencyId: demoAgency.id,
     },
@@ -99,6 +106,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       id: DEMO_IDS.nougat,
       legalName: '(가상) 데모 아티스트 B',
       officialProfileImageUrl: demoImage('nougat-official'),
+      ...DEMO_GREETINGS,
       chatDisplayName: '누가',
       chatProfileImageUrl: demoImage('nougat-chat'),
       gender: 'FEMALE',
@@ -133,6 +141,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
         officialProfileImageUrl: demoImage(`${extra.image}-official`),
         chatProfileImageUrl: demoImage(`${extra.image}-chat`),
         gender: extra.gender,
+        ...DEMO_GREETINGS,
         monthlyPriceCents: 9900,
         agencyId: extra.agencyId,
       },
@@ -151,6 +160,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   await prisma.actor.create({
     data: {
       id: DEMO_IDS.couple,
+      ...DEMO_GREETINGS,
       kind: 'COUPLE',
       legalName: '(가상) 데모 아티스트 A & C',
       chatDisplayName: '캐러멜 & 마카롱',

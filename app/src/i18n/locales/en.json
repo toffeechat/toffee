@@ -179,6 +179,8 @@
     "record": "Voice",
     "recording": "Recording {{seconds}}s",
     "stopRecording": "Stop recording",
+    "attachedMany": "{{count}} photos and videos",
+    "batchSending": "Sending {{index}} of {{total}}",
     "attached": {
       "PHOTO": "Photo attached",
       "AUDIO": "Voice message attached",
@@ -617,10 +619,14 @@
   },
   "greetings": {
     "welcomeTitle": "Welcome message",
-    "welcomeHint": "Shown at the start of a new subscriber’s chat. {{name}} is replaced with the fan’s nickname. Leave empty to turn it off.",
+    "welcomeHint": "Shown at the very start of a new subscriber's chat. Write {{name}} and it becomes the fan's nickname.",
     "birthdayTitle": "Birthday message",
-    "birthdayHint": "Sent automatically on the morning of their birthday (9 AM Thailand time) to fans who turned on birthday messages. You won’t see their birth date. Leave empty to turn it off.",
-    "placeholder": "e.g. Hi {{name}}, so glad you’re here!"
+    "birthdayHint": "Sent automatically on the morning of the fan's birthday (9 AM Thailand time) to fans who turned on birthday messages. You won't see their birth date.",
+    "placeholder": "e.g. Hi {{name}}, so glad you’re here!",
+    "birthdayPlaceholder": "e.g. Happy birthday, {{name}}!",
+    "bothRequired": "Write both messages to save.",
+    "gateTitle": "Before you start",
+    "gateBody": "Before messaging your fans, please write your welcome message and birthday message. You can change them anytime in your profile."
   },
   "notices": {
     "title": "Notices",

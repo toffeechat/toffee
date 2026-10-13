@@ -774,6 +774,15 @@ export const ERROR_MESSAGES = {
     'zh-Hant': '你無法在此頻道回覆。',
     vi: 'Bạn không thể gửi câu trả lời trong kênh này.',
   },
+  GREETINGS_REQUIRED: {
+    ko: '먼저 프로필에서 환영 메시지와 생일 축하 메시지를 써 주세요.',
+    en: 'Please write your welcome message and birthday message in your profile first.',
+    th: 'กรุณาเขียนข้อความต้อนรับและข้อความอวยพรวันเกิดในโปรไฟล์ก่อน',
+    ja: '先にプロフィールでウェルカムメッセージと誕生日メッセージを書いてください。',
+    'zh-Hans': '请先在个人资料中填写欢迎消息和生日祝福消息。',
+    'zh-Hant': '請先在個人檔案中填寫歡迎訊息和生日祝福訊息。',
+    vi: 'Vui lòng viết tin nhắn chào mừng và tin nhắn chúc mừng sinh nhật trong hồ sơ trước.',
+  },
   QUOTE_INVALID: {
     ko: '이 채널의 팬 메시지만 인용할 수 있어요.',
     en: "You can only quote fan messages from this channel.",

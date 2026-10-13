@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { ReplyTicker } from '@/components/reply-ticker';
 import { QuoteBlock } from '@/components/quote-block';
 import { VoiceMessage } from '@/components/voice-message';
 import { Avatar } from '@/components/ui/avatar';
+import { GreetingsForm, greetingsReady, useGreetings } from '@/components/greetings-form';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { IconButton } from '@/components/ui/icon-button';
@@ -46,15 +47,17 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
 };
 
-function toAttachment(result: ImagePicker.ImagePickerResult): Attachment | null {
-  const asset = result.canceled ? null : result.assets[0];
-  if (!asset) return null;
-  return {
+// 여러 장 보내기(2026-10-13) — 앨범에서 최대 10개까지 고른 순서대로, 한 장씩 메시지로 보냄(팬 화면은 연달아 온 사진을 격자로 묶음)
+const MAX_BATCH = 10;
+
+function toAttachments(result: ImagePicker.ImagePickerResult): Attachment[] {
+  if (result.canceled) return [];
+  return result.assets.slice(0, MAX_BATCH).map((asset) => ({
     mediaType: asset.type === 'video' ? 'VIDEO' : 'PHOTO',
     uri: asset.uri,
     contentType: asset.mimeType,
     durationMs: asset.type === 'video' && asset.duration ? Math.round(asset.duration) : undefined,
-  };
+  }));
 }
 
 // senderName: 커플방이면 누가 보낸 메시지인지(두 멤버가 같은 화면을 봄) — 1인 방은 null
@@ -159,6 +162,7 @@ export default function StudioChannelScreen() {
   }>();
   const clearQuote = () => router.setParams({ quoteId: undefined, quoteNickname: undefined, quoteBody: undefined });
   const { data: actor } = useActor(actorId);
+  const { data: greetings } = useGreetings(actorId);
   const { data: messages, isLoading } = useStudioMessages(actorId);
   const send = useStudioSend(actorId);
   const deleteBroadcast = useDeleteBroadcast(actorId);
@@ -167,7 +171,12 @@ export default function StudioChannelScreen() {
   const levels = useRef<number[]>([]);
   const uploadAbort = useRef<AbortController | null>(null);
   const [draft, setDraft] = useState('');
-  const [attachment, setAttachment] = useState<Attachment | null>(null);
+  // 보낼 첨부물 — 음성·카메라는 1개, 앨범은 여러 개(MAX_BATCH)
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const attachment = attachments[0] ?? null;
+  const setAttachment = (next: Attachment | null) => setAttachments(next ? [next] : []);
+  // 여러 개 보내는 중이면 지금 몇 번째인지(1부터)
+  const [batchStep, setBatchStep] = useState<{ index: number; total: number } | null>(null);
   // 음성 녹음 패널(2026-10-12 실기기 피드백: 마이크를 누르자마자 녹음되지 말고 "녹음 → 다시 듣기·다시 녹음·취소 → 보내기")
   const [voicePanel, setVoicePanel] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
@@ -206,10 +215,12 @@ export default function StudioChannelScreen() {
   };
 
   const pickFromLibrary = async () => {
-    const picked = toAttachment(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS));
-    if (picked) {
+    const picked = toAttachments(
+      await ImagePicker.launchImageLibraryAsync({ ...PICKER_OPTIONS, allowsMultipleSelection: true, selectionLimit: MAX_BATCH, orderedSelection: true }),
+    );
+    if (picked.length) {
       setVoicePanel(false);
-      setAttachment(picked);
+      setAttachments(picked);
     }
   };
 
@@ -219,7 +230,7 @@ export default function StudioChannelScreen() {
       setNotice({ text: t('studio.permissionDenied'), error: true });
       return;
     }
-    const picked = toAttachment(await ImagePicker.launchCameraAsync(PICKER_OPTIONS));
+    const [picked] = toAttachments(await ImagePicker.launchCameraAsync(PICKER_OPTIONS));
     if (picked) {
       setVoicePanel(false);
       setAttachment(picked);
@@ -255,9 +266,54 @@ export default function StudioChannelScreen() {
     setAttachment(null);
   };
 
+  // 여러 개: 사진·영상을 고른 순서대로 하나씩 보내고(앞쪽은 푸시 없음, 마지막 사진·영상이 "N개를 보냈어요" 알림 한 건), 글이 있으면 맨 뒤에
+  // 글 메시지로 따로(그 글이 알림). 중간에 실패하면 거기서 멈추고 못 보낸 것만 남겨 둠
+  const sendBatch = async (body: string) => {
+    const queue = [...attachments];
+    const total = queue.length;
+    const controller = new AbortController();
+    uploadAbort.current = controller;
+    try {
+      for (let index = 0; index < total; index += 1) {
+        setBatchStep({ index: index + 1, total });
+        setProgress(0);
+        const last = index === total - 1;
+        await send.mutateAsync({
+          body: '',
+          attachment: queue[index],
+          // 인용 답장은 글이 있으면 글에, 없으면 첫 사진에
+          replyToMessageId: !body && index === 0 ? quoteId : undefined,
+          silent: !last || !!body,
+          batchCount: last && !body ? total : undefined,
+          onProgress: setProgress,
+          signal: controller.signal,
+        });
+        setAttachments(queue.slice(index + 1));
+      }
+      if (body) await send.mutateAsync({ body, attachment: null, replyToMessageId: quoteId });
+      setDraft('');
+      if (quoteId) clearQuote();
+    } catch (error) {
+      setNotice(
+        error instanceof UploadCancelledError
+          ? { text: t('studio.uploadCancelled'), error: false }
+          : { text: error instanceof ApiError && error.message ? error.message : t('studio.sendFailed'), error: true },
+      );
+    } finally {
+      setProgress(null);
+      setBatchStep(null);
+      uploadAbort.current = null;
+    }
+  };
+
   const handleSend = () => {
     const body = draft.trim();
     if (!body && !attachment) return;
+    if (attachments.length > 1) {
+      setNotice(null);
+      void sendBatch(body);
+      return;
+    }
     setNotice(null);
     const controller = new AbortController();
     uploadAbort.current = controller;
@@ -285,9 +341,23 @@ export default function StudioChannelScreen() {
     );
   };
 
-  const canSend = !send.isPending && !recorderState.isRecording && (!!draft.trim() || !!attachment);
+  const canSend = !send.isPending && !batchStep && !recorderState.isRecording && (!!draft.trim() || !!attachment);
   // 내가 지운 메시지는 안 보임 — 운영자가 가렸거나 소속사가 대신 지운 건 이유와 함께 보임
   const visible = messages?.filter((message) => !message.deletedAt || message.deletedByAdmin || !!message.deletedByStaffId) ?? [];
+
+  // 환영·생일 메시지를 아직 안 썼으면 보내기 화면 대신 이것부터(2026-10-13 사용자 결정 — 서버도 비어 있으면 보내기를 거절).
+  // 저장하면 같은 쿼리가 바뀌어서 바로 보내기 화면으로
+  if (greetings && !greetingsReady(greetings)) {
+    return (
+      <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+        <ScrollView contentContainerStyle={styles.gate} keyboardShouldPersistTaps="handled">
+          <ThemedText type="title">{t('greetings.gateTitle')}</ThemedText>
+          <ThemedText themeColor="textSecondary">{t('greetings.gateBody')}</ThemedText>
+          <GreetingsForm actorId={actorId} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
@@ -386,7 +456,13 @@ export default function StudioChannelScreen() {
               </>
             ) : attachment ? (
               <>
-                {attachment.mediaType === 'PHOTO' ? (
+                {attachments.length > 1 ? (
+                  <View style={styles.thumbStack}>
+                    {attachments.slice(0, 3).map((item, i) => (
+                      <Image key={item.uri} source={{ uri: item.uri }} style={[styles.thumbSmall, { marginLeft: i ? -14 : 0, borderColor: theme.backgroundElement }]} contentFit="cover" />
+                    ))}
+                  </View>
+                ) : attachment.mediaType === 'PHOTO' ? (
                   <Image source={{ uri: attachment.uri }} style={styles.thumb} contentFit="cover" />
                 ) : (
                   <View style={[styles.thumb, styles.thumbIcon, { backgroundColor: theme.background }]}>
@@ -394,7 +470,13 @@ export default function StudioChannelScreen() {
                   </View>
                 )}
                 <View style={styles.trayBody}>
-                  <ThemedText type="smallMedium">{t(`studio.attached.${attachment.mediaType}`)}</ThemedText>
+                  <ThemedText type="smallMedium">
+                    {batchStep
+                      ? t('studio.batchSending', { index: batchStep.index, total: batchStep.total })
+                      : attachments.length > 1
+                        ? t('studio.attachedMany', { count: attachments.length })
+                        : t(`studio.attached.${attachment.mediaType}`)}
+                  </ThemedText>
                   {progress !== null ? (
                     <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
                       <View style={[styles.progressFill, { backgroundColor: theme.tint, width: `${Math.round(progress * 100)}%` }]} />
@@ -406,10 +488,10 @@ export default function StudioChannelScreen() {
                     </ThemedText>
                   ) : null}
                 </View>
-                {send.isPending ? (
+                {send.isPending || batchStep ? (
                   <IconButton icon={X} size={18} label={t('studio.cancelUpload')} onPress={() => uploadAbort.current?.abort()} />
                 ) : (
-                  <IconButton icon={X} size={18} label={t('studio.removeAttachment')} onPress={() => setAttachment(null)} />
+                  <IconButton icon={X} size={18} label={t('studio.removeAttachment')} onPress={() => setAttachments([])} />
                 )}
               </>
             ) : null}
@@ -500,6 +582,9 @@ const styles = StyleSheet.create({
   tray: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginHorizontal: Spacing.three, marginBottom: Spacing.two, borderRadius: Radius.md, padding: Spacing.two, paddingLeft: Spacing.three },
   trayBody: { flex: 1, gap: 3 },
   thumb: { width: 44, height: 44, borderRadius: Radius.sm },
+  gate: { padding: Spacing.four, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
+  thumbStack: { flexDirection: 'row' },
+  thumbSmall: { width: 40, height: 40, borderRadius: Radius.sm, borderWidth: 2 },
   thumbIcon: { alignItems: 'center', justifyContent: 'center' },
   recDot: { width: 10, height: 10, borderRadius: 5 },
   progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },

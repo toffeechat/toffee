@@ -179,6 +179,8 @@
     "record": "錄音",
     "recording": "錄音中 {{seconds}} 秒",
     "stopRecording": "結束錄音",
+    "attachedMany": "{{count}} 張照片和影片",
+    "batchSending": "正在傳送第 {{index}}/{{total}} 個",
     "attached": {
       "PHOTO": "已附加照片",
       "AUDIO": "已附加語音",
@@ -617,10 +619,14 @@
   },
   "greetings": {
     "welcomeTitle": "歡迎訊息",
-    "welcomeHint": "顯示在新訂閱粉絲聊天的最開頭。寫 {{name}} 會替換成粉絲暱稱。留空則不傳送。",
+    "welcomeHint": "會顯示在新訂閱粉絲聊天室的最開頭。寫 {{name}} 會替換成粉絲的暱稱。",
     "birthdayTitle": "生日祝福",
-    "birthdayHint": "會在生日當天早上（泰國時間9點）自動傳給開啟生日祝福的粉絲。你看不到粉絲的生日。留空則不傳送。",
-    "placeholder": "例如：{{name}}，歡迎你！"
+    "birthdayHint": "會在開啟生日提醒的粉絲生日當天早上（泰國時間 9 點）自動傳送。你看不到粉絲的生日日期。",
+    "placeholder": "例如：{{name}}，歡迎你！",
+    "birthdayPlaceholder": "例如：{{name}}，生日快樂！",
+    "bothRequired": "兩則訊息都填寫後才能儲存。",
+    "gateTitle": "開始之前",
+    "gateBody": "傳訊息給粉絲之前，請先寫好歡迎訊息和生日祝福訊息。之後可隨時在個人檔案中修改。"
   },
   "notices": {
     "title": "公告",

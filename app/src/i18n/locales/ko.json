@@ -179,6 +179,8 @@
     "record": "음성 녹음",
     "recording": "녹음 중 {{seconds}}초",
     "stopRecording": "녹음 끝내기",
+    "attachedMany": "사진·동영상 {{count}}개",
+    "batchSending": "{{total}}개 중 {{index}}번째 보내는 중",
     "attached": {
       "PHOTO": "사진이 첨부됐어요",
       "AUDIO": "음성이 첨부됐어요",
@@ -617,10 +619,14 @@
   },
   "greetings": {
     "welcomeTitle": "환영 메시지",
-    "welcomeHint": "새로 구독한 팬의 대화방 맨 처음에 보여요. {{name}}이라고 쓰면 팬 닉네임으로 바뀌어요. 비우면 보내지 않아요.",
+    "welcomeHint": "새로 구독한 팬의 대화방 맨 처음에 보여요. {{name}}이라고 쓰면 팬 닉네임으로 바뀌어요.",
     "birthdayTitle": "생일 축하 메시지",
-    "birthdayHint": "생일 알림을 켠 팬에게 생일 아침(태국 시간 9시)에 자동으로 가요. 팬의 생일 날짜는 보이지 않아요. 비우면 보내지 않아요.",
-    "placeholder": "예: {{name}}님, 반가워요!"
+    "birthdayHint": "생일 알림을 켠 팬에게 생일 아침(태국 시간 9시)에 자동으로 가요. 팬의 생일 날짜는 보이지 않아요.",
+    "placeholder": "예: {{name}}님, 반가워요!",
+    "birthdayPlaceholder": "예: {{name}}님, 생일 축하해요!",
+    "bothRequired": "두 메시지를 모두 써야 저장할 수 있어요.",
+    "gateTitle": "시작하기 전에",
+    "gateBody": "팬에게 메시지를 보내기 전에 환영 메시지와 생일 축하 메시지를 먼저 써 주세요. 나중에 프로필에서 언제든 고칠 수 있어요."
   },
   "notices": {
     "title": "공지사항",

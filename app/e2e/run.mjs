@@ -55,7 +55,7 @@ try {
   if (!actorId) throw new Error('시드 데이터에 배우 본인 계정이 연결된 배우가 없어요(npm run db:seed)');
   // 환영 메시지(2026-10-12) — 테스트 동안만 바꾸고 끝나면 원래대로
   savedGreetings = await api(`/actors/${actorId}/messages/greetings`, { token: actorToken });
-  await api(`/actors/${actorId}/messages/greetings`, { token: actorToken, method: 'PUT', body: { welcomeMessage: `e2e 환영 ${stamp} {{name}}` } });
+  await api(`/actors/${actorId}/messages/greetings`, { token: actorToken, method: 'PUT', body: { welcomeMessage: `e2e 환영 ${stamp} {{name}}`, birthdayMessage: savedGreetings.birthdayMessage || 'e2e 생일 {{name}}' } });
 
   await step('새 팬 로그인', async () => {
     await page.goto(`${WEB}/login`);
@@ -152,7 +152,8 @@ try {
     await api(`/actors/${actorId}/messages/greetings`, {
       token: actorToken,
       method: 'PUT',
-      body: { welcomeMessage: savedGreetings.welcomeMessage ?? '', birthdayMessage: savedGreetings.birthdayMessage ?? '' },
+      // 2026-10-13부터 둘 다 필수 — 원래 비어 있었으면(예전 시드) 기본 문구로
+      body: { welcomeMessage: savedGreetings.welcomeMessage || 'e2e 환영 {{name}}', birthdayMessage: savedGreetings.birthdayMessage || 'e2e 생일 {{name}}' },
     }).catch(() => {});
   if (fanToken) await api('/auth/me', { token: fanToken, method: 'DELETE' }).catch(() => {});
   await browser.close();

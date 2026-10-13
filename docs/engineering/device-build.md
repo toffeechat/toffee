@@ -66,6 +66,18 @@ eas build --platform ios --profile preview
 | 프로비저닝 프로파일에 넣을 기기 | 2단계에서 등록한 아이폰 선택 |
 | Set up Push Notifications / Apple Push key 생성? | **No** — 토피는 Expo 푸시가 아니라 Firebase(FCM)로 보내고, 3단계 키를 Firebase에 넣었음 |
 
+**알림 확장(2026-10-13부터)**: 앱 안에 푸시를 카톡처럼 "아티스트 사진이 있는 대화 알림"으로 바꾸는 작은 확장(`ToffeeNotificationService`,
+번들 ID `com.toffeechat.app.dev.NotificationService`)이 같이 들어가요. 그래서 이번 빌드부터 질문이 몇 개 더 나와요.
+
+| 질문 | 답 |
+|---|---|
+| 확장(NotificationService) 번들 ID 등록·프로비저닝 프로파일 만들기 | **Yes** (확장도 같은 아이폰에 깔리도록 따로 서명해야 함) |
+| Communication Notifications 같은 capability를 맞출지(sync) | **Yes** |
+
+빌드가 "Provisioning profile … doesn't include the com.apple.developer.usernotifications.communication entitlement"로 실패하면:
+developer.apple.com → Identifiers → `com.toffeechat.app.dev` → **Communication Notifications** 체크 → Save → 다시 `eas build`
+(EAS가 프로파일을 새로 받게 `eas credentials -p ios`에서 해당 프로파일을 지우고 빌드해도 됨).
+
 클라우드 빌드 15~30분. 끝나면 빌드 페이지 주소·QR이 나온다(무료 요금제는 대기열이 있을 수 있음).
 
 ## 5. 설치
@@ -77,7 +89,7 @@ eas build --platform ios --profile preview
 ## 6. 확인할 것
 
 - 로그인: 애플·구글·카카오(카카오톡 앱 있으면 앱으로 갔다 돌아오는지)·네이버·LINE, 입장 코드
-- 푸시: 아티스트 계정(웹 데모 `demo.toffeechat.app`)으로 메시지 보내기 → 폰에 알림, 누르면 그 대화방
+- 푸시: 아티스트 계정(웹 데모 `demo.toffeechat.app`)으로 메시지 보내기 → 폰에 알림(왼쪽에 아티스트 사진 + 작은 토피 아이콘, 2026-10-13부터), 누르면 그 대화방
 - 카메라 촬영·사진 선택·음성 녹음 보내기(아티스트 계정), 영상 썸네일
 - 사진 확대·넘기기·끌어서 닫기, 저장(사진 앱)
 - 음성: 무음 모드·화면 꺼도 재생, 다음 음성 이어 듣기

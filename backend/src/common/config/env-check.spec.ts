@@ -30,4 +30,13 @@ describe('서버 시작 설정 점검', () => {
     expect(open({})).toBe(true);
     expect(open({ DEV_LOGIN_CODE: 'candy' })).toBe(false);
   });
+  it('저장소 주소 모양이 틀리면 경고(따옴표·<계정ID>·https 없음)', () => {
+    const storage = { STORAGE_BUCKET: 'toffee-demo', STORAGE_ACCESS_KEY_ID: 'k', STORAGE_SECRET_ACCESS_KEY: 's' };
+    const warn = (endpoint: string) => checkEnv({ ...base, ...storage, STORAGE_ENDPOINT: endpoint }).warnings.filter((w) => w.startsWith('STORAGE_'));
+    expect(warn('https://abc.r2.cloudflarestorage.com')).toEqual([]);
+    expect(warn('"https://abc.r2.cloudflarestorage.com"')).toHaveLength(2);
+    expect(warn('https://<계정ID>.r2.cloudflarestorage.com')).toHaveLength(2);
+    expect(warn('abc.r2.cloudflarestorage.com')).toHaveLength(1);
+    expect(checkEnv({ ...base, ...storage, STORAGE_ENDPOINT: 'https://abc.r2.cloudflarestorage.com', STORAGE_BUCKET: 'toffee-demo ' }).warnings.some((w) => w.startsWith('STORAGE_BUCKET'))).toBe(true);
+  });
 });

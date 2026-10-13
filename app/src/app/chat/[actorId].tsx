@@ -37,6 +37,7 @@ import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { confirm } from '@/lib/confirm';
 import { useAcceptReplyRules, useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
+import { albumLayout, groupAlbumRows, rowHas } from '@/utils/chat-album';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 메시지를 따라감
 const AT_BOTTOM_PX = 80;
@@ -48,7 +49,9 @@ const sameDay = (a: string, b: string) => new Date(a).toDateString() === new Dat
 const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
 
 // 환영 메시지·생일 축하 — 서버 메시지가 아니라 목록에만 끼워 넣는 말풍선(신고·번역 없음, 복사만)
-type ChatItem = ChatMessage & { extra?: 'welcome' | 'birthday' };
+// album: 같은 분에 연달아 온 글 없는 사진·영상 묶음(카톡처럼 격자 한 칸, 2026-10-13) — 시간순. 묶음 줄의 나머지 값은 가장 최근 것
+type ChatItem = ChatMessage & { extra?: 'welcome' | 'birthday'; album?: ChatMessage[] };
+const groupAlbums = (messages: ChatItem[]) => groupAlbumRows(messages, sameMinute);
 const extraMessage = (actorId: string, id: string, body: string, createdAt: string, extra: ChatItem['extra']): ChatItem => ({
   id,
   actorId,
@@ -132,6 +135,8 @@ export default function ChatRoomScreen() {
     return undefined;
   }, [messages, readMarker]);
 
+  const rows = useMemo(() => groupAlbums(messages), [messages]);
+
   const listRef = useRef<FlatList<ChatItem>>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [seenNewestId, setSeenNewestId] = useState<string | undefined>(undefined);
@@ -180,7 +185,7 @@ export default function ChatRoomScreen() {
   const target = searchOpen ? (activeMatchId ?? null) : (focus ?? null);
   useEffect(() => {
     if (!target || handledFocus.current === target) return;
-    const index = messages.findIndex((m) => m.id === target);
+    const index = rows.findIndex((row) => rowHas(row, target));
     if (index < 0) {
       const paging = focusPaging.current;
       if (paging.target !== target) focusPaging.current = { target, pages: 0 };
@@ -198,17 +203,17 @@ export default function ChatRoomScreen() {
     setHighlightId(target);
     const scroll = setTimeout(() => listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: false }), 50);
     return () => clearTimeout(scroll);
-  }, [target, messages, hasNextPage, isFetchingNextPage, fetchNextPage, searchOpen, t]);
+  }, [target, rows, hasNextPage, isFetchingNextPage, fetchNextPage, searchOpen, t]);
   // 안 읽은 메시지가 화면을 넘을 만큼 많으면 처음 열 때 "여기까지 읽었어요"로(알림·검색으로 들어왔으면 그쪽이 우선)
   const handledMarker = useRef(false);
   useEffect(() => {
     if (handledMarker.current || focus || !firstUnreadId) return;
     handledMarker.current = true;
-    const index = messages.findIndex((m) => m.id === firstUnreadId);
+    const index = rows.findIndex((row) => rowHas(row, firstUnreadId));
     if (index < 4) return;
     const scroll = setTimeout(() => listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: false }), 50);
     return () => clearTimeout(scroll);
-  }, [firstUnreadId, focus, messages]);
+  }, [firstUnreadId, focus, rows]);
   // 알림으로 온 강조는 잠깐만(검색 중엔 지금 결과를 계속 강조)
   useEffect(() => {
     if (!highlightId || searchOpen) return;
@@ -333,8 +338,8 @@ export default function ChatRoomScreen() {
       <FlatList
         ref={listRef}
         inverted
-        data={messages}
-        keyExtractor={(item) => item.id}
+        data={rows}
+        keyExtractor={(item) => (item.album ? `album-${item.album[0].id}` : item.id)}
         contentContainerStyle={styles.list}
         onScroll={onScroll}
         scrollEventThrottle={100}
@@ -356,8 +361,8 @@ export default function ChatRoomScreen() {
         }
         renderItem={({ item, index }) => {
           // 뒤집힌 목록: index-1이 더 최신, index+1이 더 오래된 메시지
-          const newer = messages[index - 1];
-          const older = messages[index + 1];
+          const newer = rows[index - 1];
+          const older = rows[index + 1];
           // 커플방은 보낸 배우가 바뀌어도 묶음을 나눔(누가 보냈는지 보이게)
           const sameSender = (a: ChatItem, b: ChatItem) => !a.extra && !b.extra && a.senderType === b.senderType && (!isCouple || a.sender?.id === b.sender?.id);
           const endsGroup = !newer || !sameSender(newer, item) || !sameMinute(newer.createdAt, item.createdAt);
@@ -366,7 +371,7 @@ export default function ChatRoomScreen() {
           return (
             <View>
               {dayChanged && <DaySeparator iso={item.createdAt} locale={i18n.language} />}
-              {item.id === firstUnreadId && <ReadMarker label={t('chat.readMarker')} />}
+              {rowHas(item, firstUnreadId) && <ReadMarker label={t('chat.readMarker')} />}
               <MessageRow
                 message={item}
                 avatarUri={isCouple ? (item.sender?.chatProfileImageUrl ?? actor?.chatProfileImageUrl) : actor?.chatProfileImageUrl}
@@ -374,7 +379,7 @@ export default function ChatRoomScreen() {
                 startsGroup={startsGroup}
                 endsGroup={endsGroup}
                 onOpenProfile={() => openProfile(isCouple ? item.sender?.id : undefined)}
-                highlighted={item.id === highlightId && (!searchOpen || item.id === activeMatchId)}
+                highlighted={rowHas(item, highlightId) && (!searchOpen || rowHas(item, activeMatchId))}
                 menuOpen={menuFor === item.id}
                 onOpenMenu={() => setMenuFor(item.id)}
                 onCloseMenu={() => setMenuFor(null)}
@@ -569,6 +574,41 @@ function ReadMarker({ label }: { label: string }) {
   );
 }
 
+const ALBUM_WIDTH = 240;
+const ALBUM_GAP = 2;
+
+/** 연달아 온 사진·영상 격자 — 칸을 누르면 전체 화면(그 방의 사진·영상을 좌우로 넘겨 봄) */
+function AlbumGrid({ items, actorId }: { items: ChatMessage[]; actorId: string }) {
+  const lines = albumLayout(items.length);
+  // 줄마다 시작 위치(앞 줄들 칸 수의 합)
+  const starts = lines.map((_, line) => lines.slice(0, line).reduce((sum, n) => sum + n, 0));
+  return (
+    <View style={styles.album}>
+      {lines.map((columns, line) => {
+        const slice = items.slice(starts[line], starts[line] + columns);
+        const cell = (ALBUM_WIDTH - ALBUM_GAP * (columns - 1)) / columns;
+        return (
+          <View key={line} style={styles.albumLine}>
+            {slice.map((item) => (
+              <MediaTile
+                key={item.id}
+                id={item.id}
+                url={item.mediaUrl}
+                mediaType={item.mediaType as 'PHOTO' | 'VIDEO'}
+                durationMs={item.mediaDurationMs}
+                thumbnailUrl={item.thumbnailUrl}
+                thumbhash={item.thumbhash}
+                actorId={actorId}
+                size={{ width: cell, height: columns === 1 ? 280 : cell }}
+              />
+            ))}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 function DaySeparator({ iso, locale }: { iso: string; locale: string }) {
   return (
     <ThemedText type="caption" themeColor="textTertiary" style={styles.day}>
@@ -633,7 +673,9 @@ function MessageRow({
         if (event.nativeEvent.actionName === 'copy') onCopy();
       }}
       style={[styles.bubbleWrap, highlighted && { borderRadius: Radius.lg + 2, borderWidth: 2, borderColor: theme.tint }]}>
-      {isMedia ? (
+      {message.album ? (
+        <AlbumGrid items={message.album} actorId={actorId} />
+      ) : isMedia ? (
         <View style={styles.mediaGroup}>
           {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
           <MediaTile
@@ -809,6 +851,8 @@ const styles = StyleSheet.create({
   },
   newPillText: { flex: 1, minWidth: 0 },
   newPillCount: { borderRadius: Radius.pill, paddingHorizontal: 6, overflow: 'hidden', fontVariant: ['tabular-nums'] },
+  album: { width: ALBUM_WIDTH, gap: ALBUM_GAP, borderRadius: Radius.lg, overflow: 'hidden' },
+  albumLine: { flexDirection: 'row', gap: ALBUM_GAP },
   readMarker: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginVertical: Spacing.three },
   readMarkerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   toast: {

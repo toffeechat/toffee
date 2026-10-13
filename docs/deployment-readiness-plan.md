@@ -93,6 +93,38 @@
 - **남은 일**: R2 연결로 데모에서 사진·음성·영상 확인 → 가격(`฿[__]`)은 버블 태국 가격 참고 → 태국어 문장 검수 → `partners@` 주소
   만들기·데모 코드·연락처 채우기 → 1차 5곳 발송. 법인 전이라 "Co., Ltd." 표기 금지(문서에 적음).
 
+## 2026-10-13 (이어서) — 아이폰 푸시에 아티스트 사진(카톡식 대화 알림)
+
+- **원인**: 사용자 — "푸시 알람 형태는 어떻게 보여? 아티스트 프로필 사진이랑 대화가 그대로 보였으면 좋겠다, 카톡처럼". 지금은 앱 아이콘 + 이름 + 내용.
+  결정 카드에서 1차(이번 빌드 목표).
+- **만든 것**: 서버 `mutable-content` + 팬 알림 data에 senderName·senderImage, 앱 Expo 설정 플러그인으로 알림 확장 타깃(자세한 건 `architecture-notes.md`
+  같은 제목). 빌드 절차서 `device-build.md`에 새 질문(확장 번들 ID·capability)과 실패 시 애플 포털에서 Communication Notifications 켜는 법.
+- **확인**: backend 테스트(팬 data에 이름·사진, 소속사 data엔 없음), 리눅스에서 `expo prebuild -p ios`로 pbxproj에 확장 타깃·Embed 단계 순서·entitlement·
+  `INSendMessageIntent` 확인. **Swift 컴파일·서명·실제 알림 모양은 맥 EAS 빌드에서만 확인 가능** — 실패하면 빌드 로그를 받아 고칠 것.
+- **남은 일**: 안드로이드 알림 사진(테스트 기기 생기면), 운영 번들 ID에도 같은 capability(운영 등록 때).
+
+## 2026-10-13 (이어서) — 사진 여러 장 보내기 + 팬 화면 격자, 환영·생일 메시지 필수
+
+- **원인**: R2 연결 후 사용자가 웹에서 사진을 보내 보다가 "한 장씩밖에 안 올라간다", 이어서 "환영·생일 메시지는 아티스트가 처음에 안 쓰면
+  시작할 수 없게". 여러 장은 결정 카드에서 "A(한 장씩 연달아) + 팬 화면 격자"를 1차로 고름. 같은 대화에서 푸시에 아티스트 프로필 사진(카톡식)도 1차로(진행 중).
+- **만든 것**: 위 두 가지(`feature-decisions.md`·`architecture-notes.md` 같은 제목). 서버 `silent`/`batchCount`로 알림 한 건, `GREETINGS_REQUIRED`.
+- **확인**: backend `tsc`·oxlint·테스트 181(묶음 알림·환영 필수 거절 추가)·`nest build`, app `tsc`·eslint·테스트 15(격자 묶기·줄 나누기), 로컬 서버+웹:
+  사진 5장 → 3+2 격자 캡처, 환영·생일을 비운 캐러멜 스튜디오 → "시작하기 전에" 양식 → 저장하면 보내기 화면, API 직접 보내기 400, 끝-끝 9단계 통과.
+- **남은 일**: 실기기에서 여러 장 고르기(아이폰 사진 앱 다중 선택)·알림 한 건, 데모 서버는 main 반영 후 데모 초기화해야 데모 아티스트에 환영·생일이 들어감.
+
+## 2026-10-13 (이어서) — 데모 서버 R2 연결
+
+- 사용자가 Cloudflare에서 R2 구독(무료 플랜 $0, 등록된 카드) → 비공개 버킷 `toffee-demo` + CORS(`https://demo.toffeechat.app`, GET·PUT·HEAD) →
+  Account API 토큰(Object Read & Write, 이 버킷만, 만료 없음 — 서버용이라 User 토큰 대신) → Railway `STORAGE_*` 6개 + `SUPPORT_EMAIL` → Deploy.
+  `/health/ready` ok, 시작 로그 "꺼짐" 경고가 애플·구글 결제·사업자 정보 4개뿐 → 저장소·번역(`ANTHROPIC_API_KEY`)·푸시 서버 키·Sentry 모두 들어가 있음.
+- 장부: 계정 `cloudflare-r2`, 비용 `r2-2026-10`($0). 사업화 일정 `s1-anthropic`·`s1-device` 진행 메모.
+- 같은 날 이어서: 카카오 콘솔 네이티브 앱 키에 iOS 번들 ID가 비어 있었음(안드로이드만 등록) → `com.toffeechat.app.dev` 넣음 — 10/12 카카오 로그인 실패 원인.
+  LINE은 번들 ID 정상·Published, "Require two-factor authentication"이 켜져 있어서 끔(LINE 앱 없는 폰의 웹 로그인이 막히던 것으로 추정). LINE Channel secret이
+  대화에 노출돼 재발급 권장(→ Railway `LINE_WEB_CHANNEL_SECRET`).
+- 데모 초기화 후 웹 사진 업로드가 "일시적인 오류"(500) → Sentry `TypeError: Invalid URL`(S3 endpoint) — Railway `STORAGE_ENDPOINT` 값 모양 문제(따옴표·공백 등).
+  다시 넣도록 안내 + 시작 점검에 저장소 값 모양 경고 추가(`env-check.ts`).
+- **남은 일**: `STORAGE_ENDPOINT` 고친 뒤 웹 사진 업로드·번역 보기 확인 → iOS 재빌드. 푸시는 서버 키가 있으니 새 빌드로 받아 보고 안 오면 FCM 실패 코드로 원인 확인.
+
 ## 2026-10-13 (이어서) — 채팅방 "여기까지 읽었어요"·새 메시지 미리보기·앱 보는 중 진동
 
 - **원인**: 사용자 질문 4개(푸시 진동, 번역 방식, 읽음 표시, 위에서 읽는 중 새 메시지 미리보기) → 확인해 보니 진동은 앱을 보고 있을 때만 빠져

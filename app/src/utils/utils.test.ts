@@ -5,6 +5,7 @@ import { currentMonth, shiftMonth } from './month';
 import { showNameToken } from './name-token';
 import { STORE_PRODUCT_ID_PATTERN } from './store-product';
 import { orderedProviders } from '@/components/social-button-style';
+import { albumLayout, groupAlbumRows, rowHas } from './chat-album';
 
 describe('번역 보기를 보여 줄지(글자 종류)', () => {
   it('글자 종류 판별', () => {
@@ -70,5 +71,31 @@ describe('기타', () => {
     expect(orderedProviders(['google', 'kakao', 'line', 'apple', 'naver'], 'ko')).toEqual(['kakao', 'naver', 'google', 'apple']);
     expect(orderedProviders(['google', 'kakao', 'line', 'apple', 'naver'], 'th')).toEqual(['line', 'google', 'apple']);
     expect(orderedProviders(['google', 'kakao'], 'ja')).toEqual(['google']);
+  });
+});
+
+describe('채팅방 사진 묶음', () => {
+  const minute = (a: string, b: string) => a.slice(0, 16) === b.slice(0, 16);
+  const photo = (id: string, at: string, extra: Partial<{ body: string; sender: { id: string } }> = {}) => ({
+    id, senderType: 'ARTIST' as const, mediaType: 'PHOTO', body: null as string | null, createdAt: at, sender: { id: 'a' }, ...extra,
+  });
+  it('같은 분에 연달아 온 글 없는 사진만 한 줄로(시간순), 글·다른 분은 따로', () => {
+    // 최신 → 오래된 순
+    const rows = groupAlbumRows(
+      [photo('p4', '2026-10-13T10:01:00Z'), photo('p3', '2026-10-13T10:00:30Z'), photo('p2', '2026-10-13T10:00:20Z'), photo('p1', '2026-10-13T10:00:10Z', { body: '셀카' })],
+      minute,
+    );
+    expect(rows.map((r) => r.album?.map((m) => m.id) ?? r.id)).toEqual(['p4', ['p2', 'p3'], 'p1']);
+    expect(rowHas(rows[1], 'p2')).toBe(true);
+    expect(rowHas(rows[1], 'p4')).toBe(false);
+  });
+  it('보낸 아티스트가 바뀌면(CP방) 나눔, 10장 넘으면 다음 묶음', () => {
+    const rows = groupAlbumRows([photo('b', '2026-10-13T10:00:02Z', { sender: { id: 'b' } }), photo('a', '2026-10-13T10:00:01Z')], minute);
+    expect(rows).toHaveLength(2);
+    const many = Array.from({ length: 12 }, (_, i) => photo(`p${12 - i}`, `2026-10-13T10:00:${String(30 - i).padStart(2, '0')}Z`));
+    expect(groupAlbumRows(many, minute).map((r) => r.album?.length ?? 1)).toEqual([10, 2]);
+  });
+  it('격자 줄 나누기', () => {
+    expect([2, 3, 4, 5, 6, 7, 10].map(albumLayout)).toEqual([[2], [3], [2, 2], [3, 2], [3, 3], [3, 2, 2], [3, 3, 2, 2]]);
   });
 });

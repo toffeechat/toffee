@@ -1499,3 +1499,35 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   안드로이드 채널 `messages`에 `enableVibrate`·`vibrationPattern` — 채널 설정은 처음 만들 때 고정이라 이미 설치된 기기는 앱을 지웠다 깔거나
   채널 id를 바꿔야 반영(아직 안드로이드 사용자 없음).
 - 데모 시드: fan1 캐러멜 구독 `lastReadAt = 2.5일 전`(읽음 줄 확인용, 한 번 열면 지금으로 바뀌니 다시 보려면 데모 초기화).
+
+## 시작 점검: 저장소 값 모양 (2026-10-13)
+
+데모 R2 연결 때 `STORAGE_ENDPOINT`가 주소 형식이 아니어서(호스팅 변수 칸에 따옴표·공백 등) 서버는 정상으로 켜지고 첫 업로드에서야
+`TypeError: Invalid URL`(S3 클라이언트 endpoint 파싱, 앱엔 INTERNAL "일시적인 오류")이 났음. `checkEnv`에 경고 추가: `STORAGE_*` 값 앞뒤 공백·따옴표·
+`<…>`(예시 그대로), `STORAGE_ENDPOINT`가 http(s) URL이 아님. 값을 자동으로 다듬지는 않음(어디가 틀렸는지 보이게).
+
+## 여러 장 보내기·사진 격자·환영/생일 필수 (2026-10-13)
+
+- **여러 장**: 스키마 변경 없음. 스튜디오가 `allowsMultipleSelection`(최대 10, `orderedSelection`)으로 고르고 `useStudioSend`를 순서대로
+  `mutateAsync` — 앞쪽은 `silent: true`, 마지막 사진·영상은 `batchCount: N`(글이 있으면 사진은 전부 silent, 글 메시지가 일반 알림).
+  `SendBroadcastDto.silent`/`batchCount(2~10)`: silent면 메시지 저장·실시간·`lastArtistMessageAt`까지만 하고 팬·소속사 푸시를 건너뜀,
+  batchCount면 미리보기 `pushStrings.mediaBatch(n)`. 중간 실패 시 거기서 멈추고 못 보낸 것만 트레이에 남김(이미 보낸 건 그대로).
+- **격자**: `app/src/utils/chat-album.ts` `groupAlbumRows` — 팬 채팅 FlatList `data`를 메시지 → 줄(`album?: ChatMessage[]`, 시간순)로 바꿈.
+  조건: 아티스트·글 없음·인용 없음·환영/생일 아님·PHOTO/VIDEO·같은 보낸 사람(CP)·같은 분·최대 10. 줄 key는 `album-<가장 오래된 id>`(새 사진이 붙어도
+  안정). 알림·검색 이동·읽음 줄·강조는 `rowHas(row, id)`로 줄 안 메시지까지 찾음. 격자 칸은 `MediaTile size`, 누르면 기존 전체 화면(방 전체 넘겨보기).
+- **환영/생일 필수**: `UpdateGreetingsDto` 두 필드 필수 + `@Matches(/\S/)`, `sendBroadcast`가 `GREETINGS_REQUIRED`(400) — 앱 스튜디오는
+  `useGreetings`가 비어 있으면 보내기 화면 대신 `GreetingsForm`(공용 `components/greetings-form.tsx`, 프로필과 같은 양식). 데모 시드 아티스트·CP 모두
+  `DEMO_GREETINGS`. e2e는 둘 다 넣고 끝나면 원래 값(없으면 기본 문구)으로.
+
+## 아이폰 대화 알림(Communication Notifications) (2026-10-13)
+
+- 서버: `buildPushMessages`가 APNs에 항상 `mutable-content: 1`. `sendBroadcast`의 팬 알림 data(`fanPushData`)에 `senderName`(대화방 이름)·
+  `senderImage`(`resolveImageUrl(chatProfileImageUrl)` — 저장소 키면 2시간 서명 URL). 인용 답장 알림도 같은 data. 소속사·생일 알림엔 안 넣음(제목 유지).
+- 앱: `app/plugins/with-notification-service.js`(Expo 설정 플러그인, prebuild 때) — entitlement `com.apple.developer.usernotifications.communication`,
+  Info.plist `NSUserActivityTypes: [INSendMessageIntent]`, Xcode 타깃 `ToffeeNotificationService`(app_extension, 번들 ID `<앱>.NotificationService`, iOS 15.1,
+  `APPLICATION_EXTENSION_API_ONLY`), 앱 타깃의 "Embed Foundation Extensions" 단계를 스크립트 단계들보다 앞으로(순환 의존 오류 방지).
+  확장 코드 `plugins/notification-service/NotificationService.swift`: userInfo의 senderName·senderImage → 사진 받기(8초) → `INPerson`/`INSendMessageIntent`
+  (conversationIdentifier = actorId) → `interaction.donate` → `content.updating(from:)`. 실패·시간 초과면 원래 content.
+- EAS: `app.config.ts` `extra.eas.build.experimental.ios.appExtensions`에 같은 타깃·번들 ID(확장용 프로비저닝 프로파일). 확장은 Pods를 안 씀.
+- 이 환경(리눅스)에선 `expo prebuild -p ios --no-install`으로 pbxproj·entitlements·Info.plist까지만 확인 — Swift 컴파일·서명은 EAS 빌드에서.
+- 안드로이드는 FCM notification 메시지가 큰 아이콘(largeIcon)을 못 받아서, 하려면 data 메시지 + 앱이 직접 그리기(notifee 등) — 테스트 기기 생기면.

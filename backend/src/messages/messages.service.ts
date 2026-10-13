@@ -290,6 +290,9 @@ export class MessagesService {
   async sendBroadcast(actorSelfUserId: string, actorId: string, dto: SendBroadcastDto) {
     // 커플방이면 두 멤버 중 실제로 보낸 배우(말풍선·알림에 이름 표시)
     const senderActorId = await ensureIsActorSelf(this.prisma, actorSelfUserId, actorId);
+    // 환영·생일 메시지를 써 둬야 보낼 수 있음(2026-10-13 사용자 결정 — 앱은 첫 화면에서 먼저 쓰게 함, 여긴 우회 방지)
+    const greetings = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { welcomeMessage: true, birthdayMessage: true } });
+    if (!greetings.welcomeMessage || !greetings.birthdayMessage) throw new BadRequestException(appError('GREETINGS_REQUIRED'));
     const mediaKey = dto.mediaType === MessageMediaType.TEXT ? null : dto.mediaKey!;
     // 인용 답장: 같은 배우 채널의 팬 메시지만 인용 가능(다른 채널 메시지·스타 메시지 인용 불가)
     if (dto.replyToMessageId) {
@@ -344,12 +347,19 @@ export class MessagesService {
     // 푸시는 실패해도 메시지 발송 자체는 성공으로 처리 (best-effort). 카톡처럼 제목은 보낸 사람(대화방 이름),
     // 본문은 메시지 미리보기 — {{name}}은 받는 팬 본인 이름으로 치환, 텍스트가 없으면 미디어 종류 안내를
     // 받는 사람 언어로.
-    const actor = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { chatDisplayName: true, kind: true } });
+    const actor = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { chatDisplayName: true, kind: true, chatProfileImageUrl: true } });
     // 커플방 알림은 "방 이름" 제목 + "보낸 배우: 내용"(카톡 단톡방처럼)
     const senderPrefix = actor.kind === ActorKind.COUPLE && message.sender ? `${message.sender.chatDisplayName}: ` : '';
     // 알림을 누르면 앱이 이 값으로 해당 채팅방(팬)/콘솔(소속사)로 이동
     const pushData = { type: 'NEW_MESSAGE', actorId, messageId: message.id };
+    // 팬 알림엔 보낸 사람(대화방) 이름·프로필 사진 — 아이폰 알림 확장이 카톡처럼 사진이 있는 대화 알림으로 바꿈(2026-10-13).
+    // 사진 주소는 임시 서명 URL(2시간) — 늦게 도착한 알림이면 사진만 빠지고 원래 알림 그대로
+    const senderImage = await this.mediaService.resolveImageUrl(actor.chatProfileImageUrl).catch(() => null);
+    const fanPushData: Record<string, string> = { ...pushData, senderName: actor.chatDisplayName, ...(senderImage ? { senderImage } : {}) };
+    // 여러 장 보내기의 앞쪽 것들 — 푸시 없이 끝(마지막 한 장이 묶음 알림 한 건을 보냄)
+    if (dto.silent) return message;
     const preview = (locale: string | null, fanName?: string) => {
+      if (!dto.body && dto.batchCount) return senderPrefix + pushStrings(locale).mediaBatch(dto.batchCount);
       if (!dto.body) return senderPrefix + pushStrings(locale).media[dto.mediaType];
       const text = fanName ? personalize(dto.body, fanName) : dto.body;
       return (senderPrefix + text).slice(0, PUSH_PREVIEW_LENGTH);
@@ -360,7 +370,7 @@ export class MessagesService {
       .sendToUsers(
         notifyQuotedFan ? pushRecipients.filter((userId) => userId !== quotedFanId) : pushRecipients,
         ({ locale, displayName }) => ({ title: actor.chatDisplayName, body: preview(locale, displayName) }),
-        pushData,
+        fanPushData,
       )
       .catch(() => {});
     if (notifyQuotedFan && quotedFanId) {
@@ -371,7 +381,7 @@ export class MessagesService {
             title: pushStrings(locale).quotedReplyTitle(actor.chatDisplayName),
             body: preview(locale, displayName),
           }),
-          { ...pushData, type: 'QUOTED_REPLY' },
+          { ...fanPushData, type: 'QUOTED_REPLY' },
         )
         .catch(() => {});
     }
