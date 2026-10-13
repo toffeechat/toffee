@@ -247,8 +247,9 @@
     "replyTo": "{{nickname}}さんへの返信",
     "hidden": "非表示のメッセージです",
     "action": "返信する",
-    "publicNotice": "すべての購読者に表示され、ファンはニックネームで表示されます。",
-    "replyToMe": "あなたへの返信"
+    "publicNotice": "すべての購読者に表示されます。他のファンにはニックネームなしで「{{name}}の返信」、引用されたファンには「あなたへの返信」と表示されます。",
+    "replyToMe": "あなたへの返信",
+    "artistReply": "{{name}}の返信"
   },
   "report": {
     "title": "通報",

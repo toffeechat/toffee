@@ -156,8 +156,16 @@ export class MessagesService {
       .catch(() => {});
     return this.withSenders(
       await this.mediaService.withReadUrls(
-        // quotedMe: 아티스트가 바로 이 팬의 메시지를 인용한 답장(2026-10-13) — 그 팬 화면에만 "내 메시지에 답장" 표시(누구의 id인지는 안 내려줌)
-        messages.map((message) => ({ ...withQuote(message), quotedMe: message.senderType === MessageSenderType.ARTIST && message.replyTo?.fanUserId === userId })).map((message) => ({
+        // quotedMe: 아티스트가 바로 이 팬의 메시지를 인용한 답장(2026-10-13) — 그 팬 화면에만 "내 메시지에 답장" 표시(누구의 id인지는 안 내려줌).
+        // 팬 화면엔 인용된 팬 닉네임을 안 내려줌(2026-10-13 사용자 결정, 버블처럼 "아티스트의 답장"만) — 아티스트·소속사 화면은 그대로 닉네임
+        messages.map((message) => {
+          const quoted = withQuote(message);
+          return {
+            ...quoted,
+            replyTo: quoted.replyTo ? { ...quoted.replyTo, nickname: null } : null,
+            quotedMe: message.senderType === MessageSenderType.ARTIST && message.replyTo?.fanUserId === userId,
+          };
+        }).map((message) => ({
           ...message,
           body:
             message.senderType === MessageSenderType.ARTIST && message.body

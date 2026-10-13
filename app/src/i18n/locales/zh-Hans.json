@@ -247,8 +247,9 @@
     "replyTo": "回复 {{nickname}}",
     "hidden": "这条消息已被隐藏",
     "action": "回复",
-    "publicNotice": "所有订阅者都能看到，粉丝以昵称显示。",
-    "replyToMe": "回复了你"
+    "publicNotice": "所有订阅者都能看到。其他粉丝看到的是不带昵称的“{{name}}的回复”，被引用的粉丝看到“回复了你”。",
+    "replyToMe": "回复了你",
+    "artistReply": "{{name}}的回复"
   },
   "report": {
     "title": "举报",

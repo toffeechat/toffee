@@ -408,7 +408,7 @@ export default function StudioChannelScreen() {
                 </ThemedText>
               ) : null}
               <ThemedText type="caption" themeColor="textSecondary">
-                {t('quote.publicNotice')}
+                {t('quote.publicNotice', { name: actor?.chatDisplayName ?? '' })}
               </ThemedText>
             </View>
             <IconButton icon={X} size={18} label={t('studio.cancelQuote')} onPress={clearQuote} />
