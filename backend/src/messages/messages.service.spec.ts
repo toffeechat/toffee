@@ -106,6 +106,15 @@ describe('MessagesService.sendBroadcast 푸시 문구', () => {
     expect(fanPushes[0]({ locale: null, displayName: 'fan' }).body).toBe('Sent a photo');
   });
 
+  it('팬 알림 data에 보낸 사람 이름·프로필 사진(아이폰 대화 알림용), 소속사 알림엔 없음', async () => {
+    const { service, prisma, push } = setup();
+    const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;
+    actor.findUniqueOrThrow.mockResolvedValue({ chatDisplayName: '캐러멜', kind: 'SOLO', welcomeMessage: '환영', birthdayMessage: '축하', chatProfileImageUrl: 'https://img/caramel.jpg' });
+    await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' });
+    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-1'], expect.any(Function), expect.objectContaining({ senderName: '캐러멜', senderImage: 'https://img/caramel.jpg' }));
+    expect(push.notifyActorStaff).toHaveBeenCalledWith('actor-1', expect.any(Function), expect.not.objectContaining({ senderName: expect.anything() }), 'notifyArtistMessages');
+  });
+
   it('환영·생일 메시지가 비어 있으면 보내기 거절(GREETINGS_REQUIRED)', async () => {
     const { service, prisma } = setup();
     const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;

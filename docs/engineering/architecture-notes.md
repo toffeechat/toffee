@@ -1518,3 +1518,16 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - **환영/생일 필수**: `UpdateGreetingsDto` 두 필드 필수 + `@Matches(/\S/)`, `sendBroadcast`가 `GREETINGS_REQUIRED`(400) — 앱 스튜디오는
   `useGreetings`가 비어 있으면 보내기 화면 대신 `GreetingsForm`(공용 `components/greetings-form.tsx`, 프로필과 같은 양식). 데모 시드 아티스트·CP 모두
   `DEMO_GREETINGS`. e2e는 둘 다 넣고 끝나면 원래 값(없으면 기본 문구)으로.
+
+## 아이폰 대화 알림(Communication Notifications) (2026-10-13)
+
+- 서버: `buildPushMessages`가 APNs에 항상 `mutable-content: 1`. `sendBroadcast`의 팬 알림 data(`fanPushData`)에 `senderName`(대화방 이름)·
+  `senderImage`(`resolveImageUrl(chatProfileImageUrl)` — 저장소 키면 2시간 서명 URL). 인용 답장 알림도 같은 data. 소속사·생일 알림엔 안 넣음(제목 유지).
+- 앱: `app/plugins/with-notification-service.js`(Expo 설정 플러그인, prebuild 때) — entitlement `com.apple.developer.usernotifications.communication`,
+  Info.plist `NSUserActivityTypes: [INSendMessageIntent]`, Xcode 타깃 `ToffeeNotificationService`(app_extension, 번들 ID `<앱>.NotificationService`, iOS 15.1,
+  `APPLICATION_EXTENSION_API_ONLY`), 앱 타깃의 "Embed Foundation Extensions" 단계를 스크립트 단계들보다 앞으로(순환 의존 오류 방지).
+  확장 코드 `plugins/notification-service/NotificationService.swift`: userInfo의 senderName·senderImage → 사진 받기(8초) → `INPerson`/`INSendMessageIntent`
+  (conversationIdentifier = actorId) → `interaction.donate` → `content.updating(from:)`. 실패·시간 초과면 원래 content.
+- EAS: `app.config.ts` `extra.eas.build.experimental.ios.appExtensions`에 같은 타깃·번들 ID(확장용 프로비저닝 프로파일). 확장은 Pods를 안 씀.
+- 이 환경(리눅스)에선 `expo prebuild -p ios --no-install`으로 pbxproj·entitlements·Info.plist까지만 확인 — Swift 컴파일·서명은 EAS 빌드에서.
+- 안드로이드는 FCM notification 메시지가 큰 아이콘(largeIcon)을 못 받아서, 하려면 data 메시지 + 앱이 직접 그리기(notifee 등) — 테스트 기기 생기면.

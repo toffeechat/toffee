@@ -35,7 +35,9 @@ export function buildPushMessages(devices: PushDeviceTarget[], compose: ComposeP
       notification: { title, body },
       data,
       android: { priority: 'high', notification: { channelId: 'messages' } },
-      apns: { payload: { aps: { sound: 'default' } } },
+      // mutable-content: 아이폰이 알림을 띄우기 전에 앱의 알림 확장(ToffeeNotificationService)이 data의 senderName·senderImage로
+      // 카톡처럼 보낸 사람 사진이 있는 "대화 알림"으로 바꿈(2026-10-13). 확장이 없거나 실패하면 원래 알림 그대로
+      apns: { payload: { aps: { sound: 'default', 'mutable-content': 1 } } },
     };
   });
 }

@@ -120,6 +120,8 @@ const config: ExpoConfig = {
     ['@react-native-firebase/app', { ios: { disableSPM: true } }],
     '@react-native-firebase/messaging',
     ['expo-notifications', { color: '#7C8CFF' }],
+    // 아이폰 푸시를 카톡처럼 "보낸 사람(아티스트) 사진이 있는 대화 알림"으로(2026-10-13) — 알림 확장 타깃 추가, 아래 extra.eas appExtensions와 짝
+    './plugins/with-notification-service',
     // 카카오 SDK 저장소(안드로이드) — 패키지가 설치돼 있으면 키가 없어도 빌드에 필요
     [
       'expo-build-properties',
@@ -148,7 +150,17 @@ const config: ExpoConfig = {
   extra: {
     // 런타임에 운영/개발 빌드를 구분(소셜 로그인 키 선택) — src/lib/social-sign-in.ts
     isProductionVariant: IS_PRODUCTION,
-    eas: { projectId: '994e5a33-559f-4a23-ac9d-c47e386ffd33' },
+    eas: {
+      projectId: '994e5a33-559f-4a23-ac9d-c47e386ffd33',
+      // 알림 확장(plugins/with-notification-service.js)도 서명해야 해서 EAS에 알려 줌 — 빌드 때 확장용 번들 ID·프로비저닝 프로파일을 만듦
+      build: {
+        experimental: {
+          ios: {
+            appExtensions: [{ targetName: 'ToffeeNotificationService', bundleIdentifier: `${APP_ID}.NotificationService`, entitlements: {} }],
+          },
+        },
+      },
+    },
   },
 };
 
