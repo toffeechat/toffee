@@ -128,7 +128,7 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
 
 ### 1단계에서 남은 것
 - **Anthropic API 키**: 계정 가입·크레딧 $5 충전(10/2)까지 함. 남은 것 — 월 사용 한도 설정, 키 발급 → Railway `ANTHROPIC_API_KEY`
-  → 웹 데모 "번역 보기" 확인 → 태국 현지 대표님께 엔진 이름 가리고 태국어 결과 확인
+  → 웹 데모 "번역 보기" 확인 → 태국어 검수자에게 엔진 이름 가리고 태국어 결과 확인(현지 대표님 상담은 2026-10-13 취소)
 - **실기기 테스트**: 체크리스트 56개 항목 **아직 0개 기록**. 그 전에 데모 서버에 **파일 저장소(Cloudflare R2)** 를 연결해야
   사진·음성·영상 항목을 테스트할 수 있음 — 10/4 세션이 R2 연결 1~5단계를 안내하고 사용자 진행을 기다리다 멈춤
   (버킷 `toffee-demo`, CORS, API 토큰 → Railway `STORAGE_*` 6개 → Deploy → `/health/ready`). R2를 켜면 장부에 계정·무료 플랜 추가
