@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { orderedProviders } from '@/components/social-button-style';
-import { SocialButton } from '@/components/social-button';
+import { RecentBadge, SocialButton } from '@/components/social-button';
+import { useLastLoginProvider } from '@/lib/last-login';
 import { availableProviders, GOOGLE_WEB_CLIENT_ID, isRedirectProvider, startRedirectLogin } from '@/lib/social-sign-in.web';
 import { Spacing } from '@/constants/theme';
 import type { SocialCredential } from '@/lib/social-types';
@@ -52,6 +53,7 @@ export function SocialLoginButtons({
 }) {
   const { t, i18n } = useTranslation();
   const container = useRef<View>(null);
+  const last = useLastLoginProvider();
 
   useEffect(() => {
     if (!GOOGLE_WEB_CLIENT_ID) return;
@@ -84,9 +86,18 @@ export function SocialLoginButtons({
     <View style={styles.list}>
       {providers.map((provider) =>
         provider === 'google' ? (
-          <View key="google" ref={container} style={styles.google} />
+          <View key="google" style={styles.googleWrap}>
+            <View ref={container} style={styles.google} />
+            {last === 'google' ? <RecentBadge label={t('login.recent')} /> : null}
+          </View>
         ) : isRedirectProvider(provider) ? (
-          <SocialButton key={provider} provider={provider} label={t(`login.continueWith.${provider}`)} onPress={() => startRedirectLogin(provider)} />
+          <SocialButton
+            key={provider}
+            provider={provider}
+            label={t(`login.continueWith.${provider}`)}
+            onPress={() => startRedirectLogin(provider)}
+            recentLabel={provider === last ? t('login.recent') : undefined}
+          />
         ) : null,
       )}
     </View>
@@ -97,4 +108,6 @@ const styles = StyleSheet.create({
   list: { gap: Spacing.two },
   // 구글 공식 버튼(320×40)이 그려질 자리 — 다른 버튼과 같은 크기
   google: { alignItems: 'center', minHeight: 40 },
+  // "최근 로그인" 말풍선이 구글 버튼(320) 오른쪽 위에 붙게
+  googleWrap: { width: 320, maxWidth: '100%', alignSelf: 'center' },
 });

@@ -97,8 +97,8 @@ export class MessagesController {
     return this.messagesService.replyQuota(user.id, actorId);
   }
 
-  // 스타 본인의 보낸 메시지 삭제
-  @Roles(Role.ACTOR, Role.ADMIN)
+  // 스타 본인의 보낸 메시지 삭제 — 소속사 직원도 자기 소속 아티스트 것은 대신 삭제(2026-10-12)
+  @Roles(Role.ACTOR, Role.AGENCY_STAFF, Role.ADMIN)
   @Delete(':messageId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBroadcast(

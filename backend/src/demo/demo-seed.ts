@@ -17,6 +17,12 @@ export const DEMO_IDS = {
   caramel: demoId(11),
   nougat: demoId(12),
   couple: demoId(13),
+  // 둘러보기·소속사 대시보드가 비어 보이지 않게 더한 가상 아티스트(2026-10-12)
+  macaron: demoId(14),
+  jellybean: demoId(15),
+  cookie: demoId(16),
+  choco: demoId(17),
+  sweetAgency: demoId(3),
   pairBundle: demoId(21),
   staff: demoId(101),
   formerStaff: demoId(102),
@@ -25,6 +31,11 @@ export const DEMO_IDS = {
   fan1: demoId(105),
   fan2: demoId(106),
 } as const;
+
+// 데모 이미지(2026-10-12 사용자 요청: "연예인 이미지도 가상으로") — 실존 인물이 아닌 일러스트. 파일은 앱 웹 데모의 정적 폴더
+// app/public/demo/에 있고 웹 데모(Cloudflare Pages)가 그대로 서비스함. 다른 곳에 두면 DEMO_ASSET_BASE_URL로 바꿈
+const DEMO_ASSET_BASE = (process.env.DEMO_ASSET_BASE_URL || 'https://demo.toffeechat.app/demo').replace(/\/$/, '');
+const demoImage = (name: string) => `${DEMO_ASSET_BASE}/${name}.jpg`;
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
@@ -60,10 +71,13 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   // 가상의 소속사 2곳 — 현 소속사 + 이적 이력 데모용 이전 소속사
   const demoAgency = await prisma.agency.create({
-    data: { id: DEMO_IDS.demoAgency, name: '(가상) 데모 엔터테인먼트', logoUrl: 'https://placehold.co/200x200?text=Demo+Ent' },
+    data: { id: DEMO_IDS.demoAgency, name: '(가상) 데모 엔터테인먼트', logoUrl: demoImage('agency-demo') },
   });
   const formerAgency = await prisma.agency.create({
-    data: { id: DEMO_IDS.formerAgency, name: '(가상) 이전 소속사', logoUrl: 'https://placehold.co/200x200?text=Former' },
+    data: { id: DEMO_IDS.formerAgency, name: '(가상) 이전 소속사', logoUrl: demoImage('agency-former') },
+  });
+  const sweetAgency = await prisma.agency.create({
+    data: { id: DEMO_IDS.sweetAgency, name: '(가상) 스위트 뮤직', logoUrl: demoImage('agency-sweet') },
   });
 
   // 가상의 배우 2명 — 이름/사진 전부 가상, Toffee 캔디 테마로 지음
@@ -71,9 +85,9 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: {
       id: DEMO_IDS.caramel,
       legalName: '(가상) 데모 아티스트 A',
-      officialProfileImageUrl: 'https://placehold.co/600x800?text=Caramel',
+      officialProfileImageUrl: demoImage('caramel-official'),
       chatDisplayName: '캐러멜',
-      chatProfileImageUrl: 'https://placehold.co/400x400?text=%EC%BA%90%EB%9F%AC%EB%A9%9C',
+      chatProfileImageUrl: demoImage('caramel-chat'),
       gender: 'FEMALE',
       monthlyPriceCents: 9900, // 데모 가격 — 실제 태국 시장 가격은 별도 검증 필요
       agencyId: demoAgency.id,
@@ -84,9 +98,9 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: {
       id: DEMO_IDS.nougat,
       legalName: '(가상) 데모 아티스트 B',
-      officialProfileImageUrl: 'https://placehold.co/600x800?text=Nougat',
+      officialProfileImageUrl: demoImage('nougat-official'),
       chatDisplayName: '누가',
-      chatProfileImageUrl: 'https://placehold.co/400x400?text=%EB%88%84%EA%B0%80',
+      chatProfileImageUrl: demoImage('nougat-chat'),
       gender: 'MALE',
       monthlyPriceCents: 9900,
       agencyId: demoAgency.id,
@@ -110,10 +124,41 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       kind: 'COUPLE',
       legalName: '(가상) 데모 아티스트 A & B',
       chatDisplayName: '캐러멜 & 누가',
+      officialProfileImageUrl: demoImage('couple-caramel-nougat'),
+      chatProfileImageUrl: demoImage('couple-caramel-nougat'),
       monthlyPriceCents: 6900,
       coupleMembers: { create: [{ memberId: caramel.id }, { memberId: nougat.id }] },
     },
   });
+
+  // 가상 아티스트 4명 더(2026-10-12) — 구독자는 없고 메시지만 몇 개(소속사 대시보드의 "오래 안 보낸 순" 등이 달라 보이게)
+  const extras = [
+    { id: DEMO_IDS.macaron, name: '마카롱', legal: '(가상) 데모 아티스트 C', gender: 'FEMALE' as const, agencyId: demoAgency.id, image: 'macaron', lastDays: 2 },
+    { id: DEMO_IDS.jellybean, name: '젤리빈', legal: '(가상) 데모 아티스트 D', gender: 'MALE' as const, agencyId: demoAgency.id, image: 'jellybean', lastDays: 9 },
+    { id: DEMO_IDS.cookie, name: '쿠키', legal: '(가상) 데모 아티스트 E', gender: 'FEMALE' as const, agencyId: sweetAgency.id, image: 'cookie', lastDays: 0 },
+    { id: DEMO_IDS.choco, name: '초코', legal: '(가상) 데모 아티스트 F', gender: 'MALE' as const, agencyId: sweetAgency.id, image: 'choco', lastDays: 4 },
+  ];
+  for (const extra of extras) {
+    await prisma.actor.create({
+      data: {
+        id: extra.id,
+        legalName: extra.legal,
+        chatDisplayName: extra.name,
+        officialProfileImageUrl: demoImage(`${extra.image}-official`),
+        chatProfileImageUrl: demoImage(`${extra.image}-chat`),
+        gender: extra.gender,
+        monthlyPriceCents: 9900,
+        agencyId: extra.agencyId,
+      },
+    });
+    await prisma.actorAgencyHistory.create({ data: { actorId: extra.id, agencyId: extra.agencyId, startedAt: daysAgo(60) } });
+    await prisma.message.createMany({
+      data: [
+        { actorId: extra.id, senderType: MessageSenderType.ARTIST, body: '{{name}} 안녕! 오늘도 좋은 하루 보내', createdAt: daysAgo(extra.lastDays + 3) },
+        { actorId: extra.id, senderType: MessageSenderType.ARTIST, body: '연습 끝! 다들 밥 챙겨 먹었어?', createdAt: daysAgo(extra.lastDays) },
+      ],
+    });
+  }
 
   // 데모 엔터 스태프 1명 — 같은 소속사라 두 배우 모두 모니터링 가능
   const staff = await prisma.user.create({
@@ -219,8 +264,8 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       actorId: caramel.id,
       senderType: MessageSenderType.ARTIST,
       mediaType: MessageMediaType.PHOTO,
-      mediaUrl: 'https://placehold.co/800x800?text=Selfie',
-      body: '오늘 셀카 📸 (플레이스홀더 이미지)',
+      mediaUrl: demoImage('selfie-caramel'),
+      body: '오늘 셀카 📸',
       createdAt: daysAgo(1),
     },
   });
@@ -237,6 +282,30 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   await prisma.subscription.update({
     where: { id: fan1Sub.id },
     data: { lastArtistMessageAt: daysAgo(1), lastFanReplyAt: daysAgo(1) },
+  });
+
+  // 번역 보기 확인용 태국어 메시지(2026-10-13 사용자 요청) — 한국어 화면의 팬(fan1·fan2)이 "번역 보기"를 눌러 볼 수 있게
+  // 두 팬의 구독 시작(5일·20일 전) 뒤에 넣음. {{name}}은 팬 이름으로 바뀐 뒤 번역되는지까지 확인됨
+  await prisma.message.createMany({
+    data: [
+      { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'สวัสดี {{name}}! วันนี้กินข้าวหรือยัง? คิดถึงนะ 555', createdAt: daysAgo(3) },
+      { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'วันนี้ถ่ายละครเสร็จดึกมากเลย เหนื่อยแต่สนุกมาก ขอบคุณที่รอนะคะ 🥹', createdAt: daysAgo(2) },
+      { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ครับ พรุ่งนี้ผมมีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยครับ ㅠㅠ', createdAt: daysAgo(2) },
+    ],
+  });
+  // 반대 방향 — 아티스트(한국어 화면)가 답장 목록에서 태국어 팬 답장의 "번역 보기"를 눌러 볼 수 있게
+  const thaiBroadcast = await prisma.message.create({
+    data: { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: '{{name}} 다음 달에 방콕 가! 추천할 맛집 있어?', createdAt: daysAgo(4) },
+  });
+  await prisma.message.create({
+    data: {
+      actorId: caramel.id,
+      senderType: MessageSenderType.FAN,
+      fanUserId: fan2.id,
+      replyToMessageId: thaiBroadcast.id,
+      body: 'มาเลยค่ะ! ต้องลองข้าวมันไก่ประตูน้ำนะคะ อร่อยมาก รอเจอนะคะ 💕',
+      createdAt: daysAgo(4),
+    },
   });
 
   // 신고/모더레이션 큐 데모용

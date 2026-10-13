@@ -326,3 +326,32 @@ describe('MessagesService.listReplies 나눠 받기', () => {
     expect(args.cursor).toBeUndefined();
   });
 });
+
+describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', () => {
+  function setupDelete(role: Role, viewable: boolean) {
+    const update = vi.fn().mockResolvedValue({});
+    const prisma = {
+      user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'staff-1', role, agencyId: 'ag-1' }) },
+      actor: { findFirst: vi.fn().mockResolvedValue(viewable ? { id: 'actor-1' } : null) },
+      message: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'm1', deletedAt: null, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } }),
+        update,
+      },
+    } as unknown as PrismaService;
+    const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    return { service, update };
+  }
+
+  it('자기 소속 아티스트 메시지면 지우고 지운 직원을 기록', async () => {
+    const { service, update } = setupDelete(Role.AGENCY_STAFF, true);
+    await service.deleteBroadcast('staff-1', 'actor-1', 'm1');
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deletedByStaffId: 'staff-1' }) }));
+  });
+
+  it('다른 소속사 아티스트면 거절', async () => {
+    const { service, update } = setupDelete(Role.AGENCY_STAFF, false);
+    await expect(service.deleteBroadcast('staff-1', 'actor-1', 'm1')).rejects.toThrow();
+    expect(update).not.toHaveBeenCalled();
+  });
+});

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, CircleHelp, CreditCard, FileText, Globe, LifeBuoy, LogOut, Megaphone, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { Bell, CircleHelp, CreditCard, FileText, Globe, KeyRound, LifeBuoy, LogOut, Megaphone, Moon, ShieldCheck, Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -20,6 +20,8 @@ import { useDeleteAccount, useMe } from '@/hooks/use-onboarding';
 import { BUSINESS_FIELDS, useBusinessInfo } from '@/hooks/use-business-info';
 import { useTheme } from '@/hooks/use-theme';
 import { LANGUAGE_NATIVE_NAMES } from '@/i18n/languages';
+import { PROVIDER_NAMES } from '@/components/social-button-style';
+import { useThemePreference } from '@/lib/theme-preference';
 import { useLocalePreference } from '@/i18n/locale-preference-context';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
@@ -37,6 +39,9 @@ export default function ProfileScreen() {
   const { data: me } = useMe();
   const { data: subscriptions } = useMySubscriptions();
   const { override } = useLocalePreference();
+  const themePreference = useThemePreference();
+  // 가입 수단·이메일(2026-10-12 실기기: "구글로 가입했는지, 어떤 이메일인지 알 수 없음") — 처음 가입한 수단이 맨 앞
+  const providers = (me?.loginProviders ?? []).map((provider) => PROVIDER_NAMES[provider]).join(' · ');
   const deleteAccount = useDeleteAccount();
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -67,22 +72,37 @@ export default function ProfileScreen() {
         </ThemedText>
 
         <View style={[styles.me, { backgroundColor: theme.backgroundElement }]}>
-          <Avatar size={56} />
+          <Pressable onPress={() => router.push('/settings/profile')} accessibilityRole="button" accessibilityLabel={t('profileEdit.title')}>
+            <Avatar uri={me?.profileImageUrl} size={56} />
+          </Pressable>
           <View style={styles.meBody}>
             <ThemedText type="headline" numberOfLines={1}>
               {me?.nickname ?? t('profile.noNickname')}
             </ThemedText>
+            {me?.statusMessage ? (
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                {me.statusMessage}
+              </ThemedText>
+            ) : null}
             {locked && availableAt ? (
               <ThemedText type="small" themeColor="textSecondary">
                 {t('nickname.nextChange', { date: availableAt.toLocaleDateString(i18n.language) })}
               </ThemedText>
-            ) : (
-              <Pressable onPress={() => router.push('/settings/nickname')} hitSlop={8} accessibilityRole="button">
+            ) : null}
+            <View style={styles.meLinks}>
+              {!locked ? (
+                <Pressable onPress={() => router.push('/settings/nickname')} hitSlop={8} accessibilityRole="button">
+                  <ThemedText type="smallBold" style={{ color: theme.tint }}>
+                    {t('profile.editNickname')}
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={() => router.push('/settings/profile')} hitSlop={8} accessibilityRole="button">
                 <ThemedText type="smallBold" style={{ color: theme.tint }}>
-                  {t('profile.editNickname')}
+                  {t('profileEdit.title')}
                 </ThemedText>
               </Pressable>
-            )}
+            </View>
           </View>
         </View>
 
@@ -100,6 +120,13 @@ export default function ProfileScreen() {
             value={override ? LANGUAGE_NATIVE_NAMES[override] : t('profile.languageSystem')}
             onPress={() => router.push('/settings/language')}
           />
+          <ListRow
+            icon={Moon}
+            title={t('themeMode.title')}
+            value={t(`themeMode.${themePreference}`)}
+            onPress={() => router.push('/settings/theme')}
+          />
+          {providers ? <ListRow icon={KeyRound} title={t('profile.loginInfo')} value={providers} subtitle={me?.email ?? t('profile.noEmail')} showChevron={false} /> : null}
           <ListRow icon={CreditCard} title={t('profile.paymentMethod')} subtitle={t('profile.paymentMethodHint')} onPress={() => void openStoreSubscriptions().catch(() => {})} />
         </Section>
 
@@ -169,6 +196,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
   },
   meBody: { flex: 1, gap: 2 },
+  meLinks: { flexDirection: 'row', gap: Spacing.three, marginTop: 2 },
   section: { marginTop: Spacing.four },
   sectionLabel: { paddingHorizontal: Spacing.four, marginBottom: Spacing.one, letterSpacing: 0.6 },
   center: { textAlign: 'center', marginTop: Spacing.three },

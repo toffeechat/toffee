@@ -1,6 +1,11 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
+
+import { IconButton } from '@/components/ui/icon-button';
+import { useAuth } from '@/lib/auth-context';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -16,6 +21,25 @@ export default function ChannelBlocksScreen() {
   const { actorId } = useLocalSearchParams<{ actorId: string }>();
   const { data: blocks, isLoading } = useChannelBlocks(actorId);
   const unblock = useUnblockFan(actorId);
+  const router = useRouter();
+  const navigation = useNavigation();
+  const { role } = useAuth();
+
+  // 돌아가기 버튼 항상 — 웹에서 주소로 바로 열었거나 새로고침하면 이전 화면 기록이 없어 뒤로 갈 방법이 브라우저 뒤로가기뿐이었음(2026-10-12)
+  useEffect(() => {
+    const home = role === 'ACTOR' ? `/studio/${actorId}` : `/console/${actorId}`;
+    navigation.setOptions({
+      headerLeft: () => (
+        <IconButton
+          icon={ChevronLeft}
+          size={24}
+          label={t('common.back')}
+          color={theme.text}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace(home as never))}
+        />
+      ),
+    });
+  }, [navigation, router, role, actorId, t, theme.text]);
 
   if (isLoading) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
   return (

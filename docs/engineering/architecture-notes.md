@@ -1440,3 +1440,48 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `READ_MEDIA_IMAGES`(33)·`READ_EXTERNAL_STORAGE`(≤32)를 넣는데, 뒤의 둘은 expo-media-library가 이미 넣고 있어서 새로 늘어나는 권한은
   사실상 `DETECT_SCREEN_CAPTURE`뿐. 13 이하에서 감지를 위해 런타임 권한을 요청하지는 않음.
 - e2e(`app/e2e/run.mjs`)에 "구독 직후 환영 메시지" 단계 추가 — 테스트 동안만 caramel의 환영 메시지를 바꾸고 끝나면 되돌림.
+
+## 실기기 피드백 반영 (2026-10-12)
+
+- **스키마**(`20261012020000_device_feedback_profile_notify`): `User.profileImageUrl`(저장소 키 `users/<id>/profile/`, `userProfileImagePrefix`)·
+  `statusMessage`·`notifyArtistMessages`(기본 true)·`notifyIdleAlerts`(기본 true), `Message.deletedByStaffId`.
+- **`GET /auth/me`** 추가 필드: `email`, `loginProviders`(AuthIdentity.provider, createdAt 순 중복 제거), `agencyName`, `profileImageUrl`(서명 URL),
+  `statusMessage`, `notify*`. 새 API: `POST /auth/me/profile-image/upload`(업로드 티켓), `PATCH /auth/me/profile {statusMessage?, profileImageKey?}`
+  (60자 `STATUS_MESSAGE_MAX_LENGTH`, Cc/Cf 금지, 금칙어 → `STATUS_MESSAGE_TOO_LONG|INAPPROPRIATE`, 바뀐 이전 사진은 `deleteQuietly`),
+  `PATCH /auth/me/notification-settings`, `PATCH /admin/users/:id/clear-profile`(감사 `USER_PROFILE_CLEAR`). 탈퇴 시 사진·상태메시지 null.
+  `UploadCleanupService`가 `users/` prefix와 `User.profileImageUrl`도 봄. `AuthService`가 `MediaService`를 주입받음(StorageModule 전역).
+- **팬 답장 목록**(`listReplies`) `fanUser`에 `profileImageUrl`(키별 한 번만 서명)·`statusMessage`.
+- **푸시 설정 필터**: `PushService.sendToUsers(..., setting?)`·`notifyActorStaff(..., setting?)` — `PushSetting = 'notifyArtistMessages' | 'notifyIdleAlerts'`이면
+  기기 조회 where에 `user.<setting> = true`. 아티스트 메시지·스토리의 소속사 알림은 `notifyArtistMessages`, 장기 미발송 알림(아티스트·소속사)은
+  `notifyIdleAlerts`, 환불 기준 경고는 필터 없음. FCM 실패 로그에 오류 코드별 개수(`messaging/third-party-auth-error×1` 등).
+- **소속사 대신 삭제**: `DELETE /actors/:actorId/messages/:id`에 `AGENCY_STAFF` 허용 — `MessagesService.deleteBroadcast`가 요청자 역할을 보고
+  직원이면 `ensureCanViewActor`(현재 소속사 기준), 아니면 기존 `ensureIsActorSelf`. 직원이면 `deletedByStaffId` 기록. 팬 쪽은 `deletedAt`만 봐서 그대로 사라짐.
+  스튜디오 목록은 `deletedByAdmin || deletedByStaffId`인 지운 메시지를 이유와 함께 보여 줌.
+- **소속사 대시보드**: `GET /actors/mine/dashboard`(AGENCY_STAFF·ADMIN, `mine/...`는 `:id`보다 먼저) — `findMine` 결과 + groupBy 4번
+  (활성 구독, 최근 30일 `SubscriptionEvent` STARTED/CANCELLED, 보낸 아티스트 메시지(지운 것 제외), 팬 답장). 순위 정렬은 앱(`console/dashboard.tsx`).
+- **검색**: `ActorsService.findAll`의 q가 `chatDisplayName`도 봄(pg_trgm 색인은 legalName만 — 규모상 문제없음, 커지면 색인 추가).
+- **앱**
+  - 표시 통화 `app/src/utils/price.ts`: `formatPrice(thbCents)`(예전 `formatPrice(t, cents)`, i18n `price.*` 키 삭제) — expo-localization
+    `currencyCode` → `regionCode` → 언어 순으로 통화, `THB_RATE` 참고 환율·`ROUND_STEP` 반올림, THB 아니면 "≈ ". 결제 화면은
+    `useStorePurchase().displayPrice`(expo-iap `fetchProducts({skus, type:'subs'})` 후 `subscriptions[].displayPrice`) 우선.
+  - 화면 모드 `lib/theme-preference.ts`(useSyncExternalStore + `preference-storage` 키 `toffee_theme_override`, 네이티브는 `Appearance.setColorScheme`),
+    `hooks/use-color-scheme(.web).ts`가 우선 적용, `_layout`·스플래시도 앱 훅 사용. 화면 `settings/theme.tsx`.
+  - 최근 로그인 `lib/last-login.ts`(키 `toffee_last_login_provider`) — `login.tsx` 소셜 성공·`oauth/[provider].tsx` 성공 때 저장,
+    `SocialButton recentLabel`·`RecentBadge`(웹 구글 공식 버튼 자리 포함).
+  - 설정: 팬 `settings/profile.tsx`(사진·상태메시지), 아티스트·소속사 `settings/staff.tsx`, `settings/notifications.tsx`는 역할이 ACTOR/AGENCY_STAFF면
+    `StaffAlerts`. `WideShell`: 소속사 이름(`me.agencyName`), 메뉴에 대시보드·설정, 소속사·운영자면 `/blocks`·`/settings`에서도 넓은 배치 유지.
+    `blocks/[actorId]`는 headerLeft를 항상 그림(기록이 없으면 콘솔/스튜디오로 replace).
+  - 콘솔 모니터링 `console/[actorId].tsx`: `useStudioMessages`(같은 `actor-broadcasts` 키, `replyCount`) + 스토리를 합쳐 inverted 목록,
+    `MonitorBubble`(MediaTile·VoiceMessage·QuoteBlock, 시간 옆, 삭제 `useDeleteBroadcast` + confirm), 답장 탭은 `useActorReplies(actorId, messageId?)`
+    (`?messageId=` 필터, 10초 폴링/실시간). `useActorBroadcasts`는 삭제.
+  - 말풍선 시간 옆: 팬 채팅 `bubbleLine`(row / row-reverse, bubble `flexShrink:1`), 스튜디오 `MyMessage`는 `row-reverse`로 날짜·시간 두 줄.
+    "기다리는 중" 줄은 `isLatest`(inverted index 0)일 때만.
+  - `QuoteBlock tone='dark'` 글자색 `theme.text`, 테두리 `theme.tint`(예전 `#3A3D4A` 고정).
+  - 업로드 실패는 `ApiError.message`(서버 번역 문구) 표시, 소셜 로그인 실패는 `Sentry.captureException` + 테스트 빌드(`__DEV__`/
+    `EXPO_PUBLIC_ENABLE_DEV_LOGIN`)에서만 SDK `code · message`. 앱 아이콘 숫자: `AuthProvider`가 USER가 아니면·로그아웃 때 `setAppBadgeCount(0)`.
+  - 음성: 스튜디오 `voicePanel` 상태 — 마이크는 패널만 열고, 패널의 녹음 시작/정지, 녹음 후 `VoiceMessage`(로컬 uri)로 미리 듣기·다시 녹음·취소.
+- **데모 이미지**: `app/public/demo/*.jpg`(SVG 일러스트를 Chromium으로 렌더, 실존 인물 아님) — 웹 데모(Pages)가 `/demo/...`로 서비스.
+  시드는 `DEMO_ASSET_BASE_URL`(기본 `https://demo.toffeechat.app/demo`). 가상 아티스트 4명(`DEMO_IDS.macaron|jellybean|cookie|choco`, id 14~17)·
+  소속사 `sweetAgency`(id 3) 추가, 구독 없이 아티스트 메시지 2개씩.
+- **메일**: `eas.json` production에 `EXPO_PUBLIC_SUPPORT_EMAIL=support@toffeechat.app`, `.env.example` `SUPPORT_EMAIL` 예시값, 개인정보처리방침
+  8항 연락처 `privacy@toffeechat.app`(문구만 — 약관 버전은 안 올림).

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { useMyActors } from '@/hooks/use-console';
 import { useTheme } from '@/hooks/use-theme';
@@ -46,10 +47,7 @@ export default function StudioHomeScreen() {
           <Pressable
             onPress={() => router.push(`/studio/${item.id}`)}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
-            <Image
-              source={{ uri: item.chatProfileImageUrl ?? undefined }}
-              style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}
-            />
+            <Avatar uri={item.chatProfileImageUrl} size={48} />
             <ThemedText type="smallBold" style={styles.flex}>
               {item.chatDisplayName}
             </ThemedText>
@@ -76,6 +74,5 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.four, gap: Spacing.three },
   empty: { textAlign: 'center', marginTop: Spacing.four },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: 14, padding: Spacing.three },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
   logout: { margin: Spacing.four, borderWidth: 1, borderRadius: 10, paddingVertical: Spacing.three, alignItems: 'center' },
 });

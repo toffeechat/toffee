@@ -77,7 +77,7 @@ export default function SubscriptionDetailScreen() {
     [t('manage.status'), endsOn ? t('manage.ending') : t('manage.active')],
     bundleCover?.bundle
       ? [t('manage.price'), t('bundle.via', { name: bundleCover.bundle.name })]
-      : [t('manage.price'), `${formatPrice(t, sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`],
+      : [t('manage.price'), `${formatPrice(sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`],
     [t('manage.started'), new Date(sub.startedAt).toLocaleDateString(i18n.language)],
     endsOn ? [t('manage.endsOn'), endsOn] : [t('manage.nextBilling'), t('manage.nextBillingStore')],
   ];

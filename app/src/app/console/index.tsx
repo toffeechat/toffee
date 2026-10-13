@@ -1,12 +1,14 @@
-import { ActivityIndicator, FlatList, Image, Platform, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMyActors } from '@/hooks/use-console';
 import { useAuth } from '@/lib/auth-context';
+import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 import type { Actor } from '@/hooks/use-actors';
@@ -18,10 +20,7 @@ function ActorRow({ actor, onPress }: { actor: Actor & { lastBroadcastAt?: strin
   const { t } = useTranslation();
   return (
     <Pressable onPress={onPress} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
-      <Image
-        source={{ uri: actor.chatProfileImageUrl ?? undefined }}
-        style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}
-      />
+      <Avatar uri={actor.chatProfileImageUrl} size={48} />
       <ThemedView style={styles.rowBody}>
         <ThemedText type="smallBold">{actor.chatDisplayName}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
@@ -48,6 +47,7 @@ export default function ConsoleHomeScreen() {
   const { t } = useTranslation();
   const { logout } = useAuth();
   const { data: actors, isLoading } = useMyActors();
+  const { data: me } = useMe();
   // 정산은 PC 웹 전용 — 넓은 화면에선 왼쪽 메뉴에 있어서 여기엔 좁은 웹 창일 때만
   const wide = useWideLayout();
   const showSettlementLink = Platform.OS === 'web' && !wide;
@@ -63,6 +63,26 @@ export default function ConsoleHomeScreen() {
             </ThemedText>
           </ThemedView>
         </Pressable>
+      ) : null}
+      {/* 폰·좁은 창: 통계 대시보드·설정 바로가기(넓은 PC 화면은 왼쪽 메뉴), 소속사 이름(2026-10-12) */}
+      {!wide ? (
+        <ThemedView style={styles.quickLinks}>
+          {me?.agencyName ? (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.agencyName} numberOfLines={1}>
+              {me.agencyName}
+            </ThemedText>
+          ) : null}
+          <Pressable onPress={() => router.push('/console/dashboard')} hitSlop={8} accessibilityRole="button">
+            <ThemedText type="smallBold" style={{ color: theme.tint }}>
+              {t('dashboard.title')} ›
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={() => router.push('/settings/staff')} hitSlop={8} accessibilityRole="button">
+            <ThemedText type="smallBold" style={{ color: theme.tint }}>
+              {t('staffSettings.title')} ›
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
       ) : null}
       <ThemedText type="smallBold" style={styles.sectionLabel}>
         {t('console.title')}
@@ -96,12 +116,13 @@ export default function ConsoleHomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  quickLinks: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingHorizontal: Spacing.four, paddingTop: Spacing.three },
+  agencyName: { flex: 1 },
   settlementLink: { marginHorizontal: Spacing.four, marginTop: Spacing.three },
   container: { flex: 1 },
   sectionLabel: { paddingHorizontal: Spacing.four, paddingTop: Spacing.three },
   list: { padding: Spacing.four, gap: Spacing.three },
   row: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: Spacing.three, gap: Spacing.three },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
   rowBody: { gap: 2, backgroundColor: 'transparent' },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.four },
   loading: { marginTop: Spacing.four },

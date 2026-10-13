@@ -68,7 +68,7 @@ function RefundCard({ item, onRequest, busy, error }: { item: RefundCandidate; o
   const start = async () => {
     const ok = await confirm(
       t('idleRefund.confirmTitle'),
-      apple ? t('idleRefund.confirmApple') : t('idleRefund.confirmBody', { amount: formatPrice(t, item.amountCents) }),
+      apple ? t('idleRefund.confirmApple') : t('idleRefund.confirmBody', { amount: formatPrice(item.amountCents) }),
       apple ? t('idleRefund.requestApple') : t('idleRefund.request'),
       t('common.cancel'),
     );
@@ -87,7 +87,7 @@ function RefundCard({ item, onRequest, busy, error }: { item: RefundCandidate; o
               : t('idleRefund.reason', { from: date(item.chargedAt), to: lastDay })}
           </ThemedText>
           <ThemedText type="caption" themeColor="textTertiary">
-            {t('idleRefund.deadline', { date: date(item.deadline), amount: formatPrice(t, item.amountCents) })}
+            {t('idleRefund.deadline', { date: date(item.deadline), amount: formatPrice(item.amountCents) })}
           </ThemedText>
         </View>
       </View>

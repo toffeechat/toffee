@@ -79,6 +79,17 @@ export interface Me {
   /** 생일 축하 메시지 받기(2026-10-12) — 생년월일 자체는 안 내려오고 있는지만 */
   birthdayGreetingsEnabled?: boolean;
   hasBirthDate?: boolean;
+  /** 2026-10-12 실기기 피드백 — 가입 이메일(애플 "이메일 가리기"면 중계 주소, 없을 수도 있음)과 로그인 수단(처음 가입한 것이 맨 앞) */
+  email?: string | null;
+  loginProviders?: ('GOOGLE' | 'APPLE' | 'NAVER' | 'KAKAO' | 'LINE')[];
+  /** 팬 프로필 사진(임시 조회 주소)·상태메시지 */
+  profileImageUrl?: string | null;
+  statusMessage?: string | null;
+  /** 역할별 알림 설정 — 소속사: 아티스트 새 메시지·스토리 / 아티스트·소속사: 장기 미발송 알림 */
+  notifyArtistMessages?: boolean;
+  notifyIdleAlerts?: boolean;
+  /** 소속사 직원이면 소속사 이름(콘솔 왼쪽 위 표시) */
+  agencyName?: string | null;
 }
 
 export function useMe() {
@@ -112,4 +123,23 @@ export function useSetBirthdayGreetings() {
 // 회원 탈퇴 — 성공하면 호출한 쪽에서 로그아웃
 export function useDeleteAccount() {
   return useMutation({ mutationFn: () => apiClient.delete('/auth/me') });
+}
+
+// 팬 프로필(2026-10-12) — 상태메시지(빈 문자열이면 지움)·사진 키(null이면 기본 이미지). 규칙(60자·금칙어)은 서버가 검사
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes: { statusMessage?: string; profileImageKey?: string | null }) => apiClient.patch<Me>('/auth/me/profile', changes),
+    onSuccess: (me) => queryClient.setQueryData(['me'], me),
+  });
+}
+
+// 역할별 알림 설정(2026-10-12)
+export function useUpdateNotificationSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: { notifyArtistMessages?: boolean; notifyIdleAlerts?: boolean }) =>
+      apiClient.patch<Me>('/auth/me/notification-settings', settings),
+    onSuccess: (me) => queryClient.setQueryData(['me'], me),
+  });
 }

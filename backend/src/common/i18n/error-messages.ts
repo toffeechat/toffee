@@ -247,6 +247,25 @@ export const ERROR_MESSAGES = {
     'zh-Hant': '暱稱不能包含不當內容。',
     vi: 'Biệt danh không được chứa từ ngữ không phù hợp.',
   },
+  // 팬 상태메시지(2026-10-12)
+  STATUS_MESSAGE_TOO_LONG: {
+    ko: (p) => `상태메시지는 ${p.max}자까지 쓸 수 있어요.`,
+    en: (p) => `Status messages can be up to ${p.max} characters.`,
+    th: (p) => `ข้อความสถานะยาวได้ไม่เกิน ${p.max} ตัวอักษร`,
+    ja: (p) => `ステータスメッセージは${p.max}文字までです。`,
+    'zh-Hans': (p) => `状态消息最多 ${p.max} 个字。`,
+    'zh-Hant': (p) => `狀態訊息最多 ${p.max} 個字。`,
+    vi: (p) => `Lời giới thiệu tối đa ${p.max} ký tự.`,
+  },
+  STATUS_MESSAGE_INAPPROPRIATE: {
+    ko: '부적절한 표현이 포함된 상태메시지는 쓸 수 없어요.',
+    en: "Status messages can't contain inappropriate language.",
+    th: 'ไม่สามารถใช้ข้อความสถานะที่มีคำไม่เหมาะสมได้',
+    ja: '不適切な表現を含むステータスメッセージは使用できません。',
+    'zh-Hans': '状态消息不能包含不当内容。',
+    'zh-Hant': '狀態訊息不能包含不當內容。',
+    vi: 'Lời giới thiệu không được chứa từ ngữ không phù hợp.',
+  },
   NICKNAME_MATCHES_ACTOR: {
     ko: '아티스트 이름과 같은 닉네임은 쓸 수 없어요.',
     en: "You can't use an artist's name as your nickname.",

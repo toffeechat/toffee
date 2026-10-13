@@ -26,6 +26,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useActor } from '@/hooks/use-actors';
 import { useDeleteBroadcast, useStudioMessages, useStudioSend, type Attachment, type StudioMessage } from '@/hooks/use-studio';
 import { PLAYBACK_AUDIO_MODE } from '@/lib/audio-mode';
+import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { UploadCancelledError } from '@/lib/upload-media';
 import { useTheme } from '@/hooks/use-theme';
@@ -62,8 +63,10 @@ function MyMessage({
   onOpenReplies,
   onDelete,
   senderName,
+  isLatest,
 }: {
   message: StudioMessage;
+  isLatest?: boolean;
   onOpenReplies: () => void;
   onDelete: () => void;
   senderName?: string | null;
@@ -71,39 +74,56 @@ function MyMessage({
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const hiddenByAdmin = !!message.deletedAt && message.deletedByAdmin;
-  // 최근 메시지엔 서버가 recentReplies를 줌(답장이 없으면 빈 배열 → "기다리는 중" 줄), 오래된 메시지는 숫자만
-  const hasPreview = !!message.recentReplies && !hiddenByAdmin;
+  // 소속사가 대신 지운 메시지(2026-10-12) — 아티스트도 알 수 있게 이유와 함께 남김
+  const removedByAgency = !!message.deletedAt && !message.deletedByAdmin && !!message.deletedByStaffId;
+  const removed = hiddenByAdmin || removedByAgency;
+  // 최근 메시지엔 서버가 recentReplies를 줌, 오래된 메시지는 숫자만. 답장이 없을 때 "팬 답장을 기다리는 중…"은 가장 최근 메시지에만
+  // (2026-10-12 실기기: 최근 10개 메시지마다 붙어 있어 어수선했음) — 나머지는 "답장 없음" 링크로
+  const hasPreview = !!message.recentReplies && !removed && (message.recentReplies.length > 0 || !!isLatest);
+  const time = new Date(message.createdAt);
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
   return (
     <View style={styles.messageRow}>
-      {hiddenByAdmin && (
+      {removed && (
         <ThemedText type="small" themeColor="danger">
-          {t('studio.hiddenByAdmin')}
+          {t(hiddenByAdmin ? 'studio.hiddenByAdmin' : 'console.deletedByAgency')}
         </ThemedText>
       )}
-      <View style={[styles.column, hiddenByAdmin && styles.hidden]}>
-        {isMedia ? (
-          <>
-            {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-            <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
-          </>
-        ) : null}
-        {!isMedia || message.body ? (
-          <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
-            {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-            {message.mediaType === 'AUDIO' ? (
-              <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
-            ) : null}
-            {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
-          </View>
-        ) : null}
+      {/* 시간은 말풍선 왼쪽 아래(카톡처럼, 2026-10-12 — 예전엔 말풍선 밑 줄) */}
+      <View style={styles.bubbleLine}>
+        <View style={[styles.column, removed && styles.hidden]}>
+          {isMedia ? (
+            <>
+              {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+              <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
+            </>
+          ) : null}
+          {!isMedia || message.body ? (
+            <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
+              {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+              {message.mediaType === 'AUDIO' ? (
+                <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
+              ) : null}
+              {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.sideTime}>
+          {senderName ? (
+            <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+              {senderName}
+            </ThemedText>
+          ) : null}
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+            {time.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })}
+          </ThemedText>
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+            {time.toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' })}
+          </ThemedText>
+        </View>
       </View>
       <View style={styles.meta}>
-        <ThemedText type="caption" themeColor="textTertiary">
-          {senderName ? `${senderName} · ` : ''}
-          {new Date(message.createdAt).toLocaleString(i18n.language, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-        </ThemedText>
-        {!hiddenByAdmin && (
+        {!removed && (
           <IconButton icon={Trash2} size={15} label={t('studio.delete')} color={theme.textTertiary} onPress={onDelete} style={styles.metaButton} />
         )}
         {!hasPreview && (
@@ -148,6 +168,8 @@ export default function StudioChannelScreen() {
   const uploadAbort = useRef<AbortController | null>(null);
   const [draft, setDraft] = useState('');
   const [attachment, setAttachment] = useState<Attachment | null>(null);
+  // 음성 녹음 패널(2026-10-12 실기기 피드백: 마이크를 누르자마자 녹음되지 말고 "녹음 → 다시 듣기·다시 녹음·취소 → 보내기")
+  const [voicePanel, setVoicePanel] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
 
@@ -185,7 +207,10 @@ export default function StudioChannelScreen() {
 
   const pickFromLibrary = async () => {
     const picked = toAttachment(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS));
-    if (picked) setAttachment(picked);
+    if (picked) {
+      setVoicePanel(false);
+      setAttachment(picked);
+    }
   };
 
   const takeWithCamera = async () => {
@@ -195,7 +220,15 @@ export default function StudioChannelScreen() {
       return;
     }
     const picked = toAttachment(await ImagePicker.launchCameraAsync(PICKER_OPTIONS));
-    if (picked) setAttachment(picked);
+    if (picked) {
+      setVoicePanel(false);
+      setAttachment(picked);
+    }
+  };
+
+  const closeVoicePanel = () => {
+    setVoicePanel(false);
+    if (attachment?.mediaType === 'AUDIO') setAttachment(null);
   };
 
   const toggleRecording = async () => {
@@ -235,13 +268,14 @@ export default function StudioChannelScreen() {
         onSuccess: () => {
           setDraft('');
           setAttachment(null);
+          setVoicePanel(false);
           if (quoteId) clearQuote();
         },
         onError: (error) =>
           setNotice(
             error instanceof UploadCancelledError
               ? { text: t('studio.uploadCancelled'), error: false }
-              : { text: t('studio.sendFailed'), error: true },
+              : { text: error instanceof ApiError && error.message ? error.message : t('studio.sendFailed'), error: true },
           ),
         onSettled: () => {
           setProgress(null);
@@ -252,7 +286,8 @@ export default function StudioChannelScreen() {
   };
 
   const canSend = !send.isPending && !recorderState.isRecording && (!!draft.trim() || !!attachment);
-  const visible = messages?.filter((message) => !message.deletedAt || message.deletedByAdmin) ?? [];
+  // 내가 지운 메시지는 안 보임 — 운영자가 가렸거나 소속사가 대신 지운 건 이유와 함께 보임
+  const visible = messages?.filter((message) => !message.deletedAt || message.deletedByAdmin || !!message.deletedByStaffId) ?? [];
 
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
@@ -272,9 +307,10 @@ export default function StudioChannelScreen() {
                 <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />
               </View>
             }
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <MyMessage
                 message={item}
+                isLatest={index === 0}
                 senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
                 onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
                 onDelete={() => void removeMessage(item.id)}
@@ -309,7 +345,7 @@ export default function StudioChannelScreen() {
           </View>
         )}
 
-        {(attachment || recorderState.isRecording) && (
+        {(attachment || recorderState.isRecording || voicePanel) && (
           <View style={[styles.tray, { backgroundColor: theme.backgroundElement }]}>
             {recorderState.isRecording ? (
               <>
@@ -317,6 +353,36 @@ export default function StudioChannelScreen() {
                 <ThemedText type="smallBold" style={styles.trayBody}>
                   {t('studio.recording', { seconds: Math.floor(recorderState.durationMillis / 1000) })}
                 </ThemedText>
+                <Pressable onPress={() => void toggleRecording()} accessibilityRole="button" style={[styles.voiceButton, { backgroundColor: theme.danger }]}>
+                  <Icon as={Square} size={14} color="#fff" fill="#fff" />
+                  <ThemedText type="smallBold" style={styles.voiceButtonText}>
+                    {t('studio.stopRecordingShort')}
+                  </ThemedText>
+                </Pressable>
+              </>
+            ) : voicePanel && attachment?.mediaType === 'AUDIO' && !send.isPending ? (
+              <>
+                {/* 녹음한 것 다시 듣기 — 보내기 전 확인 */}
+                <View style={styles.trayBody}>
+                  <VoiceMessage id="draft-voice" url={attachment.uri} durationMs={attachment.durationMs} waveform={attachment.waveform} tone="dark" />
+                </View>
+                <Pressable onPress={() => void toggleRecording()} accessibilityRole="button" style={[styles.voiceChip, { borderColor: theme.border }]}>
+                  <ThemedText type="smallBold">{t('studio.reRecord')}</ThemedText>
+                </Pressable>
+                <IconButton icon={X} size={18} label={t('studio.removeAttachment')} onPress={closeVoicePanel} />
+              </>
+            ) : voicePanel && !attachment ? (
+              <>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.trayBody}>
+                  {t('studio.voiceHint')}
+                </ThemedText>
+                <Pressable onPress={() => void toggleRecording()} accessibilityRole="button" style={[styles.voiceButton, { backgroundColor: theme.danger }]}>
+                  <Icon as={Mic} size={16} color="#fff" />
+                  <ThemedText type="smallBold" style={styles.voiceButtonText}>
+                    {t('studio.startRecording')}
+                  </ThemedText>
+                </Pressable>
+                <IconButton icon={X} size={18} label={t('common.cancel')} onPress={closeVoicePanel} />
               </>
             ) : attachment ? (
               <>
@@ -355,11 +421,16 @@ export default function StudioChannelScreen() {
           {Platform.OS !== 'web' && (
             <IconButton icon={Camera} label={t('studio.camera')} onPress={takeWithCamera} color={recorderState.isRecording ? theme.textTertiary : theme.text} />
           )}
+          {/* 마이크: 바로 녹음하지 않고 녹음 패널을 엶(패널의 "녹음 시작"으로 시작) */}
           <IconButton
-            icon={recorderState.isRecording ? Square : Mic}
-            label={recorderState.isRecording ? t('studio.stopRecordingShort') : t('studio.record')}
-            onPress={() => void toggleRecording()}
-            color={recorderState.isRecording ? theme.danger : theme.text}
+            icon={Mic}
+            label={t('studio.record')}
+            onPress={() => {
+              if (recorderState.isRecording) return;
+              if (attachment && attachment.mediaType !== 'AUDIO') setAttachment(null);
+              setVoicePanel(true);
+            }}
+            color={voicePanel || recorderState.isRecording ? theme.danger : theme.text}
           />
           {/* 받는 팬마다 그 팬의 닉네임으로 바뀌는 자리 — 버블처럼 "OO야" 하고 부를 때 */}
           <Pressable
@@ -414,7 +485,13 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.four },
   flip: { transform: [{ scaleY: -1 }] },
   messageRow: { alignItems: 'flex-end', gap: 6 },
-  column: { maxWidth: '80%', alignItems: 'flex-end', gap: 4 },
+  voiceButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  voiceButtonText: { color: '#fff' },
+  voiceChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.two + 2, paddingVertical: 6 },
+  bubbleLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, maxWidth: '92%' },
+  column: { flexShrink: 1, alignItems: 'flex-end', gap: 4 },
+  sideTime: { flexShrink: 0, alignItems: 'flex-end', paddingBottom: 2 },
+  sideTimeText: { textAlign: 'right' },
   hidden: { opacity: 0.45 },
   bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

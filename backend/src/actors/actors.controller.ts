@@ -26,6 +26,13 @@ export class ActorsController {
     return this.actorsService.findMine(user.id);
   }
 
+  // 소속사 통계 대시보드(2026-10-12) — 볼 수 있는 방 전체 비교. 'mine/dashboard'도 ':id'보다 먼저
+  @Roles(Role.AGENCY_STAFF, Role.ADMIN)
+  @Get('mine/dashboard')
+  dashboard(@CurrentUser() user: AuthenticatedUser) {
+    return this.actorsService.dashboard(user.id);
+  }
+
   // 이 배우가 든 커플방(배우 프로필 "커플방")
   @Public()
   @Get(':id/couples')

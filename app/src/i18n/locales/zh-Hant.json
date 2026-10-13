@@ -2,7 +2,8 @@
   "common": {
     "cancel": "取消",
     "logout": "登出",
-    "requestFailed": "請求失敗（{{status}}）"
+    "requestFailed": "請求失敗（{{status}}）",
+    "back": "返回"
   },
   "tabs": {
     "actors": "藝人",
@@ -16,10 +17,6 @@
     "console": "控制台",
     "terms": "服務條款",
     "privacy": "隱私權政策"
-  },
-  "price": {
-    "perMonth": "฿{{price}}/月",
-    "amount": "฿{{price}}"
   },
   "login": {
     "tagline": "和你喜歡的藝人一對一聊天",
@@ -37,7 +34,8 @@
       "kakao": "透過 Kakao 繼續",
       "naver": "透過 NAVER 繼續"
     },
-    "backToLogin": "返回登入"
+    "backToLogin": "返回登入",
+    "recent": "上次使用"
   },
   "actors": {
     "title": "尋找藝人",
@@ -134,7 +132,12 @@
     "deletedByActor": "藝人已刪除的訊息（粉絲看不到）",
     "lastMessageDays": "上次訊息：{{count}} 天前",
     "noMessagesYet": "尚未傳送訊息",
-    "lastMessageToday": "今天已傳送訊息"
+    "lastMessageToday": "今天已傳送訊息",
+    "deleteTitle": "要刪除這則訊息嗎？",
+    "deleteBody": "訊息會立即從粉絲畫面消失且無法復原，已送出的通知無法收回。藝人畫面會顯示「經紀公司刪除的訊息」。",
+    "deleteConfirm": "刪除",
+    "deletedByAgency": "經紀公司刪除的訊息（粉絲看不到）",
+    "allReplies": "所有回覆"
   },
   "onboarding": {
     "birthDateTitle": "請填寫你的出生日期",
@@ -206,7 +209,10 @@
     "profileButton": "我的資料",
     "stopRecordingShort": "結束錄音",
     "cancelQuote": "取消引用",
-    "emptyTitle": "傳送第一則訊息吧"
+    "emptyTitle": "傳送第一則訊息吧",
+    "reRecord": "重新錄製",
+    "voiceHint": "點擊開始錄音，傳送前可以回聽。",
+    "startRecording": "開始錄音"
   },
   "media": {
     "save": "儲存",
@@ -269,10 +275,10 @@
     "more": "更多"
   },
   "chatPhoto": {
-    "change": "更換聊天頭像",
+    "change": "更換頭像",
     "remove": "使用預設頭像",
     "removeTitle": "改為預設頭像",
-    "removeConfirm": "將刪除聊天頭像，並換成預設的人形頭像。",
+    "removeConfirm": "將刪除頭像，並換成預設的人形頭像。",
     "uploading": "上傳中…",
     "failed": "無法更換照片，請重試。"
   },
@@ -409,7 +415,9 @@
     "support": "支援",
     "languageSystem": "跟隨裝置語言",
     "notificationsHint": "可以依藝人開關新訊息通知，關閉後仍會收到訊息。",
-    "noSubscriptions": "沒有正在訂閱的藝人"
+    "noSubscriptions": "沒有正在訂閱的藝人",
+    "loginInfo": "登入資訊",
+    "noEmail": "無電子郵件資訊"
   },
   "manage": {
     "active": "訂閱中",
@@ -627,5 +635,48 @@
     "title": "偵測到截圖",
     "body": "藝人的訊息、照片、語音和影片僅限訂閱者觀看。將截圖發布或分享到社群媒體等外部，可能會依使用條款被限制使用。",
     "ok": "確定"
+  },
+  "alerts": {
+    "artistMessages": "藝人新訊息通知",
+    "artistMessagesHint": "旗下藝人傳送訊息或限時動態時通知你。",
+    "idle": "未傳送提醒",
+    "idleHintStaff": "旗下藝人超過 7 天未傳訊息時通知你。",
+    "idleHintArtist": "幾天沒傳訊息時提醒你「粉絲在等你」。",
+    "refundNote": "接近退款標準（30 天未傳送）的警告通知無法關閉。"
+  },
+  "themeMode": {
+    "title": "顯示模式",
+    "system": "跟隨裝置設定",
+    "light": "淺色",
+    "dark": "深色"
+  },
+  "profileEdit": {
+    "title": "編輯個人資料",
+    "failed": "儲存失敗，請重試。",
+    "status": "狀態訊息",
+    "statusPlaceholder": "用一句話介紹自己",
+    "visibility": "頭像和狀態訊息不會顯示給其他粉絲，只有查看你回覆的藝人（及經紀公司）能看到。",
+    "save": "儲存"
+  },
+  "staffSettings": {
+    "title": "設定"
+  },
+  "dashboard": {
+    "title": "數據總覽",
+    "subscribers": "訂閱者",
+    "newSubs": "新訂閱（最近 {{days}} 天）",
+    "cancellations": "取消（最近 {{days}} 天）",
+    "messages": "傳送訊息（最近 {{days}} 天）",
+    "replies": "粉絲回覆（最近 {{days}} 天）",
+    "countPeople": "{{count}} 人",
+    "countItems": "{{count}} 則",
+    "rowSummary": "訂閱者 {{subscribers}} · 新訂閱 {{newSubs}} · 回覆 {{replies}}",
+    "sort": {
+      "subscribers": "訂閱者最多",
+      "idle": "最久未傳送",
+      "newSubs": "新訂閱最多",
+      "replies": "回覆最多",
+      "messages": "傳送最多"
+    }
   }
 }

@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { saveLastLoginProvider } from '@/lib/last-login';
 import { consumeRedirectState, isRedirectProvider, redirectUriFor } from '@/lib/social-sign-in.web';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
@@ -36,7 +37,10 @@ export default function OAuthCallbackScreen() {
     }
     apiClient
       .post<{ accessToken: string }>(`/auth/${provider}/web`, { code: params.code, state: params.state, redirectUri: redirectUriFor(provider) })
-      .then((data) => login(data.accessToken))
+      .then((data) => {
+        saveLastLoginProvider(provider);
+        return login(data.accessToken);
+      })
       .catch(fail);
   }, [login, params]);
 

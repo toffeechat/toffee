@@ -95,6 +95,9 @@ export interface AdminUser {
   /** 제재 사유 분류(당사자에게 번역해서 안내)·내부 메모 */
   sanctionCategory: SanctionCategory | null;
   sanctionNote: string | null;
+  /** 팬 프로필(2026-10-12) — 사진은 있는지만 보면 됨(저장소 키) */
+  statusMessage?: string | null;
+  profileImageUrl?: string | null;
   createdAt: string;
   deletedAt: string | null;
   agency: { id: string; name: string } | null;
@@ -318,6 +321,15 @@ export function useReactivateUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiClient.patch<AdminUser>(`/admin/users/${id}/reactivate`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+}
+
+// 팬 프로필 사진·상태메시지 지우기(2026-10-12, 신고·민원 대응, 작업 기록에 남음)
+export function useClearUserProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.patch<AdminUser>(`/admin/users/${id}/clear-profile`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
 }

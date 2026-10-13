@@ -12,6 +12,7 @@ import {
   useSuspendUser,
   useBanUser,
   useReactivateUser,
+  useClearUserProfile,
   type AdminUser,
   type AssignableRole,
   type SanctionCategory,
@@ -116,7 +117,8 @@ function UserRow({ user }: { user: AdminUser }) {
   const suspend = useSuspendUser();
   const ban = useBanUser();
   const reactivate = useReactivateUser();
-  const isPending = suspend.isPending || ban.isPending || reactivate.isPending;
+  const clearProfile = useClearUserProfile();
+  const isPending = suspend.isPending || ban.isPending || reactivate.isPending || clearProfile.isPending;
   const [category, setCategory] = useState<SanctionCategory | null>(null);
   const [note, setNote] = useState('');
 
@@ -141,6 +143,22 @@ function UserRow({ user }: { user: AdminUser }) {
         {user.agency ? ` · ${user.agency.name}` : ''}
         {user.actorSelf ? ` · ${user.actorSelf.legalName} 본인` : ''}
       </ThemedText>
+      {/* 팬 프로필(2026-10-12) — 부적절하면 지움 */}
+      {user.statusMessage || user.profileImageUrl ? (
+        <ThemedView style={styles.actions}>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.profileLine}>
+            {`프로필: ${user.profileImageUrl ? '사진 있음' : '사진 없음'}${user.statusMessage ? ` · "${user.statusMessage}"` : ''}`}
+          </ThemedText>
+          <Pressable
+            disabled={isPending}
+            onPress={() => clearProfile.mutate(user.id)}
+            style={[styles.actionChip, { borderColor: theme.danger }]}>
+            <ThemedText type="small" themeColor="danger">
+              사진·상태메시지 지우기
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
+      ) : null}
       {user.role !== 'ADMIN' && !user.deletedAt && <RoleControls user={user} />}
       {user.status === 'SUSPENDED' && user.suspendedUntil && (
         <ThemedText type="small" themeColor="textSecondary">
@@ -255,6 +273,7 @@ const styles = StyleSheet.create({
   roleBox: { backgroundColor: 'transparent' },
   actionChip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: Spacing.two, paddingVertical: 6 },
   reactivateChipText: { color: '#fff' },
+  profileLine: { flexShrink: 1 },
   noteInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 14 },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.six },
   loading: { marginTop: Spacing.six },

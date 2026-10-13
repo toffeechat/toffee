@@ -33,6 +33,12 @@ export class AdminUsersController {
     return this.adminUsersService.ban(admin.id, id, { category: dto.category, note: dto.note });
   }
 
+  // 팬 프로필 사진·상태메시지 지우기(2026-10-12)
+  @Patch(':id/clear-profile')
+  clearProfile(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    return this.adminUsersService.clearProfile(admin.id, id);
+  }
+
   @Patch(':id/reactivate')
   reactivate(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
     return this.adminUsersService.reactivate(admin.id, id);

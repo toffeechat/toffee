@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { ErrorCode, getAvailablePurchases, useIAP, type Purchase } from 'expo-iap';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ export function useStorePurchase(target: StoreTarget): StoreCheckout {
     void queryClient.invalidateQueries({ queryKey: ['my-bundles'] });
   };
 
-  const { connected, requestPurchase, finishTransaction } = useIAP({
+  const { connected, requestPurchase, finishTransaction, subscriptions, fetchProducts } = useIAP({
     onPurchaseSuccess: async (purchase) => {
       const waiting = pending.current;
       pending.current = null;
@@ -58,6 +58,13 @@ export function useStorePurchase(target: StoreTarget): StoreCheckout {
   });
 
   const available = Platform.OS !== 'web' && connected && !!target.sku && !!me?.id;
+
+  // 스토어 가격(그 나라 통화) — 2026-10-12: 예전엔 늘 운영자가 넣은 바트 가격만 보였음
+  const sku = target.sku;
+  useEffect(() => {
+    if (connected && sku) void fetchProducts({ skus: [sku], type: 'subs' }).catch(() => {});
+  }, [connected, sku, fetchProducts]);
+  const displayPrice = (sku && subscriptions.find((product) => product.id === sku)?.displayPrice) || null;
 
   const userId = me?.id;
   const buy = () => {
@@ -85,5 +92,5 @@ export function useStorePurchase(target: StoreTarget): StoreCheckout {
     return results.filter((item) => item.restored).length;
   };
 
-  return { available, buy, restore };
+  return { available, displayPrice, buy, restore };
 }

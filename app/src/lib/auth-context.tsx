@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { loadToken, saveToken, removeToken } from './token-storage';
 import { apiClient, onUnauthorized } from './api-client';
 import type { Role } from './types';
-import { unregisterThisDevice } from '@/lib/push';
+import { setAppBadgeCount, unregisterThisDevice } from '@/lib/push';
 
 interface AuthContextValue {
   token: string | null;
@@ -38,7 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     loadToken().then(async (storedToken) => {
       setToken(storedToken);
-      if (storedToken) setRole(await fetchRole());
+      if (storedToken) {
+        const storedRole = await fetchRole();
+        if (storedRole && storedRole !== 'USER') setAppBadgeCount(0);
+        setRole(storedRole);
+      }
       setIsLoading(false);
     });
   }, []);
@@ -64,6 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fetchedRole = await fetchRole();
     // 정지·차단 계정이면 /auth/me가 401 → 위 onUnauthorized가 이미 로그아웃 처리하고 이유를 남김
     if (!fetchedRole) return;
+    // 앱 아이콘 숫자는 팬 대화 탭만 채움 — 아티스트·소속사·운영자 계정이면 0으로(2026-10-12 실기기: 같은 폰에서 쓰던 팬 계정 숫자가
+    // 소속사 계정에도 남아 "무슨 알림인지 모르겠음")
+    if (fetchedRole !== 'USER') setAppBadgeCount(0);
     setToken(newToken);
     setRole(fetchedRole);
   };
@@ -74,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 소셜 SDK 세션도 정리 — 다음 로그인 때 다른 계정을 고를 수 있게(실패해도 무시)
     await signOutProviders().catch(() => {});
     await removeToken();
+    setAppBadgeCount(0);
     setToken(null);
     setRole(null);
     queryClient.clear();

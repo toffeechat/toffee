@@ -108,3 +108,8 @@ export function uploadProfileImage(target: 'ACTOR' | 'AGENCY', targetId: string,
 export function uploadChatProfileImage(actorId: string, uri: string, contentType?: string): Promise<string> {
   return putToStorage(`/actors/${actorId}/chat-profile-image/upload`, {}, uri, contentType);
 }
+
+/** 팬 본인 — 프로필 사진(2026-10-12). 받은 키를 PATCH /auth/me/profile { profileImageKey }에 넘김 */
+export function uploadMyProfileImage(uri: string, contentType?: string): Promise<string> {
+  return putToStorage('/auth/me/profile-image/upload', {}, uri, contentType);
+}

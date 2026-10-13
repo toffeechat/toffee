@@ -27,14 +27,47 @@ export function useActorStats(actorId: string) {
 
 export interface FanReply extends ChatMessage {
   // 스타·소속사에겐 닉네임 + 같은 닉네임 구분용 태그(#A1B2)만 — 로그인 이름(실명일 수 있음)은 안 옴
-  fanUser: { id: string; nickname: string | null; tag: string } | null;
+  fanUser: {
+    id: string;
+    nickname: string | null;
+    tag: string;
+    /** 팬 프로필 사진·상태메시지(2026-10-12) */
+    profileImageUrl?: string | null;
+    statusMessage?: string | null;
+  } | null;
 }
 
-export function useActorReplies(actorId: string) {
+// messageId를 주면 그 아티스트 메시지에 온 답장만(모니터링에서 "답장 N개" 눌렀을 때, 2026-10-12)
+export function useActorReplies(actorId: string, messageId?: string | null) {
+  const interval = useLiveInterval(10000);
   return useQuery({
-    queryKey: ['actor-replies', actorId],
-    queryFn: () => apiClient.get<FanReply[]>(`/actors/${actorId}/messages/replies`),
+    queryKey: ['actor-replies', actorId, messageId ?? null],
+    queryFn: () => apiClient.get<FanReply[]>(`/actors/${actorId}/messages/replies${messageId ? `?messageId=${encodeURIComponent(messageId)}` : ''}`),
     enabled: !!actorId,
+    refetchInterval: interval,
+  });
+}
+
+/** 소속사 통계 대시보드(2026-10-12) — 볼 수 있는 방 전체의 최근 N일 수치 */
+export interface DashboardRow {
+  id: string;
+  kind: 'SOLO' | 'COUPLE';
+  chatDisplayName: string;
+  legalName: string;
+  chatProfileImageUrl: string | null;
+  retiredAt: string | null;
+  lastBroadcastAt: string | null;
+  subscriberCount: number;
+  newSubscriptions: number;
+  cancellations: number;
+  messagesSent: number;
+  fanReplies: number;
+}
+
+export function useAgencyDashboard() {
+  return useQuery({
+    queryKey: ['agency-dashboard'],
+    queryFn: () => apiClient.get<{ days: number; actors: DashboardRow[] }>('/actors/mine/dashboard'),
   });
 }
 
@@ -54,17 +87,6 @@ export function useSendBroadcast(actorId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['actor-stats', actorId] });
     },
-  });
-}
-
-// 소속사 모니터링 — 배우가 실제로 보낸 메시지를 읽기 전용으로 확인
-export function useActorBroadcasts(actorId: string) {
-  const interval = useLiveInterval(10000);
-  return useQuery({
-    queryKey: ['actor-broadcasts', actorId],
-    queryFn: () => apiClient.get<ChatMessage[]>(`/actors/${actorId}/messages/broadcasts`),
-    enabled: !!actorId,
-    refetchInterval: interval,
   });
 }
 

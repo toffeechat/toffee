@@ -11,7 +11,9 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments }
 import { useFonts } from 'expo-font';
 import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { AppState, Platform, useColorScheme, type AppStateStatus } from 'react-native';
+import { AppState, Platform, type AppStateStatus } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { loadThemePreference } from '@/lib/theme-preference';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
@@ -40,6 +42,8 @@ SplashScreen.preventAutoHideAsync();
 applyPlaybackAudioMode();
 
 const queryClient = new QueryClient();
+// 저장해 둔 화면 모드(라이트/다크 직접 설정) — 첫 화면이 그려지기 전에 대부분 끝남
+void loadThemePreference();
 
 // 앱이 백그라운드로 가면 react-query가 "화면을 안 보고 있음"으로 알게 해서 5초 폴링 등을 멈추고, 다시 앞으로 오면 바로
 // 새로고침(refetchOnWindowFocus) — 예전엔 네이티브에서 이 연결이 없어 백그라운드에서도 계속 조회했고, 돌아와도 다음 폴링까지
@@ -173,6 +177,9 @@ function RootLayout() {
               <Stack.Screen name="settings/language" options={{ headerShown: true, title: t('profile.language') }} />
               <Stack.Screen name="settings/nickname" options={{ headerShown: true, title: t('profile.editNickname') }} />
               <Stack.Screen name="settings/notifications" options={{ headerShown: true, title: t('profile.notifications') }} />
+              <Stack.Screen name="settings/theme" options={{ headerShown: true, title: t('themeMode.title') }} />
+              <Stack.Screen name="settings/profile" options={{ headerShown: true, title: t('profileEdit.title') }} />
+              <Stack.Screen name="settings/staff" options={{ headerShown: true, title: t('staffSettings.title') }} />
               <Stack.Screen name="chat/[actorId]" options={{ headerShown: true, title: '' }} />
               <Stack.Screen name="chat-profile/[actorId]" options={{ headerShown: false, presentation: 'modal' }} />
               <Stack.Screen name="report" options={{ headerShown: true, title: t('report.title'), presentation: 'modal' }} />
@@ -189,6 +196,7 @@ function RootLayout() {
               <Stack.Screen name="console/index" options={{ headerShown: true, title: t('screens.console') }} />
               <Stack.Screen name="console/[actorId]" options={{ headerShown: true, title: '' }} />
               <Stack.Screen name="console/settlements" options={{ headerShown: true, title: t('settlement.title') }} />
+              <Stack.Screen name="console/dashboard" options={{ headerShown: true, title: t('dashboard.title') }} />
               {/* 운영자 화면은 운영자(한국어) 전용이라 의도적으로 다국어 처리 안 함 */}
               <Stack.Screen name="admin/index" options={{ headerShown: true, title: '운영자' }} />
               <Stack.Screen name="admin/reports" options={{ headerShown: true, title: '신고 처리' }} />

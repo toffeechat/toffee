@@ -9,9 +9,19 @@ export const PROVIDER_STYLE: Record<SocialProvider, { background: string; text: 
   naver: { background: '#03C75A', text: '#FFFFFF' },
 };
 
-// 나라마다 많이 쓰는 로그인을 위로(2026-10-02 사용자 결정) — 한국어: 카카오 → 네이버 → 구글 → 애플 → LINE,
-// 그 외(태국·일본·대만 등): LINE → 구글 → 애플. 카카오·네이버는 한국 밖에선 거의 안 써서 한국어 화면에서만 보임
+// 나라마다 많이 쓰는 로그인을 위로(2026-10-02 사용자 결정) — 한국어: 카카오 → 네이버 → 구글 → 애플,
+// 그 외(태국·일본·대만 등): LINE → 구글 → 애플. 카카오·네이버는 한국 밖에선 거의 안 써서 한국어 화면에서만,
+// LINE은 한국에선 거의 안 써서 한국어 화면에선 숨김(2026-10-12 사용자 결정 — 실기기에서 한국 LINE 계정 웹 로그인이 막혔음)
 export function orderedProviders(providers: SocialProvider[], language: string): SocialProvider[] {
-  const order: SocialProvider[] = language.startsWith('ko') ? ['kakao', 'naver', 'google', 'apple', 'line'] : ['line', 'google', 'apple'];
+  const order: SocialProvider[] = language.startsWith('ko') ? ['kakao', 'naver', 'google', 'apple'] : ['line', 'google', 'apple'];
   return order.filter((provider) => providers.includes(provider));
 }
+
+// 마이페이지 "로그인 정보"에 보이는 이름(서버 AuthProvider 값 → 회사 표기, 2026-10-12) — 브랜드 이름이라 번역하지 않음
+export const PROVIDER_NAMES: Record<'GOOGLE' | 'APPLE' | 'NAVER' | 'KAKAO' | 'LINE', string> = {
+  GOOGLE: 'Google',
+  APPLE: 'Apple',
+  NAVER: 'NAVER',
+  KAKAO: 'Kakao',
+  LINE: 'LINE',
+};

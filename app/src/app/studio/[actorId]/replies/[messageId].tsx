@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
@@ -134,28 +135,37 @@ function ReplyBubble({ item, locale, actorId, onQuote }: { item: FanReply; local
   const theme = useTheme();
   const { t } = useTranslation();
   return (
-    <ThemedView style={styles.row}>
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        {item.fanUser ? `${item.fanUser.nickname ?? t('console.noNickname')} ${item.fanUser.tag}` : t('console.deletedFan')}
-      </ThemedText>
-      <ThemedView style={styles.bubbleLine}>
-        <ThemedView style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-          {/* 태국·일본 팬 답장 등 다른 언어면 "번역 보기" */}
-          {item.body ? <TranslatableText actorId={actorId} messageId={item.id} text={item.body} /> : null}
-        </ThemedView>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.time}>
-          {new Date(item.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+    <ThemedView style={styles.fanRow}>
+      {/* 팬 프로필 사진·상태메시지(2026-10-12) — 아티스트·소속사에게만 보임 */}
+      <Avatar uri={item.fanUser?.profileImageUrl} size={36} />
+      <ThemedView style={styles.row}>
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          {item.fanUser ? `${item.fanUser.nickname ?? t('console.noNickname')} ${item.fanUser.tag}` : t('console.deletedFan')}
         </ThemedText>
-        {/* 시간 옆 ⋯ — 펼치면 답장하기·신고·차단(좁으면 다음 줄로) */}
-        {item.fanUser && (
-          <FanReplyActions
-            actorId={actorId}
-            messageId={item.id}
-            fanUserId={item.fanUser.id}
-            nickname={item.fanUser.nickname ?? ''}
-            onQuote={onQuote}
-          />
-        )}
+        {item.fanUser?.statusMessage ? (
+          <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
+            {item.fanUser.statusMessage}
+          </ThemedText>
+        ) : null}
+        <ThemedView style={styles.bubbleLine}>
+          <ThemedView style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
+            {/* 태국·일본 팬 답장 등 다른 언어면 "번역 보기" */}
+            {item.body ? <TranslatableText actorId={actorId} messageId={item.id} text={item.body} /> : null}
+          </ThemedView>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.time}>
+            {new Date(item.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </ThemedText>
+          {/* 시간 옆 ⋯ — 펼치면 답장하기·신고·차단(좁으면 다음 줄로) */}
+          {item.fanUser && (
+            <FanReplyActions
+              actorId={actorId}
+              messageId={item.id}
+              fanUserId={item.fanUser.id}
+              nickname={item.fanUser.nickname ?? ''}
+              onQuote={onQuote}
+            />
+          )}
+        </ThemedView>
       </ThemedView>
     </ThemedView>
   );
@@ -169,7 +179,8 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.three, gap: Spacing.three },
   empty: { textAlign: 'center', marginTop: Spacing.four },
   blocksLink: { alignSelf: 'flex-end' },
-  row: { gap: 4, alignItems: 'flex-start', backgroundColor: 'transparent' },
+  fanRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two, backgroundColor: 'transparent' },
+  row: { flex: 1, gap: 4, alignItems: 'flex-start', backgroundColor: 'transparent' },
   bubbleLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: Spacing.two, rowGap: Spacing.one, backgroundColor: 'transparent' },
   bubble: { borderRadius: 16, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexShrink: 1, maxWidth: '75%' },
   time: { flexShrink: 0 },

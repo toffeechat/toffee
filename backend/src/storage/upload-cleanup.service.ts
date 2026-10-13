@@ -7,7 +7,7 @@ import { isStorageKey } from './media-policy.js';
 // 업로드 URL을 받고 올리기만 한 뒤 메시지·스토리·프로필에 붙이지 않은 파일(보내기 취소, 앱 종료 등)을 지움.
 // 올리는 중이거나 막 올린 파일을 지우지 않게 하루 이상 지난 것만.
 export const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;
-const PREFIXES = ['actors/', 'agencies/'];
+const PREFIXES = ['actors/', 'agencies/', 'users/'];
 
 @Injectable()
 export class UploadCleanupService {
@@ -20,17 +20,19 @@ export class UploadCleanupService {
 
   /** DB 어디선가 쓰고 있는 저장소 키 전부 — 파일럿 규모라 한 번에 읽음(커지면 prefix별로 나눠 확인) */
   async referencedKeys(): Promise<Set<string>> {
-    const [messages, stories, actors, agencies] = await Promise.all([
+    const [messages, stories, actors, agencies, users] = await Promise.all([
       this.prisma.message.findMany({ where: { mediaKey: { not: null } }, select: { mediaKey: true, thumbnailKey: true } }),
       this.prisma.story.findMany({ where: { mediaKey: { not: null } }, select: { mediaKey: true } }),
       this.prisma.actor.findMany({ select: { officialProfileImageUrl: true, chatProfileImageUrl: true } }),
       this.prisma.agency.findMany({ select: { logoUrl: true } }),
+      this.prisma.user.findMany({ where: { profileImageUrl: { not: null } }, select: { profileImageUrl: true } }),
     ]);
     const keys = [
       ...messages.flatMap((m) => [m.mediaKey, m.thumbnailKey]),
       ...stories.map((s) => s.mediaKey),
       ...actors.flatMap((a) => [a.officialProfileImageUrl, a.chatProfileImageUrl]),
       ...agencies.map((a) => a.logoUrl),
+      ...users.map((u) => u.profileImageUrl),
     ];
     return new Set(keys.filter(isStorageKey));
   }

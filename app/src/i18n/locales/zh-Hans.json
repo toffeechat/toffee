@@ -2,7 +2,8 @@
   "common": {
     "cancel": "取消",
     "logout": "退出登录",
-    "requestFailed": "请求失败（{{status}}）"
+    "requestFailed": "请求失败（{{status}}）",
+    "back": "返回"
   },
   "tabs": {
     "actors": "艺人",
@@ -16,10 +17,6 @@
     "console": "控制台",
     "terms": "服务条款",
     "privacy": "隐私政策"
-  },
-  "price": {
-    "perMonth": "฿{{price}}/月",
-    "amount": "฿{{price}}"
   },
   "login": {
     "tagline": "和你喜欢的艺人一对一聊天",
@@ -37,7 +34,8 @@
       "kakao": "通过 Kakao 继续",
       "naver": "通过 NAVER 继续"
     },
-    "backToLogin": "返回登录"
+    "backToLogin": "返回登录",
+    "recent": "上次使用"
   },
   "actors": {
     "title": "寻找艺人",
@@ -134,7 +132,12 @@
     "deletedByActor": "艺人已删除的消息（粉丝看不到）",
     "lastMessageDays": "上次消息：{{count}} 天前",
     "noMessagesYet": "尚未发送消息",
-    "lastMessageToday": "今天已发送消息"
+    "lastMessageToday": "今天已发送消息",
+    "deleteTitle": "要删除这条消息吗？",
+    "deleteBody": "消息会立即从粉丝界面消失且无法恢复，已发送的通知无法撤回。艺人界面会显示\"经纪公司删除的消息\"。",
+    "deleteConfirm": "删除",
+    "deletedByAgency": "经纪公司删除的消息（粉丝看不到）",
+    "allReplies": "全部回复"
   },
   "onboarding": {
     "birthDateTitle": "请填写你的出生日期",
@@ -206,7 +209,10 @@
     "profileButton": "我的资料",
     "stopRecordingShort": "结束录音",
     "cancelQuote": "取消引用",
-    "emptyTitle": "发送第一条消息吧"
+    "emptyTitle": "发送第一条消息吧",
+    "reRecord": "重新录制",
+    "voiceHint": "点击开始录音，发送前可以回听。",
+    "startRecording": "开始录音"
   },
   "media": {
     "save": "保存",
@@ -269,10 +275,10 @@
     "more": "更多"
   },
   "chatPhoto": {
-    "change": "更换聊天头像",
+    "change": "更换头像",
     "remove": "使用默认头像",
     "removeTitle": "改为默认头像",
-    "removeConfirm": "将删除聊天头像，并换成默认的人形头像。",
+    "removeConfirm": "将删除头像，并换成默认的人形头像。",
     "uploading": "上传中…",
     "failed": "无法更换照片，请重试。"
   },
@@ -409,7 +415,9 @@
     "support": "支持",
     "languageSystem": "跟随设备语言",
     "notificationsHint": "可以按艺人开关新消息通知，关闭后仍会收到消息。",
-    "noSubscriptions": "没有正在订阅的艺人"
+    "noSubscriptions": "没有正在订阅的艺人",
+    "loginInfo": "登录信息",
+    "noEmail": "无邮箱信息"
   },
   "manage": {
     "active": "订阅中",
@@ -627,5 +635,48 @@
     "title": "检测到截屏",
     "body": "艺人的消息、照片、语音和视频仅限订阅者观看。将截图发布或分享到社交媒体等外部，可能会根据使用条款被限制使用。",
     "ok": "确定"
+  },
+  "alerts": {
+    "artistMessages": "艺人新消息通知",
+    "artistMessagesHint": "旗下艺人发送消息或快拍时通知你。",
+    "idle": "未发送提醒",
+    "idleHintStaff": "旗下艺人超过 7 天未发消息时通知你。",
+    "idleHintArtist": "几天没发消息时提醒你\"粉丝在等你\"。",
+    "refundNote": "接近退款标准（30 天未发送）的警告通知无法关闭。"
+  },
+  "themeMode": {
+    "title": "显示模式",
+    "system": "跟随设备设置",
+    "light": "浅色",
+    "dark": "深色"
+  },
+  "profileEdit": {
+    "title": "编辑资料",
+    "failed": "保存失败，请重试。",
+    "status": "状态消息",
+    "statusPlaceholder": "用一句话介绍自己",
+    "visibility": "头像和状态消息不会显示给其他粉丝，只有查看你回复的艺人（及经纪公司）能看到。",
+    "save": "保存"
+  },
+  "staffSettings": {
+    "title": "设置"
+  },
+  "dashboard": {
+    "title": "数据看板",
+    "subscribers": "订阅者",
+    "newSubs": "新订阅（最近 {{days}} 天）",
+    "cancellations": "取消（最近 {{days}} 天）",
+    "messages": "发送消息（最近 {{days}} 天）",
+    "replies": "粉丝回复（最近 {{days}} 天）",
+    "countPeople": "{{count}} 人",
+    "countItems": "{{count}} 条",
+    "rowSummary": "订阅者 {{subscribers}} · 新订阅 {{newSubs}} · 回复 {{replies}}",
+    "sort": {
+      "subscribers": "订阅者最多",
+      "idle": "最久未发送",
+      "newSubs": "新订阅最多",
+      "replies": "回复最多",
+      "messages": "发送最多"
+    }
   }
 }

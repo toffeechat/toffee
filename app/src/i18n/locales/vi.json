@@ -2,7 +2,8 @@
   "common": {
     "cancel": "Hủy",
     "logout": "Đăng xuất",
-    "requestFailed": "Yêu cầu thất bại ({{status}})"
+    "requestFailed": "Yêu cầu thất bại ({{status}})",
+    "back": "Quay lại"
   },
   "tabs": {
     "actors": "Nghệ sĩ",
@@ -16,10 +17,6 @@
     "console": "Bảng điều khiển",
     "terms": "Điều khoản dịch vụ",
     "privacy": "Chính sách quyền riêng tư"
-  },
-  "price": {
-    "perMonth": "฿{{price}}/tháng",
-    "amount": "฿{{price}}"
   },
   "login": {
     "tagline": "Trò chuyện riêng với nghệ sĩ bạn yêu thích",
@@ -37,7 +34,8 @@
       "kakao": "Tiếp tục với Kakao",
       "naver": "Tiếp tục với NAVER"
     },
-    "backToLogin": "Quay lại đăng nhập"
+    "backToLogin": "Quay lại đăng nhập",
+    "recent": "Dùng gần đây"
   },
   "actors": {
     "title": "Tìm nghệ sĩ",
@@ -134,7 +132,12 @@
     "deletedByActor": "Nghệ sĩ đã xóa (fan không nhìn thấy)",
     "lastMessageDays": "Tin nhắn gần nhất {{count}} ngày trước",
     "noMessagesYet": "Chưa gửi tin nhắn nào",
-    "lastMessageToday": "Đã gửi tin nhắn hôm nay"
+    "lastMessageToday": "Đã gửi tin nhắn hôm nay",
+    "deleteTitle": "Xóa tin nhắn này?",
+    "deleteBody": "Tin nhắn sẽ biến mất khỏi màn hình của fan ngay lập tức và không thể khôi phục. Thông báo đã gửi không thể thu hồi. Nghệ sĩ sẽ thấy \"Tin nhắn bị công ty quản lý xóa\".",
+    "deleteConfirm": "Xóa",
+    "deletedByAgency": "Công ty quản lý đã xóa tin nhắn này (fan không thấy)",
+    "allReplies": "Tất cả trả lời"
   },
   "onboarding": {
     "birthDateTitle": "Ngày sinh của bạn là gì?",
@@ -206,7 +209,10 @@
     "profileButton": "Hồ sơ của tôi",
     "stopRecordingShort": "Dừng ghi âm",
     "cancelQuote": "Hủy trích dẫn",
-    "emptyTitle": "Gửi tin nhắn đầu tiên"
+    "emptyTitle": "Gửi tin nhắn đầu tiên",
+    "reRecord": "Ghi lại",
+    "voiceHint": "Nhấn Ghi âm để bắt đầu. Bạn có thể nghe lại trước khi gửi.",
+    "startRecording": "Bắt đầu ghi âm"
   },
   "media": {
     "save": "Lưu",
@@ -269,10 +275,10 @@
     "more": "Thêm"
   },
   "chatPhoto": {
-    "change": "Đổi ảnh trò chuyện",
+    "change": "Đổi ảnh hồ sơ",
     "remove": "Dùng ảnh mặc định",
     "removeTitle": "Chuyển sang ảnh mặc định",
-    "removeConfirm": "Ảnh trò chuyện của bạn sẽ bị xóa và thay bằng ảnh hồ sơ mặc định.",
+    "removeConfirm": "Ảnh hồ sơ của bạn sẽ bị xóa và thay bằng ảnh hồ sơ mặc định.",
     "uploading": "Đang tải lên…",
     "failed": "Không đổi được ảnh. Vui lòng thử lại."
   },
@@ -409,7 +415,9 @@
     "support": "Hỗ trợ",
     "languageSystem": "Dùng ngôn ngữ của thiết bị",
     "notificationsHint": "Bật hoặc tắt thông báo tin nhắn mới cho từng nghệ sĩ. Bạn vẫn nhận được tin nhắn.",
-    "noSubscriptions": "Không có gói đăng ký đang hoạt động"
+    "noSubscriptions": "Không có gói đăng ký đang hoạt động",
+    "loginInfo": "Thông tin đăng nhập",
+    "noEmail": "Không có email"
   },
   "manage": {
     "active": "Đang hoạt động",
@@ -627,5 +635,48 @@
     "title": "Đã phát hiện chụp màn hình",
     "body": "Tin nhắn, ảnh, giọng nói và video của nghệ sĩ là nội dung chỉ dành cho người đăng ký. Đăng hoặc chia sẻ ảnh chụp màn hình ra bên ngoài như mạng xã hội có thể bị hạn chế sử dụng theo Điều khoản dịch vụ.",
     "ok": "OK"
+  },
+  "alerts": {
+    "artistMessages": "Tin nhắn mới của nghệ sĩ",
+    "artistMessagesHint": "Thông báo khi nghệ sĩ trực thuộc gửi tin nhắn hoặc story.",
+    "idle": "Nhắc khi chưa gửi tin nhắn",
+    "idleHintStaff": "Thông báo khi nghệ sĩ trực thuộc không gửi tin nhắn quá 7 ngày.",
+    "idleHintArtist": "Nhắc \"người hâm mộ đang chờ\" khi bạn chưa gửi tin nhắn vài ngày.",
+    "refundNote": "Không thể tắt cảnh báo sắp đến ngưỡng hoàn tiền (30 ngày không gửi tin nhắn)."
+  },
+  "themeMode": {
+    "title": "Chế độ hiển thị",
+    "system": "Theo cài đặt thiết bị",
+    "light": "Sáng",
+    "dark": "Tối"
+  },
+  "profileEdit": {
+    "title": "Chỉnh sửa hồ sơ",
+    "failed": "Không lưu được. Vui lòng thử lại.",
+    "status": "Lời giới thiệu",
+    "statusPlaceholder": "Giới thiệu bản thân trong một dòng",
+    "visibility": "Ảnh hồ sơ và lời giới thiệu không hiển thị với người hâm mộ khác, chỉ nghệ sĩ (và công ty quản lý) đọc tin trả lời của bạn mới thấy.",
+    "save": "Lưu"
+  },
+  "staffSettings": {
+    "title": "Cài đặt"
+  },
+  "dashboard": {
+    "title": "Bảng thống kê",
+    "subscribers": "Người đăng ký",
+    "newSubs": "Đăng ký mới ({{days}} ngày gần đây)",
+    "cancellations": "Hủy ({{days}} ngày gần đây)",
+    "messages": "Tin đã gửi ({{days}} ngày gần đây)",
+    "replies": "Trả lời của fan ({{days}} ngày gần đây)",
+    "countPeople": "{{count}} người",
+    "countItems": "{{count}}",
+    "rowSummary": "Người đăng ký {{subscribers}} · Mới {{newSubs}} · Trả lời {{replies}}",
+    "sort": {
+      "subscribers": "Nhiều người đăng ký nhất",
+      "idle": "Lâu chưa gửi nhất",
+      "newSubs": "Nhiều đăng ký mới nhất",
+      "replies": "Nhiều trả lời nhất",
+      "messages": "Gửi nhiều nhất"
+    }
   }
 }

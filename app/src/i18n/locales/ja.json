@@ -2,7 +2,8 @@
   "common": {
     "cancel": "キャンセル",
     "logout": "ログアウト",
-    "requestFailed": "リクエストに失敗しました（{{status}}）"
+    "requestFailed": "リクエストに失敗しました（{{status}}）",
+    "back": "戻る"
   },
   "tabs": {
     "actors": "アーティスト",
@@ -16,10 +17,6 @@
     "console": "コンソール",
     "terms": "利用規約",
     "privacy": "プライバシーポリシー"
-  },
-  "price": {
-    "perMonth": "฿{{price}}/月",
-    "amount": "฿{{price}}"
   },
   "login": {
     "tagline": "好きなアーティストと1対1でトークしよう",
@@ -37,7 +34,8 @@
       "kakao": "Kakaoで続ける",
       "naver": "NAVERで続ける"
     },
-    "backToLogin": "ログイン画面へ"
+    "backToLogin": "ログイン画面へ",
+    "recent": "前回のログイン"
   },
   "actors": {
     "title": "アーティストをさがす",
@@ -134,7 +132,12 @@
     "deletedByActor": "アーティストが削除したメッセージ（ファンには見えません）",
     "lastMessageDays": "最後のメッセージ：{{count}}日前",
     "noMessagesYet": "まだメッセージなし",
-    "lastMessageToday": "今日メッセージ送信済み"
+    "lastMessageToday": "今日メッセージ送信済み",
+    "deleteTitle": "このメッセージを削除しますか？",
+    "deleteBody": "ファンの画面からすぐに消え、元に戻せません。送信済みの通知は取り消せません。アーティストの画面には「事務所が削除したメッセージ」と表示されます。",
+    "deleteConfirm": "削除",
+    "deletedByAgency": "事務所が削除したメッセージ（ファンには非表示）",
+    "allReplies": "すべての返信"
   },
   "onboarding": {
     "birthDateTitle": "生年月日を入力してください",
@@ -206,7 +209,10 @@
     "profileButton": "マイプロフィール",
     "stopRecordingShort": "録音を終了",
     "cancelQuote": "引用を取り消す",
-    "emptyTitle": "最初のメッセージを送りましょう"
+    "emptyTitle": "最初のメッセージを送りましょう",
+    "reRecord": "録り直す",
+    "voiceHint": "録音ボタンで録音を開始します。送る前に聞き直せます。",
+    "startRecording": "録音開始"
   },
   "media": {
     "save": "保存",
@@ -269,10 +275,10 @@
     "more": "その他"
   },
   "chatPhoto": {
-    "change": "トーク写真を変更",
+    "change": "プロフィール写真を変更",
     "remove": "デフォルト画像にする",
     "removeTitle": "デフォルト画像に変更",
-    "removeConfirm": "トーク写真を削除して、人型のデフォルト画像に変更します。",
+    "removeConfirm": "プロフィール写真を削除して、人型のデフォルト画像に変更します。",
     "uploading": "アップロード中…",
     "failed": "写真を変更できませんでした。もう一度お試しください。"
   },
@@ -409,7 +415,9 @@
     "support": "サポート",
     "languageSystem": "端末の言語に従う",
     "notificationsHint": "アーティストごとに新着通知をオン・オフできます。通知をオフにしてもメッセージは届きます。",
-    "noSubscriptions": "購読中のアーティストはいません"
+    "noSubscriptions": "購読中のアーティストはいません",
+    "loginInfo": "ログイン情報",
+    "noEmail": "メール情報なし"
   },
   "manage": {
     "active": "購読中",
@@ -627,5 +635,48 @@
     "title": "スクリーンショットが検出されました",
     "body": "アーティストのメッセージ・写真・音声・動画は購読者限定のコンテンツです。スクリーンショットをSNSなど外部に投稿・共有すると、利用規約に基づき利用が制限されることがあります。",
     "ok": "OK"
+  },
+  "alerts": {
+    "artistMessages": "アーティストの新着メッセージ",
+    "artistMessagesHint": "所属アーティストがメッセージやストーリーを送るとお知らせします。",
+    "idle": "未送信のお知らせ",
+    "idleHintStaff": "所属アーティストが7日以上メッセージを送っていないとお知らせします。",
+    "idleHintArtist": "数日間メッセージを送っていないとき「ファンが待っています」とお知らせします。",
+    "refundNote": "返金基準（30日間未送信）が近いことの警告はオフにできません。"
+  },
+  "themeMode": {
+    "title": "画面モード",
+    "system": "端末の設定に合わせる",
+    "light": "ライト",
+    "dark": "ダーク"
+  },
+  "profileEdit": {
+    "title": "プロフィール編集",
+    "failed": "保存できませんでした。もう一度お試しください。",
+    "status": "ステータスメッセージ",
+    "statusPlaceholder": "ひとことで自己紹介",
+    "visibility": "プロフィール写真とステータスメッセージは他のファンには表示されず、あなたの返信を見るアーティスト（と事務所）にだけ表示されます。",
+    "save": "保存"
+  },
+  "staffSettings": {
+    "title": "設定"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "subscribers": "購読者",
+    "newSubs": "新規購読（直近{{days}}日）",
+    "cancellations": "解約（直近{{days}}日）",
+    "messages": "送信メッセージ（直近{{days}}日）",
+    "replies": "ファンの返信（直近{{days}}日）",
+    "countPeople": "{{count}}人",
+    "countItems": "{{count}}件",
+    "rowSummary": "購読者 {{subscribers}} · 新規 {{newSubs}} · 返信 {{replies}}",
+    "sort": {
+      "subscribers": "購読者が多い順",
+      "idle": "送っていない期間が長い順",
+      "newSubs": "新規購読が多い順",
+      "replies": "返信が多い順",
+      "messages": "送信が多い順"
+    }
   }
 }

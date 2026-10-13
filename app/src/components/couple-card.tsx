@@ -26,7 +26,7 @@ export function CoupleCard({ room, onPress }: { room: Actor; onPress: () => void
           {room.legalName}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {members.map((member) => member.legalName).join(' · ')} · {formatPrice(t, room.monthlyPriceCents)} {t('actorProfile.perMonth')}
+          {members.map((member) => member.legalName).join(' · ')} · {formatPrice(room.monthlyPriceCents)} {t('actorProfile.perMonth')}
         </ThemedText>
       </View>
       <Icon as={ChevronRight} size={18} themeColor="textTertiary" />

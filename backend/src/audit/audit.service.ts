@@ -6,6 +6,7 @@ export type AdminActionType =
   | 'USER_SUSPEND'
   | 'USER_BAN'
   | 'USER_REACTIVATE'
+  | 'USER_PROFILE_CLEAR'
   | 'USER_ROLE'
   | 'REPORT_RESOLVE'
   | 'REPORT_DISMISS'

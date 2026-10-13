@@ -15,6 +15,7 @@ import { SocialLoginButtons } from '@/components/social-login-buttons';
 import type { SocialCredential } from '@/lib/social-types';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { saveLastLoginProvider } from '@/lib/last-login';
 import { Radius, Spacing } from '@/constants/theme';
 
 /**
@@ -41,7 +42,10 @@ export default function LoginScreen() {
   const [socialError, setSocialError] = useState<string | null>(null);
   const socialLogin = useMutation({
     mutationFn: (credential: SocialCredential) => apiClient.post<{ accessToken: string }>(`/auth/${credential.provider}`, credential.body),
-    onSuccess: (data) => login(data.accessToken),
+    onSuccess: (data, credential) => {
+      saveLastLoginProvider(credential.provider);
+      return login(data.accessToken);
+    },
   });
   // mutate·setState는 렌더마다 같은 함수 — 웹 구글 버튼이 매번 다시 그려지지 않게 그대로 넘김
   const onCredential = socialLogin.mutate;

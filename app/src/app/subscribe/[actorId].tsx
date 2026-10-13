@@ -53,7 +53,7 @@ export default function SubscribeScreen() {
     );
   }
   const photo = actor.officialProfileImageUrl ?? actor.chatProfileImageUrl;
-  const price = formatPrice(t, actor.monthlyPriceCents);
+  const price = store.displayPrice ?? formatPrice(actor.monthlyPriceCents);
 
   const confirm = () =>
     store.available
@@ -62,7 +62,7 @@ export default function SubscribeScreen() {
       onSuccess: (result) =>
         setDone({
           discount: result.bundleDiscountApplied
-            ? t('subscribeFlow.discount', { base: formatPrice(t, result.basePriceCents), effective: formatPrice(t, result.effectivePriceCents) })
+            ? t('subscribeFlow.discount', { base: formatPrice(result.basePriceCents), effective: formatPrice(result.effectivePriceCents) })
             : undefined,
         }),
     });

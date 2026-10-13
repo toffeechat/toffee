@@ -8,6 +8,7 @@ import { KakaoLoginDto } from './dto/kakao-login.dto.js';
 import { LineLoginDto } from './dto/line-login.dto.js';
 import { WebCodeLoginDto } from './dto/web-code-login.dto.js';
 import { DevLoginDto } from './dto/dev-login.dto.js';
+import { CreateProfileImageUploadDto, UpdateNotificationSettingsDto, UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateBirthdayGreetingsDto } from './dto/update-birthday-greetings.dto.js';
 import { UpdateLocaleDto } from './dto/update-locale.dto.js';
 import { PushDeviceDto } from './dto/push-device.dto.js';
@@ -146,6 +147,23 @@ export class AuthController {
   }
 
   // 회원 탈퇴(팬 본인) — 성공하면 앱이 로그아웃
+  // 팬 프로필 사진·상태메시지(2026-10-12)
+  @Post('me/profile-image/upload')
+  createProfileImageUpload(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateProfileImageUploadDto) {
+    return this.authService.createProfileImageUpload(user.id, dto.contentType, dto.sizeBytes);
+  }
+
+  @Patch('me/profile')
+  updateProfile(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user.id, dto);
+  }
+
+  // 역할별 알림 설정(2026-10-12) — 소속사: 아티스트 새 메시지 / 아티스트·소속사: 장기 미발송 알림
+  @Patch('me/notification-settings')
+  updateNotificationSettings(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateNotificationSettingsDto) {
+    return this.authService.updateNotificationSettings(user.id, dto);
+  }
+
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAccount(@CurrentUser() user: AuthenticatedUser) {
