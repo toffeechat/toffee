@@ -76,6 +76,8 @@
     "closeMenu": "닫기",
     "messageActions": "길게 눌러 신고",
     "newMessages": "새 메시지 {{count}}개 ↓",
+    "newMessagesShort": "새 메시지 {{count}}개",
+    "readMarker": "여기까지 읽었어요",
     "notSubscribedTitle": "구독이 끝났어요",
     "waitingTitle": "구독을 시작했어요",
     "copy": "복사",

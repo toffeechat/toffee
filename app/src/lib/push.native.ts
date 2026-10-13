@@ -47,6 +47,9 @@ export async function registerThisDevice(): Promise<void> {
     await Notifications.setNotificationChannelAsync('messages', {
       name: i18n.t('push.channelMessages'),
       importance: Notifications.AndroidImportance.HIGH,
+      // 진동을 기기 기본값에 맡기지 않고 켬(2026-10-13) — 안드로이드 채널은 처음 만들 때 값이 고정돼서 바꾸려면 채널 id를 새로
+      enableVibrate: true,
+      vibrationPattern: [0, 250, 150, 250],
     });
   }
   await sendToServer(await getToken(messaging));

@@ -1485,3 +1485,17 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   소속사 `sweetAgency`(id 3) 추가, 구독 없이 아티스트 메시지 2개씩.
 - **메일**: `eas.json` production에 `EXPO_PUBLIC_SUPPORT_EMAIL=support@toffeechat.app`, `.env.example` `SUPPORT_EMAIL` 예시값, 개인정보처리방침
   8항 연락처 `privacy@toffeechat.app`(문구만 — 약관 버전은 안 올림).
+
+## 채팅방 읽음 줄·새 메시지 미리보기·인앱 진동 (2026-10-13)
+
+- **읽음 줄**: 새 API 없이 `GET /me/subscriptions`가 이미 주던 `Subscription.lastReadAt`을 앱 타입에 추가해서 씀. `listForFan`이 채팅방 조회 때
+  `lastReadAt`을 지금으로 바꾸므로(응답은 안 기다림) 화면을 연 순간의 값을 렌더 중 한 번만 고정(`readMarker`, effect 안 setState는 린트 금지라
+  렌더 중 조정 패턴). 화면을 연 뒤 받은 구독 목록의 값이 `openedAt - 2s`보다 늦으면 이미 갱신된 값이라 버림(알림으로 바로 들어온 경우 경쟁).
+  `firstUnreadId` = 경계보다 최신인 것 중 가장 오래된 아티스트 메시지 — 불러온 페이지 전체가 경계보다 최신이면(50개 넘게 안 읽음) 표시 안 함
+  (경계를 찾으려고 이전 페이지를 더 받지 않음). index ≥ 4면 처음 열 때 `scrollToIndex(viewPosition 0.5)`, `focus`(푸시)가 있으면 안 함.
+- **미리보기**: 기존 `unseen`(위로 올린 순간의 최신 id 기준 새로 온 개수) 그대로, `messages.slice(0, unseen)` 중 최신 아티스트 메시지를 카드로.
+  누르면 예전처럼 `scrollToOffset(0)`. 문구는 `chat.newMessagesShort`·`chat.readMarker`(7개 언어), 미디어는 인박스 `inbox.sent*` 재사용.
+- **진동**: `expo-haptics`(~57.0.3, 네이티브 모듈 → 새 빌드 필요) — `InAppBanner`가 배너를 띄울 때만 `notificationAsync(Success)`(웹 제외).
+  안드로이드 채널 `messages`에 `enableVibrate`·`vibrationPattern` — 채널 설정은 처음 만들 때 고정이라 이미 설치된 기기는 앱을 지웠다 깔거나
+  채널 id를 바꿔야 반영(아직 안드로이드 사용자 없음).
+- 데모 시드: fan1 캐러멜 구독 `lastReadAt = 2.5일 전`(읽음 줄 확인용, 한 번 열면 지금으로 바뀌니 다시 보려면 데모 초기화).

@@ -76,6 +76,8 @@
     "closeMenu": "ปิด",
     "messageActions": "กดค้างเพื่อรายงาน",
     "newMessages": "ข้อความใหม่ {{count}} ↓",
+    "newMessagesShort": "ข้อความใหม่ {{count}} ข้อความ",
+    "readMarker": "อ่านถึงตรงนี้แล้ว",
     "notSubscribedTitle": "การสมัครสมาชิกสิ้นสุดแล้ว",
     "waitingTitle": "สมัครสมาชิกแล้ว",
     "copy": "คัดลอก",

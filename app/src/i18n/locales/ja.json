@@ -76,6 +76,8 @@
     "closeMenu": "閉じる",
     "messageActions": "長押しで通報",
     "newMessages": "新着 {{count}}件 ↓",
+    "newMessagesShort": "新着メッセージ {{count}}件",
+    "readMarker": "ここまで読みました",
     "notSubscribedTitle": "購読が終了しました",
     "waitingTitle": "購読を開始しました",
     "copy": "コピー",

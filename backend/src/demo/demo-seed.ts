@@ -281,7 +281,8 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   });
   await prisma.subscription.update({
     where: { id: fan1Sub.id },
-    data: { lastArtistMessageAt: daysAgo(1), lastFanReplyAt: daysAgo(1) },
+    // lastReadAt: "여기까지 읽었어요" 줄 확인용(2026-10-13) — 2.5일 전까지 읽은 것으로, 그 뒤 메시지(태국어 1개 + 어제 것)가 안 읽음
+    data: { lastArtistMessageAt: daysAgo(1), lastFanReplyAt: daysAgo(1), lastReadAt: daysAgo(2.5) },
   });
 
   // 번역 보기 확인용 태국어 메시지(2026-10-13 사용자 요청) — 한국어 화면의 팬(fan1·fan2)이 "번역 보기"를 눌러 볼 수 있게
