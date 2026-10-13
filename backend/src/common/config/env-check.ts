@@ -54,5 +54,25 @@ export function checkEnv(env: Env): EnvCheckResult {
     const missing = keys.filter((key) => !has(env, key));
     if (missing.length) warnings.push(`${label} 꺼짐 — ${missing.join(', ')} 없음`);
   }
+  // 값은 있는데 모양이 틀린 것(2026-10-13 데모: STORAGE_ENDPOINT가 주소 형식이 아니라 첫 업로드에서야 "Invalid URL") —
+  // 호스팅 변수 칸에 따옴표·공백·예시의 <계정ID>까지 같이 들어가기 쉬움
+  for (const key of Object.keys(env).filter((name) => name.startsWith('STORAGE_'))) {
+    const value = env[key] ?? '';
+    if (value && (value !== value.trim() || /^["']|["']$/.test(value) || /[<>]/.test(value))) {
+      warnings.push(`${key} 값 앞뒤에 공백·따옴표나 <…> 예시 표시가 들어가 있음 — 값만 다시 넣을 것`);
+    }
+  }
+  if (has(env, 'STORAGE_ENDPOINT') && !isHttpUrl(env.STORAGE_ENDPOINT!.trim())) {
+    warnings.push('STORAGE_ENDPOINT가 주소 형식이 아님(https://<계정ID>.r2.cloudflarestorage.com 모양이어야 함) — 업로드가 전부 실패함');
+  }
   return { errors, warnings };
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
 }

@@ -99,7 +99,12 @@
   Account API 토큰(Object Read & Write, 이 버킷만, 만료 없음 — 서버용이라 User 토큰 대신) → Railway `STORAGE_*` 6개 + `SUPPORT_EMAIL` → Deploy.
   `/health/ready` ok, 시작 로그 "꺼짐" 경고가 애플·구글 결제·사업자 정보 4개뿐 → 저장소·번역(`ANTHROPIC_API_KEY`)·푸시 서버 키·Sentry 모두 들어가 있음.
 - 장부: 계정 `cloudflare-r2`, 비용 `r2-2026-10`($0). 사업화 일정 `s1-anthropic`·`s1-device` 진행 메모.
-- **남은 일**: 데모 초기화 → 웹에서 사진 업로드·번역 보기 확인 → 카카오·LINE 콘솔 → iOS 재빌드. 푸시는 서버 키가 있으니 새 빌드로 받아 보고 안 오면 FCM 실패 코드로 원인 확인.
+- 같은 날 이어서: 카카오 콘솔 네이티브 앱 키에 iOS 번들 ID가 비어 있었음(안드로이드만 등록) → `com.toffeechat.app.dev` 넣음 — 10/12 카카오 로그인 실패 원인.
+  LINE은 번들 ID 정상·Published, "Require two-factor authentication"이 켜져 있어서 끔(LINE 앱 없는 폰의 웹 로그인이 막히던 것으로 추정). LINE Channel secret이
+  대화에 노출돼 재발급 권장(→ Railway `LINE_WEB_CHANNEL_SECRET`).
+- 데모 초기화 후 웹 사진 업로드가 "일시적인 오류"(500) → Sentry `TypeError: Invalid URL`(S3 endpoint) — Railway `STORAGE_ENDPOINT` 값 모양 문제(따옴표·공백 등).
+  다시 넣도록 안내 + 시작 점검에 저장소 값 모양 경고 추가(`env-check.ts`).
+- **남은 일**: `STORAGE_ENDPOINT` 고친 뒤 웹 사진 업로드·번역 보기 확인 → iOS 재빌드. 푸시는 서버 키가 있으니 새 빌드로 받아 보고 안 오면 FCM 실패 코드로 원인 확인.
 
 ## 2026-10-13 (이어서) — 채팅방 "여기까지 읽었어요"·새 메시지 미리보기·앱 보는 중 진동
 

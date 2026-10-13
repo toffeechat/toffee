@@ -1499,3 +1499,9 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   안드로이드 채널 `messages`에 `enableVibrate`·`vibrationPattern` — 채널 설정은 처음 만들 때 고정이라 이미 설치된 기기는 앱을 지웠다 깔거나
   채널 id를 바꿔야 반영(아직 안드로이드 사용자 없음).
 - 데모 시드: fan1 캐러멜 구독 `lastReadAt = 2.5일 전`(읽음 줄 확인용, 한 번 열면 지금으로 바뀌니 다시 보려면 데모 초기화).
+
+## 시작 점검: 저장소 값 모양 (2026-10-13)
+
+데모 R2 연결 때 `STORAGE_ENDPOINT`가 주소 형식이 아니어서(호스팅 변수 칸에 따옴표·공백 등) 서버는 정상으로 켜지고 첫 업로드에서야
+`TypeError: Invalid URL`(S3 클라이언트 endpoint 파싱, 앱엔 INTERNAL "일시적인 오류")이 났음. `checkEnv`에 경고 추가: `STORAGE_*` 값 앞뒤 공백·따옴표·
+`<…>`(예시 그대로), `STORAGE_ENDPOINT`가 http(s) URL이 아님. 값을 자동으로 다듬지는 않음(어디가 틀렸는지 보이게).
