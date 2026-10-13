@@ -98,7 +98,7 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
 |---|---|---|---|---|
 | 사업화 장부 https://claude.ai/artifact/H7cjLDgBhgGkA8xpPR4oST | https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR | `artifacts/toffee-ledger.html` | `accounts`(16건)·`expenses`(10건)·`meta/roadmap` — **개인 백업 파일** | 페이지를 그대로 게시(capabilities `db`, 규칙 `[{"path":"","read":"view","write":"admin"}]`) → `ArtifactData` batch로 문서 id 그대로 넣기 |
 | 사업화 일정 https://claude.ai/artifact/KfGKHugZEmWsavMYkbwYV7 | https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 | `artifacts/toffee-launch-schedule.html` | `tasks`(11건) — `artifacts/data/*.json`(파일 이름 = 문서 id). `notes`·`expenses`는 비어 있었음 | 같은 방식(capabilities `db`) |
-| 실기기 테스트 체크리스트 https://claude.ai/artifact/6oRVkwDdAgZiJtY75Yf8uV | https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc | `artifacts/toffee-device-test-checklist.html` | `results` **0건**(아직 아무 항목도 체크 안 함), 입장 코드 칸(`data/users/me/demo-code`)도 비어 있었음 | 페이지만 게시(capabilities `db` + `user`) |
+| 실기기 테스트 체크리스트 https://claude.ai/artifact/6oRVkwDdAgZiJtY75Yf8uV | https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc | `artifacts/toffee-device-test-checklist.html` | `results` **0건**(복원 당시 — 10/12에 29건 기록, 4번 참고), 입장 코드 칸(`data/users/me/demo-code`)도 비어 있었음 | 페이지만 게시(capabilities `db` + `user`) |
 | 초기 사업 로드맵(9월, Copy 포함) https://claude.ai/artifact/EDRpSJv6qkY51xUYqSfJYg | — (복원 안 함) | `artifacts/toffee-business-roadmap-early.html` | 체크 상태는 브라우저(localStorage)에만 있어 백업 불가 | 지금은 `launch-roadmap.md`가 대체 — 복원 불필요 |
 | 초기 개발 로드맵(9월) https://claude.ai/artifact/2SSV2exLhYfW7zx7jsZP5o | — (복원 안 함) | `artifacts/toffee-dev-roadmap-early.html` | 위와 같음 | 지금은 `STATUS.md`가 대체 — 복원 불필요 |
 | 세 서비스 운영비(젤리·KNOU·토피) https://claude.ai/artifact/NwaEj4dRqQHrCLtB4mo1vA | https://claude.ai/artifact/BLYi5jU21RPAiwr87eBWWc | 젤리 저장소 `docs/handover/artifacts/three-services-opcosts.html` | 젤리 저장소(비공개) `docs/handover/artifacts/data/opcosts/` | 젤리 쪽 인수인계 참고 |
@@ -113,9 +113,13 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
 
 ---
 
-## 4. 사업화 진행 상황 (2026-10-08 기준)
+## 4. 사업화 진행 상황 (2026-10-13 기준)
 
-전체 계획은 [`docs/product/launch-roadmap.md`](../product/launch-roadmap.md)(8단계). **지금은 1단계 "계정·기반"(목표 10/1~10/18)**.
+> 2026-10-13 갱신: 10/8에 쓴 "남은 것"이 그대로 남아 있어서, 이미 끝난 번역 키·카카오 설정을 다음 세션이 "할 일"로 다시 안내한 일이 있었다.
+> 이 절은 **지금 상태**만 적고, 바뀌면 같은 커밋에서 고친다(자세한 경과는 작업 로그 `docs/deployment-readiness-plan.md`).
+
+전체 계획은 [`docs/product/launch-roadmap.md`](../product/launch-roadmap.md)(8단계). **지금은 1단계 "계정·기반"(목표 10/1~10/18)** 끝자락이고,
+2단계 "데모·제안 자료"(태국 소속사 제안서·메일, [`agency-outreach.md`](../product/agency-outreach.md))를 앞당겨 같이 하고 있다.
 
 ### 1단계에서 끝난 것
 - 도메인 `toffeechat.app`(Cloudflare, 만료 2027-10-01 자동 갱신), 토피 전용 Gmail, `support@`·`dev@`·`privacy@` 메일 전달
@@ -125,20 +129,30 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
 - 소셜 로그인 5곳(구글·카카오·네이버·LINE·애플) 등록, 웹 데모에서 모두 로그인 확인. 카카오·네이버·LINE 동의 화면에 토피 로고(10/4)
 - 푸시: Firebase 프로젝트·APNs 키·서비스 계정 키 → Railway. Sentry 서버 연결
 - **iOS 실기기 빌드 성공·아이폰 설치(10/4)**
+- **파일 저장소 R2 연결(10/13)**: 버킷 `toffee-demo`·CORS·API 토큰 → Railway `STORAGE_*`, `/health/ready` ok. 장부에 `cloudflare-r2`(무료 플랜) 추가됨
+- **번역 키(10/13)**: Railway `ANTHROPIC_API_KEY` 들어감(서버 시작 로그에 번역 경고 없음), 데모에 태국어 메시지·답장 테스트 데이터(fan1 캐러멜 방)
+- **카카오 로그인 설정(10/13)**: 카카오 콘솔 네이티브 앱 키에 iOS 번들 ID `com.toffeechat.app.dev`가 비어 있던 것(10/12 실기기 로그인 실패 원인)을 넣음
+- **LINE 설정(10/13)**: 채널의 "Require two-factor authentication"을 끔(LINE 앱 없는 폰의 웹 로그인이 막히던 것으로 추정)
 
 ### 1단계에서 남은 것
-- **Anthropic API 키**: 계정 가입·크레딧 $5 충전(10/2)까지 함. 남은 것 — 월 사용 한도 설정, 키 발급 → Railway `ANTHROPIC_API_KEY`
-  → 웹 데모 "번역 보기" 확인 → 태국어 검수자에게 엔진 이름 가리고 태국어 결과 확인(현지 대표님 상담은 2026-10-13 취소)
-- **실기기 테스트**: 체크리스트 56개 항목 **아직 0개 기록**. 그 전에 데모 서버에 **파일 저장소(Cloudflare R2)** 를 연결해야
-  사진·음성·영상 항목을 테스트할 수 있음 — 10/4 세션이 R2 연결 1~5단계를 안내하고 사용자 진행을 기다리다 멈춤
-  (버킷 `toffee-demo`, CORS, API 토큰 → Railway `STORAGE_*` 6개 → Deploy → `/health/ready`). R2를 켜면 장부에 계정·무료 플랜 추가
+- **새 iOS 빌드**: 10/12~13 앱 수정(음성 녹음 패널·다크 모드 글자색·오류 이유 표시·사진 여러 장·여기까지 읽었어요·알림에 아티스트 사진)은
+  폰에 깔린 10/4 빌드엔 없음(expo-updates 없음 → 다시 빌드해야 들어감). 알림 확장이 처음 들어가는 빌드라 새 질문이 나올 수 있음 —
+  [`device-build.md`](../engineering/device-build.md)
+- **실기기 테스트**: 체크리스트(https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc) 94개 중 **29개 기록(10/12), 그중 12개 "안 됨"**. 대부분 R2 미연결·
+  위 설정 문제였고 고쳐졌지만 **새 빌드로 다시 확인은 아직**. 카카오·LINE은 콘솔 설정이라 지금 빌드로도 다시 해 볼 수 있음
+- **사진 업로드 확인**: 10/13 데모 초기화 뒤 웹 업로드가 500(`STORAGE_ENDPOINT` 값 모양 문제) → 값 다시 넣은 뒤 웹 데모에서 되는지 확인
+- **번역 확인**: Anthropic Console 월 사용 한도 설정 → 데모 초기화 → 웹 데모 "번역 보기" → 태국어 검수자에게 엔진 이름 가리고 확인
+  (현지 대표님 상담은 2026-10-13 취소)
+- **푸시**: 서버 키는 있음 → 새 빌드로 받아 보고, 안 오면 Railway 로그 "FCM 발송 … 실패 (코드)"로 원인 확인
+- LINE Channel secret이 대화에 노출돼 재발급 권장(→ Railway `LINE_WEB_CHANNEL_SECRET`)
 - 2단계 인증 확인 필요(장부 표시 "확인 필요"): Anthropic Console, 카카오계정, 네이버(개인), LINE Developers
 - 안드로이드: 테스트 기기가 생기면 빌드 + 구글·카카오·네이버·LINE에 안드로이드 서명값 등록
 - Sentry 앱 소스맵 업로드 토큰(`SENTRY_AUTH_TOKEN`)은 아직
 
 ### 2단계 이후 (아직 시작 전)
-- 2단계 "데모·제안 자료"(목표 10/19~11/1): 소속사 체험 계정, 데모 영상, 영문 제안서, 랜딩 페이지, 연락 목록 15~20곳
-  (사업화 일정 페이지의 `s2-list` 항목은 만들어만 두고 비어 있음)
+- 2단계 "데모·제안 자료"(목표 10/19~11/1): 소속사 체험 계정, 데모 영상, 제안서, 랜딩 페이지, 연락 목록 15~20곳
+  (사업화 일정 페이지의 `s2-list` 항목은 만들어만 두고 비어 있음). **제안서 초안은 10/13에 먼저 만듦**(태국어 기본·한국어 확인용·영어,
+  링크는 `launch-roadmap.md` 2단계) — 남은 것: 가격 칸, 태국어 문장 검수, 데모 코드·연락처
 - 3단계 소속사 의견(11~12월) → 4단계 지원사업(2027년 1~3월, **신청 전 사업자 등록 금지**) → 5단계 법인 설립 → 6단계 출시 준비 → 7단계 파일럿(목표 2027년 여름)
 
 ### 돈 (장부 기준)
@@ -152,8 +166,8 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
 | 무엇 | 상태 | 이어서 할 일 |
 |---|---|---|
 | 작업 브랜치 3개(아래 표) | **2026-10-08 사용자 요청으로 main에 합침**(문서 충돌은 양쪽 내용을 모두 살려 정리 — `STATUS.md`는 최신 줄에 9/30 정정 두 줄 반영, `launch-roadmap.md`는 완료 체크 유지 + 🧾·🔍·🤝 체크박스 추가) | 없음 |
-| 실기기 테스트·R2 연결 (10/4 세션) | 사용자 응답 대기로 멈춤 | 4번 "1단계에서 남은 것" 참고 |
-| 번역 엔진 확인 | 잠정 Claude, 키 미입력 | 4번 참고 |
+| 실기기 테스트·R2 연결 (10/4 세션) | R2는 10/13 연결 완료, 실기기는 10/12에 29개 기록 | 새 iOS 빌드 → 다시 확인(4번 "1단계에서 남은 것") |
+| 번역 엔진 확인 | 잠정 Claude, 키는 10/13 Railway에 들어감 | 월 한도 → 웹 데모 "번역 보기" → 태국어 블라인드 확인(4번) |
 | Dependabot 자동 PR 10개(9/29·10/5) | 열려 있음, 검토 안 함 | TypeScript 7·ESLint 10·Vitest 5·`actions/checkout` 7 같은 **메이저 업데이트**가 섞여 있어 한 번에 합치지 말고 하나씩 CI 확인. 작은 묶음(minor·patch 2개)부터 |
 | 2026-09-28 세션(세션 한도로 중단) | 영상 썸네일 앱 쪽을 하다 끊겼지만, 같은 날 커밋 `a21143f`로 완료됨 | 실기기 확인만 남음(`STATUS.md` 2차 "영상 썸네일") |
 | 아이디어 보관함 | "대화방 프로필 카드에 상태메시지·배경사진" — 2차 후보, 사용자 확인 전 | 1차/2차 결정 |
