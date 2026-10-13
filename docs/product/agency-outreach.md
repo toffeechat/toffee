@@ -9,10 +9,12 @@
 
 | 자료 | 용도 | 링크 |
 |---|---|---|
-| 제안서 태국어판 (8장) | **보내는 기본본** | https://claude.ai/artifact/Asz8E6wZDbrWSua8DdpDMh |
-| 제안서 한국어판 (8장) | 내가 읽는 용 — 태국어판과 쪽 번호·내용이 같음, 슬라이드 메모에 의도 설명 | https://claude.ai/artifact/PL7ENDwuzCHg2YiYv9zgNg |
-| 제안서 영어판 (9장, 끝에 태국어 요약) | 영어 쓰는 소속사용 | https://claude.ai/artifact/8cC6F5tRwug6QgkHSsEmoy |
+| 제안서 태국어판 (11장) | **보내는 기본본** | https://claude.ai/artifact/Asz8E6wZDbrWSua8DdpDMh |
+| 제안서 한국어판 (11장) | 내가 읽는 용 — 태국어판과 쪽 번호·내용이 같음, 슬라이드 메모에 의도 설명 | https://claude.ai/artifact/PL7ENDwuzCHg2YiYv9zgNg |
+| 제안서 영어판 (12장, 끝에 태국어 요약) | 영어 쓰는 소속사용 | https://claude.ai/artifact/8cC6F5tRwug6QgkHSsEmoy |
 
+- **실제 앱 화면 포함**(2026-10-13): 표지 휴대폰 화면 + 팬 화면·아티스트 화면·소속사 화면 3장. 화면은 로컬에서 데모 데이터로 띄워
+  찍었고, 가상 이름·메시지를 각 언어로 바꿔 찍었다(태국어판엔 태국어 이름·메시지). 다시 찍는 방법: `scripts/pitch-screens/README.md`.
 - 페이지에서 PDF로 내려받아 메일에 첨부한다. 링크는 본인만 열리므로 링크로 보낼 땐 공유 메뉴에서 먼저 공유할 것.
 - **태국어는 Claude가 쓴 초안**이라 보내기 전에 원어민 검수를 받는다(사업 내용 없이 문장만 맡김 — `launch-roadmap.md` "현지 조언" 절).
   제안서 태국어판과 아래 태국어 메일을 한 번에 맡기면 된다.
