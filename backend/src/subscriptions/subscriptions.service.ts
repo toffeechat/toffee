@@ -103,7 +103,7 @@ export class SubscriptionsService {
       subscriptions.map(async (subscription) => {
         const visible = { actorId: subscription.actorId, deletedAt: null, createdAt: { gte: subscription.startedAt } };
         const readFrom = subscription.lastReadAt && subscription.lastReadAt > subscription.startedAt ? subscription.lastReadAt : subscription.startedAt;
-        const [last, unreadCount, chatProfileImageUrl] = await Promise.all([
+        const [last, unreadCount, chatProfileImageUrl, unreadQuote] = await Promise.all([
           this.prisma.message.findFirst({
             where: { ...visible, OR: [{ senderType: MessageSenderType.ARTIST }, { fanUserId: userId }] },
             orderBy: { createdAt: 'desc' },
@@ -113,12 +113,18 @@ export class SubscriptionsService {
             where: { ...visible, senderType: MessageSenderType.ARTIST, createdAt: { gt: readFrom } },
           }),
           this.media.resolveImageUrl(subscription.actor.chatProfileImageUrl),
+          // 안 읽은 메시지 중 내 메시지를 인용한 답장이 있는지(2026-10-13) — 인박스에 "내 메시지에 답장했어요"
+          this.prisma.message.findFirst({
+            where: { ...visible, senderType: MessageSenderType.ARTIST, createdAt: { gt: readFrom }, replyTo: { fanUserId: userId } },
+            select: { id: true },
+          }),
         ]);
         const covering = purchases.filter((purchase) => actorIdsOf(purchase).includes(subscription.actorId));
         return {
           ...subscription,
           actor: { ...subscription.actor, chatProfileImageUrl },
           unreadCount,
+          unreadQuotedReply: !!unreadQuote,
           endsAt: endsAtOf(covering),
           coveredBy: covering.map((purchase) => ({
               purchaseId: purchase.id,

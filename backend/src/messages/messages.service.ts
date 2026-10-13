@@ -44,6 +44,7 @@ function quoteInclude(actorId: string) {
 
 interface QuotedSource {
   id: string;
+  fanUserId?: string | null;
   senderType: MessageSenderType;
   body: string | null;
   mediaType: MessageMediaType;
@@ -155,7 +156,8 @@ export class MessagesService {
       .catch(() => {});
     return this.withSenders(
       await this.mediaService.withReadUrls(
-        messages.map(withQuote).map((message) => ({
+        // quotedMe: 아티스트가 바로 이 팬의 메시지를 인용한 답장(2026-10-13) — 그 팬 화면에만 "내 메시지에 답장" 표시(누구의 id인지는 안 내려줌)
+        messages.map((message) => ({ ...withQuote(message), quotedMe: message.senderType === MessageSenderType.ARTIST && message.replyTo?.fanUserId === userId })).map((message) => ({
           ...message,
           body:
             message.senderType === MessageSenderType.ARTIST && message.body
@@ -379,7 +381,8 @@ export class MessagesService {
           quotedFanId,
           ({ locale, displayName }) => ({
             title: pushStrings(locale).quotedReplyTitle(actor.chatDisplayName),
-            body: preview(locale, displayName),
+            // 아이폰 대화 알림은 제목을 보낸 사람 이름으로 바꿔서 "내 메시지에 답장"을 본문 앞에도(2026-10-13)
+            body: (pushStrings(locale).quotedReplyPrefix + preview(locale, displayName)).slice(0, PUSH_PREVIEW_LENGTH + 20),
           }),
           { ...fanPushData, type: 'QUOTED_REPLY' },
         )

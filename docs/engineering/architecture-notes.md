@@ -1531,3 +1531,9 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - EAS: `app.config.ts` `extra.eas.build.experimental.ios.appExtensions`에 같은 타깃·번들 ID(확장용 프로비저닝 프로파일). 확장은 Pods를 안 씀.
 - 이 환경(리눅스)에선 `expo prebuild -p ios --no-install`으로 pbxproj·entitlements·Info.plist까지만 확인 — Swift 컴파일·서명은 EAS 빌드에서.
 - 안드로이드는 FCM notification 메시지가 큰 아이콘(largeIcon)을 못 받아서, 하려면 data 메시지 + 앱이 직접 그리기(notifee 등) — 테스트 기기 생기면.
+
+## 내게 온 인용 답장 표시 (2026-10-13)
+
+- `listForFan`이 메시지마다 `quotedMe`(아티스트 메시지 && `replyTo.fanUserId === 요청한 팬`) — 인용된 팬 id 자체는 안 내려줌. 앱 `QuoteBlock mine`.
+- `listMine`(인박스)이 `unreadQuotedReply` — 경계(`lastReadAt`/구독 시작) 이후 아티스트 메시지 중 `replyTo.fanUserId = 나`가 있는지(`findFirst`).
+- 인용 답장 알림 본문 = `pushStrings.quotedReplyPrefix` + 미리보기(아이폰 대화 알림이 title을 senderName으로 바꿔서).

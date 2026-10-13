@@ -677,7 +677,7 @@ function MessageRow({
         <AlbumGrid items={message.album} actorId={actorId} />
       ) : isMedia ? (
         <View style={styles.mediaGroup}>
-          {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+          {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" mine={message.quotedMe} />}
           <MediaTile
             id={message.id}
             url={message.mediaUrl}
@@ -695,7 +695,7 @@ function MessageRow({
         </View>
       ) : (
         <View style={[styles.bubble, { backgroundColor: isArtist ? theme.backgroundElement : theme.tintSoft }]}>
-          {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+          {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" mine={message.quotedMe} />}
           {message.mediaType === 'AUDIO' ? (
             <VoiceMessage
               id={message.id}

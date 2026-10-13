@@ -247,7 +247,8 @@
     "replyTo": "Replying to {{nickname}}",
     "hidden": "This message is hidden",
     "action": "Reply",
-    "publicNotice": "Visible to all subscribers; the fan is shown by nickname."
+    "publicNotice": "Visible to all subscribers; the fan is shown by nickname.",
+    "replyToMe": "Replied to you"
   },
   "report": {
     "title": "Report",
@@ -364,7 +365,8 @@
     "emptyBody": "Subscribe to an artist you love to receive their messages here.",
     "discover": "Discover artists",
     "loadFailed": "Couldn't load your inbox",
-    "endsOn": "Until {{date}}"
+    "endsOn": "Until {{date}}",
+    "quotedReply": "↩︎ Replied to your message"
   },
   "actorProfile": {
     "back": "Back",

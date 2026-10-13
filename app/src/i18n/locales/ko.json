@@ -247,7 +247,8 @@
     "replyTo": "{{nickname}}님에게 답장",
     "hidden": "가려진 메시지예요",
     "action": "답장하기",
-    "publicNotice": "모든 구독자에게 보이고, 팬은 닉네임으로 표시돼요."
+    "publicNotice": "모든 구독자에게 보이고, 팬은 닉네임으로 표시돼요.",
+    "replyToMe": "내 메시지에 답장"
   },
   "report": {
     "title": "신고하기",
@@ -364,7 +365,8 @@
     "emptyBody": "좋아하는 아티스트를 구독하면 여기에서 1:1 메시지를 받을 수 있어요.",
     "discover": "아티스트 둘러보기",
     "loadFailed": "메시지 목록을 불러오지 못했어요",
-    "endsOn": "{{date}}까지 이용"
+    "endsOn": "{{date}}까지 이용",
+    "quotedReply": "↩︎ 내 메시지에 답장했어요"
   },
   "actorProfile": {
     "back": "뒤로",

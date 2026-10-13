@@ -21,6 +21,8 @@ export interface Subscription {
   lastReadAt: string | null;
   /** 마지막으로 채팅방을 본 뒤 온 아티스트 메시지 수 */
   unreadCount: number;
+  /** 안 읽은 메시지 중 내 메시지를 인용한 아티스트 답장이 있음(2026-10-13) */
+  unreadQuotedReply?: boolean;
   /** 인박스 미리보기(서버가 최근 대화 순으로 정렬해서 줌) */
   lastMessage: {
     senderType: 'ARTIST' | 'FAN';
