@@ -253,7 +253,9 @@
     "replyTo": "Trả lời {{nickname}}",
     "hidden": "Tin nhắn này đã bị ẩn",
     "action": "Trả lời",
-    "publicNotice": "Tất cả người đăng ký đều thấy; fan được hiển thị bằng biệt danh."
+    "publicNotice": "Mọi người đăng ký đều thấy. Fan khác thấy là \"Trả lời của {{name}}\" mà không có biệt danh; fan được trích dẫn thấy \"Đã trả lời bạn\".",
+    "replyToMe": "Đã trả lời bạn",
+    "artistReply": "Trả lời của {{name}}"
   },
   "report": {
     "title": "Báo cáo",
@@ -370,7 +372,8 @@
     "emptyBody": "Đăng ký nghệ sĩ bạn yêu thích để nhận tin nhắn của họ tại đây.",
     "discover": "Khám phá nghệ sĩ",
     "loadFailed": "Không tải được hộp thư",
-    "endsOn": "Đến {{date}}"
+    "endsOn": "Đến {{date}}",
+    "quotedReply": "↩︎ Đã trả lời tin nhắn của bạn"
   },
   "actorProfile": {
     "back": "Quay lại",

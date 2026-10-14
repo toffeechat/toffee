@@ -10,6 +10,8 @@ interface PushStrings {
   staffNewMessageTitle: (actor: string) => string;
   /** 스타가 내 메시지를 인용해 답장했을 때(인용된 팬에게만) */
   quotedReplyTitle: (actor: string) => string;
+  /** 인용 답장 알림 본문 앞 — 아이폰 대화 알림은 제목이 보낸 사람 이름으로 바뀌어서 */
+  quotedReplyPrefix: string;
   staffNewStoryTitle: (actor: string) => string;
   staffNewStoryBody: string;
   /** 장기 미발송 알림(배우 본인) — 팬 수, 며칠째, 커플방이면 방 이름 */
@@ -35,6 +37,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `사진·동영상 ${count}개를 보냈어요`,
     staffNewMessageTitle: (actor) => `${actor}님이 새 메시지를 보냈어요`,
     quotedReplyTitle: (actor) => `${actor}님이 내 메시지에 답장했어요`,
+    quotedReplyPrefix: '내 메시지에 답장 · ',
     staffNewStoryTitle: (actor) => `${actor}님이 새 스토리를 올렸어요`,
     staffNewStoryBody: '지금 확인해보세요',
     idleActorTitle: (fans) => `팬 ${fans}명이 기다리고 있어요`,
@@ -53,6 +56,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `Sent ${count} photos and videos`,
     staffNewMessageTitle: (actor) => `${actor} sent a new message`,
     quotedReplyTitle: (actor) => `${actor} replied to your message`,
+    quotedReplyPrefix: 'Replied to you · ',
     staffNewStoryTitle: (actor) => `${actor} posted a new story`,
     staffNewStoryBody: 'Check it out now',
     idleActorTitle: (fans) => `${fans} fans are waiting for you`,
@@ -71,6 +75,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `ส่งรูปภาพและวิดีโอ ${count} รายการ`,
     staffNewMessageTitle: (actor) => `${actor} ส่งข้อความใหม่`,
     quotedReplyTitle: (actor) => `${actor} ตอบกลับข้อความของคุณ`,
+    quotedReplyPrefix: 'ตอบกลับข้อความของคุณ · ',
     staffNewStoryTitle: (actor) => `${actor} ลงสตอรี่ใหม่`,
     staffNewStoryBody: 'ดูเลยตอนนี้',
     idleActorTitle: (fans) => `แฟน ${fans} คนกำลังรออยู่`,
@@ -94,6 +99,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `写真・動画を${count}件送りました`,
     staffNewMessageTitle: (actor) => `${actor}さんが新しいメッセージを送信しました`,
     quotedReplyTitle: (actor) => `${actor}さんがあなたのメッセージに返信しました`,
+    quotedReplyPrefix: 'あなたへの返信 · ',
     staffNewStoryTitle: (actor) => `${actor}さんが新しいストーリーを投稿しました`,
     staffNewStoryBody: '今すぐチェック',
     idleActorTitle: (fans) => `ファン${fans}人が待っています`,
@@ -112,6 +118,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `发送了 ${count} 张照片和视频`,
     staffNewMessageTitle: (actor) => `${actor} 发送了新消息`,
     quotedReplyTitle: (actor) => `${actor} 回复了你的消息`,
+    quotedReplyPrefix: '回复了你 · ',
     staffNewStoryTitle: (actor) => `${actor} 发布了新的限时动态`,
     staffNewStoryBody: '立即查看',
     idleActorTitle: (fans) => `${fans} 位粉丝在等你`,
@@ -130,6 +137,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `傳送了 ${count} 張照片和影片`,
     staffNewMessageTitle: (actor) => `${actor} 傳送了新訊息`,
     quotedReplyTitle: (actor) => `${actor} 回覆了你的訊息`,
+    quotedReplyPrefix: '回覆了你 · ',
     staffNewStoryTitle: (actor) => `${actor} 發布了新的限時動態`,
     staffNewStoryBody: '立即查看',
     idleActorTitle: (fans) => `${fans} 位粉絲在等你`,
@@ -148,6 +156,7 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     mediaBatch: (count) => `Đã gửi ${count} ảnh và video`,
     staffNewMessageTitle: (actor) => `${actor} đã gửi tin nhắn mới`,
     quotedReplyTitle: (actor) => `${actor} đã trả lời tin nhắn của bạn`,
+    quotedReplyPrefix: 'Đã trả lời bạn · ',
     staffNewStoryTitle: (actor) => `${actor} đã đăng story mới`,
     staffNewStoryBody: 'Xem ngay',
     idleActorTitle: (fans) => `${fans} fan đang chờ bạn`,

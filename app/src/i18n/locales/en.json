@@ -253,7 +253,9 @@
     "replyTo": "Replying to {{nickname}}",
     "hidden": "This message is hidden",
     "action": "Reply",
-    "publicNotice": "Visible to all subscribers; the fan is shown by nickname."
+    "publicNotice": "Visible to all subscribers. Other fans see it as \"{{name}}'s reply\" without the nickname; the quoted fan sees \"Replied to you\".",
+    "replyToMe": "Replied to you",
+    "artistReply": "{{name}}'s reply"
   },
   "report": {
     "title": "Report",
@@ -370,7 +372,8 @@
     "emptyBody": "Subscribe to an artist you love to receive their messages here.",
     "discover": "Discover artists",
     "loadFailed": "Couldn't load your inbox",
-    "endsOn": "Until {{date}}"
+    "endsOn": "Until {{date}}",
+    "quotedReply": "↩︎ Replied to your message"
   },
   "actorProfile": {
     "back": "Back",

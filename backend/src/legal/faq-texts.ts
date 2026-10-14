@@ -52,7 +52,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '답장은 몇 개까지 보낼 수 있나요?',
-          a: '아티스트 메시지 하나에 3개까지 글과 이모지로 답장할 수 있어요. 입력창 위에 남은 개수가 보여요. 아티스트가 내 답장을 인용해서 답하면 다른 구독자에게도 내 닉네임과 답장이 보여요.',
+          a: '아티스트 메시지 하나에 3개까지 글과 이모지로 답장할 수 있어요. 입력창 위에 남은 개수가 보여요. 아티스트가 내 답장을 인용해서 답하면 다른 구독자에게도 내 답장 내용이 보여요(닉네임은 안 보여요).',
         },
         {
           q: '받은 사진·영상을 저장해도 되나요?',
@@ -109,7 +109,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'How many replies can I send?',
-          a: 'Up to 3 text or emoji replies per artist message. The remaining count is shown above the input box. If the artist quotes your reply, other subscribers can see your nickname and reply.',
+          a: 'Up to 3 text or emoji replies per artist message. The remaining count is shown above the input box. If the artist quotes your reply, other subscribers can see what you wrote (but not your nickname).',
         },
         {
           q: 'Can I save photos and videos I received?',
@@ -166,7 +166,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'ตอบกลับได้กี่ข้อความ',
-          a: 'ตอบกลับเป็นข้อความหรืออีโมจิได้สูงสุด 3 ข้อความต่อข้อความของศิลปิน จำนวนที่เหลือแสดงอยู่เหนือช่องพิมพ์ หากศิลปินอ้างอิงข้อความของคุณ สมาชิกคนอื่นจะเห็นชื่อเล่นและข้อความนั้น',
+          a: 'ตอบกลับเป็นข้อความหรืออีโมจิได้สูงสุด 3 ข้อความต่อข้อความของศิลปิน จำนวนที่เหลือแสดงอยู่เหนือช่องพิมพ์ หากศิลปินอ้างอิงข้อความของคุณ สมาชิกคนอื่นจะเห็นข้อความนั้น (แต่ไม่เห็นชื่อเล่นของคุณ)',
         },
         {
           q: 'บันทึกรูปและวิดีโอที่ได้รับได้ไหม',
@@ -223,7 +223,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '返信はいくつまで送れますか？',
-          a: 'アーティストのメッセージ1件につき、文字と絵文字で3件まで返信できます。残りの件数は入力欄の上に表示されます。アーティストがあなたの返信を引用すると、他の購読者にもニックネームと返信が表示されます。',
+          a: 'アーティストのメッセージ1件につき、文字と絵文字で3件まで返信できます。残りの件数は入力欄の上に表示されます。アーティストがあなたの返信を引用すると、他の購読者にも返信の内容が表示されます（ニックネームは表示されません）。',
         },
         {
           q: '受け取った写真・動画を保存してもいいですか？',
@@ -280,7 +280,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '可以回复几条？',
-          a: '每条艺人消息最多可用文字或表情回复3条，剩余条数显示在输入框上方。如果艺人引用了你的回复，其他订阅者也能看到你的昵称和回复。',
+          a: '每条艺人消息最多可用文字或表情回复3条，剩余条数显示在输入框上方。如果艺人引用了你的回复，其他订阅者也能看到回复内容（看不到你的昵称）。',
         },
         {
           q: '可以保存收到的照片和视频吗？',
@@ -337,7 +337,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '可以回覆幾則？',
-          a: '每則藝人訊息最多可用文字或表情回覆3則，剩餘則數顯示在輸入框上方。若藝人引用了你的回覆，其他訂閱者也看得到你的暱稱和回覆。',
+          a: '每則藝人訊息最多可用文字或表情回覆3則，剩餘則數顯示在輸入框上方。若藝人引用了你的回覆，其他訂閱者也看得到回覆內容（看不到你的暱稱）。',
         },
         {
           q: '可以儲存收到的照片和影片嗎？',
@@ -394,7 +394,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Tôi trả lời được bao nhiêu tin?',
-          a: 'Tối đa 3 tin trả lời bằng chữ hoặc biểu tượng cảm xúc cho mỗi tin nhắn của nghệ sĩ. Số còn lại hiển thị phía trên ô nhập. Nếu nghệ sĩ trích dẫn tin trả lời của bạn, người đăng ký khác cũng thấy biệt danh và tin đó.',
+          a: 'Tối đa 3 tin trả lời bằng chữ hoặc biểu tượng cảm xúc cho mỗi tin nhắn của nghệ sĩ. Số còn lại hiển thị phía trên ô nhập. Nếu nghệ sĩ trích dẫn tin trả lời của bạn, người đăng ký khác cũng thấy nội dung tin đó (nhưng không thấy biệt danh của bạn).',
         },
         {
           q: 'Tôi có được lưu ảnh và video đã nhận không?',

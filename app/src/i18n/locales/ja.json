@@ -253,7 +253,9 @@
     "replyTo": "{{nickname}}さんへの返信",
     "hidden": "非表示のメッセージです",
     "action": "返信する",
-    "publicNotice": "すべての購読者に表示され、ファンはニックネームで表示されます。"
+    "publicNotice": "すべての購読者に表示されます。他のファンにはニックネームなしで「{{name}}の返信」、引用されたファンには「あなたへの返信」と表示されます。",
+    "replyToMe": "あなたへの返信",
+    "artistReply": "{{name}}の返信"
   },
   "report": {
     "title": "通報",
@@ -370,7 +372,8 @@
     "emptyBody": "好きなアーティストを購読すると、ここでメッセージを受け取れます。",
     "discover": "アーティストを見つける",
     "loadFailed": "メッセージ一覧を読み込めませんでした",
-    "endsOn": "{{date}}まで利用可"
+    "endsOn": "{{date}}まで利用可",
+    "quotedReply": "↩︎ あなたのメッセージに返信しました"
   },
   "actorProfile": {
     "back": "戻る",

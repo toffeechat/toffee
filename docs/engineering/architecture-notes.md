@@ -1575,3 +1575,14 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `TrendChart`의 `formatTooltipDay`(주 단위 "9. 1.~"). 전체 순위 화면은 주소 값 `days` 또는 `from`·`to`.
 - **데모**: `seedDailyStats()` — 최근 120일 각 날짜 끝 시각으로 `computeAudienceSnapshot(at)` → `createMany`.
 
+
+## 내게 온 인용 답장 표시 (2026-10-13)
+
+- `listForFan`이 메시지마다 `quotedMe`(아티스트 메시지 && `replyTo.fanUserId === 요청한 팬`) — 인용된 팬 id 자체는 안 내려줌. 앱 `QuoteBlock mine`.
+- `listMine`(인박스)이 `unreadQuotedReply` — 경계(`lastReadAt`/구독 시작) 이후 아티스트 메시지 중 `replyTo.fanUserId = 나`가 있는지(`findFirst`).
+- 인용 답장 알림 본문 = `pushStrings.quotedReplyPrefix` + 미리보기(아이폰 대화 알림이 title을 senderName으로 바꿔서).
+
+## 팬 화면 인용 닉네임 제거 (2026-10-13)
+
+- `listForFan`이 `replyTo.nickname`을 null로(팬 앱 응답에 다른 팬 닉네임이 안 실림). `listBroadcasts`·`listReplies`(아티스트·소속사)는 그대로.
+- 앱 `QuoteBlock artistName` — 있으면 제목 `quote.artistReply`("{{name}}의 답장"), `mine`이면 제목 없이 배지만. 스튜디오 `quote.publicNotice`에 `{{name}}`.

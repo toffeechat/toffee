@@ -253,7 +253,9 @@
     "replyTo": "回覆 {{nickname}}",
     "hidden": "這則訊息已被隱藏",
     "action": "回覆",
-    "publicNotice": "所有訂閱者都看得到，粉絲以暱稱顯示。"
+    "publicNotice": "所有訂閱者都看得到。其他粉絲看到的是不含暱稱的「{{name}}的回覆」，被引用的粉絲看到「回覆了你」。",
+    "replyToMe": "回覆了你",
+    "artistReply": "{{name}}的回覆"
   },
   "report": {
     "title": "檢舉",
@@ -370,7 +372,8 @@
     "emptyBody": "訂閱喜愛的藝人，就能在這裡收到 TA 的訊息。",
     "discover": "探索藝人",
     "loadFailed": "訊息列表載入失敗",
-    "endsOn": "可使用至 {{date}}"
+    "endsOn": "可使用至 {{date}}",
+    "quotedReply": "↩︎ 回覆了你的訊息"
   },
   "actorProfile": {
     "back": "返回",
