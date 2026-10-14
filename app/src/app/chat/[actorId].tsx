@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
-import { type LucideIcon, ArrowUp, Bell, BellOff, ChevronDown, ChevronUp, CloudOff, Copy, CreditCard, Ellipsis, Flag, Images, Lock, MessageCircleHeart, Search, X } from 'lucide-react-native';
+import { type LucideIcon, ArrowUp, Bell, BellOff, ChevronDown, ChevronUp, CloudOff, Copy, CreditCard, Ellipsis, Flag, Images, Lock, MessageCircleHeart, Search, Undo2, X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -24,13 +24,16 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { IconButton } from '@/components/ui/icon-button';
 import { MediaTile } from '@/components/media-tile';
+import { ChatBackground } from '@/components/chat-background';
+import { DayDivider, sameDay } from '@/components/day-divider';
+import { MessageMenu } from '@/components/message-menu';
 import { QuoteBlock } from '@/components/quote-block';
 import { TranslatableText } from '@/components/translatable-text';
 import { VoiceMessage } from '@/components/voice-message';
 import { ApiError } from '@/lib/api-client';
 import { saveMedia } from '@/lib/save-media';
 import { useActor } from '@/hooks/use-actors';
-import { useActorMessages, useChatExtras, useChatSearch, useReplyQuota, useSendReply, type ChatMessage } from '@/hooks/use-messages';
+import { useActorMessages, useChatExtras, useChatSearch, useReplyQuota, useRetractReply, useSendReply, type ChatMessage } from '@/hooks/use-messages';
 import { useMySubscriptions, useSetNotificationsMuted } from '@/hooks/use-subscriptions';
 import { useTheme } from '@/hooks/use-theme';
 import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -44,7 +47,6 @@ const AT_BOTTOM_PX = 80;
 // 알림·검색 결과로 이동할 메시지가 아직 안 불러온 예전 메시지면 이만큼(50개씩)까지만 더 불러옴 — 너무 오래된 건 안내만
 const MAX_FOCUS_PAGES = 20;
 
-const sameDay = (a: string, b: string) => new Date(a).toDateString() === new Date(b).toDateString();
 // 카톡처럼 같은 사람이 같은 시:분에 이어 보낸 메시지가 한 묶음 — 프로필 사진·이름은 묶음 첫 메시지 위, 시간은 마지막 메시지에 한 번
 const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
 
@@ -87,6 +89,7 @@ export default function ChatRoomScreen() {
   const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useActorMessages(actorId);
   const notSubscribed = error instanceof ApiError && error.status === 403;
   const sendReply = useSendReply(actorId);
+  const retractReply = useRetractReply(actorId);
   const { data: onboarding } = useOnboardingStatus();
   const acceptReplyRules = useAcceptReplyRules();
   const [draft, setDraft] = useState('');
@@ -312,6 +315,13 @@ export default function ChatRoomScreen() {
       .catch(() => setNotice(t('chat.copyFailed')));
   };
 
+  // 내 답장 회수(2026-10-14 사용자 결정) — 모두의 화면에서 "회수된 메시지입니다"로, 하루 답장 개수는 돌아오지 않음
+  const retract = async (message: ChatMessage) => {
+    setMenuFor(null);
+    if (!(await confirm(t('retract.title'), t('retract.fanBody'), t('retract.action'), t('common.cancel')))) return;
+    retractReply.mutate(message.id, { onError: (err) => setNotice(err instanceof ApiError ? err.message : t('retract.failed')) });
+  };
+
   // 버블 방식: 팬 답장은 가장 최근 스타 메시지에 붙음 — 구독 후 스타 메시지가 아직 없으면 입력창 대신 안내
   const canReply = messages.some((message) => message.senderType === 'ARTIST');
   const { data: quota } = useReplyQuota(actorId, canReply);
@@ -370,7 +380,7 @@ export default function ChatRoomScreen() {
           const startsGroup = !older || !sameSender(older, item) || !sameMinute(item.createdAt, older.createdAt);
           return (
             <View>
-              {dayChanged && <DaySeparator iso={item.createdAt} locale={i18n.language} />}
+              {dayChanged && <DayDivider iso={item.createdAt} />}
               {rowHas(item, firstUnreadId) && <ReadMarker label={t('chat.readMarker')} />}
               <MessageRow
                 message={item}
@@ -389,6 +399,7 @@ export default function ChatRoomScreen() {
                 }}
                 onSaveVoice={() => saveVoice(item)}
                 onCopy={() => copyText(item)}
+                onRetract={() => void retract(item)}
                 actorId={actorId}
                 nextVoiceId={nextVoice.get(item.id)}
               />
@@ -436,6 +447,8 @@ export default function ChatRoomScreen() {
   const showComposer = !isLoading && !isError;
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+      {/* 토피룸 배경 사진(2026-10-14) — 아티스트·소속사가 정함 */}
+      <ChatBackground uri={actor?.chatBackgroundUrl} />
       <SafeAreaView style={styles.inner} edges={['bottom']}>
         {searchOpen && (
           <View style={[styles.searchBar, { borderBottomColor: theme.border }]}>
@@ -609,14 +622,6 @@ function AlbumGrid({ items, actorId }: { items: ChatMessage[]; actorId: string }
   );
 }
 
-function DaySeparator({ iso, locale }: { iso: string; locale: string }) {
-  return (
-    <ThemedText type="caption" themeColor="textTertiary" style={styles.day}>
-      {new Date(iso).toLocaleDateString(locale, { month: 'long', day: 'numeric', weekday: 'short' })}
-    </ThemedText>
-  );
-}
-
 function MessageRow({
   message,
   avatarUri,
@@ -631,6 +636,7 @@ function MessageRow({
   onReport,
   onSaveVoice,
   onCopy,
+  onRetract,
   actorId,
   nextVoiceId,
 }: {
@@ -647,6 +653,7 @@ function MessageRow({
   onReport: () => void;
   onSaveVoice: () => void;
   onCopy: () => void;
+  onRetract: () => void;
   actorId: string;
   nextVoiceId?: string;
 }) {
@@ -655,9 +662,10 @@ function MessageRow({
   const isArtist = message.senderType === 'ARTIST';
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
   const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
-  // 길게 누르면: 글이 있으면 복사(카톡처럼, 내 답장도), 스타 메시지면 신고
-  const hasMenu = isArtist || !!message.body;
-  const canReport = isArtist && !message.extra;
+  // 길게 누르면: 글이 있으면 복사(카톡처럼, 내 답장도), 스타 메시지면 신고, 내 답장이면 회수(2026-10-14). 회수된 메시지는 메뉴 없음
+  const canReport = isArtist && !message.extra && !message.retracted;
+  const canRetract = !isArtist && !message.extra && !message.retracted;
+  const hasMenu = !message.retracted && (canReport || canRetract || !!message.body);
 
   const bubble = (
     <Pressable
@@ -673,7 +681,13 @@ function MessageRow({
         if (event.nativeEvent.actionName === 'copy') onCopy();
       }}
       style={[styles.bubbleWrap, highlighted && { borderRadius: Radius.lg + 2, borderWidth: 2, borderColor: theme.tint }]}>
-      {message.album ? (
+      {message.retracted ? (
+        <View style={[styles.bubble, styles.retracted, { borderColor: theme.border }]}>
+          <ThemedText type="small" themeColor="textTertiary">
+            {t('retract.placeholder')}
+          </ThemedText>
+        </View>
+      ) : message.album ? (
         <AlbumGrid items={message.album} actorId={actorId} />
       ) : isMedia ? (
         <View style={styles.mediaGroup}>
@@ -747,23 +761,14 @@ function MessageRow({
             )}
           </View>
           {menuOpen && (
-            <View style={[styles.menu, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              {message.body ? (
-                <Pressable onPress={onCopy} style={styles.menuItem} accessibilityRole="button">
-                  <Icon as={Copy} size={16} color={theme.text} />
-                  <ThemedText type="smallBold">{t('chat.copy')}</ThemedText>
-                </Pressable>
-              ) : null}
-              {canReport ? (
-                <Pressable onPress={onReport} style={styles.menuItem} accessibilityRole="button">
-                  <Icon as={Flag} size={16} color={theme.danger} />
-                  <ThemedText type="smallBold" themeColor="danger">
-                    {t('chat.report')}
-                  </ThemedText>
-                </Pressable>
-              ) : null}
-              <IconButton icon={X} size={16} label={t('chat.closeMenu')} onPress={onCloseMenu} style={styles.menuClose} />
-            </View>
+            <MessageMenu
+              onClose={onCloseMenu}
+              actions={[
+                ...(message.body ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: onCopy }] : []),
+                ...(canRetract ? [{ key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: onRetract }] : []),
+                ...(canReport ? [{ key: 'report', label: t('chat.report'), icon: Flag, danger: true, onPress: onReport }] : []),
+              ]}
+            />
           )}
         </View>
       </View>
@@ -807,7 +812,6 @@ const styles = StyleSheet.create({
   flip: { transform: [{ scaleY: -1 }] },
   pageLoading: { marginVertical: Spacing.three },
   loading: { marginTop: Spacing.six },
-  day: { textAlign: 'center', marginVertical: Spacing.three },
   row: { marginBottom: Spacing.three },
   rowTight: { marginBottom: 4 },
   line: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
@@ -825,15 +829,7 @@ const styles = StyleSheet.create({
   mediaGroup: { gap: 4 },
   time: { flexShrink: 0, paddingBottom: 2 },
   senderLabel: { paddingHorizontal: 4 },
-  menu: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: Radius.md,
-    paddingLeft: Spacing.three,
-  },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: Spacing.two, paddingRight: Spacing.three },
-  menuClose: { width: 36, height: 36 },
+  retracted: { borderWidth: StyleSheet.hairlineWidth },
   newPill: {
     position: 'absolute',
     bottom: Spacing.three,

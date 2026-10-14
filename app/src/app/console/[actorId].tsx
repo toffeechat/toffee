@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Images, MessageCircle, Trash2 } from 'lucide-react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Copy, Images, MessageCircle, MoreHorizontal, Undo2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,9 @@ import { showNameToken } from '@/utils/name-token';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
 import { SideTime } from '@/components/side-time';
+import { DayDivider, sameDay } from '@/components/day-divider';
+import { MessageMenu } from '@/components/message-menu';
+import { copyText } from '@/lib/copy-text';
 import { useActor } from '@/hooks/use-actors';
 import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory, type StatsSelection } from '@/hooks/use-console';
 import { DistributionBars, Panel } from '@/components/console-charts';
@@ -61,8 +64,6 @@ function SegmentedControl({ value, onChange }: { value: Section; onChange: (sect
   );
 }
 
-// 날짜 구분 줄·같은 분 묶음 — 팬 채팅방과 같은 기준
-const sameDay = (a: string, b: string) => new Date(a).toDateString() === new Date(b).toDateString();
 
 type MonitorItem =
   | { kind: 'message'; createdAt: string; message: StudioMessage }
@@ -81,6 +82,7 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
   const { data: stories, isLoading: loadingStories } = useActorStories(actorId);
   const remove = useDeleteBroadcast(actorId);
   const [failed, setFailed] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   if (loadingBroadcasts || loadingStories) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
@@ -91,7 +93,7 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const removeMessage = async (messageId: string) => {
-    if (!(await confirm(t('console.deleteTitle'), t('console.deleteBody'), t('console.deleteConfirm'), t('common.cancel')))) return;
+    if (!(await confirm(t('retract.title'), t('retract.agencyBody'), t('retract.action'), t('common.cancel')))) return;
     setFailed(null);
     remove.mutate(messageId, { onError: (error) => setFailed(error instanceof ApiError ? error.message : t('common.requestFailed')) });
   };
@@ -118,11 +120,7 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
           const dayChanged = !older || !sameDay(older.createdAt, item.createdAt);
           return (
             <View>
-              {dayChanged ? (
-                <ThemedText type="caption" themeColor="textTertiary" style={styles.day}>
-                  {new Date(item.createdAt).toLocaleDateString(i18n.language, { month: 'long', day: 'numeric', weekday: 'short' })}
-                </ThemedText>
-              ) : null}
+              {dayChanged ? <DayDivider iso={item.createdAt} /> : null}
               {item.kind === 'story' ? (
                 <ThemedText type="caption" themeColor="textSecondary" style={styles.storyLine}>
                   {`${t('console.kind.story')} · ${mediaLabel(t, item.story.mediaType)} · ${new Date(item.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' })}`}
@@ -134,6 +132,8 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
                   name={item.message.sender?.chatDisplayName ?? actor?.chatDisplayName ?? ''}
                   onDelete={() => void removeMessage(item.message.id)}
                   onOpenReplies={() => onOpenReplies(item.message.id)}
+                  menuOpen={menuFor === item.message.id}
+                  onMenuChange={(open) => setMenuFor(open ? item.message.id : null)}
                 />
               )}
             </View>
@@ -144,24 +144,51 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
   );
 }
 
+// 2026-10-14 사용자 피드백: 시간은 마지막 말풍선 바로 옆(사진+글이면 예전엔 떨어져 보였음), 휴지통 대신 길게 누르기(웹은 시간 옆 ⋯) → 복사 · 회수
 function MonitorBubble({
   message,
   avatarUri,
   name,
   onDelete,
   onOpenReplies,
+  menuOpen,
+  onMenuChange,
 }: {
   message: StudioMessage;
   avatarUri?: string | null;
   name: string;
   onDelete: () => void;
   onOpenReplies: () => void;
+  menuOpen: boolean;
+  onMenuChange: (open: boolean) => void;
 }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
   const removedBy = message.deletedAt ? (message.deletedByAdmin ? 'admin' : message.deletedByStaffId ? 'agency' : 'actor') : null;
   const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
+  const bodyText = message.body ? showNameToken(message.body, t('studio.fanNickname')) : null;
+  const side = (
+    <View style={styles.side}>
+      <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
+        {time}
+      </ThemedText>
+      {/* 웹(PC)은 마우스로 길게 누르기가 어색해서 시간 옆 ⋯로도 */}
+      {!removedBy && Platform.OS === 'web' ? (
+        <IconButton icon={MoreHorizontal} size={15} label={t('chat.messageActions')} color={theme.textTertiary} onPress={() => onMenuChange(true)} style={styles.more} />
+      ) : null}
+    </View>
+  );
+  const textBubble =
+    !isMedia || message.body ? (
+      <View style={[styles.bubble, styles.bubbleBody, { backgroundColor: theme.backgroundElement }]}>
+        {message.replyTo ? <QuoteBlock quote={message.replyTo} tone="dark" /> : null}
+        {message.mediaType === 'AUDIO' ? (
+          <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
+        ) : null}
+        {bodyText ? <ThemedText>{bodyText}</ThemedText> : null}
+      </View>
+    ) : null;
   return (
     <View style={styles.bubbleRow}>
       <Avatar uri={avatarUri} size={36} />
@@ -174,9 +201,12 @@ function MonitorBubble({
             {t(removedBy === 'admin' ? 'studio.hiddenByAdmin' : removedBy === 'agency' ? 'console.deletedByAgency' : 'console.deletedByActor')}
           </ThemedText>
         ) : null}
-        <View style={[styles.bubbleLine, removedBy && styles.removed]}>
-          <View style={styles.bubbleBody}>
-            {isMedia ? (
+        <Pressable
+          onLongPress={removedBy ? undefined : () => onMenuChange(true)}
+          delayLongPress={350}
+          style={[styles.bubbleStack, removedBy && styles.removed]}>
+          {isMedia ? (
+            <View style={styles.bubbleLine}>
               <MediaTile
                 id={message.id}
                 url={message.mediaUrl}
@@ -185,38 +215,37 @@ function MonitorBubble({
                 thumbnailUrl={message.thumbnailUrl}
                 thumbhash={message.thumbhash}
               />
-            ) : null}
-            {!isMedia || message.body ? (
-              <View style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-                {message.replyTo ? <QuoteBlock quote={message.replyTo} tone="dark" /> : null}
-                {message.mediaType === 'AUDIO' ? (
-                  <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
-                ) : null}
-                {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
-              </View>
-            ) : null}
-          </View>
-          <ThemedText type="caption" themeColor="textTertiary" style={styles.time}>
-            {time}
-          </ThemedText>
-        </View>
-        <View style={styles.bubbleMeta}>
-          <Pressable onPress={onOpenReplies} hitSlop={8} accessibilityRole="button">
-            <ThemedText type="captionBold" style={{ color: theme.tint }}>
-              {message.replyCount > 0 ? `${t('studio.replies', { count: message.replyCount })} ›` : t('studio.noReplies')}
-            </ThemedText>
-          </Pressable>
-          {!removedBy ? (
-            <IconButton icon={Trash2} size={15} label={t('console.deleteConfirm')} color={theme.textTertiary} onPress={onDelete} />
+              {textBubble ? null : side}
+            </View>
           ) : null}
-        </View>
+          {textBubble ? (
+            <View style={styles.bubbleLine}>
+              {textBubble}
+              {side}
+            </View>
+          ) : null}
+        </Pressable>
+        {menuOpen ? (
+          <MessageMenu
+            onClose={() => onMenuChange(false)}
+            actions={[
+              ...(bodyText ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: () => (onMenuChange(false), copyText(bodyText)) }] : []),
+              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onMenuChange(false), onDelete()) },
+            ]}
+          />
+        ) : null}
+        <Pressable onPress={onOpenReplies} hitSlop={8} accessibilityRole="button">
+          <ThemedText type="captionBold" style={{ color: theme.tint }}>
+            {message.replyCount > 0 ? `${t('studio.replies', { count: message.replyCount })} ›` : t('studio.noReplies')}
+          </ThemedText>
+        </Pressable>
       </View>
     </View>
   );
 }
 
-/** 팬 답장 — 대화방처럼 왼쪽 말풍선(팬 사진·닉네임·상태메시지), 소속사는 답장은 못 하고 신고·차단만(2026-10-12) */
-function ReplyBubble({ reply, actorId }: { reply: FanReply; actorId: string }) {
+/** 팬 답장 — 대화방처럼 왼쪽 말풍선(팬 사진·닉네임·상태메시지), 소속사는 답장은 못 하고 복사·신고·차단만(길게 누르기·⋯, 2026-10-14) */
+function ReplyBubble({ reply, actorId, menuOpen, onMenuChange }: { reply: FanReply; actorId: string; menuOpen: boolean; onMenuChange: (open: boolean) => void }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const fan = reply.fanUser;
@@ -233,12 +262,30 @@ function ReplyBubble({ reply, actorId }: { reply: FanReply; actorId: string }) {
           </ThemedText>
         ) : null}
         <View style={styles.bubbleLine}>
-          <View style={[styles.bubble, styles.bubbleBody, { backgroundColor: theme.backgroundElement }]}>
-            <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} />
-          </View>
-          {/* 날짜·시간 두 줄로 말풍선 옆에(2026-10-13, 아티스트 팬 답장 화면과 같은 모양) */}
+          <Pressable
+            onLongPress={fan ? () => onMenuChange(true) : undefined}
+            delayLongPress={350}
+            style={[styles.bubble, styles.bubbleBody, reply.retracted ? [styles.retracted, { borderColor: theme.border }] : { backgroundColor: theme.backgroundElement }]}>
+            {reply.retracted ? (
+              <ThemedText type="small" themeColor="textTertiary">
+                {t('retract.placeholder')}
+              </ThemedText>
+            ) : (
+              <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} />
+            )}
+          </Pressable>
           <SideTime at={reply.createdAt} />
-          {fan ? <FanReplyActions actorId={actorId} messageId={reply.id} fanUserId={fan.id} nickname={fan.nickname ?? ''} /> : null}
+          {fan ? (
+            <FanReplyActions
+              actorId={actorId}
+              messageId={reply.id}
+              fanUserId={fan.id}
+              nickname={fan.nickname ?? ''}
+              body={reply.retracted ? null : reply.body}
+              open={menuOpen}
+              onOpenChange={onMenuChange}
+            />
+          ) : null}
         </View>
       </View>
     </View>
@@ -250,6 +297,7 @@ function RepliesSection({ actorId, messageId, onClearFilter }: { actorId: string
   const router = useRouter();
   const { t } = useTranslation();
   const { data: replies, isLoading } = useActorReplies(actorId, messageId);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   if (isLoading) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
@@ -281,7 +329,15 @@ function RepliesSection({ actorId, messageId, onClearFilter }: { actorId: string
             {t('console.repliesEmpty')}
           </ThemedText>
         }
-        renderItem={({ item }) => <ReplyBubble reply={item} actorId={actorId} />}
+        renderItem={({ item, index }) => {
+          const older = replies?.[index + 1];
+          return (
+            <View>
+              {!older || !sameDay(older.createdAt, item.createdAt) ? <DayDivider iso={item.createdAt} /> : null}
+              <ReplyBubble reply={item} actorId={actorId} menuOpen={menuFor === item.id} onMenuChange={(open) => setMenuFor(open ? item.id : null)} />
+            </View>
+          );
+        }}
       />
     </>
   );
@@ -399,6 +455,8 @@ export default function ConsoleActorScreen() {
               {t('console.monitoring', { name: actor.legalName })}
             </ThemedText>
             <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
+            {/* 토피룸 배경 사진(2026-10-14) — 소속사도 바꾸기·기본으로 */}
+            <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatBackgroundUrl} target="background" />
           </ThemedView>
         </ThemedView>
       )}
@@ -429,17 +487,19 @@ const styles = StyleSheet.create({
   actorPreviewBody: { flex: 1, gap: 4, backgroundColor: 'transparent' },
   chatList: { paddingHorizontal: Spacing.four, paddingVertical: Spacing.three },
   flip: { transform: [{ scaleY: -1 }] },
-  day: { textAlign: 'center', marginVertical: Spacing.three },
   storyLine: { textAlign: 'center', marginVertical: Spacing.two },
   sectionNote: { paddingHorizontal: Spacing.four },
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two, marginBottom: Spacing.three },
   bubbleColumn: { flex: 1, gap: 4, alignItems: 'flex-start' },
   bubbleLine: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, maxWidth: '100%' },
+  bubbleStack: { gap: 4, maxWidth: '100%', alignItems: 'flex-start' },
+  side: { flexShrink: 0, flexDirection: 'row', alignItems: 'center' },
+  more: { width: 28, height: 28 },
+  retracted: { borderWidth: StyleSheet.hairlineWidth },
   bubbleBody: { flexShrink: 1, gap: 4 },
   bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
   time: { flexShrink: 0, paddingBottom: 2 },
   removed: { opacity: 0.45 },
-  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   repliesHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.four },
   container: { flex: 1 },
   segments: { flexDirection: 'row', margin: Spacing.four, borderRadius: 10, padding: 4, gap: 4 },

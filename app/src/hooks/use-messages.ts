@@ -5,12 +5,16 @@ import { useLiveInterval } from '@/lib/realtime';
 export interface MessageQuote {
   id: string;
   hidden: boolean;
+  /** 인용한 팬 답장을 그 팬이 회수함(2026-10-14) — "회수된 메시지입니다" */
+  retracted?: boolean;
   nickname: string | null;
   body: string | null;
 }
 
 export interface ChatMessage {
   id: string;
+  /** 보낸 사람이 회수한 메시지(2026-10-14) — 내용 없이 자리만, "회수된 메시지입니다" */
+  retracted?: boolean;
   /** 아티스트가 바로 내 메시지를 인용한 답장(2026-10-13) — 팬 본인 화면에서만 true */
   quotedMe?: boolean;
   actorId: string;
@@ -33,7 +37,7 @@ export interface ChatMessage {
   // 스타·소속사 화면용(팬 화면엔 지워진 메시지가 아예 안 옴) — 스타가 삭제했거나 운영자가 신고 승인으로 가림
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
-  /** 소속사가 대신 지운 메시지면 지운 직원 id(2026-10-12) — 아티스트·소속사 화면에 "소속사가 삭제한 메시지" */
+  /** 소속사가 대신 회수한 메시지면 그 직원 id(2026-10-12) — 아티스트·소속사 화면에 "소속사가 회수한 메시지" */
   deletedByStaffId?: string | null;
   createdAt: string;
 }
@@ -59,6 +63,18 @@ export function useActorMessages(actorId: string) {
     enabled: !!actorId,
     refetchInterval: (query) => (query.state.error instanceof ApiError && query.state.error.status === 403 ? false : interval),
     retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 3,
+  });
+}
+
+/** 팬이 자기 답장 회수(2026-10-14) — 하루 답장 개수는 돌아오지 않음(서버) */
+export function useRetractReply(actorId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (messageId: string) => apiClient.delete(`/actors/${actorId}/messages/${messageId}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['messages', actorId] });
+      void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+    },
   });
 }
 

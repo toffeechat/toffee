@@ -5,10 +5,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { showInAppBanner } from '@/components/in-app-banner';
-import type { Actor } from '@/hooks/use-actors';
+import type { MyActor } from '@/hooks/use-console';
+import { apiClient } from '@/lib/api-client';
+import { showNameToken } from '@/utils/name-token';
 import { useMe } from '@/hooks/use-onboarding';
 import { useAuth } from '@/lib/auth-context';
 import { onRealtimeEvent } from '@/lib/realtime';
+
+const MEDIA_TEXT: Partial<Record<string, string>> = { PHOTO: 'inbox.sentPhoto', AUDIO: 'inbox.sentVoice', VIDEO: 'inbox.sentVideo' };
 
 /*
  * 소속사 PC 웹 새 메시지 알림(2026-10-13 사용자 결정, 1차) — 웹엔 푸시가 없어서, 탭을 열어 둔 동안 실시간 신호(SSE)로:
@@ -60,20 +64,32 @@ export function useConsoleWebAlerts() {
     return onRealtimeEvent((event) => {
       if (event.kind !== 'artist-message' || !event.actorId) return;
       const actorId = event.actorId;
-      // 목록의 "마지막 메시지 N일 전"·대시보드 숫자도 새로
-      void queryClient.invalidateQueries({ queryKey: ['my-actors'] });
+      // 대시보드 숫자도 새로(목록의 마지막 메시지는 아래 배너에서 새로 받음)
       void queryClient.invalidateQueries({ queryKey: ['agency-dashboard'] });
       // 이미 그 아티스트 모니터링을 보고 있으면 배너·점 없이(목록은 실시간 신호로 이미 새로고침됨)
       if (window.location.pathname.includes(actorId)) return;
       unread.set(actorId, (unread.get(actorId) ?? 0) + 1);
       emit();
-      const actor = queryClient.getQueryData<Actor[]>(['my-actors'])?.find((row) => row.id === actorId);
-      showInAppBanner({
-        title: t('consoleAlerts.newMessage', { name: actor?.chatDisplayName ?? t('consoleAlerts.anArtist') }),
-        body: t('consoleAlerts.tapToView'),
-        actorId,
-        onPress: () => router.push(`/console/${actorId}`),
-      });
+      // 카톡처럼 제목 = 아티스트 이름, 내용 = 메시지, 프로필 사진(2026-10-14 사용자 요청 — 예전 "○○님이 새 메시지를 보냈어요").
+      // 신호엔 내용이 없어서 토피룸 목록(마지막 메시지 포함)을 새로 받아서 씀
+      void queryClient
+        .fetchQuery({ queryKey: ['my-actors'], queryFn: () => apiClient.get<MyActor[]>('/actors/mine'), staleTime: 0 })
+        .catch(() => queryClient.getQueryData<MyActor[]>(['my-actors']))
+        .then((actors) => {
+          const actor = actors?.find((row) => row.id === actorId);
+          const last = actor?.lastMessage;
+          showInAppBanner({
+            title: actor?.chatDisplayName ?? t('consoleAlerts.anArtist'),
+            body: last?.body
+              ? showNameToken(last.body, t('studio.fanNickname'))
+              : last && MEDIA_TEXT[last.mediaType]
+                ? t(MEDIA_TEXT[last.mediaType]!)
+                : t('consoleAlerts.tapToView'),
+            avatar: actor?.chatProfileImageUrl ?? null,
+            actorId,
+            onPress: () => router.push(`/console/${actorId}`),
+          });
+        });
     });
   }, [enabled, queryClient, router, t]);
 

@@ -7,6 +7,9 @@ export interface PushData {
   messageId?: string;
   title?: string;
   body?: string;
+  /** 보낸 사람 사진(서버가 대화 알림용으로 넣음, 2026-10-13) — 앱 사용 중 배너에도(2026-10-14) */
+  senderImage?: string;
+  senderName?: string;
 }
 
 export async function registerThisDevice(): Promise<void> {}

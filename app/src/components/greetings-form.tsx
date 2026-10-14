@@ -19,15 +19,17 @@ export function useGreetings(actorId: string | undefined) {
   });
 }
 
-/** 둘 다 써 뒀는지 — 2026-10-13부터 필수(비어 있으면 스튜디오가 이 양식부터 보여 주고, 서버도 보내기를 거절) */
-export const greetingsReady = (g: Greetings | undefined) => !!g?.welcomeMessage?.trim() && !!g?.birthdayMessage?.trim();
+/** 써 뒀는지 — 2026-10-13부터 필수(비어 있으면 스튜디오가 이 양식부터 보여 주고, 서버도 보내기를 거절). CP방은 환영 메시지만(2026-10-14) */
+export const greetingsReady = (g: Greetings | undefined, couple = false) =>
+  !!g?.welcomeMessage?.trim() && (couple || !!g?.birthdayMessage?.trim());
 
 /**
  * 환영 메시지·생일 축하 메시지(2026-10-12) — 한 번 써 두면 새로 구독한 팬 대화방 맨 처음, 생일 알림을 켠 팬의 생일 아침에
  * 자동으로 보임. {{name}}은 팬 닉네임으로 바뀜. 팬의 생일 날짜는 아티스트에게 보이지 않음.
  * 2026-10-13 사용자 결정으로 둘 다 필수 — 빈 칸으로는 저장 못 함(스튜디오 첫 화면에서 먼저 쓰게 함).
  */
-export function GreetingsForm({ actorId }: { actorId: string }) {
+// couple: CP방 — 생일 칸 없이 환영 메시지만(2026-10-14 사용자 결정, 생일 축하는 개인방에서만 가서 두 번 받지 않게)
+export function GreetingsForm({ actorId, couple = false }: { actorId: string; couple?: boolean }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -35,9 +37,9 @@ export function GreetingsForm({ actorId }: { actorId: string }) {
   const [draft, setDraft] = useState<{ welcomeMessage: string; birthdayMessage: string } | null>(null);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const value = draft ?? { welcomeMessage: data?.welcomeMessage ?? '', birthdayMessage: data?.birthdayMessage ?? '' };
-  const complete = !!value.welcomeMessage.trim() && !!value.birthdayMessage.trim();
+  const complete = !!value.welcomeMessage.trim() && (couple || !!value.birthdayMessage.trim());
   const save = useMutation({
-    mutationFn: (input: typeof value) => apiClient.put<Greetings>(`/actors/${actorId}/messages/greetings`, input),
+    mutationFn: (input: { welcomeMessage: string; birthdayMessage?: string }) => apiClient.put<Greetings>(`/actors/${actorId}/messages/greetings`, input),
     onSuccess: (saved) => {
       queryClient.setQueryData(['greetings', actorId], saved);
       setDraft(null);
@@ -56,26 +58,30 @@ export function GreetingsForm({ actorId }: { actorId: string }) {
         {t('greetings.welcomeHint')}
       </ThemedText>
       <TextInput value={value.welcomeMessage} onChangeText={edit('welcomeMessage')} multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
-      <ThemedText type="smallBold" style={styles.spaced}>
-        {t('greetings.birthdayTitle')}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {t('greetings.birthdayHint')}
-      </ThemedText>
-      <TextInput value={value.birthdayMessage} onChangeText={edit('birthdayMessage')} multiline maxLength={1000} placeholder={t('greetings.birthdayPlaceholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+      {couple ? null : (
+        <>
+          <ThemedText type="smallBold" style={styles.spaced}>
+            {t('greetings.birthdayTitle')}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('greetings.birthdayHint')}
+          </ThemedText>
+          <TextInput value={value.birthdayMessage} onChangeText={edit('birthdayMessage')} multiline maxLength={1000} placeholder={t('greetings.birthdayPlaceholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+        </>
+      )}
       {message ? (
         <ThemedText type="small" themeColor={message.error ? 'danger' : 'textSecondary'}>
           {message.text}
         </ThemedText>
       ) : draft && !complete ? (
         <ThemedText type="small" themeColor="textSecondary">
-          {t('greetings.bothRequired')}
+          {t(couple ? 'greetings.welcomeRequired' : 'greetings.bothRequired')}
         </ThemedText>
       ) : null}
       <Pressable
         accessibilityRole="button"
         disabled={disabled}
-        onPress={() => save.mutate({ welcomeMessage: value.welcomeMessage.trim(), birthdayMessage: value.birthdayMessage.trim() })}
+        onPress={() => save.mutate({ welcomeMessage: value.welcomeMessage.trim(), ...(couple ? {} : { birthdayMessage: value.birthdayMessage.trim() }) })}
         style={[styles.button, { backgroundColor: theme.tint }, disabled && styles.disabled]}>
         <ThemedText type="smallBold" style={styles.buttonText}>
           {t('studioProfile.save')}

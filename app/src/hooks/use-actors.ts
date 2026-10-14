@@ -17,6 +17,8 @@ export interface Actor {
   officialProfileImageUrl: string | null;
   chatDisplayName: string;
   chatProfileImageUrl: string | null;
+  /** 토피룸 배경 사진(2026-10-14) — 없으면 기본 배경 */
+  chatBackgroundUrl?: string | null;
   monthlyPriceCents: number;
   /** 개인 구독 스토어 상품 ID — 없으면 아직 스토어 결제 불가(테스트 구독만) */
   storeProductId?: string | null;

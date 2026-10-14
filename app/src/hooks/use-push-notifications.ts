@@ -43,7 +43,15 @@ export function usePushNotifications(): void {
       void queryClient.invalidateQueries({ queryKey: ['messages', data.actorId] });
       void queryClient.invalidateQueries({ queryKey: ['actor-broadcasts', data.actorId] });
       void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
-      if (data.title || data.body) showInAppBanner({ title: data.title, body: data.body, actorId: data.actorId, onPress: () => open(data) });
+      if (data.title || data.body)
+        showInAppBanner({
+          title: data.title,
+          body: data.body,
+          actorId: data.actorId,
+          // 아티스트 메시지 알림이면 프로필 사진(카톡처럼, 2026-10-14)
+          ...(data.senderName ? { avatar: data.senderImage ?? null } : {}),
+          onPress: () => open(data),
+        });
     };
     const unsubscribeOpens = subscribeNotificationOpens(open);
     const unsubscribeForeground = subscribeForegroundMessages(refresh);

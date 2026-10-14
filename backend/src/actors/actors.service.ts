@@ -19,6 +19,8 @@ const LIST_SELECT = {
   officialProfileImageUrl: true,
   chatDisplayName: true,
   chatProfileImageUrl: true,
+  // 토피룸 배경 사진(2026-10-14) — 팬 토피룸 뒤에 깔림
+  chatBackgroundUrl: true,
   monthlyPriceCents: true,
   // 개인 구독 스토어 상품 ID(없으면 아직 스토어 결제 불가 — 앱은 테스트 구독만)
   storeProductId: true,
@@ -101,9 +103,28 @@ export class ActorsService {
       select: LIST_SELECT,
       orderBy: { legalName: 'asc' },
     });
-    const last = await this.lastBroadcastMap(actors.map((actor) => actor.id));
-    // 마지막 스타 메시지 시각 — 소속사 목록의 "N일째 미발송" 표시(2026-09-29)
-    return Promise.all(actors.map(async (actor) => ({ ...(await this.withImageUrls(actor)), lastBroadcastAt: last.get(actor.id) ?? null })));
+    const ids = actors.map((actor) => actor.id);
+    const [last, lastMessages] = await Promise.all([this.lastBroadcastMap(ids), this.lastMessageMap(ids)]);
+    // 마지막 스타 메시지 시각 — 소속사 목록의 "N일째 미발송" 표시(2026-09-29). lastMessage는 토피룸 목록 미리보기(2026-10-14, 카톡 대화방 목록처럼)
+    return Promise.all(
+      actors.map(async (actor) => ({
+        ...(await this.withImageUrls(actor)),
+        lastBroadcastAt: last.get(actor.id) ?? null,
+        lastMessage: lastMessages.get(actor.id) ?? null,
+      })),
+    );
+  }
+
+  /** 방별 마지막 스타 메시지(지운·회수한 것 제외) — 스튜디오·소속사 토피룸 목록의 미리보기 줄 */
+  private async lastMessageMap(actorIds: string[]) {
+    if (actorIds.length === 0) return new Map<string, { body: string | null; mediaType: string; createdAt: Date }>();
+    const rows = await this.prisma.message.findMany({
+      where: { actorId: { in: actorIds }, senderType: MessageSenderType.ARTIST, deletedAt: null },
+      distinct: ['actorId'],
+      orderBy: [{ actorId: 'asc' }, { createdAt: 'desc' }],
+      select: { actorId: true, body: true, mediaType: true, createdAt: true },
+    });
+    return new Map(rows.map(({ actorId, ...message }) => [actorId, message]));
   }
 
   /** 방별 마지막 스타 메시지 시각(지운 메시지 제외) */
@@ -122,13 +143,15 @@ export class ActorsService {
     T extends {
       officialProfileImageUrl: string | null;
       chatProfileImageUrl: string | null;
+      chatBackgroundUrl?: string | null;
       agency: { logoUrl: string | null } | null;
       coupleMembers?: { member: { officialProfileImageUrl: string | null; chatProfileImageUrl: string | null } }[];
     },
   >(actor: T): Promise<T> {
-    const [officialProfileImageUrl, chatProfileImageUrl, logoUrl, coupleMembers] = await Promise.all([
+    const [officialProfileImageUrl, chatProfileImageUrl, chatBackgroundUrl, logoUrl, coupleMembers] = await Promise.all([
       this.media.resolveImageUrl(actor.officialProfileImageUrl),
       this.media.resolveImageUrl(actor.chatProfileImageUrl),
+      actor.chatBackgroundUrl === undefined ? undefined : this.media.resolveImageUrl(actor.chatBackgroundUrl),
       this.media.resolveImageUrl(actor.agency?.logoUrl ?? null),
       // 커플방 멤버 사진도 같은 방식으로
       actor.coupleMembers &&
@@ -146,6 +169,7 @@ export class ActorsService {
       ...actor,
       officialProfileImageUrl,
       chatProfileImageUrl,
+      ...(chatBackgroundUrl !== undefined ? { chatBackgroundUrl } : {}),
       agency: actor.agency && { ...actor.agency, logoUrl },
       ...(coupleMembers ? { coupleMembers } : {}),
     };
@@ -204,6 +228,25 @@ export class ActorsService {
   async setChatProfileImage(userId: string, actorId: string, key: string | null) {
     await ensureCanViewActor(this.prisma, userId, actorId);
     await this.updateImages(actorId, { chat: key });
+    return this.findOne(actorId);
+  }
+
+  /**
+   * 토피룸 배경 사진(2026-10-14 사용자 결정, 1차) — 대화방 사진과 같은 권한(아티스트 본인·소속사·운영자), 같은 업로드 자리.
+   * null이면 기본 배경. 바뀐 이전 파일은 다른 칸에서 안 쓰면 지움
+   */
+  async setChatBackground(userId: string, actorId: string, key: string | null) {
+    await ensureCanViewActor(this.prisma, userId, actorId);
+    const actor = await this.prisma.actor.findUniqueOrThrow({
+      where: { id: actorId },
+      select: { chatBackgroundUrl: true, officialProfileImageUrl: true, chatProfileImageUrl: true },
+    });
+    const next = await this.checkImageKey(actorId, key);
+    await this.prisma.actor.update({ where: { id: actorId }, data: { chatBackgroundUrl: next } });
+    const old = actor.chatBackgroundUrl;
+    if (isStorageKey(old) && old !== next && old !== actor.officialProfileImageUrl && old !== actor.chatProfileImageUrl) {
+      await this.media.deleteQuietly(old);
+    }
     return this.findOne(actorId);
   }
 

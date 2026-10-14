@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
 import { SideTime } from '@/components/side-time';
+import { DayDivider, sameDay } from '@/components/day-divider';
 import type { FanReply } from '@/hooks/use-console';
 import { useMessageReplies, useStudioMessages } from '@/hooks/use-studio';
 import { useTheme } from '@/hooks/use-theme';
@@ -42,6 +43,7 @@ export default function MessageRepliesScreen() {
   }, [data]);
 
   const listRef = useRef<FlatList<FanReply>>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   // 위로 올려 둔 동안 새로 온 답장 수 — 맨 아래에서 마지막으로 본 최신 답장 id 기준
   const [seenNewestId, setSeenNewestId] = useState<string | undefined>(undefined);
@@ -112,9 +114,21 @@ export default function MessageRepliesScreen() {
                 {t('studio.repliesEmpty')}
               </ThemedText>
             }
-            renderItem={({ item }) => (
-              <ReplyBubble item={item} actorId={actorId} onQuote={() => quote(item)} />
-            )}
+            renderItem={({ item, index }) => {
+              const older = replies[index + 1];
+              return (
+                <ThemedView style={styles.transparent}>
+                  {(!older || !sameDay(older.createdAt, item.createdAt)) && <DayDivider iso={item.createdAt} />}
+                  <ReplyBubble
+                    item={item}
+                    actorId={actorId}
+                    onQuote={() => quote(item)}
+                    menuOpen={menuFor === item.id}
+                    onMenuChange={(open) => setMenuFor(open ? item.id : null)}
+                  />
+                </ThemedView>
+              );
+            }}
           />
           {unseen > 0 && (
             <Pressable
@@ -132,7 +146,20 @@ export default function MessageRepliesScreen() {
   );
 }
 
-function ReplyBubble({ item, actorId, onQuote }: { item: FanReply; actorId: string; onQuote: () => void }) {
+// 길게 누르면 복사·답장하기·신고·차단(2026-10-14, 시간 옆 ⋯와 같은 메뉴). 팬이 회수한 답장은 "회수된 메시지입니다"
+function ReplyBubble({
+  item,
+  actorId,
+  onQuote,
+  menuOpen,
+  onMenuChange,
+}: {
+  item: FanReply;
+  actorId: string;
+  onQuote: () => void;
+  menuOpen: boolean;
+  onMenuChange: (open: boolean) => void;
+}) {
   const theme = useTheme();
   const { t } = useTranslation();
   return (
@@ -150,21 +177,35 @@ function ReplyBubble({ item, actorId, onQuote }: { item: FanReply; actorId: stri
         ) : null}
         <ThemedView style={styles.bubbleLine}>
           {/* 말풍선 + 시간은 한 묶음(시간이 말풍선 아래로 밀려나지 않게, 2026-10-13) */}
-          <ThemedView style={styles.bubbleWithTime}>
-            <ThemedView style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-              {/* 태국·일본 팬 답장 등 다른 언어면 "번역 보기" */}
-              {item.body ? <TranslatableText actorId={actorId} messageId={item.id} text={item.body} /> : null}
+          <Pressable
+            onLongPress={item.fanUser ? () => onMenuChange(true) : undefined}
+            delayLongPress={350}
+            accessibilityHint={item.fanUser ? t('chat.messageActions') : undefined}
+            style={styles.bubbleWithTime}>
+            <ThemedView
+              style={[styles.bubble, item.retracted ? [styles.retracted, { borderColor: theme.border }] : { backgroundColor: theme.backgroundElement }]}>
+              {item.retracted ? (
+                <ThemedText type="small" themeColor="textTertiary">
+                  {t('retract.placeholder')}
+                </ThemedText>
+              ) : item.body ? (
+                // 태국·일본 팬 답장 등 다른 언어면 "번역 보기"
+                <TranslatableText actorId={actorId} messageId={item.id} text={item.body} />
+              ) : null}
             </ThemedView>
             <SideTime at={item.createdAt} />
-          </ThemedView>
-          {/* 시간 옆 ⋯ — 펼치면 답장하기·신고·차단(좁으면 다음 줄로) */}
+          </Pressable>
+          {/* 시간 옆 ⋯ — 펼치면 복사·답장하기·신고·차단(좁으면 다음 줄로) */}
           {item.fanUser && (
             <FanReplyActions
               actorId={actorId}
               messageId={item.id}
               fanUserId={item.fanUser.id}
               nickname={item.fanUser.nickname ?? ''}
+              body={item.retracted ? null : item.body}
               onQuote={onQuote}
+              open={menuOpen}
+              onOpenChange={onMenuChange}
             />
           )}
         </ThemedView>
@@ -178,7 +219,7 @@ const styles = StyleSheet.create({
   original: { margin: Spacing.three, marginBottom: 0, borderRadius: 14, padding: Spacing.three, gap: 4 },
   loading: { marginTop: Spacing.six },
   listArea: { flex: 1 },
-  list: { padding: Spacing.three, gap: Spacing.three },
+  list: { padding: Spacing.three, gap: Spacing.two },
   empty: { textAlign: 'center', marginTop: Spacing.four },
   blocksLink: { alignSelf: 'flex-end' },
   fanRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two, backgroundColor: 'transparent' },
@@ -186,6 +227,8 @@ const styles = StyleSheet.create({
   bubbleLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: Spacing.two, rowGap: Spacing.one, backgroundColor: 'transparent' },
   bubbleWithTime: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 6, flexShrink: 1, maxWidth: '88%', backgroundColor: 'transparent' },
   bubble: { borderRadius: 16, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexShrink: 1 },
+  retracted: { borderWidth: StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
+  transparent: { backgroundColor: 'transparent' },
   newPill: {
     position: 'absolute',
     bottom: Spacing.three,

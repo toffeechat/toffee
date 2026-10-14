@@ -27,6 +27,12 @@ interface ExternalIdentity {
 
 const FETCH_TIMEOUT_MS = 5000;
 
+// 길이가 달라도 비교 시간이 같게 해시끼리 비교
+function sameCode(given: string | undefined, expected: string): boolean {
+  const digest = (value: string) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(digest(given?.trim() ?? ''), digest(expected));
+}
+
 @Injectable()
 export class AuthService {
   private readonly googleClient: OAuth2Client;
@@ -50,8 +56,14 @@ export class AuthService {
   // DevOnlyGuard가 프로덕션에서 라우트 자체를 404로 숨김.
   // 공개된 데모 서버(2026-10-01)에선 DEV_LOGIN_CODE(입장 코드)를 맞혀야 함 — 주소만 알면 아무 계정(운영자 포함)으로 들어오는 걸 막으려고.
   // 비어 있으면 예전처럼 코드 없이(로컬 개발).
+  // 운영자는 입장 코드를 따로(2026-10-14 사용자 결정): 외부 소속사에 데모 입장 코드를 나눠 주면 이메일만 admin@…으로 바꾸거나 role을 ADMIN으로
+  // 보내 운영자 화면(데모 초기화·역할 변경)에 들어갈 수 있었음 → 운영자 계정이거나 운영자 역할을 요청하면 DEV_LOGIN_ADMIN_CODE를 맞혀야 함.
+  // 입장 코드가 걸린 서버에서 운영자 코드가 비어 있으면 운영자 로그인은 아예 막힘(로컬 개발처럼 입장 코드가 없으면 예전처럼)
   async devLogin(email: string, name?: string, role?: Role, code?: string): Promise<AuthenticatedUser> {
-    this.assertDevLoginCode(code);
+    const existing = await this.prisma.user.findUnique({ where: { email }, select: { role: true } });
+    const wantsAdmin = role === Role.ADMIN || existing?.role === Role.ADMIN;
+    if (wantsAdmin) this.assertAdminLoginCode(code);
+    else this.assertDevLoginCode(code);
     const user = await this.prisma.user.upsert({
       where: { email },
       update: role ? { role } : {},
@@ -63,11 +75,14 @@ export class AuthService {
   private assertDevLoginCode(code: string | undefined) {
     const expected = this.configService.get<string>('DEV_LOGIN_CODE')?.trim();
     if (!expected) return;
-    // 길이가 달라도 비교 시간이 같게 해시끼리 비교
-    const digest = (value: string) => createHash('sha256').update(value).digest();
-    if (!timingSafeEqual(digest(code?.trim() ?? ''), digest(expected))) {
-      throw new UnauthorizedException(appError('DEV_LOGIN_CODE_INVALID'));
-    }
+    if (!sameCode(code, expected)) throw new UnauthorizedException(appError('DEV_LOGIN_CODE_INVALID'));
+  }
+
+  private assertAdminLoginCode(code: string | undefined) {
+    // 입장 코드가 없는 서버(로컬 개발)는 예전처럼 코드 없이
+    if (!this.configService.get<string>('DEV_LOGIN_CODE')?.trim()) return;
+    const expected = this.configService.get<string>('DEV_LOGIN_ADMIN_CODE')?.trim();
+    if (!expected || !sameCode(code, expected)) throw new UnauthorizedException(appError('DEV_LOGIN_CODE_INVALID'));
   }
 
   // ── 소셜 토큰 검증 ──────────────────────────────────────────────

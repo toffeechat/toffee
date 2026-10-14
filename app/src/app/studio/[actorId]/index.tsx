@@ -12,14 +12,17 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { ArrowUp, AtSign, Camera, CornerUpLeft, ImagePlus, Mic, Send, Square, Trash2, UserRound, Video, X } from 'lucide-react-native';
+import { ArrowUp, AtSign, Camera, Copy, CornerUpLeft, ImagePlus, Mic, MoreHorizontal, Send, Square, Undo2, UserRound, Video, X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MediaTile } from '@/components/media-tile';
 import { ReplyTicker } from '@/components/reply-ticker';
 import { QuoteBlock } from '@/components/quote-block';
 import { VoiceMessage } from '@/components/voice-message';
-import { Avatar } from '@/components/ui/avatar';
+import { ChatBackground } from '@/components/chat-background';
+import { DayDivider, sameDay } from '@/components/day-divider';
+import { MessageMenu } from '@/components/message-menu';
+import { copyText } from '@/lib/copy-text';
 import { GreetingsForm, greetingsReady, useGreetings } from '@/components/greetings-form';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
@@ -61,30 +64,73 @@ function toAttachments(result: ImagePicker.ImagePickerResult): Attachment[] {
 }
 
 // senderName: 커플방이면 누가 보낸 메시지인지(두 멤버가 같은 화면을 봄) — 1인 방은 null
+// 2026-10-14 사용자 피드백: 시간은 마지막 말풍선 바로 옆(사진+글이면 예전엔 사진 왼쪽 끝에 맞춰져 떨어져 보였음), 날짜는 구분선으로,
+// 휴지통 대신 말풍선을 길게 누르면 복사 · 회수(웹은 시간 아래 ⋯로도)
 function MyMessage({
   message,
   onOpenReplies,
-  onDelete,
+  onRetract,
   senderName,
   isLatest,
+  menuOpen,
+  onOpenMenu,
+  onCloseMenu,
 }: {
   message: StudioMessage;
   isLatest?: boolean;
   onOpenReplies: () => void;
-  onDelete: () => void;
+  onRetract: () => void;
   senderName?: string | null;
+  menuOpen: boolean;
+  onOpenMenu: () => void;
+  onCloseMenu: () => void;
 }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const hiddenByAdmin = !!message.deletedAt && message.deletedByAdmin;
-  // 소속사가 대신 지운 메시지(2026-10-12) — 아티스트도 알 수 있게 이유와 함께 남김
+  // 소속사가 대신 회수한 메시지(2026-10-12) — 아티스트도 알 수 있게 이유와 함께 남김
   const removedByAgency = !!message.deletedAt && !message.deletedByAdmin && !!message.deletedByStaffId;
   const removed = hiddenByAdmin || removedByAgency;
+  // 내가 회수한 메시지(2026-10-14) — 팬 화면과 같게 자리만 "회수한 메시지예요"
+  const retracted = !!message.deletedAt && !removed;
   // 최근 메시지엔 서버가 recentReplies를 줌, 오래된 메시지는 숫자만. 답장이 없을 때 "팬 답장을 기다리는 중…"은 가장 최근 메시지에만
   // (2026-10-12 실기기: 최근 10개 메시지마다 붙어 있어 어수선했음) — 나머지는 "답장 없음" 링크로
-  const hasPreview = !!message.recentReplies && !removed && (message.recentReplies.length > 0 || !!isLatest);
-  const time = new Date(message.createdAt);
+  const hasPreview = !!message.recentReplies && !message.deletedAt && (message.recentReplies.length > 0 || !!isLatest);
+  const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
+  const hasMenu = !message.deletedAt;
+  const bodyText = message.body ? showNameToken(message.body, t('studio.fanNickname')) : null;
+
+  // 시간(+ 커플방이면 보낸 사람) — 마지막 말풍선 옆 아래
+  const side = (
+    <View style={styles.sideRow}>
+      {/* 웹(PC)은 마우스로 길게 누르기가 어색해서 시간 옆 ⋯로도 */}
+      {Platform.OS === 'web' && hasMenu ? (
+        <IconButton icon={MoreHorizontal} size={15} label={t('chat.messageActions')} color={theme.textTertiary} onPress={onOpenMenu} style={styles.metaButton} />
+      ) : null}
+      <View style={styles.sideTime}>
+        {senderName ? (
+          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+            {senderName}
+          </ThemedText>
+        ) : null}
+        <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
+          {time}
+        </ThemedText>
+      </View>
+    </View>
+  );
+  const textBubble =
+    !isMedia || message.body ? (
+      <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
+        {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+        {message.mediaType === 'AUDIO' ? (
+          <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
+        ) : null}
+        {bodyText ? <ThemedText>{bodyText}</ThemedText> : null}
+      </View>
+    ) : null;
+
   return (
     <View style={styles.messageRow}>
       {removed && (
@@ -92,51 +138,54 @@ function MyMessage({
           {t(hiddenByAdmin ? 'studio.hiddenByAdmin' : 'console.deletedByAgency')}
         </ThemedText>
       )}
-      {/* 시간은 말풍선 왼쪽 아래(카톡처럼, 2026-10-12 — 예전엔 말풍선 밑 줄) */}
-      <View style={styles.bubbleLine}>
-        <View style={[styles.column, removed && styles.hidden]}>
+      {retracted ? (
+        <View style={styles.bubbleLine}>
+          <View style={[styles.bubble, styles.retracted, { borderColor: theme.border }]}>
+            <ThemedText type="small" themeColor="textTertiary">
+              {t('retract.mine')}
+            </ThemedText>
+          </View>
+          {side}
+        </View>
+      ) : (
+        <Pressable onLongPress={hasMenu ? onOpenMenu : undefined} delayLongPress={350} accessibilityHint={hasMenu ? t('chat.messageActions') : undefined} style={[styles.column, removed && styles.hidden]}>
           {isMedia ? (
-            <>
-              {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-              <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
-            </>
-          ) : null}
-          {!isMedia || message.body ? (
-            <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
-              {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-              {message.mediaType === 'AUDIO' ? (
-                <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
-              ) : null}
-              {message.body ? <ThemedText>{showNameToken(message.body, t('studio.fanNickname'))}</ThemedText> : null}
+            <View style={styles.bubbleLine}>
+              <View style={styles.mediaColumn}>
+                {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
+                <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
+              </View>
+              {textBubble ? null : side}
             </View>
           ) : null}
-        </View>
-        <View style={styles.sideTime}>
-          {senderName ? (
-            <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
-              {senderName}
-            </ThemedText>
+          {textBubble ? (
+            <View style={styles.bubbleLine}>
+              {textBubble}
+              {side}
+            </View>
           ) : null}
-          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
-            {time.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })}
-          </ThemedText>
-          <ThemedText type="caption" themeColor="textTertiary" style={styles.sideTimeText}>
-            {time.toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' })}
-          </ThemedText>
+        </Pressable>
+      )}
+      {menuOpen && (
+        <View style={styles.menuWrap}>
+          <MessageMenu
+            onClose={onCloseMenu}
+            actions={[
+              ...(message.body
+                ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: () => (onCloseMenu(), copyText(bodyText)) }]
+                : []),
+              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract()) },
+            ]}
+          />
         </View>
-      </View>
-      <View style={styles.meta}>
-        {!removed && (
-          <IconButton icon={Trash2} size={15} label={t('studio.delete')} color={theme.textTertiary} onPress={onDelete} style={styles.metaButton} />
-        )}
-        {!hasPreview && (
-          <Pressable onPress={onOpenReplies} hitSlop={8} accessibilityRole="button">
-            <ThemedText type="smallBold" style={{ color: theme.tint }}>
-              {message.replyCount > 0 ? `${t('studio.replies', { count: message.replyCount })} ›` : t('studio.noReplies')}
-            </ThemedText>
-          </Pressable>
-        )}
-      </View>
+      )}
+      {!hasPreview && !message.deletedAt && (
+        <Pressable onPress={onOpenReplies} hitSlop={8} accessibilityRole="button">
+          <ThemedText type="smallBold" style={{ color: theme.tint }}>
+            {message.replyCount > 0 ? `${t('studio.replies', { count: message.replyCount })} ›` : t('studio.noReplies')}
+          </ThemedText>
+        </Pressable>
+      )}
       {/* 최근 메시지는 팬 답장이 온 순서대로 한 줄씩 넘어가며 보임(버블·위버스 방식) */}
       {hasPreview && <ReplyTicker replies={message.recentReplies ?? []} count={message.replyCount} onPress={onOpenReplies} />}
     </View>
@@ -194,24 +243,31 @@ export default function StudioChannelScreen() {
 
   // 스토리 올리기는 후순위(3차)로 미뤄서 이 화면엔 없음 — 서버 API는 남아 있음(STATUS.md)
   useEffect(() => {
+    // 헤더는 팬 토피룸과 같은 모양(2026-10-14 사용자 요청 "팬·아티스트 대화창 UI 통일") — 이름 가운데, 사진 없음
     navigation.setOptions({
+      headerTitleAlign: 'center',
       headerTitle: () =>
         actor ? (
           <View style={styles.headerTitle}>
-            <Avatar uri={actor.chatProfileImageUrl} size={34} />
-            <ThemedText type="headline" numberOfLines={1}>
+            <ThemedText type="headline" numberOfLines={1} style={styles.headerName}>
               {actor.chatDisplayName}
             </ThemedText>
+            {actor.kind === 'COUPLE' ? (
+              <ThemedText type="caption" themeColor="textSecondary">
+                {t('couple.roomLabel')}
+              </ThemedText>
+            ) : null}
           </View>
         ) : null,
       headerRight: () => <IconButton icon={UserRound} label={t('studio.profileButton')} onPress={() => router.push(`/studio/${actorId}/profile`)} />,
     });
   }, [actor, navigation, router, actorId, t]);
 
-  const removeMessage = async (messageId: string) => {
-    const ok = await confirm(t('studio.deleteTitle'), t('studio.deleteBody'), t('studio.delete'), t('common.cancel'));
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const retractMessage = async (messageId: string) => {
+    const ok = await confirm(t('retract.title'), t('retract.artistBody'), t('retract.action'), t('common.cancel'));
     if (!ok) return;
-    deleteBroadcast.mutate(messageId, { onError: () => setNotice({ text: t('studio.deleteFailed'), error: true }) });
+    deleteBroadcast.mutate(messageId, { onError: () => setNotice({ text: t('retract.failed'), error: true }) });
   };
 
   const pickFromLibrary = async () => {
@@ -342,18 +398,18 @@ export default function StudioChannelScreen() {
   };
 
   const canSend = !send.isPending && !batchStep && !recorderState.isRecording && (!!draft.trim() || !!attachment);
-  // 내가 지운 메시지는 안 보임 — 운영자가 가렸거나 소속사가 대신 지운 건 이유와 함께 보임
-  const visible = messages?.filter((message) => !message.deletedAt || message.deletedByAdmin || !!message.deletedByStaffId) ?? [];
+  // 회수한 메시지도 자리는 남김(2026-10-14) — 팬 화면처럼 "회수한 메시지예요", 운영자가 가렸거나 소속사가 회수한 건 이유와 함께
+  const visible = messages ?? [];
 
   // 환영·생일 메시지를 아직 안 썼으면 보내기 화면 대신 이것부터(2026-10-13 사용자 결정 — 서버도 비어 있으면 보내기를 거절).
   // 저장하면 같은 쿼리가 바뀌어서 바로 보내기 화면으로
-  if (greetings && !greetingsReady(greetings)) {
+  if (greetings && actor && !greetingsReady(greetings, actor.kind === 'COUPLE')) {
     return (
       <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
         <ScrollView contentContainerStyle={styles.gate} keyboardShouldPersistTaps="handled">
           <ThemedText type="title">{t('greetings.gateTitle')}</ThemedText>
-          <ThemedText themeColor="textSecondary">{t('greetings.gateBody')}</ThemedText>
-          <GreetingsForm actorId={actorId} />
+          <ThemedText themeColor="textSecondary">{t(actor.kind === 'COUPLE' ? 'greetings.gateBodyCouple' : 'greetings.gateBody')}</ThemedText>
+          <GreetingsForm actorId={actorId} couple={actor.kind === 'COUPLE'} />
         </ScrollView>
       </KeyboardAvoidingView>
     );
@@ -361,6 +417,8 @@ export default function StudioChannelScreen() {
 
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+      {/* 토피룸 배경 사진(2026-10-14) — 팬이 보는 것과 같게 */}
+      <ChatBackground uri={actor?.chatBackgroundUrl} />
       <SafeAreaView style={styles.inner} edges={['bottom']}>
         {isLoading ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
@@ -377,15 +435,25 @@ export default function StudioChannelScreen() {
                 <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />
               </View>
             }
-            renderItem={({ item, index }) => (
-              <MyMessage
-                message={item}
-                isLatest={index === 0}
-                senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
-                onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
-                onDelete={() => void removeMessage(item.id)}
-              />
-            )}
+            renderItem={({ item, index }) => {
+              // 뒤집힌 목록: index+1이 더 오래된 메시지 — 날이 바뀌면 구분선
+              const older = visible[index + 1];
+              return (
+                <View>
+                  {(!older || !sameDay(older.createdAt, item.createdAt)) && <DayDivider iso={item.createdAt} />}
+                  <MyMessage
+                    message={item}
+                    isLatest={index === 0}
+                    senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
+                    onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
+                    onRetract={() => void retractMessage(item.id)}
+                    menuOpen={menuFor === item.id}
+                    onOpenMenu={() => setMenuFor(item.id)}
+                    onCloseMenu={() => setMenuFor(null)}
+                  />
+                </View>
+              );
+            }}
           />
         )}
 
@@ -562,21 +630,25 @@ export default function StudioChannelScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   inner: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, maxWidth: 240 },
+  headerTitle: { maxWidth: 240, alignItems: 'center' },
   loading: { marginTop: Spacing.six },
-  list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.four },
+  list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.three },
   flip: { transform: [{ scaleY: -1 }] },
   messageRow: { alignItems: 'flex-end', gap: 6 },
+  headerName: { textAlign: 'center' },
+  mediaColumn: { flexShrink: 1, alignItems: 'flex-end', gap: 4 },
+  retracted: { borderWidth: StyleSheet.hairlineWidth },
+  menuWrap: { alignSelf: 'flex-end' },
   voiceButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   voiceButtonText: { color: '#fff' },
   voiceChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.two + 2, paddingVertical: 6 },
-  bubbleLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, maxWidth: '92%' },
-  column: { flexShrink: 1, alignItems: 'flex-end', gap: 4 },
+  bubbleLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, maxWidth: '100%' },
+  column: { maxWidth: '92%', alignItems: 'flex-end', gap: 4 },
+  sideRow: { flexShrink: 0, flexDirection: 'row', alignItems: 'flex-end' },
   sideTime: { flexShrink: 0, alignItems: 'flex-end', paddingBottom: 2 },
   sideTimeText: { textAlign: 'right' },
   hidden: { opacity: 0.45 },
-  bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  bubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6, flexShrink: 1 },
   metaButton: { width: 28, height: 28 },
   toast: { position: 'absolute', top: Spacing.three, alignSelf: 'center', maxWidth: '86%', borderRadius: Radius.md, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, zIndex: 10 },
   tray: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginHorizontal: Spacing.three, marginBottom: Spacing.two, borderRadius: Radius.md, padding: Spacing.two, paddingLeft: Spacing.three },

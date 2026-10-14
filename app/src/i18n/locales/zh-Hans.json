@@ -10,7 +10,7 @@
     "chats": "聊天",
     "my": "我的",
     "discover": "发现",
-    "inbox": "消息",
+    "inbox": "Toffee Room",
     "profile": "我的"
   },
   "screens": {
@@ -53,7 +53,7 @@
   },
   "chats": {
     "title": "聊天",
-    "loadFailed": "无法加载聊天列表。",
+    "loadFailed": "无法加载 Toffee Room 列表。",
     "empty": "你还没有订阅任何艺人，去“艺人”标签页开始订阅吧。",
     "noConversation": "还没有消息"
   },
@@ -70,11 +70,11 @@
     "noRepliesLeft": "每条消息最多可回复 {{limit}} 条，请等待艺人的下一条消息。",
     "mute": "关闭通知",
     "unmute": "开启通知",
-    "muted": "已关闭此聊天的通知，仍会照常收到消息。",
-    "unmuted": "已开启此聊天的通知。",
+    "muted": "已关闭此 Toffee Room 的通知，仍会照常收到消息。",
+    "unmuted": "已开启此 Toffee Room 的通知。",
     "report": "举报",
     "closeMenu": "关闭",
-    "messageActions": "长按可举报",
+    "messageActions": "长按打开菜单",
     "newMessages": "{{count}} 条新消息 ↓",
     "newMessagesShort": "{{count}} 条新消息",
     "readMarker": "以上为已读消息",
@@ -131,18 +131,15 @@
     "lastBroadcast": "最近发送日期",
     "noBroadcast": "暂无发送记录",
     "noNickname": "（无昵称）",
-    "deletedByActor": "艺人已删除的消息（粉丝看不到）",
+    "deletedByActor": "艺人撤回的消息（粉丝看到“此消息已撤回”）",
     "lastMessageDays": "上次消息：{{count}} 天前",
     "noMessagesYet": "尚未发送消息",
     "lastMessageToday": "今天已发送消息",
-    "deleteTitle": "要删除这条消息吗？",
-    "deleteBody": "消息会立即从粉丝界面消失且无法恢复，已发送的通知无法撤回。艺人界面会显示\"经纪公司删除的消息\"。",
-    "deleteConfirm": "删除",
-    "deletedByAgency": "经纪公司删除的消息（粉丝看不到）",
+    "deletedByAgency": "经纪公司撤回的消息（粉丝看不到）",
     "allReplies": "全部回复",
     "description": "旗下艺人列表。点击可查看发送的消息、粉丝回复和统计。",
     "tabHint": {
-      "monitor": "查看艺人发给粉丝的消息。如有问题消息，可以代为删除。",
+      "monitor": "查看艺人发给粉丝的消息。如有问题消息，长按即可代为撤回。",
       "replies": "查看粉丝发来的回复。如有问题回复，可以举报或拉黑该粉丝。",
       "stats": "查看该艺人的订阅、消息、回复趋势和粉丝分布。"
     }
@@ -174,7 +171,6 @@
   "studio": {
     "screen": "工作室",
     "repliesScreen": "粉丝回复",
-    "pickActor": "请选择要发送消息的频道",
     "noActor": "没有关联的艺人账号，请联系运营人员。",
     "empty": "你还没有发送过消息，给粉丝们发第一条消息吧！",
     "inputPlaceholder": "给粉丝发消息",
@@ -206,10 +202,6 @@
     "insertName": "插入粉丝名字",
     "insertNameHint": "发送时〈粉丝昵称〉会替换成每位粉丝自己的昵称。",
     "fanNickname": "粉丝昵称",
-    "delete": "删除",
-    "deleteTitle": "删除消息",
-    "deleteBody": "这条消息将从粉丝的画面中消失。已发送的通知无法撤回，经纪公司的监控中会保留删除记录。",
-    "deleteFailed": "删除失败，请重试。",
     "hiddenByAdmin": "根据运营政策已隐藏（粉丝看不到）。",
     "waitingReplies": "正在等待粉丝回复…",
     "newReplies": "{{count}} 条新回复 ↓",
@@ -277,9 +269,9 @@
   "block": {
     "action": "屏蔽",
     "manage": "屏蔽管理",
-    "confirmTitle": "要在此频道屏蔽 {{nickname}} 吗？",
+    "confirmTitle": "要在此 Toffee Room 屏蔽 {{nickname}} 吗？",
     "confirmBody": "屏蔽后，该粉丝将无法发送回复，已发送的回复也会从列表中消失。订阅和查看消息不受影响，可随时解除。",
-    "listHint": "被屏蔽的粉丝无法在此频道回复，解除后可再次回复。",
+    "listHint": "被屏蔽的粉丝无法在此 Toffee Room 回复，解除后可再次回复。",
     "empty": "没有被屏蔽的粉丝。",
     "unblock": "解除"
   },
@@ -298,7 +290,7 @@
     "title": "我的资料",
     "headerButton": "资料",
     "nickname": "昵称",
-    "nicknameHint": "这是粉丝在聊天室中看到的名字，可以随时修改。",
+    "nicknameHint": "这是粉丝在 Toffee Room 中看到的名字，可以随时修改。",
     "save": "保存",
     "saved": "已保存。",
     "saveFailed": "保存失败，请重试。",
@@ -454,7 +446,7 @@
     "restoreFailed": "恢复失败，请稍后重试。",
     "ending": "即将到期",
     "endsOn": "使用截止日",
-    "endingNote": "已在商店关闭自动续订。到这一天前仍可查看聊天，之后聊天室将关闭。重新开启自动续订即可继续使用。",
+    "endingNote": "已在商店关闭自动续订。到这一天前仍可查看聊天，之后 Toffee Room 将关闭。重新开启自动续订即可继续使用。",
     "pastTitle": "过往订阅",
     "pastHint": "重新订阅也无法查看之前的聊天。",
     "endedOn": "{{date}} 结束",
@@ -491,16 +483,16 @@
     "includes": "包含 {{count}} 位艺人",
     "singlePrice": "单独订阅每月 {{price}}",
     "replacesSingle": "你正在单独订阅的 {{names}} 将并入此套餐，聊天记录保持不变。",
-    "doneBody": "{{name}} 套餐订阅已开始，可在消息页查看所有聊天。",
+    "doneBody": "{{name}} 套餐订阅已开始，可在 Toffee Room 页查看所有 Toffee Room。",
     "goInbox": "前往消息",
     "notFound": "找不到该套餐",
     "mine": "套餐订阅",
-    "rooms": "聊天室",
+    "rooms": "Toffee Room",
     "via": "套餐 · {{name}}",
     "cancel": "取消套餐",
     "cancelTitle": "取消套餐",
-    "cancelConfirm": "取消 {{name}} 后，与 {{names}} 的聊天室将一起关闭（单独订阅的艺人不受影响）。重新订阅也看不到之前的聊天。",
-    "cancelFromActor": "该艺人包含在你的 {{name}} 套餐中。取消后套餐内其他聊天室也会关闭，重新订阅也看不到之前的聊天。",
+    "cancelConfirm": "取消 {{name}} 后，{{names}} 的 Toffee Room 将一起关闭（单独订阅的艺人不受影响）。重新订阅也看不到之前的聊天。",
+    "cancelFromActor": "该艺人包含在你的 {{name}} 套餐中。取消后套餐内其他 Toffee Room 也会关闭，重新订阅也看不到之前的聊天。",
     "cancelFailed": "取消失败，请重试。",
     "viaShort": "通过套餐使用",
     "replacesSingleStore": "单独订阅的 {{names}} 的商店订阅不会自动结束——购买套餐后请在商店订阅管理中取消（聊天会继续）。"
@@ -628,14 +620,16 @@
   },
   "greetings": {
     "welcomeTitle": "欢迎消息",
-    "welcomeHint": "会显示在新订阅粉丝聊天室的最开头。写 {{name}} 会替换为粉丝的昵称。",
+    "welcomeHint": "会显示在新订阅粉丝的 Toffee Room 最开头。写 {{name}} 会替换为粉丝的昵称。",
     "birthdayTitle": "生日祝福",
     "birthdayHint": "会在开启生日提醒的粉丝生日当天早上（泰国时间 9 点）自动发送。你看不到粉丝的生日日期。",
     "placeholder": "例如：{{name}}，欢迎你！",
     "birthdayPlaceholder": "例如：{{name}}，生日快乐！",
     "bothRequired": "两条消息都填写后才能保存。",
     "gateTitle": "开始之前",
-    "gateBody": "给粉丝发消息之前，请先写好欢迎消息和生日祝福消息。之后可随时在个人资料中修改。"
+    "gateBody": "给粉丝发消息之前，请先写好欢迎消息和生日祝福消息。之后可随时在个人资料中修改。",
+    "welcomeRequired": "写好欢迎消息后才能保存。",
+    "gateBodyCouple": "在给此 CP 房间的粉丝发消息前，请先写欢迎消息（生日祝福只从个人房间发送）。之后可随时在个人资料中修改。"
   },
   "notices": {
     "title": "公告",
@@ -759,7 +753,6 @@
     "artists": "旗下艺人"
   },
   "consoleAlerts": {
-    "newMessage": "{{name}} 发送了新消息",
     "anArtist": "旗下艺人",
     "tapToView": "点击查看监控",
     "unread": "{{count}} 条新消息",
@@ -767,11 +760,11 @@
   },
   "records": {
     "title": "记录",
-    "description": "集中查看旗下艺人房间中被拉黑的粉丝、被举报的回复和被删除的消息。",
+    "description": "集中查看旗下艺人 Toffee Room 中被拉黑的粉丝、被举报的回复和被撤回的消息。",
     "tabs": {
       "blocks": "已拉黑粉丝",
       "reports": "举报",
-      "deleted": "已删除消息"
+      "deleted": "已撤回消息"
     },
     "allArtists": "全部",
     "by": {
@@ -789,13 +782,13 @@
       "RESOLVED": "已处理",
       "DISMISSED": "未发现问题"
     },
-    "deletedBy": "{{who}}删除",
+    "deletedBy": "{{who}}撤回",
     "hiddenByAdmin": "Toffee 运营根据政策隐藏",
-    "deletedMeta": "发送 {{sent}} · 删除 {{deleted}}",
+    "deletedMeta": "发送 {{sent}} · 撤回 {{deleted}}",
     "empty": {
       "blocks": "没有被拉黑的粉丝。",
       "reports": "没有举报的回复。",
-      "deleted": "没有被删除的消息。"
+      "deleted": "没有被撤回的消息。"
     },
     "limitNote": "仅显示最近 {{count}} 条。更早的记录请在上方选择艺人查看。",
     "unblockTitle": "要解除对 {{nickname}} 的拉黑吗？",
@@ -814,5 +807,27 @@
     "PH": "菲律宾",
     "ID": "印度尼西亚",
     "US": "美国"
+  },
+  "rooms": {
+    "title": "Toffee Room",
+    "noMessagesYet": "还没有发送过消息"
+  },
+  "retract": {
+    "action": "撤回",
+    "title": "要撤回这条消息吗？",
+    "artistBody": "粉丝将看到“此消息已撤回”。已送达的通知无法撤回。",
+    "agencyBody": "将从粉丝画面中不留痕迹地消失。已送达的通知无法撤回，艺人画面会显示“经纪公司撤回的消息”。",
+    "fanBody": "所有人都会看到“此消息已撤回”。已发送的回复次数不会恢复。",
+    "failed": "撤回失败，请重试。",
+    "placeholder": "此消息已撤回",
+    "mine": "你撤回了一条消息"
+  },
+  "chatBackground": {
+    "title": "Toffee Room 背景",
+    "hint": "显示在粉丝 Toffee Room 后面的照片。会稍微淡化，让文字清晰可读。",
+    "change": "更换背景",
+    "remove": "恢复默认",
+    "removeTitle": "恢复默认背景",
+    "removeConfirm": "删除背景照片并恢复默认背景。"
   }
 }

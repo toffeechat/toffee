@@ -30,6 +30,9 @@ export function checkEnv(env: Env): EnvCheckResult {
   if (env.ENABLE_DEV_LOGIN === 'true' && !has(env, 'DEV_LOGIN_CODE')) {
     warnings.push('테스트 로그인이 입장 코드 없이 열려 있음 — 공개된 서버면 DEV_LOGIN_CODE를 넣을 것(주소만 알면 운영자 계정으로도 로그인 가능)');
   }
+  if (env.ENABLE_DEV_LOGIN === 'true' && has(env, 'DEV_LOGIN_CODE') && !has(env, 'DEV_LOGIN_ADMIN_CODE')) {
+    warnings.push('운영자 입장 코드(DEV_LOGIN_ADMIN_CODE)가 비어 있음 — 테스트 로그인으로 운영자 계정에 들어갈 수 없음(필요하면 입장 코드와 다른 값으로 넣을 것)');
+  }
 
   const groups: [string, string[]][] = [
     ['파일 저장소(사진·음성·영상 업로드)', ['STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY']],

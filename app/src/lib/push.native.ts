@@ -22,6 +22,9 @@ export interface PushData {
   messageId?: string;
   title?: string;
   body?: string;
+  /** 보낸 사람 사진(서버가 대화 알림용으로 넣음, 2026-10-13) — 앱 사용 중 배너에도(2026-10-14) */
+  senderImage?: string;
+  senderName?: string;
 }
 
 // 로그아웃할 때 "이 기기"만 서버에서 떼어내려고 마지막으로 등록한 토큰을 기억해 둠
@@ -78,6 +81,8 @@ function toPushData(message: RemoteMessage | null): PushData | null {
     type: pick('type'),
     actorId: pick('actorId'),
     messageId: pick('messageId'),
+    senderImage: pick('senderImage'),
+    senderName: pick('senderName'),
     // 앱 사용 중 배너에 보여줄 제목·본문(서버가 만든 알림 문구 그대로)
     title: message?.notification?.title,
     body: message?.notification?.body,

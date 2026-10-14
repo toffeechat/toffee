@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -6,7 +6,8 @@ import { PushService } from '../notifications/push.service.js';
 import { pushStrings } from '../notifications/push-messages.js';
 import { ensureIsActorSelf } from '../common/authorization/actor-access.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
-import { UserStatus } from '../generated/prisma/enums.js';
+import { ActorKind, UserStatus } from '../generated/prisma/enums.js';
+import { appError } from '../common/i18n/app-error.js';
 import { birthdayToday } from './birthday.js';
 import type { UpdateGreetingsDto } from './dto/update-greetings.dto.js';
 
@@ -58,11 +59,15 @@ export class GreetingsService {
     return this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { welcomeMessage: true, birthdayMessage: true } });
   }
 
+  // CP방은 환영 메시지만(2026-10-14 사용자 결정) — 생일 축하는 개인방에서만 보내서 둘 다 구독한 팬이 두 번 받지 않게. CP방에 온 생일 문구는 버림
   async updateSettings(selfUserId: string, actorId: string, dto: UpdateGreetingsDto) {
     await ensureIsActorSelf(this.prisma, selfUserId, actorId);
+    const { kind } = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { kind: true } });
+    const couple = kind === ActorKind.COUPLE;
+    if (!couple && !clean(dto.birthdayMessage)) throw new BadRequestException(appError('GREETINGS_REQUIRED'));
     return this.prisma.actor.update({
       where: { id: actorId },
-      data: { welcomeMessage: clean(dto.welcomeMessage), birthdayMessage: clean(dto.birthdayMessage) },
+      data: { welcomeMessage: clean(dto.welcomeMessage), birthdayMessage: couple ? null : clean(dto.birthdayMessage) },
       select: { welcomeMessage: true, birthdayMessage: true },
     });
   }
@@ -91,7 +96,7 @@ export class GreetingsService {
       where: {
         userId: { in: fans.map((fan) => fan.id) },
         cancelledAt: null,
-        actor: { retiredAt: null, birthdayMessage: { not: null } },
+        actor: { retiredAt: null, kind: ActorKind.SOLO, birthdayMessage: { not: null } },
       },
       select: {
         actorId: true,

@@ -10,7 +10,7 @@
     "chats": "Trò chuyện",
     "my": "Của tôi",
     "discover": "Khám phá",
-    "inbox": "Tin nhắn",
+    "inbox": "Toffee Room",
     "profile": "Hồ sơ"
   },
   "screens": {
@@ -53,7 +53,7 @@
   },
   "chats": {
     "title": "Trò chuyện",
-    "loadFailed": "Không tải được cuộc trò chuyện.",
+    "loadFailed": "Không tải được danh sách Toffee Room.",
     "empty": "Bạn chưa đăng ký ai. Hãy bắt đầu từ tab Nghệ sĩ.",
     "noConversation": "Chưa có tin nhắn"
   },
@@ -70,11 +70,11 @@
     "noRepliesLeft": "Bạn có thể gửi tối đa {{limit}} câu trả lời cho mỗi tin nhắn. Hãy chờ tin nhắn tiếp theo của nghệ sĩ nhé.",
     "mute": "Tắt thông báo",
     "unmute": "Bật thông báo",
-    "muted": "Đã tắt thông báo cho cuộc trò chuyện này. Bạn vẫn nhận được tin nhắn.",
-    "unmuted": "Đã bật thông báo cho cuộc trò chuyện này.",
+    "muted": "Đã tắt thông báo cho Toffee Room này. Bạn vẫn nhận được tin nhắn.",
+    "unmuted": "Đã bật thông báo cho Toffee Room này.",
     "report": "Báo cáo",
     "closeMenu": "Đóng",
-    "messageActions": "Nhấn giữ để báo cáo",
+    "messageActions": "Nhấn giữ để mở menu",
     "newMessages": "{{count}} tin mới ↓",
     "newMessagesShort": "{{count}} tin nhắn mới",
     "readMarker": "Bạn đã đọc đến đây",
@@ -131,18 +131,15 @@
     "lastBroadcast": "Lần gửi gần nhất",
     "noBroadcast": "Chưa gửi gì",
     "noNickname": "(chưa có biệt danh)",
-    "deletedByActor": "Nghệ sĩ đã xóa (fan không nhìn thấy)",
+    "deletedByActor": "Nghệ sĩ đã thu hồi (fan thấy \"Tin nhắn đã được thu hồi\")",
     "lastMessageDays": "Tin nhắn gần nhất {{count}} ngày trước",
     "noMessagesYet": "Chưa gửi tin nhắn nào",
     "lastMessageToday": "Đã gửi tin nhắn hôm nay",
-    "deleteTitle": "Xóa tin nhắn này?",
-    "deleteBody": "Tin nhắn sẽ biến mất khỏi màn hình của fan ngay lập tức và không thể khôi phục. Thông báo đã gửi không thể thu hồi. Nghệ sĩ sẽ thấy \"Tin nhắn bị công ty quản lý xóa\".",
-    "deleteConfirm": "Xóa",
-    "deletedByAgency": "Công ty quản lý đã xóa tin nhắn này (fan không thấy)",
+    "deletedByAgency": "Công ty quản lý đã thu hồi (fan không thấy)",
     "allReplies": "Tất cả trả lời",
     "description": "Danh sách nghệ sĩ trực thuộc. Chạm để xem tin nhắn đã gửi, phản hồi của fan và thống kê.",
     "tabHint": {
-      "monitor": "Màn hình theo dõi tin nhắn nghệ sĩ gửi cho fan. Có thể xóa thay những tin nhắn có vấn đề.",
+      "monitor": "Màn hình theo dõi tin nhắn nghệ sĩ gửi cho fan. Nhấn giữ tin nhắn có vấn đề để thu hồi thay.",
       "replies": "Màn hình xem phản hồi của fan. Có thể báo cáo phản hồi có vấn đề hoặc chặn fan đó.",
       "stats": "Màn hình xem xu hướng đăng ký, tin nhắn, phản hồi và phân bố fan của nghệ sĩ này."
     }
@@ -174,7 +171,6 @@
   "studio": {
     "screen": "Studio",
     "repliesScreen": "Câu trả lời của fan",
-    "pickActor": "Chọn kênh để gửi tin nhắn",
     "noActor": "Chưa có tài khoản nghệ sĩ nào được liên kết. Vui lòng liên hệ đơn vị vận hành.",
     "empty": "Bạn chưa gửi tin nhắn nào. Hãy gửi tin nhắn đầu tiên cho fan nhé!",
     "inputPlaceholder": "Nhắn tin cho fan",
@@ -206,10 +202,6 @@
     "insertName": "Chèn tên fan",
     "insertNameHint": "〈biệt danh fan〉 sẽ được thay bằng biệt danh của từng fan khi gửi.",
     "fanNickname": "biệt danh fan",
-    "delete": "Xóa",
-    "deleteTitle": "Xóa tin nhắn",
-    "deleteBody": "Tin nhắn này sẽ biến mất khỏi màn hình của fan. Thông báo đã gửi không thể thu hồi, và việc xóa vẫn được ghi lại trong phần theo dõi của công ty quản lý.",
-    "deleteFailed": "Không xóa được. Vui lòng thử lại.",
     "hiddenByAdmin": "Đã bị ẩn theo chính sách của chúng tôi (fan không nhìn thấy).",
     "waitingReplies": "Đang chờ fan trả lời…",
     "newReplies": "{{count}} mới ↓",
@@ -277,9 +269,9 @@
   "block": {
     "action": "Chặn",
     "manage": "Fan đã chặn",
-    "confirmTitle": "Chặn {{nickname}} trong kênh này?",
+    "confirmTitle": "Chặn {{nickname}} trong Toffee Room này?",
     "confirmBody": "Họ sẽ không thể gửi câu trả lời, và các câu trả lời trước đó sẽ biến mất khỏi danh sách của bạn. Gói đăng ký và quyền xem tin nhắn của họ vẫn giữ nguyên. Bạn có thể bỏ chặn bất cứ lúc nào.",
-    "listHint": "Fan bị chặn không thể trả lời trong kênh này. Bỏ chặn để cho phép trả lời lại.",
+    "listHint": "Fan bị chặn không thể trả lời trong Toffee Room này. Bỏ chặn để cho phép trả lời lại.",
     "empty": "Không có fan nào bị chặn.",
     "unblock": "Bỏ chặn"
   },
@@ -298,7 +290,7 @@
     "title": "Hồ sơ của tôi",
     "headerButton": "Hồ sơ",
     "nickname": "Biệt danh",
-    "nicknameHint": "Đây là tên fan nhìn thấy trong phòng trò chuyện. Bạn có thể đổi bất cứ lúc nào.",
+    "nicknameHint": "Đây là tên fan nhìn thấy trong Toffee Room. Bạn có thể đổi bất cứ lúc nào.",
     "save": "Lưu",
     "saved": "Đã lưu.",
     "saveFailed": "Không lưu được. Vui lòng thử lại.",
@@ -454,7 +446,7 @@
     "restoreFailed": "Không khôi phục được. Vui lòng thử lại sau.",
     "ending": "Sắp kết thúc",
     "endsOn": "Hết quyền truy cập",
-    "endingNote": "Tự động gia hạn đã tắt trong cửa hàng. Bạn vẫn trò chuyện được đến ngày này, sau đó cuộc trò chuyện sẽ đóng. Bật lại tự động gia hạn để tiếp tục.",
+    "endingNote": "Tự động gia hạn đã tắt trong cửa hàng. Bạn vẫn trò chuyện được đến ngày này, sau đó Toffee Room sẽ đóng. Bật lại tự động gia hạn để tiếp tục.",
     "pastTitle": "Gói đăng ký trước đây",
     "pastHint": "Cuộc trò chuyện trước đó sẽ không được khôi phục nếu bạn đăng ký lại.",
     "endedOn": "Đã kết thúc {{date}}",
@@ -491,16 +483,16 @@
     "includes": "Gồm {{count}} nghệ sĩ",
     "singlePrice": "{{price}}/tháng nếu đăng ký riêng",
     "replacesSingle": "Gói đăng ký hiện tại của bạn với {{names}} sẽ được chuyển vào gói combo này. Các cuộc trò chuyện vẫn tiếp tục như cũ.",
-    "doneBody": "Gói combo {{name}} của bạn đã bắt đầu. Bạn sẽ thấy tất cả cuộc trò chuyện trong Tin nhắn.",
+    "doneBody": "Gói combo {{name}} của bạn đã bắt đầu. Bạn sẽ thấy tất cả Toffee Room trong tab Toffee Room.",
     "goInbox": "Đến Tin nhắn",
     "notFound": "Không tìm thấy gói combo",
     "mine": "Gói combo",
-    "rooms": "Trò chuyện",
+    "rooms": "Toffee Room",
     "via": "Gói combo · {{name}}",
     "cancel": "Hủy gói combo",
     "cancelTitle": "Hủy gói combo",
-    "cancelConfirm": "Hủy {{name}} sẽ đóng các cuộc trò chuyện với {{names}} (nghệ sĩ bạn đăng ký riêng vẫn mở). Cuộc trò chuyện trước đó sẽ không hiển thị nếu bạn đăng ký lại.",
-    "cancelFromActor": "Nghệ sĩ này nằm trong gói combo {{name}} của bạn. Hủy sẽ đóng cả các cuộc trò chuyện khác trong gói. Cuộc trò chuyện trước đó sẽ không hiển thị nếu bạn đăng ký lại.",
+    "cancelConfirm": "Hủy {{name}} sẽ đóng các Toffee Room của {{names}} (nghệ sĩ bạn đăng ký riêng vẫn mở). Cuộc trò chuyện trước đó sẽ không hiển thị nếu bạn đăng ký lại.",
+    "cancelFromActor": "Nghệ sĩ này nằm trong gói combo {{name}} của bạn. Hủy sẽ đóng cả các Toffee Room khác trong gói. Cuộc trò chuyện trước đó sẽ không hiển thị nếu bạn đăng ký lại.",
     "cancelFailed": "Không hủy được. Vui lòng thử lại.",
     "viaShort": "Thuộc gói combo",
     "replacesSingleStore": "Các gói đăng ký riêng trên cửa hàng cho {{names}} sẽ không tự kết thúc — hãy hủy chúng trong cài đặt đăng ký của cửa hàng sau khi mua gói combo (các cuộc trò chuyện vẫn tiếp tục)."
@@ -628,14 +620,16 @@
   },
   "greetings": {
     "welcomeTitle": "Tin nhắn chào mừng",
-    "welcomeHint": "Hiển thị ở đầu phòng chat của fan mới đăng ký. Viết {{name}} sẽ được thay bằng biệt danh của fan.",
+    "welcomeHint": "Hiển thị ở đầu Toffee Room của fan mới đăng ký. Viết {{name}} sẽ được thay bằng biệt danh của fan.",
     "birthdayTitle": "Lời chúc sinh nhật",
     "birthdayHint": "Tự động gửi vào sáng ngày sinh nhật (9 giờ theo giờ Thái Lan) cho fan đã bật thông báo sinh nhật. Bạn sẽ không thấy ngày sinh của fan.",
     "placeholder": "VD: Chào {{name}}, rất vui được gặp bạn!",
     "birthdayPlaceholder": "Ví dụ: Chúc mừng sinh nhật {{name}}!",
     "bothRequired": "Hãy viết cả hai tin nhắn để lưu.",
     "gateTitle": "Trước khi bắt đầu",
-    "gateBody": "Trước khi nhắn tin cho fan, hãy viết tin nhắn chào mừng và tin nhắn chúc mừng sinh nhật. Bạn có thể sửa bất cứ lúc nào trong hồ sơ."
+    "gateBody": "Trước khi nhắn tin cho fan, hãy viết tin nhắn chào mừng và tin nhắn chúc mừng sinh nhật. Bạn có thể sửa bất cứ lúc nào trong hồ sơ.",
+    "welcomeRequired": "Hãy viết lời chào mừng để lưu.",
+    "gateBodyCouple": "Trước khi nhắn cho fan trong phòng CP này, hãy viết lời chào mừng (lời chúc sinh nhật chỉ gửi từ phòng cá nhân). Bạn có thể sửa bất cứ lúc nào trong hồ sơ."
   },
   "notices": {
     "title": "Thông báo",
@@ -759,7 +753,6 @@
     "artists": "Nghệ sĩ"
   },
   "consoleAlerts": {
-    "newMessage": "{{name}} vừa gửi tin nhắn mới",
     "anArtist": "Nghệ sĩ trực thuộc",
     "tapToView": "Chạm để mở theo dõi",
     "unread": "{{count}} tin nhắn mới",
@@ -767,11 +760,11 @@
   },
   "records": {
     "title": "Nhật ký",
-    "description": "Tổng hợp fan bị chặn, phản hồi bị báo cáo và tin nhắn đã xóa trong phòng của các nghệ sĩ trực thuộc.",
+    "description": "Tổng hợp fan bị chặn, phản hồi bị báo cáo và tin nhắn đã thu hồi trong Toffee Room của các nghệ sĩ trực thuộc.",
     "tabs": {
       "blocks": "Fan bị chặn",
       "reports": "Báo cáo",
-      "deleted": "Tin nhắn đã xóa"
+      "deleted": "Tin nhắn đã thu hồi"
     },
     "allArtists": "Tất cả",
     "by": {
@@ -789,13 +782,13 @@
       "RESOLVED": "Đã xử lý",
       "DISMISSED": "Không có vấn đề"
     },
-    "deletedBy": "{{who}} đã xóa",
+    "deletedBy": "{{who}} đã thu hồi",
     "hiddenByAdmin": "Đội ngũ Toffee đã ẩn theo chính sách",
-    "deletedMeta": "Gửi {{sent}} · xóa {{deleted}}",
+    "deletedMeta": "Gửi {{sent}} · thu hồi {{deleted}}",
     "empty": {
       "blocks": "Không có fan bị chặn.",
       "reports": "Không có phản hồi bị báo cáo.",
-      "deleted": "Không có tin nhắn đã xóa."
+      "deleted": "Không có tin nhắn đã thu hồi."
     },
     "limitNote": "Chỉ hiển thị {{count}} mục gần nhất. Hãy chọn nghệ sĩ ở trên để xem nhật ký cũ hơn.",
     "unblockTitle": "Bỏ chặn {{nickname}}?",
@@ -814,5 +807,27 @@
     "PH": "Philippines",
     "ID": "Indonesia",
     "US": "Hoa Kỳ"
+  },
+  "rooms": {
+    "title": "Toffee Room",
+    "noMessagesYet": "Chưa gửi tin nhắn nào"
+  },
+  "retract": {
+    "action": "Thu hồi",
+    "title": "Thu hồi tin nhắn này?",
+    "artistBody": "Fan sẽ thấy \"Tin nhắn đã được thu hồi\". Thông báo đã gửi không thể thu hồi.",
+    "agencyBody": "Tin nhắn sẽ biến mất khỏi màn hình fan mà không để lại dấu vết. Thông báo đã gửi không thể thu hồi, và nghệ sĩ sẽ thấy \"Công ty quản lý đã thu hồi\".",
+    "fanBody": "Mọi người sẽ thấy \"Tin nhắn đã được thu hồi\". Số lượt trả lời đã dùng không được hoàn lại.",
+    "failed": "Không thu hồi được. Vui lòng thử lại.",
+    "placeholder": "Tin nhắn đã được thu hồi",
+    "mine": "Bạn đã thu hồi tin nhắn này"
+  },
+  "chatBackground": {
+    "title": "Hình nền Toffee Room",
+    "hint": "Ảnh hiển thị phía sau Toffee Room của fan. Ảnh được làm mờ nhẹ để chữ dễ đọc.",
+    "change": "Đổi hình nền",
+    "remove": "Dùng mặc định",
+    "removeTitle": "Dùng hình nền mặc định",
+    "removeConfirm": "Xóa ảnh nền và dùng hình nền mặc định."
   }
 }

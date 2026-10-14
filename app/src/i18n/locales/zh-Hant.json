@@ -10,7 +10,7 @@
     "chats": "聊天",
     "my": "我的",
     "discover": "探索",
-    "inbox": "訊息",
+    "inbox": "Toffee Room",
     "profile": "我的"
   },
   "screens": {
@@ -53,7 +53,7 @@
   },
   "chats": {
     "title": "聊天",
-    "loadFailed": "無法載入聊天列表。",
+    "loadFailed": "無法載入 Toffee Room 列表。",
     "empty": "你還沒有訂閱任何藝人，到「藝人」分頁開始訂閱吧。",
     "noConversation": "還沒有訊息"
   },
@@ -70,11 +70,11 @@
     "noRepliesLeft": "每則訊息最多可回覆 {{limit}} 則，請等待藝人的下一則訊息。",
     "mute": "關閉通知",
     "unmute": "開啟通知",
-    "muted": "已關閉此聊天的通知，仍會照常收到訊息。",
-    "unmuted": "已開啟此聊天的通知。",
+    "muted": "已關閉此 Toffee Room 的通知，仍會照常收到訊息。",
+    "unmuted": "已開啟此 Toffee Room 的通知。",
     "report": "檢舉",
     "closeMenu": "關閉",
-    "messageActions": "長按可檢舉",
+    "messageActions": "長按開啟選單",
     "newMessages": "{{count}} 則新訊息 ↓",
     "newMessagesShort": "{{count}} 則新訊息",
     "readMarker": "以上為已讀訊息",
@@ -131,18 +131,15 @@
     "lastBroadcast": "最近傳送日期",
     "noBroadcast": "尚無傳送紀錄",
     "noNickname": "（無暱稱）",
-    "deletedByActor": "藝人已刪除的訊息（粉絲看不到）",
+    "deletedByActor": "藝人收回的訊息（粉絲看到「此訊息已收回」）",
     "lastMessageDays": "上次訊息：{{count}} 天前",
     "noMessagesYet": "尚未傳送訊息",
     "lastMessageToday": "今天已傳送訊息",
-    "deleteTitle": "要刪除這則訊息嗎？",
-    "deleteBody": "訊息會立即從粉絲畫面消失且無法復原，已送出的通知無法收回。藝人畫面會顯示「經紀公司刪除的訊息」。",
-    "deleteConfirm": "刪除",
-    "deletedByAgency": "經紀公司刪除的訊息（粉絲看不到）",
+    "deletedByAgency": "經紀公司收回的訊息（粉絲看不到）",
     "allReplies": "所有回覆",
     "description": "旗下藝人列表。點擊可查看傳送的訊息、粉絲回覆和統計。",
     "tabHint": {
-      "monitor": "查看藝人傳給粉絲的訊息。如有問題訊息，可以代為刪除。",
+      "monitor": "查看藝人傳給粉絲的訊息。如有問題訊息，長按即可代為收回。",
       "replies": "查看粉絲傳來的回覆。如有問題回覆，可以檢舉或封鎖該粉絲。",
       "stats": "查看該藝人的訂閱、訊息、回覆趨勢和粉絲分布。"
     }
@@ -174,7 +171,6 @@
   "studio": {
     "screen": "工作室",
     "repliesScreen": "粉絲回覆",
-    "pickActor": "請選擇要傳送訊息的頻道",
     "noActor": "沒有連結的藝人帳號，請聯絡營運人員。",
     "empty": "你還沒有傳送過訊息，傳第一則訊息給粉絲吧！",
     "inputPlaceholder": "傳訊息給粉絲",
@@ -206,10 +202,6 @@
     "insertName": "插入粉絲名字",
     "insertNameHint": "傳送時〈粉絲暱稱〉會替換成每位粉絲自己的暱稱。",
     "fanNickname": "粉絲暱稱",
-    "delete": "刪除",
-    "deleteTitle": "刪除訊息",
-    "deleteBody": "這則訊息將從粉絲的畫面中消失。已傳送的通知無法收回，經紀公司的監控中會保留刪除紀錄。",
-    "deleteFailed": "刪除失敗，請重試。",
     "hiddenByAdmin": "依營運政策已隱藏（粉絲看不到）。",
     "waitingReplies": "正在等待粉絲回覆…",
     "newReplies": "{{count}} 則新回覆 ↓",
@@ -277,9 +269,9 @@
   "block": {
     "action": "封鎖",
     "manage": "封鎖管理",
-    "confirmTitle": "要在此頻道封鎖 {{nickname}} 嗎？",
+    "confirmTitle": "要在此 Toffee Room 封鎖 {{nickname}} 嗎？",
     "confirmBody": "封鎖後，這位粉絲將無法傳送回覆，已傳送的回覆也會從列表中消失。訂閱和查看訊息不受影響，可隨時解除。",
-    "listHint": "被封鎖的粉絲無法在此頻道回覆，解除後即可再次回覆。",
+    "listHint": "被封鎖的粉絲無法在此 Toffee Room 回覆，解除後即可再次回覆。",
     "empty": "沒有被封鎖的粉絲。",
     "unblock": "解除"
   },
@@ -298,7 +290,7 @@
     "title": "我的資料",
     "headerButton": "資料",
     "nickname": "暱稱",
-    "nicknameHint": "這是粉絲在聊天室中看到的名字，可以隨時修改。",
+    "nicknameHint": "這是粉絲在 Toffee Room 中看到的名字，可以隨時修改。",
     "save": "儲存",
     "saved": "已儲存。",
     "saveFailed": "儲存失敗，請重試。",
@@ -454,7 +446,7 @@
     "restoreFailed": "恢復失敗，請稍後再試。",
     "ending": "即將到期",
     "endsOn": "使用截止日",
-    "endingNote": "已在商店關閉自動續訂。到這一天前仍可查看聊天，之後聊天室將關閉。重新開啟自動續訂即可繼續使用。",
+    "endingNote": "已在商店關閉自動續訂。到這一天前仍可查看聊天，之後 Toffee Room 將關閉。重新開啟自動續訂即可繼續使用。",
     "pastTitle": "過往訂閱",
     "pastHint": "重新訂閱也無法查看之前的聊天。",
     "endedOn": "{{date}} 結束",
@@ -491,16 +483,16 @@
     "includes": "包含 {{count}} 位藝人",
     "singlePrice": "單獨訂閱每月 {{price}}",
     "replacesSingle": "你正在單獨訂閱的 {{names}} 將併入此組合，聊天紀錄保持不變。",
-    "doneBody": "{{name}} 組合訂閱已開始，可在訊息頁查看所有聊天。",
+    "doneBody": "{{name}} 組合訂閱已開始，可在 Toffee Room 頁查看所有 Toffee Room。",
     "goInbox": "前往訊息",
     "notFound": "找不到該組合",
     "mine": "組合訂閱",
-    "rooms": "聊天室",
+    "rooms": "Toffee Room",
     "via": "組合 · {{name}}",
     "cancel": "取消組合",
     "cancelTitle": "取消組合",
-    "cancelConfirm": "取消 {{name}} 後，與 {{names}} 的聊天室將一起關閉（單獨訂閱的藝人不受影響）。重新訂閱也看不到之前的聊天。",
-    "cancelFromActor": "此藝人包含在你的 {{name}} 組合中。取消後組合內其他聊天室也會關閉，重新訂閱也看不到之前的聊天。",
+    "cancelConfirm": "取消 {{name}} 後，{{names}} 的 Toffee Room 將一起關閉（單獨訂閱的藝人不受影響）。重新訂閱也看不到之前的聊天。",
+    "cancelFromActor": "此藝人包含在你的 {{name}} 組合中。取消後組合內其他 Toffee Room 也會關閉，重新訂閱也看不到之前的聊天。",
     "cancelFailed": "取消失敗，請再試一次。",
     "viaShort": "透過組合使用",
     "replacesSingleStore": "單獨訂閱的 {{names}} 的商店訂閱不會自動結束——購買套裝後請在商店訂閱管理中取消（聊天會繼續）。"
@@ -628,14 +620,16 @@
   },
   "greetings": {
     "welcomeTitle": "歡迎訊息",
-    "welcomeHint": "會顯示在新訂閱粉絲聊天室的最開頭。寫 {{name}} 會替換成粉絲的暱稱。",
+    "welcomeHint": "會顯示在新訂閱粉絲的 Toffee Room 最開頭。寫 {{name}} 會替換成粉絲的暱稱。",
     "birthdayTitle": "生日祝福",
     "birthdayHint": "會在開啟生日提醒的粉絲生日當天早上（泰國時間 9 點）自動傳送。你看不到粉絲的生日日期。",
     "placeholder": "例如：{{name}}，歡迎你！",
     "birthdayPlaceholder": "例如：{{name}}，生日快樂！",
     "bothRequired": "兩則訊息都填寫後才能儲存。",
     "gateTitle": "開始之前",
-    "gateBody": "傳訊息給粉絲之前，請先寫好歡迎訊息和生日祝福訊息。之後可隨時在個人檔案中修改。"
+    "gateBody": "傳訊息給粉絲之前，請先寫好歡迎訊息和生日祝福訊息。之後可隨時在個人檔案中修改。",
+    "welcomeRequired": "寫好歡迎訊息後才能儲存。",
+    "gateBodyCouple": "在傳訊息給此 CP 房間的粉絲前，請先寫歡迎訊息（生日祝福只從個人房間送出）。之後可隨時在個人檔案中修改。"
   },
   "notices": {
     "title": "公告",
@@ -759,7 +753,6 @@
     "artists": "旗下藝人"
   },
   "consoleAlerts": {
-    "newMessage": "{{name}} 傳送了新訊息",
     "anArtist": "旗下藝人",
     "tapToView": "點擊查看監控",
     "unread": "{{count}} 則新訊息",
@@ -767,11 +760,11 @@
   },
   "records": {
     "title": "紀錄",
-    "description": "集中查看旗下藝人聊天室中被封鎖的粉絲、被檢舉的回覆和被刪除的訊息。",
+    "description": "集中查看旗下藝人 Toffee Room 中被封鎖的粉絲、被檢舉的回覆和被收回的訊息。",
     "tabs": {
       "blocks": "已封鎖粉絲",
       "reports": "檢舉",
-      "deleted": "已刪除訊息"
+      "deleted": "已收回訊息"
     },
     "allArtists": "全部",
     "by": {
@@ -789,13 +782,13 @@
       "RESOLVED": "已處理",
       "DISMISSED": "未發現問題"
     },
-    "deletedBy": "{{who}}刪除",
+    "deletedBy": "{{who}}收回",
     "hiddenByAdmin": "Toffee 營運依政策隱藏",
-    "deletedMeta": "傳送 {{sent}} · 刪除 {{deleted}}",
+    "deletedMeta": "傳送 {{sent}} · 收回 {{deleted}}",
     "empty": {
       "blocks": "沒有被封鎖的粉絲。",
       "reports": "沒有檢舉的回覆。",
-      "deleted": "沒有被刪除的訊息。"
+      "deleted": "沒有被收回的訊息。"
     },
     "limitNote": "僅顯示最近 {{count}} 筆。更早的紀錄請在上方選擇藝人查看。",
     "unblockTitle": "要解除對 {{nickname}} 的封鎖嗎？",
@@ -814,5 +807,27 @@
     "PH": "菲律賓",
     "ID": "印尼",
     "US": "美國"
+  },
+  "rooms": {
+    "title": "Toffee Room",
+    "noMessagesYet": "還沒有傳送過訊息"
+  },
+  "retract": {
+    "action": "收回",
+    "title": "要收回這則訊息嗎？",
+    "artistBody": "粉絲將看到「此訊息已收回」。已送達的通知無法收回。",
+    "agencyBody": "將從粉絲畫面中不留痕跡地消失。已送達的通知無法收回，藝人畫面會顯示「經紀公司收回的訊息」。",
+    "fanBody": "所有人都會看到「此訊息已收回」。已傳送的回覆次數不會恢復。",
+    "failed": "收回失敗，請再試一次。",
+    "placeholder": "此訊息已收回",
+    "mine": "你收回了一則訊息"
+  },
+  "chatBackground": {
+    "title": "Toffee Room 背景",
+    "hint": "顯示在粉絲 Toffee Room 後面的照片。會稍微淡化，讓文字清楚好讀。",
+    "change": "更換背景",
+    "remove": "恢復預設",
+    "removeTitle": "恢復預設背景",
+    "removeConfirm": "刪除背景照片並恢復預設背景。"
   }
 }
