@@ -253,7 +253,9 @@
     "replyTo": "{{nickname}}님에게 답장",
     "hidden": "가려진 메시지예요",
     "action": "답장하기",
-    "publicNotice": "모든 구독자에게 보이고, 팬은 닉네임으로 표시돼요."
+    "publicNotice": "모든 구독자에게 보여요. 다른 팬에겐 닉네임 없이 \"{{name}}의 답장\"으로, 인용된 팬에겐 \"내 메시지에 답장\"으로 보여요.",
+    "replyToMe": "내 메시지에 답장",
+    "artistReply": "{{name}}의 답장"
   },
   "report": {
     "title": "신고하기",
@@ -370,7 +372,8 @@
     "emptyBody": "좋아하는 아티스트를 구독하면 여기에서 1:1 메시지를 받을 수 있어요.",
     "discover": "아티스트 둘러보기",
     "loadFailed": "메시지 목록을 불러오지 못했어요",
-    "endsOn": "{{date}}까지 이용"
+    "endsOn": "{{date}}까지 이용",
+    "quotedReply": "↩︎ 내 메시지에 답장했어요"
   },
   "actorProfile": {
     "back": "뒤로",
@@ -695,7 +698,6 @@
       "COUPLE": "CP"
     },
     "period": "{{days}}일",
-    "basis": "태국 시간 기준 최근 {{days}}일 · 증감은 바로 전 {{days}}일과 비교",
     "kpi": {
       "subscribers": "구독 중",
       "newSubs": "새 구독",
@@ -704,8 +706,8 @@
       "replies": "팬 답장",
       "engagement": "메시지당 답장"
     },
-    "vsPrevious": "지난 {{days}}일 대비",
-    "netChange": "최근 {{days}}일 순증 {{value}}명",
+    "vsPrevious": "바로 앞 {{days}}일 대비",
+    "netChange": "기간 중 순증 {{value}}명",
     "engagementHint": "메시지 하나에 평균 몇 개의 답장이 왔는지",
     "same": "변동 없음",
     "fromZero": "+{{count}}",
@@ -731,7 +733,26 @@
     "daysAgo": "{{count}}일 전",
     "perMessage": "메시지당 {{value}}개",
     "mediaMix": "보낸 메시지 종류",
-    "topMessages": "답장이 많았던 메시지"
+    "topMessages": "답장이 많았던 메시지",
+    "custom": "기간 선택",
+    "basisRange": "태국 시간 기준 {{from}} ~ {{to}}({{days}}일) · 증감은 바로 앞 {{days}}일과 비교",
+    "weeklyNote": "기간이 3개월보다 길어서 1주씩 묶어 보여요",
+    "asOf": "{{date}} 기준",
+    "noRecordShort": "그날 기록 없음",
+    "noRecord": "하루 기록을 시작하기 전 날짜라 구독 수·팬 분포를 볼 수 없어요",
+    "audienceBasisPast": "{{date}} 기준 구독 {{count}}건 · 여러 아티스트를 구독한 팬은 아티스트마다 셈 · 팬이 적은 나라·언어는 \"기타\"로 묶어요",
+    "todayBasis": "기간과 상관없이 오늘 기준",
+    "picker": {
+      "title": "기간 선택",
+      "hint": "시작일과 종료일을 차례로 눌러 주세요 (최대 {{days}}일)",
+      "selected": "{{from}} ~ {{to}} ({{days}}일)",
+      "thisMonth": "이번 달",
+      "lastMonth": "지난달",
+      "lastYear": "최근 1년",
+      "prevMonth": "이전 달",
+      "nextMonth": "다음 달",
+      "apply": "적용"
+    }
   },
   "consoleNav": {
     "dashboard": "대시보드",

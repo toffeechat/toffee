@@ -177,7 +177,7 @@ describe('MessagesService.sendBroadcast 인용 답장 알림', () => {
       expect.objectContaining({ type: 'QUOTED_REPLY', actorId: 'actor-1', messageId: 'm1' }),
     );
     const compose = vi.mocked(push.sendToUser).mock.calls[0][1];
-    expect(compose({ locale: 'ko', displayName: '민지' })).toEqual({ title: '캐러멜님이 내 메시지에 답장했어요', body: '고마워' });
+    expect(compose({ locale: 'ko', displayName: '민지' })).toEqual({ title: '캐러멜님이 내 메시지에 답장했어요', body: '내 메시지에 답장 · 고마워' });
   });
 
   it('알림을 끈(구독자 목록에 없는) 팬에겐 인용 알림도 안 감', async () => {

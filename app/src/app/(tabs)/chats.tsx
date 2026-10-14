@@ -159,6 +159,12 @@ function InboxRow({ sub, onPress, locale }: { sub: Subscription; onPress: () => 
           </View>
           <CountBadge count={sub.unreadCount} />
         </View>
+        {/* 안 읽은 것 중 내 메시지에 한 아티스트 답장(2026-10-13) */}
+        {sub.unreadCount > 0 && sub.unreadQuotedReply ? (
+          <ThemedText type="captionBold" style={{ color: theme.tint }}>
+            {t('inbox.quotedReply')}
+          </ThemedText>
+        ) : null}
         {/* 스토어에서 해지(자동 갱신 끔)한 방 — 기간 끝까지 이용, 언제 닫히는지 미리(2026-10-02) */}
         {sub.endsAt ? (
           <ThemedText type="caption" style={{ color: theme.tint }}>

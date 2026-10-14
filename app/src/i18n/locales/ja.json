@@ -253,7 +253,9 @@
     "replyTo": "{{nickname}}さんへの返信",
     "hidden": "非表示のメッセージです",
     "action": "返信する",
-    "publicNotice": "すべての購読者に表示され、ファンはニックネームで表示されます。"
+    "publicNotice": "すべての購読者に表示されます。他のファンにはニックネームなしで「{{name}}の返信」、引用されたファンには「あなたへの返信」と表示されます。",
+    "replyToMe": "あなたへの返信",
+    "artistReply": "{{name}}の返信"
   },
   "report": {
     "title": "通報",
@@ -370,7 +372,8 @@
     "emptyBody": "好きなアーティストを購読すると、ここでメッセージを受け取れます。",
     "discover": "アーティストを見つける",
     "loadFailed": "メッセージ一覧を読み込めませんでした",
-    "endsOn": "{{date}}まで利用可"
+    "endsOn": "{{date}}まで利用可",
+    "quotedReply": "↩︎ あなたのメッセージに返信しました"
   },
   "actorProfile": {
     "back": "戻る",
@@ -695,7 +698,6 @@
       "COUPLE": "CP"
     },
     "period": "{{days}}日",
-    "basis": "タイ時間基準の直近{{days}}日 · 増減は直前の{{days}}日と比較",
     "kpi": {
       "subscribers": "購読中",
       "newSubs": "新規購読",
@@ -704,8 +706,8 @@
       "replies": "ファンの返信",
       "engagement": "メッセージあたりの返信"
     },
-    "vsPrevious": "前の{{days}}日と比較",
-    "netChange": "直近{{days}}日の純増 {{value}}人",
+    "vsPrevious": "直前の{{days}}日と比較",
+    "netChange": "期間中の純増 {{value}}人",
     "engagementHint": "1つのメッセージに届いた返信の平均数",
     "same": "変化なし",
     "fromZero": "+{{count}}",
@@ -731,7 +733,26 @@
     "daysAgo": "{{count}}日前",
     "perMessage": "1件あたり{{value}}件",
     "mediaMix": "送信メッセージの種類",
-    "topMessages": "返信が多かったメッセージ"
+    "topMessages": "返信が多かったメッセージ",
+    "custom": "期間を選択",
+    "basisRange": "タイ時間基準 {{from}}〜{{to}}（{{days}}日間）· 増減は直前の{{days}}日と比較",
+    "weeklyNote": "期間が3か月より長いため、1週間ごとにまとめて表示しています",
+    "asOf": "{{date}}時点",
+    "noRecordShort": "その日の記録なし",
+    "noRecord": "日次記録を始める前の日付のため、購読数・ファンの分布は表示できません",
+    "audienceBasisPast": "{{date}}時点の購読{{count}}件 · 複数のアーティストを購読しているファンはアーティストごとに数えます · ファンが少ない国・言語は「その他」にまとめます",
+    "todayBasis": "期間に関係なく今日時点",
+    "picker": {
+      "title": "期間を選択",
+      "hint": "開始日と終了日を順にタップしてください（最大{{days}}日）",
+      "selected": "{{from}}〜{{to}}（{{days}}日間）",
+      "thisMonth": "今月",
+      "lastMonth": "先月",
+      "lastYear": "直近1年",
+      "prevMonth": "前の月",
+      "nextMonth": "次の月",
+      "apply": "適用"
+    }
   },
   "consoleNav": {
     "dashboard": "ダッシュボード",

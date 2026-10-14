@@ -253,7 +253,9 @@
     "replyTo": "Replying to {{nickname}}",
     "hidden": "This message is hidden",
     "action": "Reply",
-    "publicNotice": "Visible to all subscribers; the fan is shown by nickname."
+    "publicNotice": "Visible to all subscribers. Other fans see it as \"{{name}}'s reply\" without the nickname; the quoted fan sees \"Replied to you\".",
+    "replyToMe": "Replied to you",
+    "artistReply": "{{name}}'s reply"
   },
   "report": {
     "title": "Report",
@@ -370,7 +372,8 @@
     "emptyBody": "Subscribe to an artist you love to receive their messages here.",
     "discover": "Discover artists",
     "loadFailed": "Couldn't load your inbox",
-    "endsOn": "Until {{date}}"
+    "endsOn": "Until {{date}}",
+    "quotedReply": "↩︎ Replied to your message"
   },
   "actorProfile": {
     "back": "Back",
@@ -695,7 +698,6 @@
       "COUPLE": "CP"
     },
     "period": "{{days}} days",
-    "basis": "Last {{days}} days (Thailand time) · changes compare with the {{days}} days before",
     "kpi": {
       "subscribers": "Subscribed",
       "newSubs": "New subscriptions",
@@ -704,8 +706,8 @@
       "replies": "Fan replies",
       "engagement": "Replies per message"
     },
-    "vsPrevious": "vs previous {{days}} days",
-    "netChange": "Net {{value}} in the last {{days}} days",
+    "vsPrevious": "vs the {{days}} days before",
+    "netChange": "Net {{value}} in this period",
     "engagementHint": "Average replies each message received",
     "same": "No change",
     "fromZero": "+{{count}}",
@@ -731,7 +733,26 @@
     "daysAgo": "{{count}} days ago",
     "perMessage": "{{value}} per message",
     "mediaMix": "Message types",
-    "topMessages": "Messages with the most replies"
+    "topMessages": "Messages with the most replies",
+    "custom": "Pick dates",
+    "basisRange": "{{from}} – {{to}} ({{days}} days, Thailand time) · changes compare with the {{days}} days before",
+    "weeklyNote": "Grouped by week because the period is longer than 3 months",
+    "asOf": "As of {{date}}",
+    "noRecordShort": "No record for that day",
+    "noRecord": "This date is before daily records began, so subscriber counts and fan breakdown aren't available",
+    "audienceBasisPast": "{{count}} subscriptions as of {{date}} · fans of several artists counted once per artist · small groups are combined into \"Other\"",
+    "todayBasis": "Always as of today, whatever the period",
+    "picker": {
+      "title": "Pick dates",
+      "hint": "Tap the start date, then the end date (up to {{days}} days)",
+      "selected": "{{from}} – {{to}} ({{days}} days)",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "lastYear": "Last 12 months",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "apply": "Apply"
+    }
   },
   "consoleNav": {
     "dashboard": "Dashboard",

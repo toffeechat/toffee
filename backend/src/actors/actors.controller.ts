@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ActorsService } from './actors.service.js';
-import { AgencyStatsService } from './agency-stats.service.js';
+import { AgencyStatsService, resolveRange } from './agency-stats.service.js';
 import { AgencyRecordsService } from './agency-records.service.js';
 import { ActorStatsQueryDto, AgencyDashboardQueryDto, AgencyRecordsQueryDto } from './dto/agency-stats-query.dto.js';
 import { ListActorsQueryDto } from './dto/list-actors-query.dto.js';
@@ -33,11 +33,11 @@ export class ActorsController {
     return this.actorsService.findMine(user.id);
   }
 
-  // 소속사 통계 대시보드(2026-10-12, 10-13 개편: 기간·아티스트/CP·추이·팬 나라/언어). 'mine/…'은 ':id'보다 먼저
+  // 소속사 통계 대시보드(2026-10-12, 10-13 개편: 기간(최근 N일 또는 from~to)·아티스트/CP·추이·팬 나라/언어). 'mine/…'은 ':id'보다 먼저
   @Roles(Role.AGENCY_STAFF, Role.ADMIN)
   @Get('mine/dashboard')
   dashboard(@CurrentUser() user: AuthenticatedUser, @Query() query: AgencyDashboardQueryDto) {
-    return this.agencyStats.dashboard(user.id, query.days, query.kind);
+    return this.agencyStats.dashboard(user.id, resolveRange(query), query.kind);
   }
 
   // 소속사 "기록"(2026-10-13) — 소속 아티스트 방의 차단·신고·메시지 삭제
@@ -63,7 +63,7 @@ export class ActorsController {
   @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
   @Get(':id/stats')
   getStats(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Query() query: ActorStatsQueryDto) {
-    return this.agencyStats.actorStats(user.id, id, query.days);
+    return this.agencyStats.actorStats(user.id, id, resolveRange(query));
   }
 
   // 배우 닉네임(채팅방에 보이는 이름) — 배우 본인만(소속사는 발송 권한과 마찬가지로 대신 못 바꿈)

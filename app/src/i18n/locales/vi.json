@@ -253,7 +253,9 @@
     "replyTo": "Trả lời {{nickname}}",
     "hidden": "Tin nhắn này đã bị ẩn",
     "action": "Trả lời",
-    "publicNotice": "Tất cả người đăng ký đều thấy; fan được hiển thị bằng biệt danh."
+    "publicNotice": "Mọi người đăng ký đều thấy. Fan khác thấy là \"Trả lời của {{name}}\" mà không có biệt danh; fan được trích dẫn thấy \"Đã trả lời bạn\".",
+    "replyToMe": "Đã trả lời bạn",
+    "artistReply": "Trả lời của {{name}}"
   },
   "report": {
     "title": "Báo cáo",
@@ -370,7 +372,8 @@
     "emptyBody": "Đăng ký nghệ sĩ bạn yêu thích để nhận tin nhắn của họ tại đây.",
     "discover": "Khám phá nghệ sĩ",
     "loadFailed": "Không tải được hộp thư",
-    "endsOn": "Đến {{date}}"
+    "endsOn": "Đến {{date}}",
+    "quotedReply": "↩︎ Đã trả lời tin nhắn của bạn"
   },
   "actorProfile": {
     "back": "Quay lại",
@@ -695,7 +698,6 @@
       "COUPLE": "CP"
     },
     "period": "{{days}} ngày",
-    "basis": "{{days}} ngày gần nhất (giờ Thái Lan) · so với {{days}} ngày trước đó",
     "kpi": {
       "subscribers": "Đang đăng ký",
       "newSubs": "Đăng ký mới",
@@ -704,8 +706,8 @@
       "replies": "Phản hồi của fan",
       "engagement": "Phản hồi mỗi tin nhắn"
     },
-    "vsPrevious": "so với {{days}} ngày trước",
-    "netChange": "Tăng ròng {{value}} người trong {{days}} ngày gần nhất",
+    "vsPrevious": "so với {{days}} ngày trước đó",
+    "netChange": "Tăng ròng {{value}} người trong kỳ",
     "engagementHint": "Số phản hồi trung bình mỗi tin nhắn nhận được",
     "same": "Không đổi",
     "fromZero": "+{{count}}",
@@ -731,7 +733,26 @@
     "daysAgo": "{{count}} ngày trước",
     "perMessage": "{{value}} mỗi tin",
     "mediaMix": "Loại tin nhắn đã gửi",
-    "topMessages": "Tin nhắn nhiều phản hồi nhất"
+    "topMessages": "Tin nhắn nhiều phản hồi nhất",
+    "custom": "Chọn ngày",
+    "basisRange": "{{from}} – {{to}} ({{days}} ngày, giờ Thái Lan) · so với {{days}} ngày trước đó",
+    "weeklyNote": "Khoảng thời gian dài hơn 3 tháng nên được gộp theo tuần",
+    "asOf": "Tính đến {{date}}",
+    "noRecordShort": "Không có dữ liệu ngày đó",
+    "noRecord": "Ngày này trước khi bắt đầu ghi dữ liệu hằng ngày nên không xem được số người đăng ký và phân bố fan",
+    "audienceBasisPast": "{{count}} lượt đăng ký tính đến {{date}} · fan đăng ký nhiều nghệ sĩ được tính theo từng nghệ sĩ · quốc gia và ngôn ngữ có ít fan được gộp vào \"Khác\"",
+    "todayBasis": "Luôn tính đến hôm nay, bất kể khoảng thời gian",
+    "picker": {
+      "title": "Chọn ngày",
+      "hint": "Chạm ngày bắt đầu rồi ngày kết thúc (tối đa {{days}} ngày)",
+      "selected": "{{from}} – {{to}} ({{days}} ngày)",
+      "thisMonth": "Tháng này",
+      "lastMonth": "Tháng trước",
+      "lastYear": "12 tháng gần nhất",
+      "prevMonth": "Tháng trước",
+      "nextMonth": "Tháng sau",
+      "apply": "Áp dụng"
+    }
   },
   "consoleNav": {
     "dashboard": "Bảng thống kê",

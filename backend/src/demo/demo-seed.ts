@@ -4,6 +4,8 @@
 import type { Prisma } from '../generated/prisma/client.js';
 import { MessageSenderType, MessageMediaType, Role } from '../generated/prisma/enums.js';
 import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
+import { computeAudienceSnapshot } from '../actors/daily-stats.service.js';
+import { DAY_MS, startOfTodayInZone, zoneDays } from '../common/utils/stats-time.js';
 
 // 데모 계정은 약관 동의를 마친 상태로(새로 가입하는 계정은 앱 온보딩에서 동의)
 const AGREED = { termsVersion: CURRENT_TERMS_VERSION, termsAcceptedAt: new Date() };
@@ -340,6 +342,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   });
 
   await seedStatsCrowd(prisma, { staffId: staff.id, caramelId: caramel.id, nougatId: nougat.id });
+  await seedDailyStats(prisma);
 
   console.log('시드 완료:', {
     actors: [caramel.chatDisplayName, nougat.chatDisplayName],
@@ -440,4 +443,21 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
       deletedByStaffId: ids.staffId,
     },
   });
+}
+
+/**
+ * 하루 기록(ActorDailyStat) 채우기(2026-10-13, 기간 선택) — 실제 서버는 기록을 시작한 날부터만 쌓이지만, 데모에선 지난 기간을 골라 볼 수
+ * 있게 최근 120일 치를 구독 시작·해지 시각으로 거꾸로 계산해 넣음(데모 데이터는 재구독이 없어 정확함). 오늘 줄은 서버가 매시간 덮어씀.
+ */
+async function seedDailyStats(prisma: Prisma.TransactionClient) {
+  const actorIds = (await prisma.actor.findMany({ select: { id: true } })).map((actor) => actor.id);
+  const today = startOfTodayInZone();
+  const days = zoneDays(new Date(today.getTime() - 120 * DAY_MS), 121);
+  for (const [index, day] of days.entries()) {
+    // 그날 끝(다음 날 0시 직전) 상태
+    const snapshot = await computeAudienceSnapshot(prisma, new Date(today.getTime() - (119 - index) * DAY_MS - 1));
+    await prisma.actorDailyStat.createMany({
+      data: actorIds.map((actorId) => ({ actorId, day, ...(snapshot.get(actorId) ?? { subscribers: 0, countries: {}, languages: {} }) })),
+    });
+  }
 }

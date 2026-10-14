@@ -198,10 +198,13 @@ export function TrendChart({
   days,
   series,
   formatDay,
+  formatTooltipDay = formatDay,
 }: {
   days: string[];
   series: { label: string; color: string; values: number[] }[];
   formatDay: (day: string) => string;
+  /** 말풍선 날짜(주 단위면 "9. 1.~") — 없으면 축과 같게 */
+  formatTooltipDay?: (day: string) => string;
 }) {
   const theme = useTheme();
   const [width, setWidth] = useState(0);
@@ -315,7 +318,7 @@ export function TrendChart({
                   xOf(active) > plotWidth / 2 ? { right: plotWidth - xOf(active) + 12 } : { left: AXIS_WIDTH + xOf(active) + 12 },
                 ]}>
                 <ThemedText type="captionBold" style={{ color: theme.onPrimary }}>
-                  {formatDay(days[active])}
+                  {formatTooltipDay(days[active])}
                 </ThemedText>
                 {series.map((s) => (
                   <View key={s.label} style={styles.legendItem}>
@@ -398,11 +401,13 @@ export function RankCard({
   onMore,
   onPressItem,
   emptyText,
+  caption,
   style,
 }: {
   title: string;
   icon: LucideIcon;
   items: RankItem[];
+  caption?: string;
   limit?: number;
   onMore?: () => void;
   onPressItem?: (id: string) => void;
@@ -416,6 +421,7 @@ export function RankCard({
     <Panel
       title={title}
       icon={icon}
+      caption={caption}
       style={style}
       right={
         onMore && items.length > 0 ? (

@@ -253,7 +253,9 @@
     "replyTo": "回覆 {{nickname}}",
     "hidden": "這則訊息已被隱藏",
     "action": "回覆",
-    "publicNotice": "所有訂閱者都看得到，粉絲以暱稱顯示。"
+    "publicNotice": "所有訂閱者都看得到。其他粉絲看到的是不含暱稱的「{{name}}的回覆」，被引用的粉絲看到「回覆了你」。",
+    "replyToMe": "回覆了你",
+    "artistReply": "{{name}}的回覆"
   },
   "report": {
     "title": "檢舉",
@@ -370,7 +372,8 @@
     "emptyBody": "訂閱喜愛的藝人，就能在這裡收到 TA 的訊息。",
     "discover": "探索藝人",
     "loadFailed": "訊息列表載入失敗",
-    "endsOn": "可使用至 {{date}}"
+    "endsOn": "可使用至 {{date}}",
+    "quotedReply": "↩︎ 回覆了你的訊息"
   },
   "actorProfile": {
     "back": "返回",
@@ -695,7 +698,6 @@
       "COUPLE": "CP"
     },
     "period": "{{days}}天",
-    "basis": "泰國時間最近{{days}}天 · 增減與之前{{days}}天比較",
     "kpi": {
       "subscribers": "訂閱中",
       "newSubs": "新訂閱",
@@ -704,8 +706,8 @@
       "replies": "粉絲回覆",
       "engagement": "每則訊息的回覆"
     },
-    "vsPrevious": "與前{{days}}天相比",
-    "netChange": "最近{{days}}天淨增 {{value}} 人",
+    "vsPrevious": "與之前{{days}}天相比",
+    "netChange": "期間淨增 {{value}} 人",
     "engagementHint": "每則訊息平均收到的回覆數",
     "same": "無變化",
     "fromZero": "+{{count}}",
@@ -731,7 +733,26 @@
     "daysAgo": "{{count}}天前",
     "perMessage": "每則 {{value}} 個",
     "mediaMix": "傳送訊息類型",
-    "topMessages": "回覆最多的訊息"
+    "topMessages": "回覆最多的訊息",
+    "custom": "選擇日期",
+    "basisRange": "泰國時間 {{from}} ~ {{to}}（{{days}}天）· 增減與之前{{days}}天比較",
+    "weeklyNote": "期間超過3個月，按週彙總顯示",
+    "asOf": "截至{{date}}",
+    "noRecordShort": "當天無紀錄",
+    "noRecord": "該日期早於開始每日紀錄的時間，無法查看訂閱數和粉絲分布",
+    "audienceBasisPast": "截至{{date}}的訂閱 {{count}} 個 · 訂閱多位藝人的粉絲按藝人分別計算 · 粉絲較少的國家/地區和語言合併為「其他」",
+    "todayBasis": "無論選擇哪個期間，都以今天為準",
+    "picker": {
+      "title": "選擇日期",
+      "hint": "請依序點擊開始日期和結束日期（最多{{days}}天）",
+      "selected": "{{from}} ~ {{to}}（{{days}}天）",
+      "thisMonth": "本月",
+      "lastMonth": "上個月",
+      "lastYear": "最近1年",
+      "prevMonth": "上個月",
+      "nextMonth": "下個月",
+      "apply": "套用"
+    }
   },
   "consoleNav": {
     "dashboard": "數據看板",

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
 
 // 소속사 대시보드·아티스트별 통계의 기간(일) — 앱의 [7일][30일][90일]
 export const STATS_PERIODS = [7, 30, 90] as const;
@@ -10,6 +10,15 @@ export class ActorStatsQueryDto {
   @Type(() => Number)
   @IsIn(STATS_PERIODS)
   days?: StatsPeriod;
+
+  // 직접 고른 기간(2026-10-13, 태국 날짜 YYYY-MM-DD, 양 끝 포함, 최대 1년) — 주면 days 대신. 범위 검사는 resolveRange
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  from?: string;
+
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  to?: string;
 }
 
 export class AgencyDashboardQueryDto extends ActorStatsQueryDto {

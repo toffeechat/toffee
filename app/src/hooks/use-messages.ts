@@ -11,6 +11,8 @@ export interface MessageQuote {
 
 export interface ChatMessage {
   id: string;
+  /** 아티스트가 바로 내 메시지를 인용한 답장(2026-10-13) — 팬 본인 화면에서만 true */
+  quotedMe?: boolean;
   actorId: string;
   senderType: 'ARTIST' | 'FAN';
   fanUserId: string | null;

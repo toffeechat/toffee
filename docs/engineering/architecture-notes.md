@@ -1572,3 +1572,32 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 운영자 API: `GET /admin/users?sort=recent`(lastActiveAt desc nulls last), 목록에 `lastActiveAt` + 마지막 기기(`accessLogs take 1`),
   `GET /admin/users/:id/access-logs`(최신 200줄). ADMIN만.
 
+## 소속사 통계 기간 선택·하루 기록 (2026-10-14)
+
+- **기간**: `ActorStatsQueryDto`에 `from`·`to`(YYYY-MM-DD, `@Matches`) — `resolveRange(query)`(agency-stats.service)가 `{from, to, days}`로 바꾸고 검사
+  (둘 다 있어야, 시작 ≤ 끝 ≤ 오늘(태국), 1~`MAX_RANGE_DAYS`=366일, 없는 날짜 거름 → `STATS_RANGE_INVALID` 400). 없으면 `days`(기본 30)로 오늘까지.
+  `activity()`는 `[from - days, to + 1일)`을 한 번에 group by. `days > WEEKLY_AFTER_DAYS(92)`면 `bucketWeekly`로 7일씩(점의 day = 묶음 첫날).
+  응답에 `from/to/days/bucket/audienceAsOf/audienceRecorded/distinctFans` 추가, 지난 날짜에 기록이 없으면 `totals.subscribers`·`subscriberCount`가 null.
+  태국 날짜 도우미 `zoneDayOf`·`zoneDayStart`(stats-time).
+- **하루 기록**: 모델 `ActorDailyStat(actorId, day YYYY-MM-DD, subscribers, countries Json, languages Json, @@unique([actorId, day]))`, 마이그레이션
+  `20261014010000_actor_daily_stat`. `daily-stats.service.ts` — `@Cron('50 * * * *', Asia/Bangkok)` `recordToday()` → `writeDailyStats(prisma, 오늘)`이
+  모든 방 upsert(구독 없는 방은 0 — "기록 없음"과 구분). `computeAudienceSnapshot(prisma, at?)`: at 없으면 `cancelledAt IS NULL`, 있으면
+  `startedAt ≤ at < cancelledAt`(재구독 시 startedAt이 덮어써져 근사치라 데모 채우기에만). 구독 수는 탈퇴 계정 포함(화면 "구독 중"과 같은 기준),
+  나라·언어는 탈퇴 안 한 팬만, 묶기 전 원래 수 저장 → 보여 줄 때 방별로 더한 뒤 `groupSmall`.
+- `audienceFor(ids, range)`: `to`가 오늘이면 지금 상태(팬 수는 `count(DISTINCT)`), 지난 날짜면 그날 `ActorDailyStat` 합.
+- **앱**: `StatsSelection = {days} | {from, to}`(`hooks/use-console.ts`, `selectionQuery`/`selectionParams`/`selectionFromParams`),
+  `components/stats-range-picker.tsx`(`StatsRangeControl` + 직접 만든 달력 모달, 날짜 계산은 `utils/stat-range.ts` 단위 테스트), `RangeCaption`,
+  `TrendChart`의 `formatTooltipDay`(주 단위 "9. 1.~"). 전체 순위 화면은 주소 값 `days` 또는 `from`·`to`.
+- **데모**: `seedDailyStats()` — 최근 120일 각 날짜 끝 시각으로 `computeAudienceSnapshot(at)` → `createMany`.
+
+
+## 내게 온 인용 답장 표시 (2026-10-13)
+
+- `listForFan`이 메시지마다 `quotedMe`(아티스트 메시지 && `replyTo.fanUserId === 요청한 팬`) — 인용된 팬 id 자체는 안 내려줌. 앱 `QuoteBlock mine`.
+- `listMine`(인박스)이 `unreadQuotedReply` — 경계(`lastReadAt`/구독 시작) 이후 아티스트 메시지 중 `replyTo.fanUserId = 나`가 있는지(`findFirst`).
+- 인용 답장 알림 본문 = `pushStrings.quotedReplyPrefix` + 미리보기(아이폰 대화 알림이 title을 senderName으로 바꿔서).
+
+## 팬 화면 인용 닉네임 제거 (2026-10-13)
+
+- `listForFan`이 `replyTo.nickname`을 null로(팬 앱 응답에 다른 팬 닉네임이 안 실림). `listBroadcasts`·`listReplies`(아티스트·소속사)는 그대로.
+- 앱 `QuoteBlock artistName` — 있으면 제목 `quote.artistReply`("{{name}}의 답장"), `mine`이면 제목 없이 배지만. 스튜디오 `quote.publicNotice`에 `{{name}}`.
