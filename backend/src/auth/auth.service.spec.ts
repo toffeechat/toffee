@@ -151,11 +151,17 @@ describe('PC 웹 소셜 로그인(code 교환)', () => {
   });
 });
 
-describe('데모 입장 코드(2026-10-01)', () => {
-  const withCode = (code?: string) => {
-    const prisma = { user: { upsert: vi.fn().mockResolvedValue({ id: 'u1', role: 'ADMIN' }) } };
+describe('데모 입장 코드(2026-10-01, 운영자 코드 분리 2026-10-14)', () => {
+  const withCode = (code?: string, adminCode?: string, existingRole: string | null = null) => {
+    const prisma = {
+      user: {
+        findUnique: vi.fn().mockResolvedValue(existingRole ? { role: existingRole } : null),
+        upsert: vi.fn().mockResolvedValue({ id: 'u1', role: existingRole ?? 'USER' }),
+      },
+    };
+    const env: Record<string, string | undefined> = { DEV_LOGIN_CODE: code, DEV_LOGIN_ADMIN_CODE: adminCode };
     const service = new AuthService(
-      { get: (key: string) => (key === 'DEV_LOGIN_CODE' ? code : undefined) } as unknown as ConfigService,
+      { get: (key: string) => env[key] } as unknown as ConfigService,
       {} as JwtService,
       prisma as unknown as PrismaService,
       {} as ModerationService,
@@ -166,15 +172,28 @@ describe('데모 입장 코드(2026-10-01)', () => {
 
   it('코드가 설정돼 있으면 맞혀야 로그인되고, 틀리거나 없으면 계정을 만들지도 않음', async () => {
     const { service, prisma } = withCode('candy-demo-42');
-    await expect(service.devLogin('admin@toffee.demo', undefined, undefined, 'wrong')).rejects.toThrow();
-    await expect(service.devLogin('admin@toffee.demo')).rejects.toThrow();
+    await expect(service.devLogin('fan1@toffee.demo', undefined, undefined, 'wrong')).rejects.toThrow();
+    await expect(service.devLogin('fan1@toffee.demo')).rejects.toThrow();
     expect(prisma.user.upsert).not.toHaveBeenCalled();
-    await expect(service.devLogin('admin@toffee.demo', undefined, undefined, ' candy-demo-42 ')).resolves.toEqual({ id: 'u1', role: 'ADMIN' });
+    await expect(service.devLogin('fan1@toffee.demo', undefined, undefined, ' candy-demo-42 ')).resolves.toEqual({ id: 'u1', role: 'USER' });
   });
 
-  it('코드가 없으면 예전처럼 코드 없이(로컬 개발)', async () => {
+  it('운영자 계정·운영자 역할 요청은 운영자 코드로만 — 일반 입장 코드로는 안 됨', async () => {
+    const admin = withCode('candy-demo-42', 'boss-77', 'ADMIN');
+    await expect(admin.service.devLogin('admin@toffee.demo', undefined, undefined, 'candy-demo-42')).rejects.toThrow();
+    await expect(admin.service.devLogin('admin@toffee.demo', undefined, undefined, 'boss-77')).resolves.toEqual({ id: 'u1', role: 'ADMIN' });
+    // 일반 계정을 운영자로 바꾸려는 요청도
+    const fan = withCode('candy-demo-42', 'boss-77');
+    await expect(fan.service.devLogin('new@toffee.demo', undefined, 'ADMIN' as never, 'candy-demo-42')).rejects.toThrow();
+    expect(fan.prisma.user.upsert).not.toHaveBeenCalled();
+    // 운영자 코드가 비어 있으면 운영자 로그인은 막힘
+    await expect(withCode('candy-demo-42', undefined, 'ADMIN').service.devLogin('admin@toffee.demo', undefined, undefined, 'candy-demo-42')).rejects.toThrow();
+  });
+
+  it('코드가 없으면 예전처럼 코드 없이(로컬 개발, 운영자도)', async () => {
     await expect(withCode(undefined).service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
     await expect(withCode('  ').service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
+    await expect(withCode(undefined, undefined, 'ADMIN').service.devLogin('admin@toffee.demo')).resolves.toMatchObject({ role: 'ADMIN' });
   });
 });
 

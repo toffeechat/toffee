@@ -1,5 +1,7 @@
 import { WideShell } from '@/components/wide-shell';
 import { InAppBanner } from '@/components/in-app-banner';
+import { HeaderBack, homeFor } from '@/components/header-back';
+import { ToastHost } from '@/components/toast';
 import { useEffect, type ReactNode } from 'react';
 import {
   NotoSansThai_400Regular,
@@ -97,7 +99,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
     // 역할별 첫 화면 — 로그인/온보딩 직후뿐 아니라 저장된 로그인으로 앱을 다시 켰을 때 팬 탭으로
     // 떨어진 경우에도 제 화면으로 보냄(예전엔 로그인 직후에만 분기해서 재실행 시 팬 탭에 머물렀음)
-    const home = role === 'ADMIN' ? '/admin' : role === 'AGENCY_STAFF' ? '/console' : role === 'ACTOR' ? '/studio' : '/';
+    const home = homeFor(role);
     const onFanTabs = segments[0] === '(tabs)';
     // 역할별 영역 — 주소를 직접 쳐서 다른 역할 화면에 들어오면 제 화면으로(데이터는 서버가 막지만 화면 틀도 안 보이게).
     // 운영자는 확인용으로 콘솔·스튜디오도 열 수 있음.
@@ -166,6 +168,8 @@ function RootLayout() {
                 headerTintColor: palette.text,
                 headerTitleStyle: { ...fontFor(600, i18n.language), fontSize: 17 },
                 headerBackButtonDisplayMode: 'minimal',
+                // 뒤로가기는 우리 버튼(글자색 고정, 웹에서 기록이 없으면 첫 화면으로 — 2026-10-14)
+                headerLeft: ({ canGoBack }) => <HeaderBack canGoBack={canGoBack} />,
                 contentStyle: { backgroundColor: palette.background },
               }}>
               <Stack.Screen name="(tabs)" />
@@ -188,7 +192,8 @@ function RootLayout() {
               <Stack.Screen name="blocks/[actorId]" options={{ headerShown: true, title: t('block.manage') }} />
               <Stack.Screen name="media-viewer" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
               <Stack.Screen name="media-gallery/[actorId]" options={{ headerShown: true, title: t('gallery.title') }} />
-              <Stack.Screen name="studio/index" options={{ headerShown: true, title: t('studio.screen') }} />
+              {/* 아티스트 하단 탭(2026-10-14): 토피룸 / 설정 */}
+              <Stack.Screen name="studio/(tabs)" options={{ headerShown: false, title: t('studio.screen') }} />
               <Stack.Screen name="studio/[actorId]/index" options={{ headerShown: true, title: '' }} />
               <Stack.Screen name="studio/[actorId]/profile" options={{ headerShown: true, title: t('studioProfile.title') }} />
               <Stack.Screen
@@ -230,6 +235,7 @@ function RootLayout() {
             </Stack>
             </WideShell>
             <InAppBanner />
+            <ToastHost />
           </AuthGate>
         </ThemeProvider>
       </AuthProvider>

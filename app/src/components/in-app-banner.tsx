@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/themed-text';
+import { Avatar } from '@/components/ui/avatar';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -13,6 +14,8 @@ export interface BannerPayload {
   title?: string;
   body?: string;
   actorId?: string;
+  /** 보낸 사람 사진(2026-10-14, 카톡처럼) — 주면 T 아이콘 대신 프로필 사진(null이면 사람 모양 기본 이미지) */
+  avatar?: string | null;
   onPress: () => void;
 }
 
@@ -72,7 +75,11 @@ export function InAppBanner() {
         }}
         accessibilityRole="button"
         style={[styles.card, { backgroundColor: theme.background, borderColor: theme.border }]}>
-        <Image source={require('@/../assets/brand/t-icon-black.png')} style={styles.icon} contentFit="contain" />
+        {payload.avatar !== undefined ? (
+          <Avatar uri={payload.avatar} size={36} />
+        ) : (
+          <Image source={require('@/../assets/brand/t-icon-black.png')} style={styles.icon} contentFit="contain" />
+        )}
         <View style={styles.body}>
           {payload.title ? (
             <ThemedText type="smallBold" numberOfLines={1}>

@@ -85,4 +85,11 @@ export class ActorsController {
   setChatProfileImage(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetChatProfileImageDto) {
     return this.actorsService.setChatProfileImage(user.id, id, dto.key);
   }
+
+  // 토피룸 배경 사진(2026-10-14) — 대화방 사진과 같은 권한, 업로드는 chat-profile-image/upload를 같이 씀
+  @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
+  @Patch(':id/chat-background')
+  setChatBackground(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetChatProfileImageDto) {
+    return this.actorsService.setChatBackground(user.id, id, dto.key);
+  }
 }

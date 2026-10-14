@@ -57,11 +57,8 @@ describe('MessagesService.sendBroadcast 푸시 문구', () => {
     await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '{{name}}야 안녕!' });
 
     expect(fanPushes[0]({ locale: 'ko', displayName: '민지' })).toEqual({ title: '캐러멜', body: '민지야 안녕!' });
-    // 모니터링용 스태프 알림은 원문 그대로, 제목은 스태프 언어로
-    expect(staffPushes[0]({ locale: 'en', displayName: 'staff' })).toEqual({
-      title: '캐러멜 sent a new message',
-      body: '{{name}}야 안녕!',
-    });
+    // 모니터링용 스태프 알림은 원문 그대로, 카톡처럼 제목은 아티스트 이름(2026-10-14)
+    expect(staffPushes[0]({ locale: 'en', displayName: 'staff' })).toEqual({ title: '캐러멜', body: '{{name}}야 안녕!' });
   });
 
   it('CP방: 보낸 아티스트가 기록되고, 팬 알림은 "방 이름" 제목 + "보낸 아티스트: 내용"', async () => {
@@ -106,21 +103,31 @@ describe('MessagesService.sendBroadcast 푸시 문구', () => {
     expect(fanPushes[0]({ locale: null, displayName: 'fan' }).body).toBe('Sent a photo');
   });
 
-  it('팬 알림 data에 보낸 사람 이름·프로필 사진(아이폰 대화 알림용), 소속사 알림엔 없음', async () => {
+  it('알림 data에 보낸 사람 이름·프로필 사진(아이폰 대화 알림용) — 팬·소속사 모두(2026-10-14)', async () => {
     const { service, prisma, push } = setup();
     const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;
     actor.findUniqueOrThrow.mockResolvedValue({ chatDisplayName: '캐러멜', kind: 'SOLO', welcomeMessage: '환영', birthdayMessage: '축하', chatProfileImageUrl: 'https://img/caramel.jpg' });
     await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' });
     expect(push.sendToUsers).toHaveBeenCalledWith(['fan-1'], expect.any(Function), expect.objectContaining({ senderName: '캐러멜', senderImage: 'https://img/caramel.jpg' }));
-    expect(push.notifyActorStaff).toHaveBeenCalledWith('actor-1', expect.any(Function), expect.not.objectContaining({ senderName: expect.anything() }), 'notifyArtistMessages');
+    expect(push.notifyActorStaff).toHaveBeenCalledWith('actor-1', expect.any(Function), expect.objectContaining({ senderName: '캐러멜', senderImage: 'https://img/caramel.jpg' }), 'notifyArtistMessages');
   });
 
   it('환영·생일 메시지가 비어 있으면 보내기 거절(GREETINGS_REQUIRED)', async () => {
     const { service, prisma } = setup();
     const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;
-    actor.findUniqueOrThrow.mockResolvedValueOnce({ welcomeMessage: '환영', birthdayMessage: null });
+    actor.findUniqueOrThrow.mockResolvedValueOnce({ kind: 'SOLO', welcomeMessage: '환영', birthdayMessage: null });
     await expect(service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' })).rejects.toThrow();
     expect(prisma.message.create).not.toHaveBeenCalled();
+  });
+
+  it('CP방은 환영 메시지만 있으면 보낼 수 있음(2026-10-14)', async () => {
+    const { service, prisma } = setup();
+    const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;
+    actor.findUniqueOrThrow.mockResolvedValueOnce({ kind: 'COUPLE', welcomeMessage: '환영', birthdayMessage: null });
+    await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' });
+    expect(prisma.message.create).toHaveBeenCalled();
+    actor.findUniqueOrThrow.mockResolvedValueOnce({ kind: 'COUPLE', welcomeMessage: null, birthdayMessage: null });
+    await expect(service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' })).rejects.toThrow();
   });
 
   it('여러 장 보내기: 앞쪽(silent)은 푸시 없음, 마지막 장은 "N개를 보냈어요" 한 건', async () => {
@@ -207,15 +214,19 @@ describe('인용 답장 요약(toQuote)', () => {
   };
 
   it('팬 메시지는 닉네임 + 본문 앞부분', () => {
-    expect(toQuote(base)).toEqual({ id: 'q1', hidden: false, nickname: '캐러멜바라기', body: '오늘도 화이팅!' });
+    expect(toQuote(base)).toEqual({ id: 'q1', hidden: false, retracted: false, nickname: '캐러멜바라기', body: '오늘도 화이팅!' });
     expect(toQuote({ ...base, body: 'a'.repeat(300) })?.body).toHaveLength(120);
   });
 
   it('정지·차단된 팬이거나 신고 처리된 메시지면 내용과 닉네임을 가림', () => {
-    const hidden = { id: 'q1', hidden: true, nickname: null, body: null };
+    const hidden = { id: 'q1', hidden: true, retracted: false, nickname: null, body: null };
     expect(toQuote({ ...base, fanUser: { nickname: 'x', status: 'BANNED' } })).toEqual(hidden);
     expect(toQuote({ ...base, fanUser: { nickname: 'x', status: 'SUSPENDED' } })).toEqual(hidden);
     expect(toQuote({ ...base, reports: [{ id: 'r1' }] })).toEqual(hidden);
+  });
+
+  it('팬이 회수한 답장을 인용했으면 "회수된 메시지"(2026-10-14)', () => {
+    expect(toQuote({ ...base, deletedAt: new Date() })).toEqual({ id: 'q1', hidden: true, retracted: true, nickname: null, body: null });
   });
 
   it('아티스트 메시지(팬 답장이 자동으로 묶인 경우)는 인용이 아님', () => {

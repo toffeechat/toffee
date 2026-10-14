@@ -11,12 +11,13 @@ export interface AlbumCandidate {
   extra?: string;
   replyTo?: unknown;
   sender?: { id: string } | null;
+  retracted?: boolean;
 }
 
 export const MAX_ALBUM = 10;
 
 const isAlbumable = (m: AlbumCandidate) =>
-  m.senderType === 'ARTIST' && !m.extra && !m.body && !m.replyTo && (m.mediaType === 'PHOTO' || m.mediaType === 'VIDEO');
+  m.senderType === 'ARTIST' && !m.extra && !m.retracted && !m.body && !m.replyTo && (m.mediaType === 'PHOTO' || m.mediaType === 'VIDEO');
 
 /** 최신 → 오래된 순 목록에서 이어진 사진·영상을 묶음 줄 하나로(album은 시간순, 줄의 나머지 값은 가장 최근 것) */
 export function groupAlbumRows<T extends AlbumCandidate>(messages: T[], sameMinute: (a: string, b: string) => boolean): (T & { album?: T[] })[] {

@@ -33,7 +33,7 @@ export function QuoteBlock({ quote, tone, mine, artistName }: { quote: MessageQu
       ) : null}
       {quote.hidden ? (
         <ThemedText type="small" style={{ color, opacity: 0.8 }}>
-          {t('quote.hidden')}
+          {t(quote.retracted ? 'retract.placeholder' : 'quote.hidden')}
         </ThemedText>
       ) : (
         <>

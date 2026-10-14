@@ -28,6 +28,8 @@ function quoteInclude(actorId: string) {
         body: true,
         mediaType: true,
         fanUserId: true,
+        // 팬이 회수한 답장(2026-10-14) — 인용 칸에 "회수된 메시지"
+        deletedAt: true,
         fanUser: {
           select: {
             nickname: true,
@@ -48,6 +50,7 @@ interface QuotedSource {
   senderType: MessageSenderType;
   body: string | null;
   mediaType: MessageMediaType;
+  deletedAt?: Date | null;
   fanUser: { nickname: string | null; status: UserStatus; deletedAt?: Date | null; blockedInChannels?: { id: string }[] } | null;
   reports: { id: string }[];
 }
@@ -65,11 +68,13 @@ export function toQuote(source: QuotedSource | null) {
     !!source.fanUser.deletedAt ||
     (source.fanUser.blockedInChannels?.length ?? 0) > 0 ||
     source.reports.length > 0;
+  const retracted = !!source.deletedAt;
   return {
     id: source.id,
-    hidden,
-    nickname: hidden ? null : (source.fanUser?.nickname ?? null),
-    body: hidden || !source.body ? null : source.body.slice(0, QUOTE_PREVIEW_LENGTH),
+    hidden: hidden || retracted,
+    retracted,
+    nickname: hidden || retracted ? null : (source.fanUser?.nickname ?? null),
+    body: hidden || retracted || !source.body ? null : source.body.slice(0, QUOTE_PREVIEW_LENGTH),
   };
 }
 
@@ -82,6 +87,27 @@ function withQuote<T extends { replyTo: QuotedSource | null }>(message: T) {
   const { replyTo, ...rest } = message;
   return { ...rest, replyTo: toQuote(replyTo) };
 }
+
+/**
+ * 회수한 메시지(2026-10-14 사용자 결정 — "삭제" 대신 "회수") — 자리만 남기고 내용은 비움. 앱은 "회수된 메시지입니다"로 그림.
+ * 원본은 DB에 그대로(신고 증거·운영자 확인용) — 화면으로만 안 내려줌
+ */
+function asRetracted<T extends { body: string | null; mediaKey?: string | null }>(message: T): T & { retracted: boolean } {
+  return {
+    ...message,
+    body: null,
+    mediaKey: null,
+    thumbnailKey: null,
+    thumbhash: null,
+    waveform: null,
+    mediaDurationMs: null,
+    replyTo: null,
+    retracted: true,
+  };
+}
+
+// 팬 화면에 남는 회수 — 아티스트 본인이 회수한 스타 메시지와 팬 본인이 회수한 답장. 소속사·운영자가 지운 건 흔적 없이 사라짐(사고 대응)
+const RETRACTED_BY_SENDER = { deletedByAdmin: false, deletedByStaffId: null } as const;
 const PUSH_PREVIEW_LENGTH = 60;
 // 스타 화면 "팬 답장 흐름" 미리보기 — 최근 스타 메시지 몇 개에만, 메시지당 최근 답장 몇 개만(오래된 메시지는 숫자만)
 const REPLY_PREVIEW_MESSAGES = 10;
@@ -139,9 +165,11 @@ export class MessagesService {
       where: {
         actorId,
         createdAt: { gte: subscription.startedAt },
-        // 스타가 지웠거나 운영자가 가린 메시지는 팬에게 안 보임(팬 답장엔 deletedAt이 없음)
-        deletedAt: null,
-        OR: [{ senderType: MessageSenderType.ARTIST }, { fanUserId: userId }],
+        // 소속사가 지웠거나 운영자가 가린 스타 메시지는 팬에게 안 보임. 아티스트가 직접 회수한 것·내가 회수한 답장은 "회수된 메시지"로 자리만(2026-10-14)
+        OR: [
+          { senderType: MessageSenderType.ARTIST, OR: [{ deletedAt: null }, RETRACTED_BY_SENDER] },
+          { fanUserId: userId },
+        ],
       },
       include: quoteInclude(actorId),
       orderBy: page.limit ? [{ createdAt: 'desc' }, { id: 'desc' }] : { createdAt: 'asc' },
@@ -165,13 +193,17 @@ export class MessagesService {
             replyTo: quoted.replyTo ? { ...quoted.replyTo, nickname: null } : null,
             quotedMe: message.senderType === MessageSenderType.ARTIST && message.replyTo?.fanUserId === userId,
           };
-        }).map((message) => ({
-          ...message,
-          body:
-            message.senderType === MessageSenderType.ARTIST && message.body
-              ? personalize(message.body, fan.nickname ?? fan.displayName)
-              : message.body,
-        })),
+        }).map((message) =>
+          message.deletedAt
+            ? asRetracted(message)
+            : {
+                ...message,
+                body:
+                  message.senderType === MessageSenderType.ARTIST && message.body
+                    ? personalize(message.body, fan.nickname ?? fan.displayName)
+                    : message.body,
+              },
+        ),
       ),
     );
   }
@@ -301,8 +333,11 @@ export class MessagesService {
     // 커플방이면 두 멤버 중 실제로 보낸 배우(말풍선·알림에 이름 표시)
     const senderActorId = await ensureIsActorSelf(this.prisma, actorSelfUserId, actorId);
     // 환영·생일 메시지를 써 둬야 보낼 수 있음(2026-10-13 사용자 결정 — 앱은 첫 화면에서 먼저 쓰게 함, 여긴 우회 방지)
-    const greetings = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { welcomeMessage: true, birthdayMessage: true } });
-    if (!greetings.welcomeMessage || !greetings.birthdayMessage) throw new BadRequestException(appError('GREETINGS_REQUIRED'));
+    // CP방은 환영 메시지만 필수(2026-10-14 사용자 결정)
+    const greetings = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { kind: true, welcomeMessage: true, birthdayMessage: true } });
+    if (!greetings.welcomeMessage || (greetings.kind !== ActorKind.COUPLE && !greetings.birthdayMessage)) {
+      throw new BadRequestException(appError('GREETINGS_REQUIRED'));
+    }
     const mediaKey = dto.mediaType === MessageMediaType.TEXT ? null : dto.mediaKey!;
     // 인용 답장: 같은 배우 채널의 팬 메시지만 인용 가능(다른 채널 메시지·스타 메시지 인용 불가)
     if (dto.replyToMessageId) {
@@ -396,15 +431,13 @@ export class MessagesService {
         )
         .catch(() => {});
     }
-    // 소속사 모니터링용 알림 — 팬 알림과 별개, 실패해도 발송 자체엔 영향 없음(모니터링은 원문 그대로라 치환 안 함)
+    // 소속사 모니터링용 알림 — 팬 알림과 별개, 실패해도 발송 자체엔 영향 없음(모니터링은 원문 그대로라 치환 안 함).
+    // 카톡처럼 제목 = 아티스트가 정한 이름, 본문 = 메시지, 아이폰은 프로필 사진(2026-10-14 사용자 요청 — 예전 "○○님이 새 메시지를 보냈어요")
     void this.pushService
       .notifyActorStaff(
         actorId,
-        ({ locale }) => ({
-          title: pushStrings(locale).staffNewMessageTitle(actor.chatDisplayName),
-          body: preview(locale),
-        }),
-        pushData,
+        ({ locale }) => ({ title: actor.chatDisplayName, body: preview(locale) }),
+        { ...pushData, senderName: actor.chatDisplayName, ...(senderImage ? { senderImage } : {}) },
         'notifyArtistMessages',
       )
       .catch(() => {});
@@ -436,8 +469,9 @@ export class MessagesService {
     // 팬 프로필 사진·상태메시지(2026-10-12)도 — 사진은 같은 팬이 여러 번 나와도 임시 주소를 한 번만 만듦
     const photoKeys = [...new Set(replies.map((reply) => reply.fanUser?.profileImageUrl).filter((key): key is string => !!key))];
     const photos = new Map(await Promise.all(photoKeys.map(async (key) => [key, await this.mediaService.resolveImageUrl(key)] as const)));
+    // 팬이 회수한 답장(2026-10-14)은 자리만 — "회수된 메시지입니다"
     return replies.map(({ fanUser, ...reply }) => ({
-      ...reply,
+      ...(reply.deletedAt ? asRetracted(reply) : reply),
       fanUser:
         fanUser && !fanUser.deletedAt
           ? {
@@ -529,9 +563,11 @@ export class MessagesService {
    * 이미 보낸 푸시 알림은 되돌릴 수 없음. 첨부 파일은 신고가 걸려 있지 않으면 지움(신고 증거는 남김).
    */
   async deleteBroadcast(requesterId: string, actorId: string, messageId: string) {
+    // 팬은 자기 답장만 회수(2026-10-14) — 같은 주소(DELETE …/messages/:id)를 씀
+    const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true } });
+    if (requester.role === Role.USER) return this.retractReply(requesterId, actorId, messageId);
     // 소속사 직원도 자기 소속 아티스트 메시지를 대신 지울 수 있음(2026-10-12 사용자 결정 — 아티스트 사고 시 급히 내리기).
     // 팬 화면에선 아티스트가 지운 것과 똑같이 사라지고, 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
-    const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true } });
     const byStaff = requester.role === Role.AGENCY_STAFF;
     if (byStaff) await ensureCanViewActor(this.prisma, requesterId, actorId);
     else await ensureIsActorSelf(this.prisma, requesterId, actorId);
@@ -555,5 +591,21 @@ export class MessagesService {
       await this.mediaService.deleteQuietly(message.mediaKey);
       await this.mediaService.deleteQuietly(message.thumbnailKey);
     }
+  }
+
+  /**
+   * 팬이 자기 답장 회수(2026-10-14 사용자 결정) — 시간 제한 없음. 아티스트·소속사·내 화면엔 "회수된 메시지입니다"로 자리만 남고 원본은 DB에
+   * 그대로(이미 신고됐거나 나중에 신고되면 운영자가 확인). 하루 답장 개수는 돌려주지 않음(보내고 회수하고 다시 보내기 반복 방지 —
+   * replyTarget이 지운 것도 셈)
+   */
+  async retractReply(userId: string, actorId: string, messageId: string) {
+    const message = await this.prisma.message.findFirst({
+      where: { id: messageId, actorId, senderType: MessageSenderType.FAN, fanUserId: userId },
+      select: { id: true, deletedAt: true },
+    });
+    if (!message) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
+    if (message.deletedAt) return;
+    await this.prisma.message.update({ where: { id: messageId }, data: { deletedAt: new Date() } });
+    void this.realtime.publish({ kind: 'message-removed', actorId });
   }
 }

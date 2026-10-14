@@ -4,11 +4,16 @@ import { useLiveInterval } from '@/lib/realtime';
 import type { Actor } from './use-actors';
 import type { ChatMessage } from './use-messages';
 
+/** 내가 보낼 수 있는/관리하는 방 — lastBroadcastAt: 소속사 목록의 "N일째 미발송"(2026-09-29), lastMessage: 토피룸 목록 미리보기(2026-10-14) */
+export type MyActor = Actor & {
+  lastBroadcastAt?: string | null;
+  lastMessage?: { body: string | null; mediaType: string; createdAt: string } | null;
+};
+
 export function useMyActors() {
   return useQuery({
     queryKey: ['my-actors'],
-    // lastBroadcastAt: 마지막 스타 메시지 시각 — 소속사 목록의 "N일째 미발송" 표시(2026-09-29)
-    queryFn: () => apiClient.get<(Actor & { lastBroadcastAt?: string | null })[]>('/actors/mine'),
+    queryFn: () => apiClient.get<MyActor[]>('/actors/mine'),
   });
 }
 

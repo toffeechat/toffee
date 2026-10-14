@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Avatar } from '@/components/ui/avatar';
-import { ChatPhotoEditor } from '@/components/chat-photo-editor';
+import { ChatBackgroundPreview, ChatPhotoEditor } from '@/components/chat-photo-editor';
 import { GreetingsForm } from '@/components/greetings-form';
 import { SupportLink } from '@/components/support-link';
 import { useActor, type Actor } from '@/hooks/use-actors';
 import { useTheme } from '@/hooks/use-theme';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { useAuth } from '@/lib/auth-context';
 import { Spacing } from '@/constants/theme';
 
 /**
@@ -72,8 +71,6 @@ function NicknameForm({ actor }: { actor: Actor }) {
 export default function StudioProfileScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
-  const { logout } = useAuth();
-  const router = useRouter();
   const { actorId } = useLocalSearchParams<{ actorId: string }>();
   const { data: actor } = useActor(actorId);
 
@@ -86,22 +83,22 @@ export default function StudioProfileScreen() {
             <Avatar uri={actor.chatProfileImageUrl} size={96} />
             <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
           </ThemedView>
+          {/* 토피룸 배경 사진(2026-10-14) — 팬 토피룸 뒤에 깔림 */}
+          <ThemedView style={[styles.section, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold">{t('chatBackground.title')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('chatBackground.hint')}
+            </ThemedText>
+            <ChatBackgroundPreview uri={actor.chatBackgroundUrl} />
+            <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatBackgroundUrl} target="background" />
+          </ThemedView>
           <NicknameForm key={actor.id} actor={actor} />
           {/* 커플방이면 방 하나에 한 벌 — 두 멤버 누구나 고칠 수 있음 */}
-          <GreetingsForm key={`greetings-${actor.id}`} actorId={actor.id} />
+          <GreetingsForm key={`greetings-${actor.id}`} actorId={actor.id} couple={actor.kind === 'COUPLE'} />
           <ThemedText type="small" themeColor="textSecondary">
             {t('studioProfile.officialNote', { name: actor.legalName })}
           </ThemedText>
           <SupportLink />
-          {/* 알림·화면 모드·언어·로그인 정보(2026-10-12 역할별 설정) */}
-          <Pressable onPress={() => router.push('/settings/staff')} style={[styles.logout, { borderColor: theme.backgroundSelected }]}>
-            <ThemedText type="smallBold">{t('staffSettings.title')}</ThemedText>
-          </Pressable>
-          <Pressable onPress={logout} style={[styles.logout, { borderColor: theme.backgroundSelected }]}>
-            <ThemedText type="smallBold" themeColor="danger">
-              {t('common.logout')}
-            </ThemedText>
-          </Pressable>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -119,5 +116,4 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   multiline: { minHeight: 88, textAlignVertical: 'top' },
   spaced: { marginTop: Spacing.two },
-  logout: { borderWidth: 1, borderRadius: 10, paddingVertical: Spacing.three, alignItems: 'center', marginTop: Spacing.two },
 });

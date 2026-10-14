@@ -61,6 +61,7 @@ function applyEvent(queryClient: QueryClient, event: RealtimeEvent) {
     void queryClient.invalidateQueries({ queryKey: ['actor-replies', actorId] });
     return;
   }
+  // 팬 답장 회수(2026-10-14)도 message-removed로 와서 아래에서 같이 새로고침
   // 스타 메시지 도착·삭제 — 팬 채팅방·남은 답장 수·인박스, 스타·소속사 메시지 목록
   void queryClient.invalidateQueries({ queryKey: ['messages', actorId] });
   void queryClient.invalidateQueries({ queryKey: ['chat-media', actorId] });
@@ -68,6 +69,8 @@ function applyEvent(queryClient: QueryClient, event: RealtimeEvent) {
   void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
   void queryClient.invalidateQueries({ queryKey: ['actor-broadcasts', actorId] });
   void queryClient.invalidateQueries({ queryKey: ['actor-replies', actorId] });
+  // 스튜디오·소속사 토피룸 목록의 마지막 메시지(2026-10-14)
+  void queryClient.invalidateQueries({ queryKey: ['my-actors'] });
 }
 
 /** SSE 본문을 한 덩어리씩 잘라 이벤트로 — "event: x\ndata: {...}\n\n" */

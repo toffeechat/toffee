@@ -1532,6 +1532,32 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 이 환경(리눅스)에선 `expo prebuild -p ios --no-install`으로 pbxproj·entitlements·Info.plist까지만 확인 — Swift 컴파일·서명은 EAS 빌드에서.
 - 안드로이드는 FCM notification 메시지가 큰 아이콘(largeIcon)을 못 받아서, 하려면 data 메시지 + 앱이 직접 그리기(notifee 등) — 테스트 기기 생기면.
 
+## 토피룸·회수·배경 사진·운영자 입장 코드 (2026-10-14)
+
+- **회수(retract)**: 스키마 변경 없이 기존 `Message.deletedAt`·`deletedByAdmin`·`deletedByStaffId`로 구분.
+  - 스타 메시지: 본인 회수 = `deletedAt`만, 소속사 = `deletedByStaffId`, 운영자 = `deletedByAdmin`. `listForFan`은
+    `senderType ARTIST AND (deletedAt IS NULL OR (deletedByAdmin=false AND deletedByStaffId IS NULL))` + 내 답장(회수 포함)을 가져와
+    회수된 건 `asRetracted()`로 내용·미디어·인용을 비우고 `retracted: true`.
+  - 팬 답장: 예전엔 팬 메시지에 `deletedAt`이 없었음 → `DELETE /actors/:id/messages/:messageId`를 `Role.USER`도 쓰게 하고 서비스에서 역할로 분기
+    (`retractReply` — 자기 답장만, 아니면 404). `replyTarget`의 사용 개수는 `deletedAt`과 무관하게 세서 하루 답장 개수가 안 돌아옴. `listReplies`도
+    `asRetracted`, `recentReplyPreviews`(답장 줄)는 원래 `deletedAt: null`이라 빠짐. 인용(`toQuote`)은 `replyTo.deletedAt`이면 `hidden + retracted`.
+  - 실시간: 둘 다 `message-removed`(앱은 팬 채팅·답장·스튜디오·`my-actors` 무효화). 인박스 미리보기·검색·모아보기는 원래 `deletedAt: null`이라 회수 제외.
+- **앱 공통 컴포넌트**: `day-divider.tsx`(날짜 구분선 + `sameDay`), `message-menu.tsx`(길게 누르기 메뉴), `toast.tsx`(`showToast`, 루트에 `ToastHost`),
+  `lib/copy-text.ts`, `header-back.tsx`(루트 Stack `headerLeft` — `canGoBack`이 없으면 웹에서만 `homeFor(role)`로 replace, 그 화면이 홈이면 숨김),
+  `room-list-row.tsx`(스튜디오·소속사 토피룸 목록), `chat-background.tsx`. `SideTime`은 시간만.
+- **아티스트 탭**: `app/studio/index.tsx` → `app/studio/(tabs)/{_layout,index,settings}.tsx`, 루트 Stack은 `studio/(tabs)` headerShown false.
+  `settings`는 `settings/staff` 재사용(스튜디오 프로필의 설정·로그아웃 버튼은 뺌).
+- **`/actors/mine`**: `lastMessage`(방별 최신 스타 메시지, `distinct actorId` + `orderBy [actorId, createdAt desc]`) 추가.
+- **배경 사진**: `Actor.chatBackgroundUrl`(마이그레이션 `20261014120000_actor_chat_background`), `LIST_SELECT`·`withImageUrls`에 포함(서명 URL),
+  `PATCH /actors/:id/chat-background`(권한·업로드 자리는 대화방 사진과 같음 — `chat-profile-image/upload`로 올리고 키만 다르게 저장, 이전 파일은 다른 칸에서 안 쓰면 삭제).
+  앱 `ChatPhotoEditor target="background"`.
+- **CP방 인사**: `GreetingsService.updateSettings`가 COUPLE이면 `birthdayMessage`를 null로 저장, SOLO는 비어 있으면 `GREETINGS_REQUIRED`.
+  `sendBroadcast` 게이트도 COUPLE은 환영만, 생일 크론은 `actor.kind = SOLO`만.
+- **소속사 푸시**: `notifyActorStaff` 제목 = `chatDisplayName`, 본문 = 팬과 같은 `preview()`(원문, 치환 없음), data에 `senderName`·`senderImage`(iOS 알림 확장이
+  대화 알림으로). `staffNewMessageTitle` 문구 삭제. 웹 배너(`console-alerts.ts`)는 SSE에 본문이 없어 `/actors/mine`을 `fetchQuery`해서 `lastMessage`로.
+- **운영자 입장 코드**: `AuthService.devLogin` — 요청 `role === ADMIN`이거나 기존 계정이 ADMIN이면 `DEV_LOGIN_ADMIN_CODE`와 비교(설정 안 했으면 거절),
+  아니면 `DEV_LOGIN_CODE`. `DEV_LOGIN_CODE`가 비어 있는 로컬은 둘 다 통과. env 점검에 경고 추가.
+
 ## 소속사 대시보드·기록·웹 알림·정산 토피 몫 (2026-10-13)
 
 - **통계 API**: `backend/src/actors/agency-stats.service.ts`(`AgencyStatsService`). `GET /actors/mine/dashboard?days=7|30|90&kind=ALL|SOLO|COUPLE`,

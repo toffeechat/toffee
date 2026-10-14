@@ -10,7 +10,7 @@
     "chats": "Chats",
     "my": "My",
     "discover": "Discover",
-    "inbox": "Inbox",
+    "inbox": "Toffee Room",
     "profile": "Profile"
   },
   "screens": {
@@ -53,7 +53,7 @@
   },
   "chats": {
     "title": "Chats",
-    "loadFailed": "Couldn't load your chats.",
+    "loadFailed": "Couldn't load your Toffee Rooms.",
     "empty": "You haven't subscribed to anyone yet. Start from the Artists tab.",
     "noConversation": "No messages yet"
   },
@@ -70,11 +70,11 @@
     "noRepliesLeft": "You can send up to {{limit}} replies per message. Please wait for the artist's next message.",
     "mute": "Mute notifications",
     "unmute": "Unmute notifications",
-    "muted": "Notifications for this chat are off. You'll still receive messages.",
-    "unmuted": "Notifications for this chat are on.",
+    "muted": "Notifications for this Toffee Room are off. You'll still receive messages.",
+    "unmuted": "Notifications for this Toffee Room are on.",
     "report": "Report",
     "closeMenu": "Close",
-    "messageActions": "Long press to report",
+    "messageActions": "Long-press for options",
     "newMessages": "{{count}} new ↓",
     "newMessagesShort": "{{count}} new messages",
     "readMarker": "You've read up to here",
@@ -131,18 +131,15 @@
     "lastBroadcast": "Last sent",
     "noBroadcast": "Nothing sent yet",
     "noNickname": "(no nickname)",
-    "deletedByActor": "Deleted by the artist (not visible to fans)",
+    "deletedByActor": "Unsent by the artist (fans see \"This message was unsent\")",
     "lastMessageDays": "Last message {{count}} days ago",
     "noMessagesYet": "No messages sent yet",
     "lastMessageToday": "Sent a message today",
-    "deleteTitle": "Delete this message?",
-    "deleteBody": "It disappears from fans' screens right away and can't be undone. Notifications already sent can't be recalled. The artist will see it as \"Deleted by the agency\".",
-    "deleteConfirm": "Delete",
-    "deletedByAgency": "Deleted by the agency (hidden from fans)",
+    "deletedByAgency": "Unsent by your agency (hidden from fans)",
     "allReplies": "All replies",
     "description": "Your agency's artists. Tap one to see their messages, fan replies and stats.",
     "tabHint": {
-      "monitor": "Monitor the messages this artist sends to fans. You can delete a problematic message on their behalf.",
+      "monitor": "Monitor the messages this artist sends to fans. Long-press a problematic message to unsend it on their behalf.",
       "replies": "Replies from fans. You can report a problematic reply or block that fan.",
       "stats": "Subscription, message and reply trends for this artist, plus where their fans are."
     }
@@ -174,7 +171,6 @@
   "studio": {
     "screen": "Studio",
     "repliesScreen": "Fan replies",
-    "pickActor": "Choose a channel to send messages from",
     "noActor": "No artist account is linked. Please contact the operator.",
     "empty": "You haven't sent any messages yet. Send your fans a first message!",
     "inputPlaceholder": "Message your fans",
@@ -206,10 +202,6 @@
     "insertName": "Insert fan name",
     "insertNameHint": "〈fan nickname〉 is replaced with each fan's own nickname when sent.",
     "fanNickname": "fan nickname",
-    "delete": "Delete",
-    "deleteTitle": "Delete message",
-    "deleteBody": "This message will disappear from fans' screens. Notifications already sent can't be recalled, and the deletion stays on record in agency monitoring.",
-    "deleteFailed": "Couldn't delete. Please try again.",
     "hiddenByAdmin": "Hidden under our policy (not visible to fans).",
     "waitingReplies": "Waiting for fan replies…",
     "newReplies": "{{count}} new ↓",
@@ -277,9 +269,9 @@
   "block": {
     "action": "Block",
     "manage": "Blocked fans",
-    "confirmTitle": "Block {{nickname}} in this channel?",
+    "confirmTitle": "Block {{nickname}} in this Toffee Room?",
     "confirmBody": "They won't be able to send replies, and their existing replies will disappear from your list. Their subscription and access to messages stay the same. You can unblock anytime.",
-    "listHint": "Blocked fans can't reply in this channel. Unblock to allow replies again.",
+    "listHint": "Blocked fans can't reply in this Toffee Room. Unblock to allow replies again.",
     "empty": "No blocked fans.",
     "unblock": "Unblock"
   },
@@ -298,7 +290,7 @@
     "title": "My profile",
     "headerButton": "Profile",
     "nickname": "Nickname",
-    "nicknameHint": "This is the name fans see in the chat room. You can change it anytime.",
+    "nicknameHint": "This is the name fans see in your Toffee Room. You can change it anytime.",
     "save": "Save",
     "saved": "Saved.",
     "saveFailed": "Couldn't save. Please try again.",
@@ -454,7 +446,7 @@
     "restoreFailed": "Couldn't restore. Please try again later.",
     "ending": "Ending",
     "endsOn": "Access ends",
-    "endingNote": "Auto-renew is off in the store. You can keep chatting until this date, then the chat closes. Turn auto-renew back on to keep going.",
+    "endingNote": "Auto-renew is off in the store. You can keep chatting until this date, then the Toffee Room closes. Turn auto-renew back on to keep going.",
     "pastTitle": "Past subscriptions",
     "pastHint": "Previous chats aren't restored if you subscribe again.",
     "endedOn": "Ended {{date}}",
@@ -491,16 +483,16 @@
     "includes": "{{count}} artists included",
     "singlePrice": "{{price}}/month on its own",
     "replacesSingle": "Your current subscription to {{names}} will move into this bundle. Your chats continue as they are.",
-    "doneBody": "Your {{name}} bundle has started. You'll find every chat in the Inbox.",
+    "doneBody": "Your {{name}} bundle has started. You'll find every Toffee Room in the Toffee Room tab.",
     "goInbox": "Go to Inbox",
     "notFound": "Bundle not found",
     "mine": "Bundles",
-    "rooms": "Chats",
+    "rooms": "Toffee Rooms",
     "via": "Bundle · {{name}}",
     "cancel": "Cancel bundle",
     "cancelTitle": "Cancel bundle",
-    "cancelConfirm": "Cancelling {{name}} closes the chats with {{names}} (artists you subscribe to separately stay open). Previous chats won't be visible if you subscribe again.",
-    "cancelFromActor": "This artist is part of your {{name}} bundle. Cancelling closes the other chats in the bundle too. Previous chats won't be visible if you subscribe again.",
+    "cancelConfirm": "Cancelling {{name}} closes the Toffee Rooms of {{names}} (artists you subscribe to separately stay open). Previous chats won't be visible if you subscribe again.",
+    "cancelFromActor": "This artist is part of your {{name}} bundle. Cancelling closes the other Toffee Rooms in the bundle too. Previous chats won't be visible if you subscribe again.",
     "cancelFailed": "Couldn't cancel. Please try again.",
     "viaShort": "Included in a bundle",
     "replacesSingleStore": "Your separate store subscriptions for {{names}} won't end automatically — cancel them in store subscription settings after buying the bundle (your chats continue)."
@@ -628,14 +620,16 @@
   },
   "greetings": {
     "welcomeTitle": "Welcome message",
-    "welcomeHint": "Shown at the very start of a new subscriber's chat. Write {{name}} and it becomes the fan's nickname.",
+    "welcomeHint": "Shown at the very start of a new subscriber's Toffee Room. Write {{name}} and it becomes the fan's nickname.",
     "birthdayTitle": "Birthday message",
     "birthdayHint": "Sent automatically on the morning of the fan's birthday (9 AM Thailand time) to fans who turned on birthday messages. You won't see their birth date.",
     "placeholder": "e.g. Hi {{name}}, so glad you’re here!",
     "birthdayPlaceholder": "e.g. Happy birthday, {{name}}!",
     "bothRequired": "Write both messages to save.",
     "gateTitle": "Before you start",
-    "gateBody": "Before messaging your fans, please write your welcome message and birthday message. You can change them anytime in your profile."
+    "gateBody": "Before messaging your fans, please write your welcome message and birthday message. You can change them anytime in your profile.",
+    "welcomeRequired": "Write a welcome message to save.",
+    "gateBodyCouple": "Before messaging fans in this CP room, please write a welcome message (birthday messages are only sent from solo rooms). You can edit it anytime in your profile."
   },
   "notices": {
     "title": "Notices",
@@ -759,7 +753,6 @@
     "artists": "Artists"
   },
   "consoleAlerts": {
-    "newMessage": "{{name}} sent a new message",
     "anArtist": "An artist",
     "tapToView": "Tap to open monitoring",
     "unread": "{{count}} new messages",
@@ -767,11 +760,11 @@
   },
   "records": {
     "title": "Records",
-    "description": "Blocked fans, reported replies and deleted messages from your artists' rooms, all in one place.",
+    "description": "Blocked fans, reported replies and unsent messages from your artists' Toffee Rooms, all in one place.",
     "tabs": {
       "blocks": "Blocked fans",
       "reports": "Reports",
-      "deleted": "Deleted messages"
+      "deleted": "Unsent messages"
     },
     "allArtists": "All",
     "by": {
@@ -789,13 +782,13 @@
       "RESOLVED": "Action taken",
       "DISMISSED": "No issue found"
     },
-    "deletedBy": "Deleted by {{who}}",
+    "deletedBy": "Unsent by {{who}}",
     "hiddenByAdmin": "Hidden by the Toffee team under our policies",
-    "deletedMeta": "Sent {{sent}} · deleted {{deleted}}",
+    "deletedMeta": "Sent {{sent}} · unsent {{deleted}}",
     "empty": {
       "blocks": "No blocked fans.",
       "reports": "No reported replies.",
-      "deleted": "No deleted messages."
+      "deleted": "No unsent messages."
     },
     "limitNote": "Showing the latest {{count}}. Pick an artist above to see older records.",
     "unblockTitle": "Unblock {{nickname}}?",
@@ -814,5 +807,27 @@
     "PH": "Philippines",
     "ID": "Indonesia",
     "US": "United States"
+  },
+  "rooms": {
+    "title": "Toffee Room",
+    "noMessagesYet": "No messages sent yet"
+  },
+  "retract": {
+    "action": "Unsend",
+    "title": "Unsend this message?",
+    "artistBody": "Fans will see \"This message was unsent\" instead. Notifications already delivered can't be recalled.",
+    "agencyBody": "It disappears from fans' screens without a trace. Notifications already delivered can't be recalled, and the artist will see \"Unsent by your agency\".",
+    "fanBody": "Everyone will see \"This message was unsent\" instead. Your reply count is not restored.",
+    "failed": "Couldn't unsend. Please try again.",
+    "placeholder": "This message was unsent",
+    "mine": "You unsent this message"
+  },
+  "chatBackground": {
+    "title": "Toffee Room background",
+    "hint": "A photo shown behind your Toffee Room for fans. It is softly dimmed so text stays readable.",
+    "change": "Change background",
+    "remove": "Use default",
+    "removeTitle": "Use default background",
+    "removeConfirm": "Remove the background photo and use the default background."
   }
 }
