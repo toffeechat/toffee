@@ -32,6 +32,11 @@ export const DEMO_IDS = {
   caramelSelf: demoId(104),
   fan1: demoId(105),
   fan2: demoId(106),
+  // 답장 목록·대시보드가 비어 보이지 않게 넣는 팬 4명(2026-10-14)
+  fan3: demoId(107),
+  fan4: demoId(108),
+  fan5: demoId(109),
+  fan6: demoId(110),
 } as const;
 
 // 데모 이미지(2026-10-12 사용자 요청: "연예인 이미지도 가상으로") — 실존 인물이 아닌 일러스트. 파일은 앱 웹 데모의 정적 폴더
@@ -41,8 +46,8 @@ const demoImage = (name: string) => `${DEMO_ASSET_BASE}/${name}.jpg`;
 
 // 환영·생일 메시지(2026-10-13부터 필수 — 없으면 아티스트가 메시지를 못 보냄) — 데모 아티스트 공통
 const DEMO_GREETINGS = {
-  welcomeMessage: '{{name}} 반가워! 구독해 줘서 고마워 💛 여기서 자주 이야기하자',
-  birthdayMessage: '{{name}} 생일 축하해! 🎂 오늘 하루 제일 행복했으면 좋겠어',
+  welcomeMessage: 'ยินดีต้อนรับนะ {{name}}! ขอบคุณที่สมัครสมาชิก 💛 มาคุยกันบ่อย ๆ นะ',
+  birthdayMessage: 'สุขสันต์วันเกิดนะ {{name}}! 🎂 ขอให้วันนี้เป็นวันที่มีความสุขที่สุด',
 };
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
@@ -79,22 +84,22 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   // 가상의 소속사 2곳 — 현 소속사 + 이적 이력 데모용 이전 소속사
   const demoAgency = await prisma.agency.create({
-    data: { id: DEMO_IDS.demoAgency, name: '(가상) 데모 엔터테인먼트', logoUrl: demoImage('agency-demo') },
+    data: { id: DEMO_IDS.demoAgency, name: 'Demo Entertainment (sample)', logoUrl: demoImage('agency-demo') },
   });
   const formerAgency = await prisma.agency.create({
-    data: { id: DEMO_IDS.formerAgency, name: '(가상) 이전 소속사', logoUrl: demoImage('agency-former') },
+    data: { id: DEMO_IDS.formerAgency, name: 'Former Agency (sample)', logoUrl: demoImage('agency-former') },
   });
   const sweetAgency = await prisma.agency.create({
-    data: { id: DEMO_IDS.sweetAgency, name: '(가상) 스위트 뮤직', logoUrl: demoImage('agency-sweet') },
+    data: { id: DEMO_IDS.sweetAgency, name: 'Sweet Music (sample)', logoUrl: demoImage('agency-sweet') },
   });
 
   // 가상의 배우 2명 — 이름/사진 전부 가상, Toffee 캔디 테마로 지음
   const caramel = await prisma.actor.create({
     data: {
       id: DEMO_IDS.caramel,
-      legalName: '(가상) 데모 아티스트 A',
+      legalName: 'Caramel (sample)',
       officialProfileImageUrl: demoImage('caramel-official'),
-      chatDisplayName: '캐러멜',
+      chatDisplayName: 'Caramel',
       chatProfileImageUrl: demoImage('caramel-chat'),
       gender: 'FEMALE',
       ...DEMO_GREETINGS,
@@ -106,10 +111,10 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   const nougat = await prisma.actor.create({
     data: {
       id: DEMO_IDS.nougat,
-      legalName: '(가상) 데모 아티스트 B',
+      legalName: 'Nougat (sample)',
       officialProfileImageUrl: demoImage('nougat-official'),
       ...DEMO_GREETINGS,
-      chatDisplayName: '누가',
+      chatDisplayName: 'Nougat',
       chatProfileImageUrl: demoImage('nougat-chat'),
       gender: 'FEMALE',
       monthlyPriceCents: 9900,
@@ -129,10 +134,10 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   // 가상 아티스트 4명 더(2026-10-12) — 구독자는 없고 메시지만 몇 개(소속사 대시보드의 "오래 안 보낸 순" 등이 달라 보이게)
   const extras = [
-    { id: DEMO_IDS.macaron, name: '마카롱', legal: '(가상) 데모 아티스트 C', gender: 'FEMALE' as const, agencyId: demoAgency.id, image: 'macaron', lastDays: 2 },
-    { id: DEMO_IDS.jellybean, name: '젤리빈', legal: '(가상) 데모 아티스트 D', gender: 'MALE' as const, agencyId: demoAgency.id, image: 'jellybean', lastDays: 9 },
-    { id: DEMO_IDS.cookie, name: '쿠키', legal: '(가상) 데모 아티스트 E', gender: 'FEMALE' as const, agencyId: sweetAgency.id, image: 'cookie', lastDays: 0 },
-    { id: DEMO_IDS.choco, name: '초코', legal: '(가상) 데모 아티스트 F', gender: 'MALE' as const, agencyId: sweetAgency.id, image: 'choco', lastDays: 4 },
+    { id: DEMO_IDS.macaron, name: 'Macaron', legal: 'Macaron (sample)', gender: 'FEMALE' as const, agencyId: demoAgency.id, image: 'macaron', lastDays: 2 },
+    { id: DEMO_IDS.jellybean, name: 'Jellybean', legal: 'Jellybean (sample)', gender: 'MALE' as const, agencyId: demoAgency.id, image: 'jellybean', lastDays: 9 },
+    { id: DEMO_IDS.cookie, name: 'Cookie', legal: 'Cookie (sample)', gender: 'FEMALE' as const, agencyId: sweetAgency.id, image: 'cookie', lastDays: 0 },
+    { id: DEMO_IDS.choco, name: 'Choco', legal: 'Choco (sample)', gender: 'MALE' as const, agencyId: sweetAgency.id, image: 'choco', lastDays: 4 },
   ];
   for (const extra of extras) {
     await prisma.actor.create({
@@ -151,8 +156,8 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     await prisma.actorAgencyHistory.create({ data: { actorId: extra.id, agencyId: extra.agencyId, startedAt: daysAgo(60) } });
     await prisma.message.createMany({
       data: [
-        { actorId: extra.id, senderType: MessageSenderType.ARTIST, body: '{{name}} 안녕! 오늘도 좋은 하루 보내', createdAt: daysAgo(extra.lastDays + 3) },
-        { actorId: extra.id, senderType: MessageSenderType.ARTIST, body: '연습 끝! 다들 밥 챙겨 먹었어?', createdAt: daysAgo(extra.lastDays) },
+        { actorId: extra.id, senderType: MessageSenderType.ARTIST, body: 'สวัสดี {{name}}! ขอให้วันนี้เป็นวันที่ดีนะ', createdAt: daysAgo(extra.lastDays + 3) },
+        { actorId: extra.id, senderType: MessageSenderType.ARTIST, body: 'ซ้อมเสร็จแล้ว! ทุกคนกินข้าวกันหรือยัง?', createdAt: daysAgo(extra.lastDays) },
       ],
     });
   }
@@ -164,8 +169,8 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       id: DEMO_IDS.couple,
       ...DEMO_GREETINGS,
       kind: 'COUPLE',
-      legalName: '(가상) 데모 아티스트 A & C',
-      chatDisplayName: '캐러멜 & 마카롱',
+      legalName: 'Caramel & Macaron (sample)',
+      chatDisplayName: 'Caramel & Macaron',
       officialProfileImageUrl: demoImage('couple-caramel-macaron'),
       chatProfileImageUrl: demoImage('couple-caramel-macaron'),
       monthlyPriceCents: 6900,
@@ -179,7 +184,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       ...AGREED,
       id: DEMO_IDS.staff,
       role: Role.AGENCY_STAFF,
-      displayName: '데모 소속사 스태프',
+      displayName: 'Demo Staff',
       email: 'staff@toffee.demo',
       agencyId: demoAgency.id,
     },
@@ -190,7 +195,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       ...AGREED,
       id: DEMO_IDS.formerStaff,
       role: Role.AGENCY_STAFF,
-      displayName: '이전 소속사 스태프',
+      displayName: 'Former Agency Staff',
       email: 'former-staff@toffee.demo',
       agencyId: formerAgency.id,
     },
@@ -198,13 +203,13 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   const admin = await prisma.user.create({
     data: {
-      ...AGREED, id: DEMO_IDS.admin, role: Role.ADMIN, displayName: '데모 운영자', email: 'admin@toffee.demo' },
+      ...AGREED, id: DEMO_IDS.admin, role: Role.ADMIN, displayName: 'Demo Admin', email: 'admin@toffee.demo' },
   });
 
   // 배우 본인 계정 — 메시지·스토리 발송은 이제 이 계정만 할 수 있음(소속사는 열람 전용)
   await prisma.user.create({
     data: {
-      ...AGREED, id: DEMO_IDS.caramelSelf, role: Role.ACTOR, displayName: '캐러멜(본인)', email: 'caramel-self@toffee.demo' },
+      ...AGREED, id: DEMO_IDS.caramelSelf, role: Role.ACTOR, displayName: 'Caramel', email: 'caramel-self@toffee.demo' },
   });
   await prisma.actor.update({
     where: { id: caramel.id },
@@ -216,18 +221,18 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   const ADULT = { birthDate: new Date('2000-03-03') };
   const fan1 = await prisma.user.create({
     data: {
-      ...AGREED, ...ADULT, id: DEMO_IDS.fan1, role: Role.USER, displayName: '민지', nickname: '캐러멜바라기', email: 'fan1@toffee.demo' },
+      ...AGREED, ...ADULT, id: DEMO_IDS.fan1, role: Role.USER, displayName: 'Minji', nickname: 'caramel_love', email: 'fan1@toffee.demo' },
   });
   const fan2 = await prisma.user.create({
     data: {
-      ...AGREED, ...ADULT, id: DEMO_IDS.fan2, role: Role.USER, displayName: '수아', nickname: '누가누가', email: 'fan2@toffee.demo' },
+      ...AGREED, ...ADULT, id: DEMO_IDS.fan2, role: Role.USER, displayName: 'Ploy', nickname: 'nougat_lover', email: 'fan2@toffee.demo' },
   });
 
   // 묶음 상품(2026-09-29) — 캐러멜 + 누가를 개인 구독 합계(฿198)보다 싸게
   const pairBundle = await prisma.bundle.create({
     data: {
       id: DEMO_IDS.pairBundle,
-      name: '캐러멜 + 누가',
+      name: 'Caramel + Nougat',
       priceCents: 15900,
       actors: { create: [{ actorId: caramel.id }, { actorId: nougat.id }] },
     },
@@ -260,7 +265,8 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: {
       actorId: caramel.id,
       senderType: MessageSenderType.ARTIST,
-      body: '{{name}}야 반가워! (이건 구독 전 메시지라 fan1에겐 안 보여야 함)',
+      // fan1(5일 전 구독)에겐 안 보여야 하는 구독 전 메시지
+      body: 'ยินดีที่ได้รู้จักนะ {{name}}!',
       createdAt: daysAgo(10),
     },
   });
@@ -268,7 +274,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: {
       actorId: caramel.id,
       senderType: MessageSenderType.ARTIST,
-      body: '{{name}}야 오늘 하루 어땠어? 나는 촬영 잘 마쳤어!',
+      body: '{{name}} วันนี้เป็นยังไงบ้าง? ถ่ายงานเสร็จเรียบร้อยแล้วนะ!',
       createdAt: daysAgo(1),
     },
   });
@@ -278,7 +284,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       senderType: MessageSenderType.ARTIST,
       mediaType: MessageMediaType.PHOTO,
       mediaUrl: demoImage('selfie-caramel'),
-      body: '오늘 셀카 📸',
+      body: 'เซลฟี่วันนี้ 📸',
       createdAt: daysAgo(1),
     },
   });
@@ -288,7 +294,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       senderType: MessageSenderType.FAN,
       fanUserId: fan1.id,
       replyToMessageId: recentBroadcast.id,
-      body: '오빠 오늘도 화이팅!',
+      body: '오늘도 화이팅! 항상 응원해요 💜',
       createdAt: daysAgo(1),
     },
   });
@@ -298,18 +304,20 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: { lastArtistMessageAt: daysAgo(1), lastFanReplyAt: daysAgo(1), lastReadAt: daysAgo(2.5) },
   });
 
+  // 데모 내용은 태국 소속사 기준(2026-10-14): 아티스트·소속사 이름은 영어, 아티스트 메시지는 태국어, 팬 답장은 태국어·한국어·영어·일본어
+  // 섞어서 "번역 보기"를 양쪽에서 눌러 볼 수 있게. 화면 글자는 브라우저 언어를 따름
   // 번역 보기 확인용 태국어 메시지(2026-10-13 사용자 요청) — 한국어 화면의 팬(fan1·fan2)이 "번역 보기"를 눌러 볼 수 있게
   // 두 팬의 구독 시작(5일·20일 전) 뒤에 넣음. {{name}}은 팬 이름으로 바뀐 뒤 번역되는지까지 확인됨
   await prisma.message.createMany({
     data: [
       { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'สวัสดี {{name}}! วันนี้กินข้าวหรือยัง? คิดถึงนะ 555', createdAt: daysAgo(3) },
       { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'วันนี้ถ่ายละครเสร็จดึกมากเลย เหนื่อยแต่สนุกมาก ขอบคุณที่รอนะคะ 🥹', createdAt: daysAgo(2) },
-      { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ค่ะ พรุ่งนี้มีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยค่ะ ㅠㅠ', createdAt: daysAgo(2) },
+      { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ค่ะ พรุ่งนี้มีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยค่ะ 🥹', createdAt: daysAgo(2) },
     ],
   });
   // 반대 방향 — 아티스트(한국어 화면)가 답장 목록에서 태국어 팬 답장의 "번역 보기"를 눌러 볼 수 있게
   const thaiBroadcast = await prisma.message.create({
-    data: { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: '{{name}} 다음 달에 방콕 가! 추천할 맛집 있어?', createdAt: daysAgo(4) },
+    data: { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: '{{name}} สุดสัปดาห์นี้จะไปแถวประตูน้ำ มีร้านอร่อยแนะนำไหม?', createdAt: daysAgo(4) },
   });
   await prisma.message.create({
     data: {
@@ -322,13 +330,38 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     },
   });
 
+  // 해외 팬 답장 4개 더(2026-10-14) — 아티스트 "팬 답장" 화면이 비어 보이지 않게, 언어를 섞어서(태국어·영어·일본어)
+  const moreFans = [
+    { id: DEMO_IDS.fan3, nickname: 'minnie', body: 'ร้านข้าวมันไก่โกอ่างเลยค่ะ! คิวยาวแต่คุ้ม', minutes: 2 },
+    { id: DEMO_IDS.fan4, nickname: 'plai', body: 'Send us photos when you go 📷', minutes: 3 },
+    { id: DEMO_IDS.fan5, nickname: 'sora', body: 'プラトゥーナムは暑いから水たくさん飲んでね ☀️', minutes: 5 },
+    { id: DEMO_IDS.fan6, nickname: 'namwan', body: 'อยากไปเจอจัง ขอให้เที่ยวสนุกนะ 💕', minutes: 7 },
+  ];
+  for (const [i, fan] of moreFans.entries()) {
+    await prisma.user.create({
+      data: { ...AGREED, ...ADULT, id: fan.id, role: Role.USER, displayName: fan.nickname, nickname: fan.nickname, email: `fan${i + 3}@toffee.demo` },
+    });
+    await prisma.purchase.create({ data: { userId: fan.id, actorId: caramel.id, priceCents: caramel.monthlyPriceCents, startedAt: daysAgo(8 + i) } });
+    await prisma.subscription.create({ data: { userId: fan.id, actorId: caramel.id, startedAt: daysAgo(8 + i) } });
+    await prisma.message.create({
+      data: {
+        actorId: caramel.id,
+        senderType: MessageSenderType.FAN,
+        fanUserId: fan.id,
+        replyToMessageId: thaiBroadcast.id,
+        body: fan.body,
+        createdAt: new Date(daysAgo(4).getTime() + fan.minutes * 60_000),
+      },
+    });
+  }
+
   // 신고/모더레이션 큐 데모용
   await prisma.report.create({
     data: {
       messageId: recentBroadcast.id,
       reportedById: fan2.id,
       category: 'SPAM',
-      reason: '(데모) 스팸성 메시지로 신고',
+      reason: '(demo) reported as spam',
     },
   });
 
@@ -378,7 +411,15 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
   ] as const;
   // 캐러멜이 제일 인기, CP방·젤리빈은 적게
   const rooms = [ids.caramelId, ids.caramelId, ids.caramelId, DEMO_IDS.macaron, DEMO_IDS.macaron, ids.nougatId, DEMO_IDS.jellybean, DEMO_IDS.couple];
-  const replyLines = ['오늘도 고마워요!', 'ขอบคุณค่ะ 💕', '보고 싶어요 ㅠㅠ', 'สู้ๆ นะคะ', '사진 너무 좋아요', '応援してます！', 'Love this!', '굿나잇 🌙'];
+  // 팬은 자기 언어로 답장(2026-10-14 태국 소속사 기준 데모) — 소속사·아티스트 화면에서 "번역 보기"가 여러 언어로 보이게
+  const replyLines: Record<string, readonly string[]> = {
+    th: ['ขอบคุณค่ะ 💕', 'สู้ๆ นะคะ', 'คิดถึงจัง 🥹', 'รูปสวยมากเลย', 'ฝันดีนะ 🌙'],
+    ko: ['오늘도 고마워요!', '보고 싶어요 ㅠㅠ'],
+    ja: ['応援してます！', '写真最高です'],
+    vi: ['Cảm ơn nhé! 💕'],
+    'zh-Hant': ['好想你！'],
+    en: ['Love this!', 'Good night 🌙'],
+  };
 
   const replies: Prisma.MessageCreateManyInput[] = [];
   const events: Prisma.SubscriptionEventCreateManyInput[] = [];
@@ -388,7 +429,7 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
     const id = demoId(200 + i);
     crowd.push(id);
     await prisma.user.create({
-      data: { ...AGREED, birthDate: new Date('1999-05-05'), id, role: Role.USER, displayName: `통계용 팬 ${i + 1}`, nickname: `팬${i + 1}`, countryCode, locale },
+      data: { ...AGREED, birthDate: new Date('1999-05-05'), id, role: Role.USER, displayName: `Fan ${i + 1}`, nickname: `fan${i + 1}`, countryCode, locale },
     });
     const joined = new Set<string>();
     for (let n = 0; n < (random() < 0.3 ? 2 : 1); n++) {
@@ -406,7 +447,7 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
       const until = cancelledDays ?? 0;
       for (let r = 0; r < Math.floor(random() * 5); r++) {
         const day = until + random() * (startedDays - until);
-        replies.push({ actorId, senderType: MessageSenderType.FAN, fanUserId: id, body: pick(replyLines), createdAt: daysAgo(day) });
+        replies.push({ actorId, senderType: MessageSenderType.FAN, fanUserId: id, body: pick(replyLines[locale] ?? replyLines.en), createdAt: daysAgo(day) });
       }
     }
   }
@@ -416,7 +457,7 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
     data: [12, 16, 19, 23, 27, 33, 38, 41, 47, 52, 58].map((day, index) => ({
       actorId: index % 3 === 0 ? DEMO_IDS.macaron : ids.caramelId,
       senderType: MessageSenderType.ARTIST,
-      body: index % 2 ? '{{name}} 오늘 연습 끝! 다들 잘 자 🌙' : '이번 주 촬영 비하인드 곧 보여 줄게',
+      body: index % 2 ? '{{name}} ซ้อมเสร็จแล้ว! ฝันดีนะทุกคน 🌙' : 'เร็ว ๆ นี้จะเอาเบื้องหลังการถ่ายทำสัปดาห์นี้มาให้ดูนะ',
       createdAt: daysAgo(day),
     })),
   });
@@ -424,20 +465,20 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
 
   // 기록 화면 데모 — 차단(계기 답장 포함), 소속사 신고, 소속사가 지운 메시지
   const rude = await prisma.message.create({
-    data: { actorId: ids.caramelId, senderType: MessageSenderType.FAN, fanUserId: crowd[0], body: '(데모) 계속 사적인 연락처를 묻는 답장', createdAt: daysAgo(3) },
+    data: { actorId: ids.caramelId, senderType: MessageSenderType.FAN, fanUserId: crowd[0], body: '(เดโม) ถามช่องทางติดต่อส่วนตัวซ้ำ ๆ', createdAt: daysAgo(3) },
   });
   await prisma.actorFanBlock.create({
     data: { actorId: ids.caramelId, fanUserId: crowd[0], blockedById: ids.staffId, messageId: rude.id, createdAt: daysAgo(3) },
   });
   const spam = await prisma.message.create({
-    data: { actorId: DEMO_IDS.macaron, senderType: MessageSenderType.FAN, fanUserId: crowd[1], body: '(데모) 다른 사이트 홍보 링크가 담긴 답장', createdAt: daysAgo(6) },
+    data: { actorId: DEMO_IDS.macaron, senderType: MessageSenderType.FAN, fanUserId: crowd[1], body: '(เดโม) ข้อความที่มีลิงก์โปรโมตเว็บไซต์อื่น', createdAt: daysAgo(6) },
   });
   await prisma.report.create({ data: { messageId: spam.id, reportedById: ids.staffId, category: 'SPAM', createdAt: daysAgo(6) } });
   await prisma.message.create({
     data: {
       actorId: ids.caramelId,
       senderType: MessageSenderType.ARTIST,
-      body: '(데모) 촬영장 위치가 드러난 사진 설명 — 소속사가 대신 삭제',
+      body: '(เดโม) คำบรรยายรูปที่เผยสถานที่ถ่ายทำ — ต้นสังกัดลบแทน',
       createdAt: daysAgo(8),
       deletedAt: daysAgo(8),
       deletedByStaffId: ids.staffId,
