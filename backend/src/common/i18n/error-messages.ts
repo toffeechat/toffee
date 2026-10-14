@@ -63,6 +63,16 @@ export const ERROR_MESSAGES = {
     'zh-Hant': '請檢查輸入的內容。',
     vi: 'Vui lòng kiểm tra nội dung bạn đã nhập.',
   },
+  // 소속사 통계 기간 선택(2026-10-13) — 시작 ≤ 끝 ≤ 오늘, 최대 maxDays일
+  STATS_RANGE_INVALID: {
+    ko: (p) => `기간을 다시 골라 주세요. 오늘까지, 최대 ${p.maxDays}일까지 볼 수 있어요.`,
+    en: (p) => `Please pick the dates again. You can view up to ${p.maxDays} days, ending today at the latest.`,
+    th: (p) => `กรุณาเลือกช่วงวันที่ใหม่ ดูได้สูงสุด ${p.maxDays} วัน และไม่เกินวันนี้`,
+    ja: (p) => `期間を選び直してください。今日まで、最大${p.maxDays}日間まで表示できます。`,
+    'zh-Hans': (p) => `请重新选择日期。最多可查看 ${p.maxDays} 天，最晚到今天。`,
+    'zh-Hant': (p) => `請重新選擇日期。最多可查看 ${p.maxDays} 天，最晚到今天。`,
+    vi: (p) => `Vui lòng chọn lại khoảng ngày. Có thể xem tối đa ${p.maxDays} ngày, muộn nhất đến hôm nay.`,
+  },
   UNAUTHORIZED: {
     ko: '다시 로그인해 주세요.',
     en: 'Please sign in again.',

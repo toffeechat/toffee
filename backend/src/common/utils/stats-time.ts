@@ -22,3 +22,18 @@ export function zoneDays(from: Date, days: number): string[] {
   const format = new Intl.DateTimeFormat('en-CA', { timeZone: STATS_TIME_ZONE });
   return Array.from({ length: days }, (_, i) => format.format(new Date(from.getTime() + i * DAY_MS + 12 * 60 * 60 * 1000)));
 }
+
+/** 그 순간의 태국 날짜(YYYY-MM-DD) */
+export function zoneDayOf(at: Date): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: STATS_TIME_ZONE }).format(at);
+}
+
+/** 태국 날짜(YYYY-MM-DD)의 0시(UTC Date) — 형식이 틀리면 null */
+export function zoneDayStart(day: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!match) return null;
+  const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(y, m - 1, d) - 7 * 60 * 60 * 1000);
+  // 2월 30일처럼 없는 날짜는 거름
+  return zoneDayOf(new Date(date.getTime() + 12 * 60 * 60 * 1000)) === day ? date : null;
+}

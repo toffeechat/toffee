@@ -14,9 +14,10 @@ import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
 import { SideTime } from '@/components/side-time';
 import { useActor } from '@/hooks/use-actors';
-import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory, type StatsPeriod } from '@/hooks/use-console';
+import { useActorStats, useActorReplies, useActorStories, type FanReply, type ActorStory, type StatsSelection } from '@/hooks/use-console';
 import { DistributionBars, Panel } from '@/components/console-charts';
-import { AudiencePanels, KpiGrid, PeriodPills, ScreenIntro, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
+import { AudiencePanels, KpiGrid, RangeCaption, ScreenIntro, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
+import { StatsRangeControl } from '@/components/stats-range-picker';
 import { useDeleteBroadcast, useStudioMessages, type StudioMessage } from '@/hooks/use-studio';
 import { MediaTile } from '@/components/media-tile';
 import { QuoteBlock } from '@/components/quote-block';
@@ -288,41 +289,41 @@ function RepliesSection({ actorId, messageId, onClearFilter }: { actorId: string
 
 /**
  * 아티스트별 통계(2026-10-13 개편, 사용자 요청: "덜렁 카드 두 개 → 대시보드처럼 그래프로") — 대시보드와 같은 숫자 카드·추이 +
- * 메시지 종류·답장이 많았던 메시지(누르면 그 답장) + 팬 나라·언어. GET /actors/:id/stats?days=
+ * 메시지 종류·답장이 많았던 메시지(누르면 그 답장) + 팬 나라·언어. 기간은 최근 N일 또는 직접 고른 날짜(최대 1년). GET /actors/:id/stats
  */
 function StatsSection({ actorId, onOpenReplies }: { actorId: string; onOpenReplies: (messageId: string) => void }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
-  const [days, setDays] = useState<StatsPeriod>(30);
+  const [selection, setSelection] = useState<StatsSelection>({ days: 30 });
   const [width, setWidth] = useState(0);
-  const { data: stats, isLoading } = useActorStats(actorId, days);
+  const { data: stats, isLoading } = useActorStats(actorId, selection);
   const half = cellStyle(width, width >= 900 ? 2 : 1);
 
   return (
     <ScrollView contentContainerStyle={styles.statsContent} style={{ backgroundColor: theme.backgroundElement }}>
       <View style={styles.statsInner} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
         <View style={statsStyles.filters}>
-          <PeriodPills value={days} onChange={setDays} />
+          <StatsRangeControl value={selection} onChange={setSelection} />
         </View>
         {isLoading || !stats ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
         ) : (
           <>
+            <RangeCaption range={stats} />
             <ThemedText type="caption" themeColor="textTertiary">
-              {`${t('dashboard.basis', { days })} · ${t('console.lastBroadcast')} ${
-                stats.lastBroadcastAt ? new Date(stats.lastBroadcastAt).toLocaleDateString(i18n.language) : t('console.noBroadcast')
-              }`}
+              {`${t('console.lastBroadcast')} ${stats.lastBroadcastAt ? new Date(stats.lastBroadcastAt).toLocaleDateString(i18n.language) : t('console.noBroadcast')}`}
             </ThemedText>
             <KpiGrid
               width={width}
-              days={days}
+              days={stats.days}
               subscribers={stats.subscriberCount}
+              asOf={stats.audienceAsOf}
               netChange={stats.totals.newSubscriptions - stats.totals.cancellations}
               totals={stats.totals}
               previous={stats.previous}
               daily={stats.daily}
             />
-            <TrendPanels width={width} daily={stats.daily} />
+            <TrendPanels width={width} daily={stats.daily} bucket={stats.bucket} />
             <View style={styles.statsGrid}>
               <Panel title={t('dashboard.mediaMix')} icon={Images} style={half}>
                 <DistributionBars rows={stats.mediaMix} labelOf={(key) => mediaLabel(t, key)} emptyText={t('dashboard.noMessages')} />
@@ -358,7 +359,7 @@ function StatsSection({ actorId, onOpenReplies }: { actorId: string; onOpenRepli
                 )}
               </Panel>
             </View>
-            <AudiencePanels width={width} fans={stats.fans} countries={stats.countries} languages={stats.languages} />
+            <AudiencePanels width={width} fans={stats.fans} countries={stats.countries} languages={stats.languages} asOf={stats.audienceAsOf} recorded={stats.audienceRecorded} />
           </>
         )}
       </View>

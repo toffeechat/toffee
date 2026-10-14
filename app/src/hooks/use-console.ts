@@ -16,6 +16,37 @@ export function useMyActors() {
 export const STATS_PERIODS = [7, 30, 90] as const;
 export type StatsPeriod = (typeof STATS_PERIODS)[number];
 export type RoomKindFilter = 'ALL' | 'SOLO' | 'COUPLE';
+/** 통계 기간 — 최근 N일 버튼 또는 직접 고른 날짜(태국 날짜 YYYY-MM-DD, 양 끝 포함, 최대 1년 — 2026-10-13) */
+export type StatsSelection = { days: StatsPeriod } | { from: string; to: string };
+
+/** "전체 순위" 화면으로 넘길 주소 값 / 받은 값 → 기간 */
+export function selectionParams(selection: StatsSelection): Record<string, string> {
+  return 'days' in selection ? { days: String(selection.days) } : { from: selection.from, to: selection.to };
+}
+export function selectionFromParams(params: { days?: string; from?: string; to?: string }): StatsSelection {
+  const pattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (params.from && params.to && pattern.test(params.from) && pattern.test(params.to)) return { from: params.from, to: params.to };
+  return { days: STATS_PERIODS.find((value) => String(value) === params.days) ?? 30 };
+}
+
+export function selectionQuery(selection: StatsSelection): string {
+  return 'days' in selection ? `days=${selection.days}` : `from=${selection.from}&to=${selection.to}`;
+}
+
+/** 서버가 정한 실제 기간 + "구독 중"·팬 분포의 기준(지난 날짜면 그날 하루 기록) */
+interface RangeInfo {
+  from: string;
+  to: string;
+  days: number;
+  /** 3개월보다 길면 추이가 1주씩 묶여 옴(점의 day = 그 주 첫날) */
+  bucket: 'day' | 'week';
+  /** null = 지금 상태, 날짜 = 그날 하루 기록 */
+  audienceAsOf: string | null;
+  /** false = 그날 하루 기록이 없음(기록 시작 전) */
+  audienceRecorded: boolean;
+  /** true = 팬 수가 여러 방 구독자를 한 번만 센 값, false = 방마다 더한 구독 수(지난 날짜) */
+  distinctFans: boolean;
+}
 
 export interface ActivityTotals {
   newSubscriptions: number;
@@ -32,9 +63,9 @@ export interface DistributionRow {
   count: number;
 }
 
-export interface ActorStats {
-  days: StatsPeriod;
-  subscriberCount: number;
+export interface ActorStats extends RangeInfo {
+  /** 지난 날짜인데 기록이 없으면 null */
+  subscriberCount: number | null;
   lastBroadcastAt: string | null;
   totals: ActivityTotals;
   previous: ActivityTotals;
@@ -46,11 +77,13 @@ export interface ActorStats {
   topMessages: { id: string; body: string | null; mediaType: string; createdAt: string; replyCount: number }[];
 }
 
-export function useActorStats(actorId: string, days: StatsPeriod = 30) {
+export function useActorStats(actorId: string, selection: StatsSelection = { days: 30 }) {
+  const query = selectionQuery(selection);
   return useQuery({
-    queryKey: ['actor-stats', actorId, days],
-    queryFn: () => apiClient.get<ActorStats>(`/actors/${actorId}/stats?days=${days}`),
+    queryKey: ['actor-stats', actorId, query],
+    queryFn: () => apiClient.get<ActorStats>(`/actors/${actorId}/stats?${query}`),
     enabled: !!actorId,
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -89,10 +122,9 @@ export interface DashboardRow extends ActivityTotals {
   subscriberCount: number;
 }
 
-export interface AgencyDashboard {
-  days: StatsPeriod;
+export interface AgencyDashboard extends RangeInfo {
   kind: RoomKindFilter;
-  totals: ActivityTotals & { subscribers: number };
+  totals: ActivityTotals & { subscribers: number | null };
   previous: ActivityTotals;
   daily: DailyActivity[];
   fans: number;
@@ -101,10 +133,11 @@ export interface AgencyDashboard {
   actors: DashboardRow[];
 }
 
-export function useAgencyDashboard(days: StatsPeriod = 30, kind: RoomKindFilter = 'ALL') {
+export function useAgencyDashboard(selection: StatsSelection = { days: 30 }, kind: RoomKindFilter = 'ALL') {
+  const query = selectionQuery(selection);
   return useQuery({
-    queryKey: ['agency-dashboard', days, kind],
-    queryFn: () => apiClient.get<AgencyDashboard>(`/actors/mine/dashboard?days=${days}&kind=${kind}`),
+    queryKey: ['agency-dashboard', query, kind],
+    queryFn: () => apiClient.get<AgencyDashboard>(`/actors/mine/dashboard?${query}&kind=${kind}`),
     // 필터를 바꾸는 동안 이전 숫자를 그대로 보여 줌(화면이 깜빡이지 않게)
     placeholderData: (previous) => previous,
   });
