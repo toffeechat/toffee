@@ -39,6 +39,9 @@
   로그인·VISIT·동시 요청 한 줄·운영자 외 403 확인, 웹 e2e 9단계 통과(헤더 추가로 생기는 CORS 사전 요청도 통과), 화면 캡처 확인.
 - **남은 일**: 👤 데모 서버에 배포해야 기록이 쌓이기 시작함(그 전 접속은 마지막 접속 시각만). 실기기 빌드에서 기기 이름·앱 버전이
   제대로 오는지 확인. 서버 Sentry 키 넣기.
+- **배포·체크리스트**: PR toffeechat/toffee#45로 main 반영(CI 3개 통과 → 데모 자동 배포). 실기기 테스트 체크리스트 아티팩트
+  (https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc, 백업 `docs/handover/artifacts/toffee-device-test-checklist.html`)에 운영자 탭
+  "회원 접속 기록·기기"(10-14 새로 추가) 항목과 안내(폰 기기 이름·앱 버전은 새 빌드부터)를 추가해 다시 게시(버전 10).
 
 ---
 
