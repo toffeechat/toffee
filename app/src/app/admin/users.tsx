@@ -7,13 +7,16 @@ import { ThemedView } from '@/components/themed-view';
 import {
   useAdminAgencies,
   useAdminUsers,
+  useAdminUserAccessLogs,
   useAssignStaffAgency,
   useChangeUserRole,
   useSuspendUser,
   useBanUser,
   useReactivateUser,
   useClearUserProfile,
+  type AccessLog,
   type AdminUser,
+  type AdminUserSort,
   type AssignableRole,
   type SanctionCategory,
 } from '@/hooks/use-admin';
@@ -103,6 +106,80 @@ function RoleControls({ user }: { user: AdminUser }) {
   );
 }
 
+// ── 접속 기록(2026-10-14) — 소속사에 데모를 보낸 뒤 들어와 봤는지, 도용·분쟁 때 어떤 기기였는지 ──
+const PLATFORM_LABELS: Record<string, string> = { ios: 'iOS 앱', android: '안드로이드 앱', web: '웹' };
+const METHOD_LABELS: Record<string, string> = {
+  GOOGLE: 'Google',
+  APPLE: 'Apple',
+  KAKAO: 'Kakao',
+  NAVER: 'Naver',
+  LINE: 'LINE',
+  DEV: '데모 로그인',
+};
+
+// 마지막 접속은 한 시간에 한 번만 갱신돼서 한 시간 안쪽은 "1시간 이내"로만
+function timeAgo(iso: string): string {
+  const minutes = (Date.now() - new Date(iso).getTime()) / 60_000;
+  if (minutes < 60) return '1시간 이내';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}일 전`;
+  return new Date(iso).toLocaleDateString('ko-KR');
+}
+
+function deviceText(log: Pick<AccessLog, 'platform' | 'deviceModel' | 'osVersion' | 'appVersion'>): string {
+  return [
+    log.platform ? (PLATFORM_LABELS[log.platform] ?? log.platform) : null,
+    log.deviceModel,
+    log.osVersion,
+    log.appVersion ? `v${log.appVersion}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function AccessHistory({ user }: { user: AdminUser }) {
+  const [open, setOpen] = useState(false);
+  const { data: logs, isLoading, isError } = useAdminUserAccessLogs(user.id, open);
+  const last = user.accessLogs?.[0];
+  const lastDevice = last ? deviceText(last) : '';
+
+  return (
+    <ThemedView style={styles.accessBox}>
+      <ThemedView style={styles.actions}>
+        <ThemedText type="small" themeColor={user.lastActiveAt ? 'textSecondary' : 'danger'} style={styles.profileLine}>
+          {user.lastActiveAt ? `마지막 접속: ${timeAgo(user.lastActiveAt)}` : '접속 기록 없음'}
+          {lastDevice ? ` · ${lastDevice}` : ''}
+        </ThemedText>
+        <AdminChip label={open ? '접속 기록 닫기' : '접속 기록'} selected={open} onPress={() => setOpen(!open)} />
+      </ThemedView>
+      {open &&
+        (isLoading ? (
+          <ActivityIndicator style={styles.accessLoading} />
+        ) : isError ? (
+          <ThemedText type="small" themeColor="danger">
+            접속 기록을 불러오지 못했어요.
+          </ThemedText>
+        ) : !logs?.length ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            최근 3개월 접속 기록이 없어요.
+          </ThemedText>
+        ) : (
+          logs.map((log) => (
+            <ThemedText key={log.id} type="small" themeColor="textSecondary">
+              {`${new Date(log.createdAt).toLocaleString('ko-KR')} · `}
+              <ThemedText type="small" themeColor={log.kind === 'LOGIN' ? 'text' : 'textSecondary'}>
+                {log.kind === 'LOGIN' ? `로그인${log.method ? `(${METHOD_LABELS[log.method] ?? log.method})` : ''}` : '접속'}
+              </ThemedText>
+              {[deviceText(log), log.ip].filter(Boolean).map((part) => ` · ${part}`).join('')}
+            </ThemedText>
+          ))
+        ))}
+    </ThemedView>
+  );
+}
+
 // 제재 사유 분류 — 신고 사유와 같은 5가지. 당사자에게는 분류만 번역해서 안내되고, 메모는 운영자만 봄
 const SANCTION_LABELS: Record<SanctionCategory, string> = {
   SPAM: '스팸·광고',
@@ -143,6 +220,7 @@ function UserRow({ user }: { user: AdminUser }) {
         {user.agency ? ` · ${user.agency.name}` : ''}
         {user.actorSelf ? ` · ${user.actorSelf.legalName} 본인` : ''}
       </ThemedText>
+      <AccessHistory user={user} />
       {/* 팬 프로필(2026-10-12) — 부적절하면 지움 */}
       {user.statusMessage || user.profileImageUrl ? (
         <ThemedView style={styles.actions}>
@@ -226,10 +304,14 @@ function UserRow({ user }: { user: AdminUser }) {
   );
 }
 
+const ROLE_FILTERS: (AdminUser['role'] | null)[] = [null, 'USER', 'ACTOR', 'AGENCY_STAFF', 'ADMIN'];
+
 export default function AdminUsersScreen() {
   const theme = useTheme();
   const [query, setQuery] = useState('');
-  const { data: users, isLoading } = useAdminUsers(query);
+  const [role, setRole] = useState<AdminUser['role'] | null>(null);
+  const [sort, setSort] = useState<AdminUserSort | undefined>(undefined);
+  const { data: users, isLoading } = useAdminUsers(query, role ?? undefined, sort);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -241,6 +323,16 @@ export default function AdminUsersScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
         />
+        {/* 역할·정렬 — 예) 소속사 직원 + 최근 접속순으로 데모를 받은 소속사가 들어와 봤는지 확인 */}
+        <ThemedView style={styles.actions}>
+          {ROLE_FILTERS.map((value) => (
+            <AdminChip key={value ?? 'ALL'} label={value ? ROLE_LABELS[value] : '전체'} selected={role === value} onPress={() => setRole(value)} />
+          ))}
+        </ThemedView>
+        <ThemedView style={styles.actions}>
+          <AdminChip label="가입 최신순" selected={!sort} onPress={() => setSort(undefined)} />
+          <AdminChip label="최근 접속순" selected={sort === 'recent'} onPress={() => setSort('recent')} />
+        </ThemedView>
       </ThemedView>
 
       {isLoading ? (
@@ -271,6 +363,8 @@ const styles = StyleSheet.create({
   rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.two, backgroundColor: 'transparent' },
   roleBox: { backgroundColor: 'transparent' },
+  accessBox: { gap: 2, backgroundColor: 'transparent' },
+  accessLoading: { alignSelf: 'flex-start', marginVertical: Spacing.one },
   actionChip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: Spacing.two, paddingVertical: 6 },
   reactivateChipText: { color: '#fff' },
   profileLine: { flexShrink: 1 },

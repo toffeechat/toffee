@@ -10,4 +10,9 @@ export class ListUsersQueryDto {
   @IsOptional()
   @IsIn(Object.values(Role))
   role?: Role;
+
+  // recent = 최근 접속순(2026-10-14, 데모 접속 확인용). 없으면 가입 최신순
+  @IsOptional()
+  @IsIn(['recent'])
+  sort?: 'recent';
 }

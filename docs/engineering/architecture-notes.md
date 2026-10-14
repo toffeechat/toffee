@@ -1557,6 +1557,21 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `/console/<id>`로 가면 그 방 카운트 삭제. 새로고침하면 카운트는 사라짐(서버 저장 안 함).
 - **데모 시드**: `seedStatsCrowd()` — 고정 난수로 가상 팬 48명(id `demoId(200+i)`, 이메일 없음)·구독·SubscriptionEvent·팬 답장, 기록 예시 3건.
 
+## 접속 기록 `AccessLog` (2026-10-14)
+
+- `src/access-log/` — `AccessLogService.recordLogin()`(auth.controller의 모든 로그인 경로가 `signIn()`을 거쳐 호출, 실패해도 로그인은
+  진행)과 `touchVisit()`(JwtStrategy `validate`에서 매 요청, `passReqToCallback: true`). `touchVisit`은 `lastActiveAt`이 한 시간 넘게
+  지났을 때만 `updateMany({ where: { id, lastActiveAt: null | < 1시간 전 } })` → count 1일 때만 VISIT insert — 동시 요청 경합에도 한 줄.
+  로그인 때 `lastActiveAt`도 같이 갱신해서 로그인 직후 VISIT가 중복으로 안 생김.
+- 기기 정보: `client-info.ts` `clientInfoFromRequest()` — 앱(`app/src/lib/api-client.ts`)이 보내는 `X-Client-Platform`·`X-Client-Device`·
+  `X-Client-OS`·`X-Client-Version`(ASCII만, 60자) + `user-agent` + `req.ip`(운영에선 `TRUST_PROXY` 필요). Device가 없으면(웹)
+  `describeUserAgent()`로 "Chrome · macOS". 헤더는 클라이언트가 마음대로 보낼 수 있으니 표시용으로만 쓸 것.
+- 컨트롤러에서 기기 정보가 필요하면 `@Client() client: ClientInfo` 파라미터 데코레이터.
+- 보관: `ACCESS_LOG_RETENTION_DAYS = 90`, 매일 04:40(태국) `purgeOld()`. 탈퇴(`deleteAccount`)에선 지우지 않음(3개월 보관 정책),
+  User가 실제로 삭제되면 cascade.
+- 운영자 API: `GET /admin/users?sort=recent`(lastActiveAt desc nulls last), 목록에 `lastActiveAt` + 마지막 기기(`accessLogs take 1`),
+  `GET /admin/users/:id/access-logs`(최신 200줄). ADMIN만.
+
 ## 소속사 통계 기간 선택·하루 기록 (2026-10-14)
 
 - **기간**: `ActorStatsQueryDto`에 `from`·`to`(YYYY-MM-DD, `@Matches`) — `resolveRange(query)`(agency-stats.service)가 `{from, to, days}`로 바꾸고 검사

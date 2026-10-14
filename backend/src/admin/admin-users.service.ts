@@ -27,9 +27,18 @@ const LIST_SELECT = {
   profileImageUrl: true,
   createdAt: true,
   deletedAt: true,
+  // 접속 확인(2026-10-14) — 마지막 접속(한 시간 단위)과 마지막으로 쓴 기기
+  lastActiveAt: true,
+  accessLogs: {
+    select: { platform: true, deviceModel: true, osVersion: true, appVersion: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+  },
   agency: { select: { id: true, name: true } },
   actorSelf: { select: { id: true, legalName: true } },
 } as const;
+
+const ACCESS_LOG_PAGE = 200;
 
 @Injectable()
 export class AdminUsersService {
@@ -38,7 +47,7 @@ export class AdminUsersService {
     private readonly audit: AuditService,
   ) {}
 
-  findAll(query?: string, role?: Role) {
+  findAll(query?: string, role?: Role, sort?: 'recent') {
     const where: Prisma.UserWhereInput = {};
     if (role) where.role = role;
     if (query) {
@@ -51,7 +60,18 @@ export class AdminUsersService {
     return this.prisma.user.findMany({
       where,
       select: LIST_SELECT,
+      // 최근 접속순이면 한 번도 접속 안 한 계정은 맨 뒤
+      orderBy: sort === 'recent' ? [{ lastActiveAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }] : { createdAt: 'desc' },
+    });
+  }
+
+  /** 회원 한 명의 접속 기록(최근 3개월, 최신순 최대 200줄) — 로그인·접속 시각, 기기, 앱 버전, IP */
+  async accessLogs(userId: string) {
+    return this.prisma.accessLog.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
+      take: ACCESS_LOG_PAGE,
+      select: { id: true, kind: true, method: true, platform: true, deviceModel: true, osVersion: true, appVersion: true, ip: true, createdAt: true },
     });
   }
 

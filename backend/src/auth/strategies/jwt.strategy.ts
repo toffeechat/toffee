@@ -2,12 +2,13 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { UserStatus } from '../../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.js';
 import { appError } from '../../common/i18n/app-error.js';
-
-const ACTIVE_TOUCH_INTERVAL_MS = 60 * 60 * 1000;
+import { AccessLogService } from '../../access-log/access-log.service.js';
+import { clientInfoFromRequest } from '../../access-log/client-info.js';
 
 interface JwtPayload {
   sub: string;
@@ -18,17 +19,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly accessLog: AccessLogService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
+      // 접속 기록에 기기 정보(X-Client-* 헤더)를 남기려고 요청도 받음
+      passReqToCallback: true,
     });
   }
 
   // JWT에 담긴 role은 신뢰하지 않고, 매 요청마다 DB에서 최신 role을 다시 읽음
   // — 권한이 바뀌면(예: 소속사 스태프 지정) 재로그인 없이 바로 반영됨
-  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+  async validate(req: Request, payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) throw new UnauthorizedException();
     if (user.status === UserStatus.BANNED) {
@@ -42,10 +46,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         appError('ACCOUNT_SUSPENDED', { until: user.suspendedUntil.toISOString(), ...(user.sanctionCategory ? { reason: user.sanctionCategory } : {}) }),
       );
     }
-    // 마지막 접속 기록(통계용) — 매 요청마다 쓰지 않게 한 시간 지났을 때만, 응답은 기다리지 않음
-    if (!user.lastActiveAt || Date.now() - user.lastActiveAt.getTime() > ACTIVE_TOUCH_INTERVAL_MS) {
-      void this.prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } }).catch(() => {});
-    }
+    // 마지막 접속(통계·운영자 회원 관리) + 접속 기록 — 한 시간에 한 번만, 응답은 기다리지 않음
+    this.accessLog.touchVisit(user.id, user.lastActiveAt, clientInfoFromRequest(req));
     return { id: user.id, role: user.role };
   }
 }
