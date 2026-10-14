@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>토피 실기기 테스트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,13 +108,13 @@ textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border
     <div class="tblwrap"><table class="acc">
       <tr><th>역할</th><th>이메일</th><th>상태</th></tr>
       <tr><td>운영자</td><td><span class="mono">admin@toffee.demo</span><button class="copy" data-copy="admin@toffee.demo">복사</button></td><td>모든 관리 화면</td></tr>
-      <tr><td>소속사</td><td><span class="mono">staff@toffee.demo</span><button class="copy" data-copy="staff@toffee.demo">복사</button></td><td>(가상) 데모 엔터 — 캐러멜·누가·마카롱·젤리빈 관리(데모 초기화 후)</td></tr>
+      <tr><td>소속사</td><td><span class="mono">staff@toffee.demo</span><button class="copy" data-copy="staff@toffee.demo">복사</button></td><td>(가상) 데모 엔터 — 캐러멜·누가·마카롱·젤리빈·CP방 관리. 데모 초기화 후 통계용 가상 팬 48명·최근 120일 기록이 들어 있음</td></tr>
       <tr><td>이전 소속사</td><td><span class="mono">former-staff@toffee.demo</span><button class="copy" data-copy="former-staff@toffee.demo">복사</button></td><td>누가가 30일 전 떠난 소속사</td></tr>
       <tr><td>아티스트</td><td><span class="mono">caramel-self@toffee.demo</span><button class="copy" data-copy="caramel-self@toffee.demo">복사</button></td><td>캐러멜 본인(여성) · CP방 "캐러멜 &amp; 누가" 멤버</td></tr>
       <tr><td>팬 1</td><td><span class="mono">fan1@toffee.demo</span><button class="copy" data-copy="fan1@toffee.demo">복사</button></td><td>닉네임 캐러멜바라기 · 캐러멜 구독 중, 누가는 해지</td></tr>
       <tr><td>팬 2</td><td><span class="mono">fan2@toffee.demo</span><button class="copy" data-copy="fan2@toffee.demo">복사</button></td><td>닉네임 누가누가 · 캐러멜+누가 묶음 구독</td></tr>
     </table></div>
-    <div class="warn"><strong>사진·음성·영상 보내기</strong>는 데모 서버에 파일 저장소(Cloudflare R2)가 아직 연결 안 돼서 "파일 저장소가 설정되지 않았어요" 같은 오류가 날 거예요. 그러면 <b>문제</b>가 아니라 <b>건너뜀</b>을 누르고, 카메라·마이크 권한 창이 뜨는지만 메모해 주세요.</div>
+    <div class="warn"><strong>사진·음성·영상 보내기</strong>는 2026-10-13에 데모 서버에 파일 저장소(Cloudflare R2)를 연결해서 이제 돼요. 실패하면 화면에 나온 문구를 메모에 그대로 적어 주세요.</div>
     <div class="warn"><strong>다 하고 나면 운영자 → 데모 초기화</strong>로 처음 상태로 돌아가요. 대신 테스트 중에 소셜 로그인으로 새로 생긴 계정도 같이 지워지니, 폰 앱은 한 번 로그아웃 후 다시 로그인하세요(푸시 기기 등록도 다시 돼요). 이 체크리스트 결과는 지워지지 않아요.</div>
   </section>
 
@@ -134,6 +134,9 @@ textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border
 
   <div class="warn"><strong>"10-12 새로 추가" 항목</strong>(약관 재동의·결제 안내·첫 답장 동의·환영/생일 메시지·화면 캡처 경고·FAQ·공지사항)은 이 작업이 데모 서버에 올라가고 <b>앱을 새로 빌드한 뒤</b>에 확인할 수 있어요. 지금 설치된 앱에선 안 보이면 건너뜀으로 두세요.</div>
   <div class="warn"><strong>"10-12 피드백 반영" 항목</strong>(각 탭 아래쪽)은 2026-10-12 실기기 테스트에서 말씀하신 것들을 고친 거예요. main에 반영하고 <b>앱을 새로 빌드</b>한 뒤, 운영자 → <b>데모 초기화</b>를 한 번 하고 확인해 주세요. 사진·음성·영상 보내기는 여전히 R2 연결 후에만 돼요.</div>
+  <div class="warn"><strong>"10-14 새로 추가" 항목</strong>(운영자 탭 '회원 접속 기록·기기')은 데모 서버에 배포된 뒤부터 기록이 쌓여요. PC 웹 줄은 바로 확인할 수 있고, 폰의 <b>기기 이름·앱 버전</b>은 <b>앱을 새로 빌드</b>한 뒤부터 나와요(지금 설치된 앱으로 들어오면 기기 칸이 비어 있어요 — 정상).</div>
+  <div class="warn"><strong>"10-13 새로 추가" 항목</strong>은 2026-10-13~14에 main에 들어갔어요. <b>PC 웹(demo.toffeechat.app)은 데모 초기화만 하면 바로</b> 확인할 수 있고, 폰은 <b>앱을 새로 빌드</b>한 뒤에 확인해 주세요(진동·알림 사진·사진 여러 장 고르기는 폰에서만).</div>
+  <div class="warn"><strong>"10-13 소속사 개편"·"10-14 기간 선택" 항목</strong>(소속사 탭)은 main에 들어가 있어요. <b>PC 웹(demo.toffeechat.app)은 운영자 → 데모 초기화를 한 번 한 뒤 바로</b> 확인할 수 있고(그래야 통계용 가상 팬·지난 기록이 들어가요), 폰의 <b>하단 탭·그래프 터치</b>는 <b>앱을 새로 빌드</b>한 뒤에 확인해 주세요. 새 빌드 전엔 폰 브라우저로 demo.toffeechat.app에 들어가도 비슷하게 볼 수 있어요.</div>
   <nav class="tabs" role="tablist" id="tabs" aria-label="역할"></nav>
   <div id="sections"></div>
 
@@ -199,6 +202,7 @@ const ROLES = [
     ["w-same","같은 계정 확인",["폰에서 가입한 소셜 계정으로 웹 로그인"],"폰과 같은 구독·대화가 보임","PC",false,"로그인"],
     ["w-photo","사진 넘기기",["사진 전체 화면 → 좌우 화살표"],"이전·다음 사진으로 넘어감","PC",false,"대화"],
     ["w-live","실시간 도착",["폰 팬 + PC 아티스트 동시에 열기","아티스트가 보내기"],"새로고침 없이 폰 대화방에 바로 뜸","폰·PC",false,"대화"],
+    ["w-quote","인용 답장: 내게 온 답장 / 닉네임 숨김",["(데모 초기화 후) 창 하나에 fan1@toffee.demo로 캐러멜 대화방 → 답장 하나 보내기","다른 창(시크릿 창)에 caramel-self@toffee.demo → 캐러멜 채널 → 그 메시지 '팬 답장' → 방금 답장 '답장하기'로 인용해 보내기","fan1 창: 메시지 목록 → 캐러멜 대화방","로그아웃 → fan2@toffee.demo로 캐러멜 대화방"],"fan1: 메시지 목록 캐러멜 줄에 '↩︎ 내 메시지에 답장했어요', 대화방 인용 칸에 '내 메시지에 답장' 배지(닉네임 줄 없음). fan2: 같은 메시지 인용 칸 제목이 '캐러멜의 답장'이고 fan1 닉네임(캐러멜바라기)이 어디에도 안 보임. 아티스트 창에선 '캐러멜바라기님에게 답장'으로 보임(정상)","PC",false,"10-13 새로 추가"],
     ["w-faq","공개 FAQ 페이지",["PC에서 api-demo.toffeechat.app/support 열기","'자주 묻는 질문 →' 누르기 → 위쪽 언어 바꾸기"],"FAQ 페이지가 열리고 언어별로 바뀜(스토어 고객센터 주소로 쓰는 곳)","PC",false,"10-12 새로 추가"],
   ]},
   {key:"artist", name:"아티스트", who:"<code>caramel-self@toffee.demo</code> — 폰 앱(카메라·녹음) + PC 웹",
@@ -210,7 +214,7 @@ const ROLES = [
     ["a-voice","음성 녹음",["음성 → 마이크 권한 허용 → 녹음 → 정지 → 보내기"],"녹음 중 음파·초가 움직임, 팬이 재생 가능","폰",true,"보내기"],
     ["a-video","영상 + 썸네일",["사진/영상 → 영상 선택 → 보내기"],"팬 화면에 첫 장면 썸네일과 함께 도착","폰",true,"보내기"],
     ["a-cp","CP방에서 보내기",["캐러멜 & 누가 채널 → 글 보내기"],"fan2(묶음 구독) 화면 CP방에 도착","폰·PC",false,"보내기"],
-    ["a-replies","팬 답장 보기",["메시지 아래 답장 줄 → 답장 화면","답장 하나 인용해서 보내기"],"답장이 순서대로 넘어가고, 인용 메시지에 팬 닉네임 표시","폰·PC",false,"팬 답장"],
+    ["a-replies","팬 답장 보기",["메시지 아래 답장 줄 → 답장 화면","답장 하나 인용해서 보내기"],"답장이 순서대로 넘어가고, 아티스트 화면의 인용 메시지엔 팬 닉네임 표시(팬 화면에선 2026-10-13부터 닉네임 없이 '캐러멜의 답장')","폰·PC",false,"팬 답장"],
     ["a-block","팬 차단·해제",["답장 옆 ⋯ → 차단","차단 목록 → 해제"],"차단된 팬은 답장 입력이 막히고, 해제하면 다시 됨","폰·PC",false,"팬 답장"],
     ["a-delete","메시지 삭제",["내 메시지 → 삭제"],"팬 화면에서 사라짐","폰·PC",false,"관리"],
     ["a-profile","내 프로필",["내 프로필 → 닉네임 바꾸기","대화방 사진 → 기본 이미지로"],"팬 대화방 헤더에 새 닉네임, 사람 모양 기본 이미지","폰·PC",false,"관리"],
@@ -228,19 +232,32 @@ const ROLES = [
     ["ax-multi","사진 여러 장 보내기",["캐러멜 채널 → 사진 버튼 → 사진 5장 고르기(고른 순서대로 번호)","글은 비우고 보내기","다시 3장 + 글 쓰고 보내기"],"'5개 중 2번째 보내는 중'처럼 차례로 올라감, 중간에 X로 취소 가능. 글을 쓰면 사진 뒤에 글 메시지가 따로 감. 팬 폰엔 알림이 한 번만","폰",true,"10-13 새로 추가"],
   ]},
   {key:"agency", name:"소속사", who:"<code>staff@toffee.demo</code> — PC 웹 권장(정산은 PC 전용)", items:[
-    ["s-list","관리 아티스트 목록",["입장 코드 로그인 → staff@toffee.demo"],"캐러멜·누가가 보임, 활성 구독자·마지막 발송 표시","PC",false,"모니터링"],
+    ["s-list","소속 아티스트 목록",["입장 코드 로그인 → staff@toffee.demo → 소속 아티스트(폰은 하단 탭, PC는 왼쪽 메뉴)"],"캐러멜·누가·마카롱·젤리빈·CP방이 보이고, 각 줄에 마지막 메시지 며칠 전(7일 넘으면 빨간색)","PC",false,"모니터링"],
     ["s-monitor","모니터링 탭",["캐러멜 → 모니터링"],"아티스트가 보낸 메시지·삭제한 메시지(표시) 보임","PC",false,"모니터링"],
-    ["s-replies","답장·통계 탭",["답장 탭 / 통계 탭"],"팬 답장 목록, 숫자가 나옴","PC",false,"모니터링"],
+    ["s-replies","답장 탭",["캐러멜 → 답장 탭"],"팬 답장 목록이 말풍선으로(팬 사진·상태메시지)","PC",false,"모니터링"],
     ["s-settle","정산",["정산 → 이번 달","테스트 결제 포함 켜기 → CSV 받기"],"표와 CSV가 나옴 (데모는 테스트 구독이라 금액이 작거나 0)","PC",false,"정산"],
-    ["s-phone","폰에서 소속사 화면",["폰 앱으로 staff 로그인 → 정산 누르기"],"\"PC 웹에서 확인해 주세요\" 안내","폰",false,"정산"],
+    ["s-phone","폰에는 정산 없음",["폰 앱(새 빌드)으로 staff 로그인 → 하단 탭·설정 보기"],"하단 탭은 대시보드·소속 아티스트·기록·설정뿐이고 정산은 없음(PC 웹 전용). 정산 말고는 다 앱에서 열림","폰",false,"정산"],
     ["s-former","이전 소속사 계정",["former-staff@toffee.demo로 로그인"],"누가(이적한 아티스트)가 목록에 안 보임","PC",false,"권한"],
-    ["sx-name","소속사 이름",["PC로 staff 로그인 / 폰으로 staff 로그인"],"PC는 왼쪽 위 'Toffee' 아래, 폰은 첫 화면 위에 '(가상) 데모 엔터테인먼트'","폰·PC",false,"10-12 피드백 반영"],
-    ["sx-dashboard","통계 대시보드",["왼쪽 메뉴(폰은 첫 화면 위) → 통계 대시보드","순위 기준 칩을 하나씩 눌러 보기 → 행 하나 누르기"],"맨 위 합계(구독자·30일 새 구독·해지·메시지·답장), 기준별 순위가 바뀜, 누르면 그 아티스트 모니터링","폰·PC",false,"10-12 피드백 반영"],
+    ["sx-name","소속사 이름",["PC로 staff 로그인 / 폰으로 staff 로그인"],"PC는 왼쪽 위 'Toffee' 아래, 대시보드 제목 위에도 '(가상) 데모 엔터테인먼트'","폰·PC",false,"10-12 피드백 반영"],
+    ["sx-dashboard","통계 대시보드 (예전 모양 → 10-13 개편)",["로그인하면 바로 나오는 첫 화면"],"아래 '10-13 소속사 개편' 항목들로 확인해 주세요(이 줄은 바로 건너뜀으로 둬도 돼요)","폰·PC",false,"10-12 피드백 반영"],
     ["sx-chat","모니터링 대화방 모양",["캐러멜 → 모니터링","메시지 아래 '팬 답장 N개' 누르기"],"팬이 보는 것처럼 말풍선으로(사진·음성도 그대로), 날짜 줄. 누르면 답장 탭에서 그 메시지 답장만, '모든 답장'으로 돌아가기","폰·PC",false,"10-12 피드백 반영"],
     ["sx-delete","메시지 대신 삭제",["모니터링 → 메시지 아래 휴지통 → 삭제","폰 팬(fan1) 대화방 확인"],"팬 화면에서 바로 사라지고(흔적 없음), 모니터링엔 '소속사가 삭제한 메시지'로 남음","폰·PC",false,"10-12 피드백 반영"],
     ["sx-blocks","차단 관리에서 돌아가기",["답장 탭 → 차단 관리 ›"],"위에 ‹ 뒤로 버튼이 있고, PC는 왼쪽 메뉴도 그대로","PC",false,"10-12 피드백 반영"],
     ["sx-alerts","알림 설정",["설정 → 알림 → '아티스트 새 메시지 알림' 끄기","아티스트로 메시지 보내기 → 다시 켜고 보내기"],"끄면 소속사 폰에 알림이 안 오고, 켜면 옴(푸시는 Firebase 확인 후)","폰",true,"10-12 피드백 반영"],
     ["sx-push","소속사 푸시",["폰 앱 staff 로그인 → 홈으로 내리기","아티스트가 메시지 보내기"],"'캐러멜님이 새 메시지를 보냈어요' 알림, 누르면 모니터링으로","폰",true,"10-12 피드백 반영"],
+    ["sn-first","첫 화면 = 대시보드, 하단 탭",["PC: staff 로그인 → 왼쪽 메뉴 순서 보기","폰(새 빌드 또는 폰 브라우저): staff 로그인 → 아래쪽 탭 보기"],"로그인하면 통계 대시보드가 먼저 나옴. PC 왼쪽 메뉴는 대시보드·소속 아티스트·기록·정산·설정, 폰은 아래에 대시보드·소속 아티스트·기록·설정 탭(팬 화면처럼)","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-kpi","숫자 카드 6개",["대시보드 맨 위 카드 보기","[전체]→[아티스트]→[CP] 눌러 보기"],"구독 중·새 구독·해지·보낸 메시지·팬 답장·메시지당 답장 카드, 각각 ▲▼%(좋으면 보라, 나쁘면 빨강 — 해지는 줄면 보라)와 작은 추이선. 아티스트/CP를 고르면 숫자가 바뀜","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-trend","추이 그래프",["\'새 구독 · 해지 추이\'·\'팬 답장 · 보낸 메시지 추이\' 그래프","PC: 마우스를 그래프 위에 올려 움직이기 / 폰: 손가락으로 누른 채 좌우로"],"보라·주황 두 줄, 올린 날짜의 숫자가 검은 말풍선으로 나오고 점이 따라옴. 폰에서 손가락으로 끌 때 화면 스크롤이 이상하게 같이 움직이면 메모","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-rank","순위 카드 6개 + 전체 순위",["\'아티스트 순위\'의 6개 카드(구독자·오래 안 보낸·새 구독·답장·해지·반응 좋은 순) 보기","카드 하나의 \'전체 순위 ›\' → 위쪽 기준 바꿔 보기","순위의 아티스트 하나 누르기"],"카드마다 상위 5명 + 막대(1위는 진한 보라, 오래 안 보낸 7일 넘음은 빨강). 전체 순위 화면에서 기준·기간·아티스트/CP를 바꿀 수 있고, 아티스트를 누르면 그 아티스트 화면","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-audience","팬 나라·언어",["대시보드 맨 아래 \'팬 분포\'"],"팬 나라(태국·한국·…)와 팬 언어(ไทย·한국어·…)가 막대와 %로. 팬이 5명보다 적은 나라는 \'기타\'로 묶임, \'○개 더 보기\'로 펼침","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-hint","탭 설명·아티스트 통계",["소속 아티스트 → 캐러멜 → 모니터링·답장·통계 탭을 하나씩","통계 탭의 \'답장이 많았던 메시지\' 하나 누르기"],"탭마다 맨 위에 무슨 화면인지 한 줄 설명. 통계 탭은 대시보드처럼 카드·그래프 + 보낸 메시지 종류·답장 많았던 메시지·팬 나라/언어. 메시지를 누르면 답장 탭에서 그 메시지 답장만","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-records","기록 (차단·신고·삭제)",["기록 탭(PC는 왼쪽 메뉴) → 차단한 팬 / 신고 / 삭제된 메시지 칸 눌러 보기","위쪽 아티스트 이름으로 좁혀 보기"],"데모 예시: 차단한 팬 \'팬1\'(차단 계기 답장 \'계속 사적인 연락처를…\'), 신고 1건(처리 대기), 소속사가 지운 메시지 1건. 각 카드 아래 아티스트 이름을 누르면 그 아티스트로","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-blocktrigger","차단 계기 답장 기록",["캐러멜 → 답장 탭 → 답장 하나 ⋯ → 차단","기록 → 차단한 팬","그 카드의 \'해제\' 누르기"],"방금 차단한 팬이 맨 위에 \'차단한 사람: 나\'와 그 답장 내용으로 나옴. 해제하면 목록에서 빠짐","폰·PC",false,"10-13 소속사 개편"],
+    ["sn-webalert","PC 웹 새 메시지 알림",["PC 창 하나: staff 로그인 → 소속 아티스트 화면 열어 두기","다른 창(시크릿 창): caramel-self@toffee.demo → 캐러멜 채널에서 글 보내기","staff 창 보기 → 캐러멜 누르기"],"staff 창 위에 \'캐러멜님이 새 메시지를 보냈어요\' 배너, 브라우저 탭 제목이 \'(1) …\', 캐러멜 사진에 숫자·\'새 메시지\'. 캐러멜을 열면 숫자가 사라짐. 설정 → 알림에서 \'아티스트 새 메시지 알림\'을 끄면 안 뜸","PC",false,"10-13 소속사 개편"],
+    ["sn-settle","정산에 토피 몫 없음",["PC: 정산 → 맨 위 카드와 표 보기 → 아티스트별 CSV 받기","(비교) admin으로 운영자 → 정산"],"소속사 화면엔 \'토피 몫\' 카드·칸이 없고(결제액·스토어 수수료·수수료 뺀 금액·지급액·환불), CSV에도 platform 열이 없음. 운영자 화면엔 그대로 있음","PC",false,"10-13 소속사 개편"],
+    ["sn-range","기간 직접 고르기",["대시보드 → [7일][30일][90일] 옆 \'기간 선택\'","달력에서 시작일 → 종료일 누르기 → 적용 (또는 \'지난달\')","아티스트 화면 통계 탭에서도 한 번"],"버튼이 \'9월 1일 ~ 9월 30일\'로 바뀌고 모든 숫자·그래프가 그 기간으로. 증감은 \'바로 앞 30일 대비\'. \'구독 중\' 카드와 팬 분포 밑에 \'9월 30일 기준\'","폰·PC",false,"10-14 기간 선택"],
+    ["sn-year","최근 1년 (주 단위)",["기간 선택 → \'최근 1년\' → 적용"],"그래프 위에 \'1주씩 묶어 보여요\', 그래프 점이 주마다 하나. 오늘 날짜에서 1년을 넘는 날은 달력에서 못 고름","폰·PC",false,"10-14 기간 선택"],
+    ["sn-norecord","기록 전 날짜",["기간 선택 → \'이전 달\'로 5개월 전쯤 이동 → 그 달 안에서 시작·종료 고르기 → 적용"],"새 구독·해지·메시지 숫자는 나오지만, \'구독 중\'은 \'–\'(그날 기록 없음), 팬 분포·구독자 순위는 \'하루 기록을 시작하기 전 날짜라…\' 안내(데모엔 최근 120일 기록만 있음)","PC",false,"10-14 기간 선택"],
   ]},
   {key:"admin", name:"운영자", who:"<code>admin@toffee.demo</code> — PC 웹 권장", items:[
     ["o-home","운영자 첫 화면",["입장 코드 로그인 → admin@toffee.demo"],"대기 신고·오늘 가입·활성 구독·오늘 접속 숫자","PC",false,"현황"],
@@ -257,6 +274,7 @@ const ROLES = [
     ["o-notices","공지 올리기",["운영자 → 공지사항 → 제목·본문 쓰고 '맨 위에 고정' 켜기 → 올리기","고치기 / 삭제도 한 번씩"],"팬 앱 프로필 → 공지사항에 바로 보이고, 작업 기록에 '공지 올리기·고치기·삭제'가 남음","PC",false,"10-12 새로 추가"],
     ["ox-clear","팬 프로필 지우기",["(먼저 팬 탭에서 상태메시지 저장)","회원 관리 → 그 팬 → '사진·상태메시지 지우기'"],"팬 프로필이 지워지고 작업 기록에 '팬 프로필 지움'","PC",false,"10-12 피드백 반영"],
     ["ox-demo","가상 아티스트 사진",["데모 초기화 후 둘러보기"],"아티스트 6명(캐러멜·누가·마카롱·젤리빈·쿠키·초코)과 CP방이 일러스트 사진으로 나옴, 소속사 3곳 로고","폰·PC",false,"10-12 피드백 반영"],
+    ["ox-access","회원 접속 기록·기기",["폰 앱(새 빌드)으로 staff@toffee.demo 로그인 → 아무 화면이나 보기","PC 웹에서도 staff@toffee.demo로 한 번 로그인","PC에서 운영자(admin) → 회원 관리 → [소속사 직원] + [최근 접속순]","데모 소속사 스태프 카드의 '접속 기록' 누르기"],"카드에 '마지막 접속: 1시간 이내 · iOS 앱 · iPhone ○○ · iOS ○○ · v1.0.0'. 접속 기록에 폰 줄('로그인(데모 로그인) · iOS 앱 · 기기 이름 · 앱 버전 · IP')과 PC 줄('웹 · Chrome · Windows' 등)이 시간순으로. 한 번도 안 들어온 계정은 빨간 '접속 기록 없음'. 기기 이름이 비거나 이상하면 메모","폰·PC",true,"10-14 새로 추가"],
     ["o-reset","데모 초기화 (맨 마지막)",["운영자 첫 화면 맨 아래 데모 초기화 → 초기화"],"데모 데이터로 돌아감, 새로 만든 아티스트·소셜 계정은 사라짐. 폰은 로그아웃 후 다시 로그인","PC",false,"마무리"],
   ]},
 ];
