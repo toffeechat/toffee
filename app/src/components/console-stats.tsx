@@ -2,10 +2,11 @@ import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Info, Languages, MessageCircle, MessageSquareReply, Globe2, Send, TrendingUp, UserMinus, UserPlus, Users } from 'lucide-react-native';
 
-import { DeltaBadge, DistributionBars, KpiCard, Panel, SegmentedPills, TrendChart } from '@/components/console-charts';
+import { DeltaBadge, DistributionBars, KpiCard, Panel, TrendChart } from '@/components/console-charts';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
-import { STATS_PERIODS, type ActivityTotals, type DailyActivity, type DistributionRow, type StatsPeriod } from '@/hooks/use-console';
+import type { ActivityTotals, DailyActivity, DistributionRow } from '@/hooks/use-console';
+import { formatStatDay } from '@/components/stats-range-picker';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
 import { repliesPerMessage } from '@/utils/dashboard-rank';
@@ -29,9 +30,15 @@ export function ScreenIntro({ text, style }: { text: string; style?: ViewStyle }
   );
 }
 
-export function PeriodPills({ value, onChange }: { value: StatsPeriod; onChange: (days: StatsPeriod) => void }) {
-  const { t } = useTranslation();
-  return <SegmentedPills options={STATS_PERIODS.map((days) => ({ value: days, label: t('dashboard.period', { days }) }))} value={value} onChange={onChange} />;
+/** 기간 설명 한 줄 — "태국 시간 기준 최근 30일 · …" 또는 "8월 1일 ~ 9월 15일(46일) · …" */
+export function RangeCaption({ range }: { range: { from: string; to: string; days: number } | undefined; }) {
+  const { t, i18n } = useTranslation();
+  if (!range) return null;
+  return (
+    <ThemedText type="caption" themeColor="textTertiary">
+      {t('dashboard.basisRange', { from: formatStatDay(range.from, i18n.language), to: formatStatDay(range.to, i18n.language), days: range.days })}
+    </ThemedText>
+  );
 }
 
 /** 칸 수에 맞는 카드 폭(사이 간격 Spacing.three) */
@@ -44,20 +51,25 @@ export function KpiGrid({
   width,
   days,
   subscribers,
+  asOf,
   netChange,
   totals,
   previous,
   daily,
 }: {
   width: number;
-  days: StatsPeriod;
-  subscribers: number;
+  /** 고른 기간 일수(앞 기간 비교 문구) */
+  days: number;
+  /** null = 그날 하루 기록이 없음 */
+  subscribers: number | null;
+  /** 지난 날짜로 끝나는 기간이면 그날("구독 중"이 그날 기준) */
+  asOf: string | null;
   netChange: number;
   totals: ActivityTotals;
   previous: ActivityTotals;
   daily: DailyActivity[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const columns = width >= 900 ? 3 : 2;
   const cell = cellStyle(width, columns);
   const per = repliesPerMessage(totals);
@@ -67,8 +79,13 @@ export function KpiGrid({
     {
       icon: Users,
       label: t('dashboard.kpi.subscribers'),
-      value: subscribers.toLocaleString(),
-      footer: t('dashboard.netChange', { value: `${netChange >= 0 ? '+' : ''}${netChange}`, days }),
+      value: subscribers === null ? '–' : subscribers.toLocaleString(),
+      footer:
+        subscribers === null
+          ? t('dashboard.noRecordShort')
+          : [asOf ? t('dashboard.asOf', { date: formatStatDay(asOf, i18n.language) }) : null, t('dashboard.netChange', { value: `${netChange >= 0 ? '+' : ''}${netChange}`, days })]
+              .filter(Boolean)
+              .join(' · '),
     },
     {
       icon: UserPlus,
@@ -119,28 +136,33 @@ export function KpiGrid({
   );
 }
 
-export function TrendPanels({ width, daily }: { width: number; daily: DailyActivity[] }) {
+export function TrendPanels({ width, daily, bucket = 'day' }: { width: number; daily: DailyActivity[]; bucket?: 'day' | 'week' }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const cell = cellStyle(width, width >= 900 ? 2 : 1);
   const days = daily.map((d) => d.day);
+  // 주 단위(3개월 넘는 기간)면 축은 그 주 첫날, 말풍선은 "9. 1.~"
   const formatDay = (day: string) => shortDay(day, i18n.language);
+  const formatTooltipDay = (day: string) => `${formatDay(day)}${bucket === 'week' ? '~' : ''}`;
+  const caption = bucket === 'week' ? t('dashboard.weeklyNote') : undefined;
   return (
     <View style={styles.grid}>
-      <Panel title={t('dashboard.trendSubs')} icon={TrendingUp} style={cell}>
+      <Panel title={t('dashboard.trendSubs')} icon={TrendingUp} caption={caption} style={cell}>
         <TrendChart
           days={days}
           formatDay={formatDay}
+          formatTooltipDay={formatTooltipDay}
           series={[
             { label: t('dashboard.kpi.newSubs'), color: theme.chart1, values: daily.map((d) => d.newSubscriptions) },
             { label: t('dashboard.kpi.cancellations'), color: theme.chart2, values: daily.map((d) => d.cancellations) },
           ]}
         />
       </Panel>
-      <Panel title={t('dashboard.trendActivity')} icon={MessageCircle} style={cell}>
+      <Panel title={t('dashboard.trendActivity')} icon={MessageCircle} caption={caption} style={cell}>
         <TrendChart
           days={days}
           formatDay={formatDay}
+          formatTooltipDay={formatTooltipDay}
           series={[
             { label: t('dashboard.kpi.replies'), color: theme.chart1, values: daily.map((d) => d.fanReplies) },
             { label: t('dashboard.kpi.messages'), color: theme.chart2, values: daily.map((d) => d.messagesSent) },
@@ -152,10 +174,29 @@ export function TrendPanels({ width, daily }: { width: number; daily: DailyActiv
 }
 
 /** 팬 나라·언어(지금 구독 중인 팬 기준, 적은 묶음은 서버가 "기타"로 합침) */
-export function AudiencePanels({ width, fans, countries, languages }: { width: number; fans: number; countries: DistributionRow[]; languages: DistributionRow[] }) {
+export function AudiencePanels({
+  width,
+  fans,
+  countries,
+  languages,
+  asOf,
+  recorded = true,
+}: {
+  width: number;
+  fans: number;
+  countries: DistributionRow[];
+  languages: DistributionRow[];
+  /** 지난 날짜로 끝나는 기간 — 그날 하루 기록(방마다 더한 구독 수) */
+  asOf?: string | null;
+  recorded?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const cell = cellStyle(width, width >= 900 ? 2 : 1);
-  const caption = t('dashboard.audienceBasis', { count: fans });
+  const caption = !recorded
+    ? t('dashboard.noRecord')
+    : asOf
+      ? t('dashboard.audienceBasisPast', { date: formatStatDay(asOf, i18n.language), count: fans })
+      : t('dashboard.audienceBasis', { count: fans });
   return (
     <View style={styles.grid}>
       <Panel title={t('dashboard.countries')} icon={Globe2} caption={caption} style={cell}>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AgencyStatsService, groupSmall } from './agency-stats.service.js';
-import { startOfTodayInZone, zoneDays, DAY_MS } from '../common/utils/stats-time.js';
+import { AgencyStatsService, bucketWeekly, groupSmall, resolveRange } from './agency-stats.service.js';
+import { startOfTodayInZone, zoneDays, DAY_MS, zoneDayStart } from '../common/utils/stats-time.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { ActorsService } from './actors.service.js';
 
@@ -58,6 +58,10 @@ describe('소속사 대시보드 집계', () => {
     const prisma = {
       $queryRawUnsafe: queryRawUnsafe,
       subscription: { groupBy: vi.fn().mockResolvedValue([{ actorId: 'a1', _count: { _all: 7 } }, { actorId: 'a2', _count: { _all: 2 } }]) },
+      // 지난 날짜의 하루 기록 — a1만 기록 있음
+      actorDailyStat: {
+        findMany: vi.fn().mockResolvedValue([{ actorId: 'a1', day: before, subscribers: 6, countries: { TH: 5, VN: 1 }, languages: { th: 6 } }]),
+      },
     } as unknown as PrismaService;
     const actors = {
       findMine: vi.fn().mockResolvedValue([
@@ -70,7 +74,7 @@ describe('소속사 대시보드 집계', () => {
 
   it('합계·앞 기간·일별·방별을 나눠 셈', async () => {
     const { service } = setup();
-    const result = await service.dashboard('u1', 7, 'ALL');
+    const result = await service.dashboard('u1', resolveRange({ days: 7 }), 'ALL');
     expect(result.totals).toEqual({ subscribers: 9, newSubscriptions: 5, cancellations: 1, messagesSent: 5, fanReplies: 12 });
     expect(result.previous.newSubscriptions).toBe(4);
     expect(result.daily).toHaveLength(7);
@@ -82,10 +86,55 @@ describe('소속사 대시보드 집계', () => {
     expect(result.fans).toBe(9);
   });
 
+  it('지난 날짜로 끝나는 기간은 "구독 중"·분포를 그날 기록으로(방마다 더함)', async () => {
+    const { service } = setup();
+    const toStart = zoneDayStart(before)!;
+    const from = zoneDays(new Date(toStart.getTime() - 6 * DAY_MS), 1)[0];
+    const result = await service.dashboard('u1', { from, to: before, days: 7 }, 'ALL');
+    expect(result.audienceAsOf).toBe(before);
+    expect(result.distinctFans).toBe(false);
+    expect(result.totals.subscribers).toBe(6);
+    expect(result.actors.find((row) => row.id === 'a1')?.subscriberCount).toBe(6);
+    // VN 1명은 5명 미만이라 기타
+    expect(result.countries).toEqual([{ key: 'TH', count: 5 }, { key: 'other', count: 1 }]);
+  });
+
   it('CP만 고르면 CP방 id로만 조회', async () => {
     const { service, queryRawUnsafe } = setup();
-    const result = await service.dashboard('u1', 7, 'COUPLE');
+    const result = await service.dashboard('u1', resolveRange({ days: 7 }), 'COUPLE');
     expect(result.actors.map((row) => row.id)).toEqual(['a2']);
     expect(queryRawUnsafe.mock.calls[0][1]).toEqual(['a2']);
+  });
+});
+
+describe('기간 고르기', () => {
+  const now = new Date('2026-10-13T05:00:00Z'); // 태국 12시
+
+  it('최근 N일은 오늘까지', () => {
+    expect(resolveRange({ days: 7 }, now)).toEqual({ from: '2026-10-07', to: '2026-10-13', days: 7 });
+    expect(resolveRange({}, now).days).toBe(30);
+  });
+
+  it('직접 고른 기간 — 양 끝 포함, 최대 1년, 오늘까지', () => {
+    expect(resolveRange({ from: '2026-08-01', to: '2026-09-15' }, now)).toEqual({ from: '2026-08-01', to: '2026-09-15', days: 46 });
+    expect(resolveRange({ from: '2025-10-13', to: '2026-10-13' }, now).days).toBe(366);
+    expect(() => resolveRange({ from: '2025-10-12', to: '2026-10-13' }, now)).toThrow();
+    expect(() => resolveRange({ from: '2026-09-15', to: '2026-08-01' }, now)).toThrow();
+    expect(() => resolveRange({ from: '2026-10-01', to: '2026-10-14' }, now)).toThrow();
+    expect(() => resolveRange({ from: '2026-02-30', to: '2026-03-01' }, now)).toThrow();
+    expect(() => resolveRange({ from: '2026-10-01' }, now)).toThrow();
+  });
+
+  it('태국 날짜 0시', () => {
+    expect(zoneDayStart('2026-10-13')?.toISOString()).toBe('2026-10-12T17:00:00.000Z');
+    expect(zoneDayStart('2026-13-01')).toBeNull();
+  });
+
+  it('긴 기간은 7일씩 묶음(첫날 기준, 마지막은 짧을 수 있음)', () => {
+    const daily = Array.from({ length: 10 }, (_, i) => ({ day: `d${i}`, newSubscriptions: 1, cancellations: 0, messagesSent: i, fanReplies: 0 }));
+    const weeks = bucketWeekly(daily);
+    expect(weeks.map((w) => w.day)).toEqual(['d0', 'd7']);
+    expect(weeks[0]).toMatchObject({ newSubscriptions: 7, messagesSent: 21 });
+    expect(weeks[1]).toMatchObject({ newSubscriptions: 3, messagesSent: 24 });
   });
 });

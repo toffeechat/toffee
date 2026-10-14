@@ -1557,3 +1557,21 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `/console/<id>`로 가면 그 방 카운트 삭제. 새로고침하면 카운트는 사라짐(서버 저장 안 함).
 - **데모 시드**: `seedStatsCrowd()` — 고정 난수로 가상 팬 48명(id `demoId(200+i)`, 이메일 없음)·구독·SubscriptionEvent·팬 답장, 기록 예시 3건.
 
+## 소속사 통계 기간 선택·하루 기록 (2026-10-14)
+
+- **기간**: `ActorStatsQueryDto`에 `from`·`to`(YYYY-MM-DD, `@Matches`) — `resolveRange(query)`(agency-stats.service)가 `{from, to, days}`로 바꾸고 검사
+  (둘 다 있어야, 시작 ≤ 끝 ≤ 오늘(태국), 1~`MAX_RANGE_DAYS`=366일, 없는 날짜 거름 → `STATS_RANGE_INVALID` 400). 없으면 `days`(기본 30)로 오늘까지.
+  `activity()`는 `[from - days, to + 1일)`을 한 번에 group by. `days > WEEKLY_AFTER_DAYS(92)`면 `bucketWeekly`로 7일씩(점의 day = 묶음 첫날).
+  응답에 `from/to/days/bucket/audienceAsOf/audienceRecorded/distinctFans` 추가, 지난 날짜에 기록이 없으면 `totals.subscribers`·`subscriberCount`가 null.
+  태국 날짜 도우미 `zoneDayOf`·`zoneDayStart`(stats-time).
+- **하루 기록**: 모델 `ActorDailyStat(actorId, day YYYY-MM-DD, subscribers, countries Json, languages Json, @@unique([actorId, day]))`, 마이그레이션
+  `20261014010000_actor_daily_stat`. `daily-stats.service.ts` — `@Cron('50 * * * *', Asia/Bangkok)` `recordToday()` → `writeDailyStats(prisma, 오늘)`이
+  모든 방 upsert(구독 없는 방은 0 — "기록 없음"과 구분). `computeAudienceSnapshot(prisma, at?)`: at 없으면 `cancelledAt IS NULL`, 있으면
+  `startedAt ≤ at < cancelledAt`(재구독 시 startedAt이 덮어써져 근사치라 데모 채우기에만). 구독 수는 탈퇴 계정 포함(화면 "구독 중"과 같은 기준),
+  나라·언어는 탈퇴 안 한 팬만, 묶기 전 원래 수 저장 → 보여 줄 때 방별로 더한 뒤 `groupSmall`.
+- `audienceFor(ids, range)`: `to`가 오늘이면 지금 상태(팬 수는 `count(DISTINCT)`), 지난 날짜면 그날 `ActorDailyStat` 합.
+- **앱**: `StatsSelection = {days} | {from, to}`(`hooks/use-console.ts`, `selectionQuery`/`selectionParams`/`selectionFromParams`),
+  `components/stats-range-picker.tsx`(`StatsRangeControl` + 직접 만든 달력 모달, 날짜 계산은 `utils/stat-range.ts` 단위 테스트), `RangeCaption`,
+  `TrendChart`의 `formatTooltipDay`(주 단위 "9. 1.~"). 전체 순위 화면은 주소 값 `days` 또는 `from`·`to`.
+- **데모**: `seedDailyStats()` — 최근 120일 각 날짜 끝 시각으로 `computeAudienceSnapshot(at)` → `createMany`.
+

@@ -6,12 +6,13 @@ import { useTranslation } from 'react-i18next';
 
 import { RankCard, SegmentedPills } from '@/components/console-charts';
 import { RANK_ICONS, rankItems } from '@/components/console-rank';
-import { AudiencePanels, KpiGrid, PeriodPills, ScreenIntro, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
+import { AudiencePanels, KpiGrid, RangeCaption, ScreenIntro, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
+import { StatsRangeControl, formatStatDay } from '@/components/stats-range-picker';
 import { ThemedText } from '@/components/themed-text';
-import { useAgencyDashboard, type RoomKindFilter, type StatsPeriod } from '@/hooks/use-console';
+import { selectionParams, useAgencyDashboard, type RoomKindFilter, type StatsSelection } from '@/hooks/use-console';
 import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
-import { RANK_METRICS } from '@/utils/dashboard-rank';
+import { RANK_METRICS, type RankMetric } from '@/utils/dashboard-rank';
 import { Spacing } from '@/constants/theme';
 
 const KINDS: RoomKindFilter[] = ['ALL', 'SOLO', 'COUPLE'];
@@ -24,15 +25,18 @@ const KINDS: RoomKindFilter[] = ['ALL', 'SOLO', 'COUPLE'];
 export default function AgencyDashboardScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: me } = useMe();
   // 위쪽 막대가 없는 탭이라 상태 표시줄(시계·노치)만큼 띄움
   const insets = useSafeAreaInsets();
-  const [days, setDays] = useState<StatsPeriod>(30);
+  const [selection, setSelection] = useState<StatsSelection>({ days: 30 });
   const [kind, setKind] = useState<RoomKindFilter>('ALL');
   const [width, setWidth] = useState(0);
-  const { data, isLoading, isFetching, refetch } = useAgencyDashboard(days, kind);
+  const { data, isLoading, isFetching, refetch } = useAgencyDashboard(selection, kind);
   const rankCell = cellStyle(width, width >= 1100 ? 3 : width >= 640 ? 2 : 1);
+  // 오래 안 보낸 순은 기간과 상관없이 오늘 기준, 구독자 순은 지난 날짜면 그날 기준
+  const rankCaption = (metric: RankMetric, asOf: string | null) =>
+    metric === 'idle' ? t('dashboard.todayBasis') : metric === 'subscribers' && asOf ? t('dashboard.asOf', { date: formatStatDay(asOf, i18n.language) }) : undefined;
 
   return (
     <ScrollView
@@ -54,11 +58,9 @@ export default function AgencyDashboardScreen() {
         <ScreenIntro text={t('dashboard.description')} />
         <View style={statsStyles.filters}>
           <SegmentedPills options={KINDS.map((value) => ({ value, label: t(`dashboard.kind.${value}`) }))} value={kind} onChange={setKind} />
-          <PeriodPills value={days} onChange={setDays} />
+          <StatsRangeControl value={selection} onChange={setSelection} />
         </View>
-        <ThemedText type="caption" themeColor="textTertiary">
-          {t('dashboard.basis', { days })}
-        </ThemedText>
+        <RangeCaption range={data} />
 
         {isLoading || !data ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
@@ -66,14 +68,15 @@ export default function AgencyDashboardScreen() {
           <>
             <KpiGrid
               width={width}
-              days={days}
+              days={data.days}
               subscribers={data.totals.subscribers}
+              asOf={data.audienceAsOf}
               netChange={data.totals.newSubscriptions - data.totals.cancellations}
               totals={data.totals}
               previous={data.previous}
               daily={data.daily}
             />
-            <TrendPanels width={width} daily={data.daily} />
+            <TrendPanels width={width} daily={data.daily} bucket={data.bucket} />
 
             <ThemedText type="title" style={statsStyles.sectionTitle}>
               {t('dashboard.rankings')}
@@ -84,9 +87,13 @@ export default function AgencyDashboardScreen() {
                   key={metric}
                   title={t(`dashboard.sort.${metric}`)}
                   icon={RANK_ICONS[metric]}
-                  items={rankItems(data.actors, metric, t)}
-                  emptyText={t(metric === 'cancellations' ? 'dashboard.noCancellations' : 'dashboard.noData')}
-                  onMore={() => router.push({ pathname: '/console/ranking', params: { metric, days: String(days), kind } })}
+                  // 지난 날짜인데 하루 기록이 없으면 구독자 순위는 비움
+                  items={metric === 'subscribers' && !data.audienceRecorded ? [] : rankItems(data.actors, metric, t)}
+                  caption={rankCaption(metric, data.audienceAsOf)}
+                  emptyText={t(
+                    metric === 'subscribers' && !data.audienceRecorded ? 'dashboard.noRecord' : metric === 'cancellations' ? 'dashboard.noCancellations' : 'dashboard.noData',
+                  )}
+                  onMore={() => router.push({ pathname: '/console/ranking', params: { metric, ...selectionParams(selection), kind } })}
                   onPressItem={(id) => router.push(`/console/${id}`)}
                   style={rankCell}
                 />
@@ -96,7 +103,14 @@ export default function AgencyDashboardScreen() {
             <ThemedText type="title" style={statsStyles.sectionTitle}>
               {t('dashboard.audience')}
             </ThemedText>
-            <AudiencePanels width={width} fans={data.fans} countries={data.countries} languages={data.languages} />
+            <AudiencePanels
+              width={width}
+              fans={data.fans}
+              countries={data.countries}
+              languages={data.languages}
+              asOf={data.audienceAsOf}
+              recorded={data.audienceRecorded}
+            />
           </>
         )}
       </View>

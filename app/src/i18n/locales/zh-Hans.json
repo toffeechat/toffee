@@ -695,7 +695,6 @@
       "COUPLE": "CP"
     },
     "period": "{{days}}天",
-    "basis": "泰国时间最近{{days}}天 · 增减与之前{{days}}天比较",
     "kpi": {
       "subscribers": "订阅中",
       "newSubs": "新订阅",
@@ -704,8 +703,8 @@
       "replies": "粉丝回复",
       "engagement": "每条消息的回复"
     },
-    "vsPrevious": "与前{{days}}天相比",
-    "netChange": "最近{{days}}天净增 {{value}} 人",
+    "vsPrevious": "与之前{{days}}天相比",
+    "netChange": "期间净增 {{value}} 人",
     "engagementHint": "每条消息平均收到的回复数",
     "same": "无变化",
     "fromZero": "+{{count}}",
@@ -731,7 +730,26 @@
     "daysAgo": "{{count}}天前",
     "perMessage": "每条 {{value}} 个",
     "mediaMix": "发送消息类型",
-    "topMessages": "回复最多的消息"
+    "topMessages": "回复最多的消息",
+    "custom": "选择日期",
+    "basisRange": "泰国时间 {{from}} ~ {{to}}（{{days}}天）· 增减与之前{{days}}天比较",
+    "weeklyNote": "时间段超过3个月，按周汇总显示",
+    "asOf": "截至{{date}}",
+    "noRecordShort": "当天无记录",
+    "noRecord": "该日期早于开始每日记录的时间，无法查看订阅数和粉丝分布",
+    "audienceBasisPast": "截至{{date}}的订阅 {{count}} 个 · 订阅多位艺人的粉丝按艺人分别计算 · 粉丝较少的国家/地区和语言合并为“其他”",
+    "todayBasis": "无论选择哪个时间段，都以今天为准",
+    "picker": {
+      "title": "选择日期",
+      "hint": "请依次点击开始日期和结束日期（最多{{days}}天）",
+      "selected": "{{from}} ~ {{to}}（{{days}}天）",
+      "thisMonth": "本月",
+      "lastMonth": "上月",
+      "lastYear": "最近1年",
+      "prevMonth": "上个月",
+      "nextMonth": "下个月",
+      "apply": "应用"
+    }
   },
   "consoleNav": {
     "dashboard": "数据看板",
