@@ -1,3 +1,6 @@
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import { API_URL } from './env';
 import { loadToken } from './token-storage';
 import i18n from '@/i18n';
@@ -19,12 +22,27 @@ export function onUnauthorized(handler: ((message: string) => void) | null) {
   unauthorizedHandler = handler;
 }
 
+// 접속 기록용 기기 정보(2026-10-14) — 운영자 회원 관리에서 "어떤 기기·앱 버전으로 들어왔는지" 확인.
+// 웹은 기기 이름이 없어서 서버가 브라우저 정보로 대신 채움. 헤더 값은 영문·숫자만 안전해서 그 밖의 글자는 지움
+function clientHeaders(): Record<string, string> {
+  const clean = (value: string | null | undefined) => value?.replace(/[^\x20-\x7E]/g, '').trim().slice(0, 60) || undefined;
+  const entries: [string, string | undefined][] = [
+    ['X-Client-Platform', Platform.OS],
+    ['X-Client-Device', Platform.OS === 'web' ? undefined : clean(Device.modelName)],
+    ['X-Client-OS', clean([Device.osName, Device.osVersion].filter(Boolean).join(' '))],
+    ['X-Client-Version', clean(Constants.expoConfig?.version)],
+  ];
+  return Object.fromEntries(entries.filter((entry): entry is [string, string] => Boolean(entry[1])));
+}
+const CLIENT_HEADERS = clientHeaders();
+
 async function request<T>(path: string, options: RequestInit = {}, as: 'json' | 'text' = 'json'): Promise<T> {
   const token = await loadToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     // 서버가 오류 문구를 지금 앱 언어로 번역해서 줌(backend LocalizedExceptionFilter)
     'Accept-Language': i18n.language,
+    ...CLIENT_HEADERS,
     ...(options.headers as Record<string, string> | undefined),
   };
   if (token) headers.Authorization = `Bearer ${token}`;

@@ -18,101 +18,112 @@ import { Public } from '../common/decorators/public.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DevOnlyGuard } from '../common/guards/dev-only.guard.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AccessLogService } from '../access-log/access-log.service.js';
+import { Client, type ClientInfo } from '../access-log/client-info.js';
 
 const LOGIN_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly accessLog: AccessLogService,
+  ) {}
 
-  @Public()
-  @Throttle(LOGIN_THROTTLE)
-  @Post('google')
-  async loginWithGoogle(@Body() dto: GoogleLoginDto) {
-    const identity = await this.authService.verifyGoogleToken(dto.idToken);
-    const user = await this.authService.findOrCreateUser(AuthProvider.GOOGLE, identity);
+  // 로그인 성공 → 접속 기록(운영자 회원 관리, 2026-10-14) 남기고 토큰 발급
+  private async signIn(user: AuthenticatedUser, method: AuthProvider | 'DEV', client: ClientInfo) {
+    await this.accessLog.recordLogin(user.id, method, client);
     return this.authService.issueAccessToken(user);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
+  @Post('google')
+  async loginWithGoogle(@Body() dto: GoogleLoginDto, @Client() client: ClientInfo) {
+    const identity = await this.authService.verifyGoogleToken(dto.idToken);
+    const user = await this.authService.findOrCreateUser(AuthProvider.GOOGLE, identity);
+    return this.signIn(user, AuthProvider.GOOGLE, client);
+  }
+
+  @Public()
+  @Throttle(LOGIN_THROTTLE)
   @Post('apple')
-  async loginWithApple(@Body() dto: AppleLoginDto) {
+  async loginWithApple(@Body() dto: AppleLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyAppleToken(dto.idToken);
     // 애플 idToken엔 이름이 없어서, 최초 로그인 때 클라이언트가 보내준 이름을 여기서 덧붙임
     const user = await this.authService.findOrCreateUser(
       AuthProvider.APPLE,
       { ...identity, name: dto.name },
     );
-    return this.authService.issueAccessToken(user);
+    return this.signIn(user, AuthProvider.APPLE, client);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('naver')
-  async loginWithNaver(@Body() dto: NaverLoginDto) {
+  async loginWithNaver(@Body() dto: NaverLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyNaverToken(dto.accessToken);
     const user = await this.authService.findOrCreateUser(AuthProvider.NAVER, identity);
-    return this.authService.issueAccessToken(user);
+    return this.signIn(user, AuthProvider.NAVER, client);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('kakao')
-  async loginWithKakao(@Body() dto: KakaoLoginDto) {
+  async loginWithKakao(@Body() dto: KakaoLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyKakaoToken(dto.accessToken);
     const user = await this.authService.findOrCreateUser(AuthProvider.KAKAO, identity);
-    return this.authService.issueAccessToken(user);
+    return this.signIn(user, AuthProvider.KAKAO, client);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('line')
-  async loginWithLine(@Body() dto: LineLoginDto) {
+  async loginWithLine(@Body() dto: LineLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyLineToken(dto.idToken);
     const user = await this.authService.findOrCreateUser(AuthProvider.LINE, identity);
-    return this.authService.issueAccessToken(user);
+    return this.signIn(user, AuthProvider.LINE, client);
   }
 
   // PC 웹 로그인 — 회사 로그인 페이지가 돌려준 code를 서버가 교환(앱은 위의 토큰 방식)
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('kakao/web')
-  async loginWithKakaoWeb(@Body() dto: WebCodeLoginDto) {
+  async loginWithKakaoWeb(@Body() dto: WebCodeLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyKakaoWebCode(dto.code, dto.redirectUri);
-    return this.authService.issueAccessToken(await this.authService.findOrCreateUser(AuthProvider.KAKAO, identity));
+    return this.signIn(await this.authService.findOrCreateUser(AuthProvider.KAKAO, identity), AuthProvider.KAKAO, client);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('naver/web')
-  async loginWithNaverWeb(@Body() dto: WebCodeLoginDto) {
+  async loginWithNaverWeb(@Body() dto: WebCodeLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyNaverWebCode(dto.code, dto.state, dto.redirectUri);
-    return this.authService.issueAccessToken(await this.authService.findOrCreateUser(AuthProvider.NAVER, identity));
+    return this.signIn(await this.authService.findOrCreateUser(AuthProvider.NAVER, identity), AuthProvider.NAVER, client);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('line/web')
-  async loginWithLineWeb(@Body() dto: WebCodeLoginDto) {
+  async loginWithLineWeb(@Body() dto: WebCodeLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyLineWebCode(dto.code, dto.redirectUri);
-    return this.authService.issueAccessToken(await this.authService.findOrCreateUser(AuthProvider.LINE, identity));
+    return this.signIn(await this.authService.findOrCreateUser(AuthProvider.LINE, identity), AuthProvider.LINE, client);
   }
 
   @Public()
   @Throttle(LOGIN_THROTTLE)
   @Post('apple/web')
-  async loginWithAppleWeb(@Body() dto: WebCodeLoginDto) {
+  async loginWithAppleWeb(@Body() dto: WebCodeLoginDto, @Client() client: ClientInfo) {
     const identity = await this.authService.verifyAppleWebCode(dto.code, dto.redirectUri);
-    return this.authService.issueAccessToken(await this.authService.findOrCreateUser(AuthProvider.APPLE, identity));
+    return this.signIn(await this.authService.findOrCreateUser(AuthProvider.APPLE, identity), AuthProvider.APPLE, client);
   }
 
   @Public()
   @UseGuards(DevOnlyGuard)
   @Post('dev-login')
-  async devLogin(@Body() dto: DevLoginDto) {
+  async devLogin(@Body() dto: DevLoginDto, @Client() client: ClientInfo) {
     const user = await this.authService.devLogin(dto.email, dto.name, dto.role as Role | undefined, dto.code);
-    return this.authService.issueAccessToken(user);
+    return this.signIn(user, 'DEV', client);
   }
 
   @Get('me')

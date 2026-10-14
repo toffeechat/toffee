@@ -100,20 +100,48 @@ export interface AdminUser {
   profileImageUrl?: string | null;
   createdAt: string;
   deletedAt: string | null;
+  /** 마지막 접속(한 시간 단위로 갱신)·마지막으로 쓴 기기(2026-10-14) */
+  lastActiveAt?: string | null;
+  accessLogs?: Pick<AccessLog, 'platform' | 'deviceModel' | 'osVersion' | 'appVersion' | 'createdAt'>[];
   agency: { id: string; name: string } | null;
   actorSelf: { id: string; legalName: string } | null;
 }
 
-export function useAdminUsers(query: string, role?: AdminUser['role']) {
+/** 접속 기록 한 줄 — LOGIN(로그인할 때마다) / VISIT(로그인 유지 중 한 시간에 한 번) */
+export interface AccessLog {
+  id: string;
+  kind: 'LOGIN' | 'VISIT';
+  /** 로그인 수단(GOOGLE·KAKAO… 또는 DEV = 데모 이메일 로그인) */
+  method: string | null;
+  platform: string | null;
+  deviceModel: string | null;
+  osVersion: string | null;
+  appVersion: string | null;
+  ip: string | null;
+  createdAt: string;
+}
+
+export type AdminUserSort = 'recent';
+
+export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort) {
   return useQuery({
-    queryKey: ['admin', 'users', query, role ?? null],
+    queryKey: ['admin', 'users', query, role ?? null, sort ?? null],
     queryFn: () => {
       const params = new URLSearchParams();
       if (query) params.set('q', query);
       if (role) params.set('role', role);
+      if (sort) params.set('sort', sort);
       const qs = params.toString();
       return apiClient.get<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`);
     },
+  });
+}
+
+export function useAdminUserAccessLogs(userId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'users', userId, 'access-logs'],
+    queryFn: () => apiClient.get<AccessLog[]>(`/admin/users/${userId}/access-logs`),
+    enabled,
   });
 }
 

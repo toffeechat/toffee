@@ -15,7 +15,13 @@ export class AdminUsersController {
 
   @Get()
   findAll(@Query() query: ListUsersQueryDto) {
-    return this.adminUsersService.findAll(query.q, query.role);
+    return this.adminUsersService.findAll(query.q, query.role, query.sort);
+  }
+
+  // 접속 기록(2026-10-14)
+  @Get(':id/access-logs')
+  accessLogs(@Param('id') id: string) {
+    return this.adminUsersService.accessLogs(id);
   }
 
   @Patch(':id/role')

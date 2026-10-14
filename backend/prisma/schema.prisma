@@ -152,6 +152,7 @@ model User {
   fanMessages        Message[]           @relation("FanMessages")
   agency             Agency?             @relation(fields: [agencyId], references: [id])
   pushDevices        PushDevice[]
+  accessLogs         AccessLog[]
   blockedInChannels  ActorFanBlock[]     @relation("BlockedInChannels")
   blocksIssued       ActorFanBlock[]     @relation("BlocksIssued")
   reportsFiled       Report[]            @relation("ReportsFiled")
@@ -180,6 +181,31 @@ model PushDevice {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// 접속 기록(2026-10-14) — 운영자 회원 관리에서 "언제·어떤 기기로 들어왔는지" 확인용(소속사 데모 접속 확인, 계정 도용·분쟁 대응).
+// LOGIN = 로그인할 때마다 한 줄, VISIT = 로그인이 유지된 채 앱을 쓸 때 한 시간에 한 줄(User.lastActiveAt 갱신과 같은 때).
+// 기기 정보는 앱이 요청마다 보내는 X-Client-* 헤더(없으면 빈 값), 웹은 브라우저 정보(userAgent)로 표시.
+// 3개월 지나면 매일 지움(access-log.service.ts, 통신비밀보호법 접속 기록 3개월 — 탈퇴해도 그때까지 보관, 잠정 정책).
+model AccessLog {
+  id          String   @id @default(uuid())
+  userId      String
+  // LOGIN / VISIT
+  kind        String
+  // 로그인 수단(LOGIN만) — GOOGLE·APPLE·KAKAO·NAVER·LINE 또는 DEV(데모·개발용 이메일 로그인)
+  method      String?
+  platform    String?
+  deviceModel String?
+  osVersion   String?
+  appVersion  String?
+  userAgent   String?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 model AuthIdentity {
