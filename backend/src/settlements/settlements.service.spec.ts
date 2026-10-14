@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monthOf, monthRange, SettlementsService, splitRevenue } from './settlements.service.js';
+import { monthOf, monthRange, SettlementsService, splitRevenue, withoutPlatformShare, type SettlementReport } from './settlements.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { ConfigService } from '@nestjs/config';
 import type { AuditService } from '../audit/audit.service.js';
@@ -22,6 +22,47 @@ describe('정산 계산', () => {
     expect(monthOf(new Date('2026-08-31T16:59:59Z'))).toBe('2026-08');
   });
 });
+
+const SAMPLE_REPORT: SettlementReport = {
+      month: '2026-09',
+      currency: 'THB',
+      storeFeePercent: 15,
+      defaultSharePercent: 70,
+      includesSandbox: false,
+      sandboxEnabled: false,
+      closed: null,
+      payouts: [],
+      totals: { grossCents: 0, adjustmentCents: 0, storeFeeCents: 0, netCents: 0, payoutCents: 0, platformCents: 0, refundedCents: 0 },
+      agencies: [
+        {
+          agencyId: 'ag',
+          name: '=HYPERLINK("http://evil")',
+          sharePercent: 70,
+          grossCents: 0,
+          adjustmentCents: -9900,
+          storeFeeCents: 0,
+          netCents: 0,
+          payoutCents: 0,
+          platformCents: 0,
+          refundedCents: 0,
+          actors: [
+            {
+              actorId: 'a1',
+              name: '@Nawin',
+              chargeCount: 0,
+              grossCents: 0,
+              adjustmentCents: -9900,
+              storeFeeCents: 0,
+              netCents: 0,
+              payoutCents: 0,
+              platformCents: 0,
+              refundedCents: 0,
+              rooms: [],
+            },
+          ],
+        },
+      ],
+    };
 
 interface Charge {
   id: string;
@@ -179,49 +220,28 @@ describe('정산 지급 기록', () => {
 describe('정산 CSV', () => {
   it('=·+·-·@로 시작하는 이름은 엑셀 수식으로 실행되지 않게 글자로(음수 금액은 그대로)', () => {
     const { service } = setup([]);
-    const csv = service.toCsv({
-      month: '2026-09',
-      currency: 'THB',
-      storeFeePercent: 15,
-      defaultSharePercent: 70,
-      includesSandbox: false,
-      sandboxEnabled: false,
-      closed: null,
-      payouts: [],
-      totals: { grossCents: 0, adjustmentCents: 0, storeFeeCents: 0, netCents: 0, payoutCents: 0, platformCents: 0, refundedCents: 0 },
-      agencies: [
-        {
-          agencyId: 'ag',
-          name: '=HYPERLINK("http://evil")',
-          sharePercent: 70,
-          grossCents: 0,
-          adjustmentCents: -9900,
-          storeFeeCents: 0,
-          netCents: 0,
-          payoutCents: 0,
-          platformCents: 0,
-          refundedCents: 0,
-          actors: [
-            {
-              actorId: 'a1',
-              name: '@Nawin',
-              chargeCount: 0,
-              grossCents: 0,
-              adjustmentCents: -9900,
-              storeFeeCents: 0,
-              netCents: 0,
-              payoutCents: 0,
-              platformCents: 0,
-              refundedCents: 0,
-              rooms: [],
-            },
-          ],
-        },
-      ],
-    });
+    const csv = service.toCsv(SAMPLE_REPORT);
     const row = csv.trim().split('\n')[1];
     expect(row).toContain(`"'=HYPERLINK(""http://evil"")"`);
     expect(row).toContain(",'@Nawin,");
     expect(row).toContain(',-99.00,');
+  });
+});
+
+describe('소속사용 정산표', () => {
+  it('토피 몫을 합계·소속사·아티스트 줄에서 모두 뺌', () => {
+    const report = withoutPlatformShare(SAMPLE_REPORT);
+    expect(report.totals).not.toHaveProperty('platformCents');
+    expect(report.agencies[0]).not.toHaveProperty('platformCents');
+    expect(report.agencies[0].actors[0]).not.toHaveProperty('platformCents');
+    expect(report.agencies[0].actors[0].payoutCents).toBe(0);
+  });
+
+  it('소속사 CSV엔 platform 열이 없음', () => {
+    const { service } = setup([]);
+    const [header, row] = service.toCsv(SAMPLE_REPORT, false, false).trim().split('\n');
+    expect(header.replace('\ufeff', '').split(',')).not.toContain('platform');
+    expect(row.split(',')).toHaveLength(header.split(',').length);
+    expect(service.toCsv(SAMPLE_REPORT).split('\n')[0]).toContain('platform');
   });
 });

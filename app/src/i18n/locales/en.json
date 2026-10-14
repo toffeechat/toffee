@@ -106,8 +106,8 @@
     "languageSystem": "Use device language"
   },
   "console": {
-    "title": "Artists I manage",
-    "empty": "You don't manage any artists yet.",
+    "title": "Our artists",
+    "empty": "No artists in your agency yet.",
     "monitoring": "Monitoring {{name}}",
     "tabs": {
       "monitor": "Monitoring",
@@ -139,7 +139,13 @@
     "deleteBody": "It disappears from fans' screens right away and can't be undone. Notifications already sent can't be recalled. The artist will see it as \"Deleted by the agency\".",
     "deleteConfirm": "Delete",
     "deletedByAgency": "Deleted by the agency (hidden from fans)",
-    "allReplies": "All replies"
+    "allReplies": "All replies",
+    "description": "Your agency's artists. Tap one to see their messages, fan replies and stats.",
+    "tabHint": {
+      "monitor": "Monitor the messages this artist sends to fans. You can delete a problematic message on their behalf.",
+      "replies": "Replies from fans. You can report a problematic reply or block that fan.",
+      "stats": "Subscription, message and reply trends for this artist, plus where their fans are."
+    }
   },
   "onboarding": {
     "birthDateTitle": "What's your date of birth?",
@@ -674,20 +680,139 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "subscribers": "Subscribers",
-    "newSubs": "New subscriptions (last {{days}} days)",
-    "cancellations": "Cancellations (last {{days}} days)",
-    "messages": "Messages sent (last {{days}} days)",
-    "replies": "Fan replies (last {{days}} days)",
     "countPeople": "{{count}}",
     "countItems": "{{count}}",
-    "rowSummary": "{{subscribers}} subscribers · {{newSubs}} new · {{replies}} replies",
     "sort": {
       "subscribers": "Most subscribers",
       "idle": "Longest without a message",
       "newSubs": "Most new subscriptions",
       "replies": "Most replies",
-      "messages": "Most messages sent"
+      "messages": "Most messages sent",
+      "cancellations": "Most cancellations",
+      "engagement": "Best engagement"
+    },
+    "description": "Subscriptions, messages and fan engagement across all your artists at a glance. Tap an artist in a ranking to open their page.",
+    "kind": {
+      "ALL": "All",
+      "SOLO": "Artists",
+      "COUPLE": "CP"
+    },
+    "period": "{{days}} days",
+    "kpi": {
+      "subscribers": "Subscribed",
+      "newSubs": "New subscriptions",
+      "cancellations": "Cancellations",
+      "messages": "Messages sent",
+      "replies": "Fan replies",
+      "engagement": "Replies per message"
+    },
+    "vsPrevious": "vs the {{days}} days before",
+    "netChange": "Net {{value}} in this period",
+    "engagementHint": "Average replies each message received",
+    "same": "No change",
+    "fromZero": "+{{count}}",
+    "trendSubs": "New subscriptions · cancellations",
+    "trendActivity": "Fan replies · messages sent",
+    "rankings": "Artist rankings",
+    "more": "Full ranking",
+    "less": "Show less",
+    "moreCount": "Show {{count}} more",
+    "fullRanking": "Full ranking",
+    "audience": "Fan breakdown",
+    "countries": "Fan countries",
+    "languages": "Fan languages",
+    "audienceBasis": "Based on {{count}} current subscribers · fans of several artists counted once · small groups are combined into \"Other\"",
+    "other": "Other",
+    "unknown": "Unknown",
+    "deviceLanguage": "Device language",
+    "noData": "No data yet",
+    "noCancellations": "No cancellations in this period",
+    "noMessages": "No messages sent in this period",
+    "noReplies": "No messages with replies in this period",
+    "retired": "Inactive",
+    "daysAgo": "{{count}} days ago",
+    "perMessage": "{{value}} per message",
+    "mediaMix": "Message types",
+    "topMessages": "Messages with the most replies",
+    "custom": "Pick dates",
+    "basisRange": "{{from}} – {{to}} ({{days}} days, Thailand time) · changes compare with the {{days}} days before",
+    "weeklyNote": "Grouped by week because the period is longer than 3 months",
+    "asOf": "As of {{date}}",
+    "noRecordShort": "No record for that day",
+    "noRecord": "This date is before daily records began, so subscriber counts and fan breakdown aren't available",
+    "audienceBasisPast": "{{count}} subscriptions as of {{date}} · fans of several artists counted once per artist · small groups are combined into \"Other\"",
+    "todayBasis": "Always as of today, whatever the period",
+    "picker": {
+      "title": "Pick dates",
+      "hint": "Tap the start date, then the end date (up to {{days}} days)",
+      "selected": "{{from}} – {{to}} ({{days}} days)",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "lastYear": "Last 12 months",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "apply": "Apply"
     }
+  },
+  "consoleNav": {
+    "dashboard": "Dashboard",
+    "artists": "Artists"
+  },
+  "consoleAlerts": {
+    "newMessage": "{{name}} sent a new message",
+    "anArtist": "An artist",
+    "tapToView": "Tap to open monitoring",
+    "unread": "{{count}} new messages",
+    "newLabel": "New"
+  },
+  "records": {
+    "title": "Records",
+    "description": "Blocked fans, reported replies and deleted messages from your artists' rooms, all in one place.",
+    "tabs": {
+      "blocks": "Blocked fans",
+      "reports": "Reports",
+      "deleted": "Deleted messages"
+    },
+    "allArtists": "All",
+    "by": {
+      "ACTOR": "Artist",
+      "AGENCY_STAFF": "Agency",
+      "ADMIN": "Toffee team"
+    },
+    "byMe": "You",
+    "blockedMeta": "Blocked by {{who}} · {{date}}",
+    "trigger": "Reply that led to the block",
+    "noTrigger": "No reply recorded for this block",
+    "reportedMeta": "Reported by {{who}} · {{date}}",
+    "status": {
+      "PENDING": "Pending",
+      "RESOLVED": "Action taken",
+      "DISMISSED": "No issue found"
+    },
+    "deletedBy": "Deleted by {{who}}",
+    "hiddenByAdmin": "Hidden by the Toffee team under our policies",
+    "deletedMeta": "Sent {{sent}} · deleted {{deleted}}",
+    "empty": {
+      "blocks": "No blocked fans.",
+      "reports": "No reported replies.",
+      "deleted": "No deleted messages."
+    },
+    "limitNote": "Showing the latest {{count}}. Pick an artist above to see older records.",
+    "unblockTitle": "Unblock {{nickname}}?",
+    "unblockBody": "This fan will be able to send replies again."
+  },
+  "countries": {
+    "TH": "Thailand",
+    "KR": "South Korea",
+    "JP": "Japan",
+    "TW": "Taiwan",
+    "HK": "Hong Kong",
+    "CN": "China",
+    "VN": "Vietnam",
+    "SG": "Singapore",
+    "MY": "Malaysia",
+    "PH": "Philippines",
+    "ID": "Indonesia",
+    "US": "United States"
   }
 }

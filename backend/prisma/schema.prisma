@@ -277,6 +277,7 @@ model Actor {
   allocationsAsRoom  ChargeAllocation[]   @relation("AllocationRoom")
   allocationsAsActor ChargeAllocation[]   @relation("AllocationActor")
   birthdayGreetings  BirthdayGreeting[]
+  dailyStats         ActorDailyStat[]
 
   @@index([agencyId])
 }
@@ -460,14 +461,15 @@ model Message {
   deletedByStaffId String?
   createdAt        DateTime          @default(now())
 
-  actor        Actor                @relation("MessageChannel", fields: [actorId], references: [id], onDelete: Cascade)
+  actor         Actor                @relation("MessageChannel", fields: [actorId], references: [id], onDelete: Cascade)
   // 스타 메시지를 실제로 보낸 배우 — 1인 방은 그 배우, 커플방은 두 멤버 중 보낸 쪽(말풍선에 이름·사진 표시). 팬 답장은 null
-  senderActor  Actor?               @relation("MessageSenderActor", fields: [senderActorId], references: [id], onDelete: SetNull)
-  fanUser      User?                @relation("FanMessages", fields: [fanUserId], references: [id])
-  replyTo      Message?             @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
-  replies      Message[]            @relation("MessageReplies")
-  translations MessageTranslation[]
-  reports      Report[]
+  senderActor   Actor?               @relation("MessageSenderActor", fields: [senderActorId], references: [id], onDelete: SetNull)
+  fanUser       User?                @relation("FanMessages", fields: [fanUserId], references: [id])
+  replyTo       Message?             @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies       Message[]            @relation("MessageReplies")
+  translations  MessageTranslation[]
+  reports       Report[]
+  blockTriggers ActorFanBlock[]
 
   @@index([replyToMessageId])
   // 팬 대화방 나눠 받기·방 안 검색·사진 모아보기가 전부 "이 방의 메시지를 시간순으로" 찾음(2026-09-29)
@@ -554,11 +556,14 @@ model ActorFanBlock {
   fanUserId   String
   blockedById String
   reason      String?
+  // 차단 계기가 된 팬 답장(2026-10-13, 소속사 "기록" 화면) — 차단하면 그 답장이 다른 화면에서 빠져서 여기서만 다시 볼 수 있음
+  messageId   String?
   createdAt   DateTime @default(now())
 
-  actor     Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  fanUser   User  @relation("BlockedInChannels", fields: [fanUserId], references: [id], onDelete: Cascade)
-  blockedBy User  @relation("BlocksIssued", fields: [blockedById], references: [id])
+  actor     Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  fanUser   User     @relation("BlockedInChannels", fields: [fanUserId], references: [id], onDelete: Cascade)
+  blockedBy User     @relation("BlocksIssued", fields: [blockedById], references: [id])
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@unique([actorId, fanUserId])
   @@index([fanUserId])
@@ -749,4 +754,22 @@ model Notice {
   updatedAt   DateTime @updatedAt
 
   @@index([pinned, createdAt])
+}
+
+// 방별 하루 기록(2026-10-13 사용자 결정, 소속사 통계 기간 선택) — 그날(태국 날짜) 끝 무렵의 구독 수·구독 팬 나라·언어. 매시간 오늘 줄을
+// 덮어써서 마지막 기록이 그날 마감 상태. 지난 기간을 고르면 "구독 중"·팬 분포를 이 기록으로 보여 줌(기록 시작 전 날짜는 없음).
+// 나라·언어는 묶기 전 원래 수({"TH": 12, "unknown": 1}) — 작은 묶음을 "기타"로 합치는 건 보여 줄 때.
+model ActorDailyStat {
+  id          String   @id @default(uuid())
+  actorId     String
+  day         String
+  subscribers Int
+  countries   Json
+  languages   Json
+  updatedAt   DateTime @updatedAt
+
+  actor Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, day])
+  @@index([day])
 }

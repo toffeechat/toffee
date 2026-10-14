@@ -1,9 +1,10 @@
-import { ScrollView, StyleSheet } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, Globe, KeyRound, LogOut, Moon } from 'lucide-react-native';
+import { Bell, Globe, KeyRound, LogOut, Moon, Wallet } from 'lucide-react-native';
 
 import { ListRow } from '@/components/ui/list-row';
+import { useWideLayout } from '@/components/wide-shell';
 import { PROVIDER_NAMES } from '@/components/social-button-style';
 import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,19 +16,25 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 /**
  * 아티스트·소속사 설정(2026-10-12 — "알림 설정이 역할마다 없다") — 팬 마이페이지 대신. 알림(역할별), 화면 모드, 언어, 로그인 정보, 로그아웃.
- * 소속사 PC 웹은 왼쪽 메뉴 "설정", 폰은 콘솔 첫 화면·스튜디오 프로필에서 들어옴
+ * 소속사는 하단 탭·PC 왼쪽 메뉴 "설정"(/console/settings, 2026-10-13), 아티스트는 스튜디오 프로필에서 들어옴
  */
 export default function StaffSettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
+  // 정산은 PC 웹 전용 — 넓은 화면은 왼쪽 메뉴에 있으니 좁은 웹 창일 때만 여기에(앱엔 없음, 2026-10-13 하단 탭 개편)
+  const wide = useWideLayout();
+  const showSettlement = role === 'AGENCY_STAFF' && Platform.OS === 'web' && !wide;
   const { data: me } = useMe();
   const { override } = useLocalePreference();
   const themePreference = useThemePreference();
   const providers = (me?.loginProviders ?? []).map((provider) => PROVIDER_NAMES[provider]).join(' · ');
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.scroll}>
+      {showSettlement ? (
+        <ListRow icon={Wallet} title={t('settlement.title')} subtitle={t('settlement.menuHint')} onPress={() => router.push('/console/settlements')} />
+      ) : null}
       <ListRow icon={Bell} title={t('profile.notifications')} onPress={() => router.push('/settings/notifications')} />
       <ListRow icon={Moon} title={t('themeMode.title')} value={t(`themeMode.${themePreference}`)} onPress={() => router.push('/settings/theme')} />
       <ListRow

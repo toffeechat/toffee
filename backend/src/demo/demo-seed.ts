@@ -4,6 +4,8 @@
 import type { Prisma } from '../generated/prisma/client.js';
 import { MessageSenderType, MessageMediaType, Role } from '../generated/prisma/enums.js';
 import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
+import { computeAudienceSnapshot } from '../actors/daily-stats.service.js';
+import { DAY_MS, startOfTodayInZone, zoneDays } from '../common/utils/stats-time.js';
 
 // 데모 계정은 약관 동의를 마친 상태로(새로 가입하는 계정은 앱 온보딩에서 동의)
 const AGREED = { termsVersion: CURRENT_TERMS_VERSION, termsAcceptedAt: new Date() };
@@ -339,6 +341,9 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     ],
   });
 
+  await seedStatsCrowd(prisma, { staffId: staff.id, caramelId: caramel.id, nougatId: nougat.id });
+  await seedDailyStats(prisma);
+
   console.log('시드 완료:', {
     actors: [caramel.chatDisplayName, nougat.chatDisplayName],
     agencies: [demoAgency.name, formerAgency.name],
@@ -348,4 +353,111 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     sampleFanReplyId: fanReply.id,
     actorSelfLoginEmail: 'caramel-self@toffee.demo',
   });
+}
+
+/**
+ * 소속사 통계 대시보드·기록 화면이 비어 보이지 않게 넣는 가상 팬 무리(2026-10-13 대시보드 개편) — 이메일 없는 팬 48명이
+ * 데모 엔터 아티스트들을 최근 80일에 걸쳐 구독·일부 해지(나라·언어 섞어서)하고 답장을 보냄. 매번 같은 결과가 나오게 고정 난수.
+ * 기록 화면용으로 차단 1건(계기 답장 포함)·소속사 신고 1건·소속사가 지운 메시지 1건도.
+ */
+async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: string; caramelId: string; nougatId: string }) {
+  let seed = 20261013;
+  const random = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  const pick = <T>(items: readonly T[]) => items[Math.floor(random() * items.length)];
+  // 태국 팬이 가장 많고 한국·일본·베트남 순(주 시장 가정)
+  const places = [
+    ...Array<[string, string]>(9).fill(['TH', 'th']),
+    ...Array<[string, string]>(3).fill(['KR', 'ko']),
+    ...Array<[string, string]>(2).fill(['JP', 'ja']),
+    ['VN', 'vi'],
+    ['TW', 'zh-Hant'],
+    ['US', 'en'],
+  ] as const;
+  // 캐러멜이 제일 인기, CP방·젤리빈은 적게
+  const rooms = [ids.caramelId, ids.caramelId, ids.caramelId, DEMO_IDS.macaron, DEMO_IDS.macaron, ids.nougatId, DEMO_IDS.jellybean, DEMO_IDS.couple];
+  const replyLines = ['오늘도 고마워요!', 'ขอบคุณค่ะ 💕', '보고 싶어요 ㅠㅠ', 'สู้ๆ นะคะ', '사진 너무 좋아요', '応援してます！', 'Love this!', '굿나잇 🌙'];
+
+  const replies: Prisma.MessageCreateManyInput[] = [];
+  const events: Prisma.SubscriptionEventCreateManyInput[] = [];
+  const crowd: string[] = [];
+  for (let i = 0; i < 48; i++) {
+    const [countryCode, locale] = pick(places);
+    const id = demoId(200 + i);
+    crowd.push(id);
+    await prisma.user.create({
+      data: { ...AGREED, birthDate: new Date('1999-05-05'), id, role: Role.USER, displayName: `통계용 팬 ${i + 1}`, nickname: `팬${i + 1}`, countryCode, locale },
+    });
+    const joined = new Set<string>();
+    for (let n = 0; n < (random() < 0.3 ? 2 : 1); n++) {
+      const actorId = pick(rooms);
+      if (joined.has(actorId)) continue;
+      joined.add(actorId);
+      const startedDays = 1 + Math.floor(random() * 80);
+      const cancelledDays = random() < 0.18 ? Math.max(0, startedDays - 1 - Math.floor(random() * startedDays)) : null;
+      await prisma.subscription.create({
+        data: { userId: id, actorId, startedAt: daysAgo(startedDays), cancelledAt: cancelledDays === null ? null : daysAgo(cancelledDays) },
+      });
+      events.push({ userId: id, actorId, type: 'STARTED', priceCents: 9900, createdAt: daysAgo(startedDays) });
+      if (cancelledDays !== null) events.push({ userId: id, actorId, type: 'CANCELLED', createdAt: daysAgo(cancelledDays) });
+      // 구독 중인 동안 답장 몇 개
+      const until = cancelledDays ?? 0;
+      for (let r = 0; r < Math.floor(random() * 5); r++) {
+        const day = until + random() * (startedDays - until);
+        replies.push({ actorId, senderType: MessageSenderType.FAN, fanUserId: id, body: pick(replyLines), createdAt: daysAgo(day) });
+      }
+    }
+  }
+  await prisma.subscriptionEvent.createMany({ data: events });
+  // 앞 기간(31~60일 전) 비교가 되게 캐러멜·마카롱의 예전 메시지도
+  await prisma.message.createMany({
+    data: [12, 16, 19, 23, 27, 33, 38, 41, 47, 52, 58].map((day, index) => ({
+      actorId: index % 3 === 0 ? DEMO_IDS.macaron : ids.caramelId,
+      senderType: MessageSenderType.ARTIST,
+      body: index % 2 ? '{{name}} 오늘 연습 끝! 다들 잘 자 🌙' : '이번 주 촬영 비하인드 곧 보여 줄게',
+      createdAt: daysAgo(day),
+    })),
+  });
+  await prisma.message.createMany({ data: replies });
+
+  // 기록 화면 데모 — 차단(계기 답장 포함), 소속사 신고, 소속사가 지운 메시지
+  const rude = await prisma.message.create({
+    data: { actorId: ids.caramelId, senderType: MessageSenderType.FAN, fanUserId: crowd[0], body: '(데모) 계속 사적인 연락처를 묻는 답장', createdAt: daysAgo(3) },
+  });
+  await prisma.actorFanBlock.create({
+    data: { actorId: ids.caramelId, fanUserId: crowd[0], blockedById: ids.staffId, messageId: rude.id, createdAt: daysAgo(3) },
+  });
+  const spam = await prisma.message.create({
+    data: { actorId: DEMO_IDS.macaron, senderType: MessageSenderType.FAN, fanUserId: crowd[1], body: '(데모) 다른 사이트 홍보 링크가 담긴 답장', createdAt: daysAgo(6) },
+  });
+  await prisma.report.create({ data: { messageId: spam.id, reportedById: ids.staffId, category: 'SPAM', createdAt: daysAgo(6) } });
+  await prisma.message.create({
+    data: {
+      actorId: ids.caramelId,
+      senderType: MessageSenderType.ARTIST,
+      body: '(데모) 촬영장 위치가 드러난 사진 설명 — 소속사가 대신 삭제',
+      createdAt: daysAgo(8),
+      deletedAt: daysAgo(8),
+      deletedByStaffId: ids.staffId,
+    },
+  });
+}
+
+/**
+ * 하루 기록(ActorDailyStat) 채우기(2026-10-13, 기간 선택) — 실제 서버는 기록을 시작한 날부터만 쌓이지만, 데모에선 지난 기간을 골라 볼 수
+ * 있게 최근 120일 치를 구독 시작·해지 시각으로 거꾸로 계산해 넣음(데모 데이터는 재구독이 없어 정확함). 오늘 줄은 서버가 매시간 덮어씀.
+ */
+async function seedDailyStats(prisma: Prisma.TransactionClient) {
+  const actorIds = (await prisma.actor.findMany({ select: { id: true } })).map((actor) => actor.id);
+  const today = startOfTodayInZone();
+  const days = zoneDays(new Date(today.getTime() - 120 * DAY_MS), 121);
+  for (const [index, day] of days.entries()) {
+    // 그날 끝(다음 날 0시 직전) 상태
+    const snapshot = await computeAudienceSnapshot(prisma, new Date(today.getTime() - (119 - index) * DAY_MS - 1));
+    await prisma.actorDailyStat.createMany({
+      data: actorIds.map((actorId) => ({ actorId, day, ...(snapshot.get(actorId) ?? { subscribers: 0, countries: {}, languages: {} }) })),
+    });
+  }
 }

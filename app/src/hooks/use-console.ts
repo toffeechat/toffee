@@ -12,16 +12,78 @@ export function useMyActors() {
   });
 }
 
-export interface ActorStats {
-  subscriberCount: number;
-  lastBroadcastAt: string | null;
+/** 기간(일) — 대시보드·아티스트별 통계 공통 [7일][30일][90일] */
+export const STATS_PERIODS = [7, 30, 90] as const;
+export type StatsPeriod = (typeof STATS_PERIODS)[number];
+export type RoomKindFilter = 'ALL' | 'SOLO' | 'COUPLE';
+/** 통계 기간 — 최근 N일 버튼 또는 직접 고른 날짜(태국 날짜 YYYY-MM-DD, 양 끝 포함, 최대 1년 — 2026-10-13) */
+export type StatsSelection = { days: StatsPeriod } | { from: string; to: string };
+
+/** "전체 순위" 화면으로 넘길 주소 값 / 받은 값 → 기간 */
+export function selectionParams(selection: StatsSelection): Record<string, string> {
+  return 'days' in selection ? { days: String(selection.days) } : { from: selection.from, to: selection.to };
+}
+export function selectionFromParams(params: { days?: string; from?: string; to?: string }): StatsSelection {
+  const pattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (params.from && params.to && pattern.test(params.from) && pattern.test(params.to)) return { from: params.from, to: params.to };
+  return { days: STATS_PERIODS.find((value) => String(value) === params.days) ?? 30 };
 }
 
-export function useActorStats(actorId: string) {
+export function selectionQuery(selection: StatsSelection): string {
+  return 'days' in selection ? `days=${selection.days}` : `from=${selection.from}&to=${selection.to}`;
+}
+
+/** 서버가 정한 실제 기간 + "구독 중"·팬 분포의 기준(지난 날짜면 그날 하루 기록) */
+interface RangeInfo {
+  from: string;
+  to: string;
+  days: number;
+  /** 3개월보다 길면 추이가 1주씩 묶여 옴(점의 day = 그 주 첫날) */
+  bucket: 'day' | 'week';
+  /** null = 지금 상태, 날짜 = 그날 하루 기록 */
+  audienceAsOf: string | null;
+  /** false = 그날 하루 기록이 없음(기록 시작 전) */
+  audienceRecorded: boolean;
+  /** true = 팬 수가 여러 방 구독자를 한 번만 센 값, false = 방마다 더한 구독 수(지난 날짜) */
+  distinctFans: boolean;
+}
+
+export interface ActivityTotals {
+  newSubscriptions: number;
+  cancellations: number;
+  messagesSent: number;
+  fanReplies: number;
+}
+export interface DailyActivity extends ActivityTotals {
+  day: string;
+}
+/** 나라·언어 분포 — 팬이 적은 묶음은 서버가 "other"로 합쳐 보냄(특정 팬을 짐작 못 하게) */
+export interface DistributionRow {
+  key: string;
+  count: number;
+}
+
+export interface ActorStats extends RangeInfo {
+  /** 지난 날짜인데 기록이 없으면 null */
+  subscriberCount: number | null;
+  lastBroadcastAt: string | null;
+  totals: ActivityTotals;
+  previous: ActivityTotals;
+  daily: DailyActivity[];
+  fans: number;
+  countries: DistributionRow[];
+  languages: DistributionRow[];
+  mediaMix: DistributionRow[];
+  topMessages: { id: string; body: string | null; mediaType: string; createdAt: string; replyCount: number }[];
+}
+
+export function useActorStats(actorId: string, selection: StatsSelection = { days: 30 }) {
+  const query = selectionQuery(selection);
   return useQuery({
-    queryKey: ['actor-stats', actorId],
-    queryFn: () => apiClient.get<ActorStats>(`/actors/${actorId}/stats`),
+    queryKey: ['actor-stats', actorId, query],
+    queryFn: () => apiClient.get<ActorStats>(`/actors/${actorId}/stats?${query}`),
     enabled: !!actorId,
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -48,8 +110,8 @@ export function useActorReplies(actorId: string, messageId?: string | null) {
   });
 }
 
-/** 소속사 통계 대시보드(2026-10-12) — 볼 수 있는 방 전체의 최근 N일 수치 */
-export interface DashboardRow {
+/** 소속사 통계 대시보드(2026-10-12, 10-13 개편) — 볼 수 있는 방 전체의 최근 N일 수치 */
+export interface DashboardRow extends ActivityTotals {
   id: string;
   kind: 'SOLO' | 'COUPLE';
   chatDisplayName: string;
@@ -58,16 +120,80 @@ export interface DashboardRow {
   retiredAt: string | null;
   lastBroadcastAt: string | null;
   subscriberCount: number;
-  newSubscriptions: number;
-  cancellations: number;
-  messagesSent: number;
-  fanReplies: number;
 }
 
-export function useAgencyDashboard() {
+export interface AgencyDashboard extends RangeInfo {
+  kind: RoomKindFilter;
+  totals: ActivityTotals & { subscribers: number | null };
+  previous: ActivityTotals;
+  daily: DailyActivity[];
+  fans: number;
+  countries: DistributionRow[];
+  languages: DistributionRow[];
+  actors: DashboardRow[];
+}
+
+export function useAgencyDashboard(selection: StatsSelection = { days: 30 }, kind: RoomKindFilter = 'ALL') {
+  const query = selectionQuery(selection);
   return useQuery({
-    queryKey: ['agency-dashboard'],
-    queryFn: () => apiClient.get<{ days: number; actors: DashboardRow[] }>('/actors/mine/dashboard'),
+    queryKey: ['agency-dashboard', query, kind],
+    queryFn: () => apiClient.get<AgencyDashboard>(`/actors/mine/dashboard?${query}&kind=${kind}`),
+    // 필터를 바꾸는 동안 이전 숫자를 그대로 보여 줌(화면이 깜빡이지 않게)
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** 소속사 "기록"(2026-10-13) — 소속 아티스트 방의 차단·신고·메시지 삭제. by = 한 사람의 역할(ACTOR/AGENCY_STAFF/ADMIN) */
+export interface RecordRoom {
+  id: string;
+  chatDisplayName: string;
+  kind: 'SOLO' | 'COUPLE';
+}
+export interface RecordFan {
+  id: string;
+  nickname: string | null;
+  tag: string;
+}
+export interface AgencyRecords {
+  limit: number;
+  blocks: {
+    room: RecordRoom | null;
+    createdAt: string;
+    reason: string | null;
+    by: string;
+    byMe: boolean;
+    fanUser: RecordFan | null;
+    message: { id: string; body: string | null; createdAt: string } | null;
+  }[];
+  reports: {
+    id: string;
+    room: RecordRoom | null;
+    category: string;
+    reason: string | null;
+    status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+    createdAt: string;
+    resolvedAt: string | null;
+    by: string;
+    byMe: boolean;
+    message: { id: string; body: string | null; mediaType: string; senderType: string; createdAt: string; fanUser: RecordFan | null };
+  }[];
+  deleted: {
+    id: string;
+    room: RecordRoom | null;
+    body: string | null;
+    mediaType: string;
+    createdAt: string;
+    deletedAt: string;
+    by: string;
+    byMe: boolean;
+  }[];
+}
+
+export function useAgencyRecords(actorId?: string | null) {
+  return useQuery({
+    queryKey: ['agency-records', actorId ?? null],
+    queryFn: () => apiClient.get<AgencyRecords>(`/actors/mine/records${actorId ? `?actorId=${encodeURIComponent(actorId)}` : ''}`),
+    placeholderData: (previous) => previous,
   });
 }
 

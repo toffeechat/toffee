@@ -106,8 +106,8 @@
     "languageSystem": "跟隨裝置語言"
   },
   "console": {
-    "title": "我管理的藝人",
-    "empty": "你還沒有負責的藝人。",
+    "title": "旗下藝人",
+    "empty": "還沒有旗下藝人。",
     "monitoring": "正在監看 {{name}}",
     "tabs": {
       "monitor": "監看",
@@ -139,7 +139,13 @@
     "deleteBody": "訊息會立即從粉絲畫面消失且無法復原，已送出的通知無法收回。藝人畫面會顯示「經紀公司刪除的訊息」。",
     "deleteConfirm": "刪除",
     "deletedByAgency": "經紀公司刪除的訊息（粉絲看不到）",
-    "allReplies": "所有回覆"
+    "allReplies": "所有回覆",
+    "description": "旗下藝人列表。點擊可查看傳送的訊息、粉絲回覆和統計。",
+    "tabHint": {
+      "monitor": "查看藝人傳給粉絲的訊息。如有問題訊息，可以代為刪除。",
+      "replies": "查看粉絲傳來的回覆。如有問題回覆，可以檢舉或封鎖該粉絲。",
+      "stats": "查看該藝人的訂閱、訊息、回覆趨勢和粉絲分布。"
+    }
   },
   "onboarding": {
     "birthDateTitle": "請填寫你的出生日期",
@@ -673,21 +679,140 @@
     "title": "設定"
   },
   "dashboard": {
-    "title": "數據總覽",
-    "subscribers": "訂閱者",
-    "newSubs": "新訂閱（最近 {{days}} 天）",
-    "cancellations": "取消（最近 {{days}} 天）",
-    "messages": "傳送訊息（最近 {{days}} 天）",
-    "replies": "粉絲回覆（最近 {{days}} 天）",
-    "countPeople": "{{count}} 人",
-    "countItems": "{{count}} 則",
-    "rowSummary": "訂閱者 {{subscribers}} · 新訂閱 {{newSubs}} · 回覆 {{replies}}",
+    "title": "數據看板",
+    "countPeople": "{{count}}人",
+    "countItems": "{{count}}則",
     "sort": {
       "subscribers": "訂閱者最多",
-      "idle": "最久未傳送",
+      "idle": "最久未傳訊息",
       "newSubs": "新訂閱最多",
       "replies": "回覆最多",
-      "messages": "傳送最多"
+      "messages": "傳送訊息最多",
+      "cancellations": "取消訂閱最多",
+      "engagement": "粉絲反應最好"
+    },
+    "description": "一頁查看所有旗下藝人的訂閱、訊息和粉絲反應。點擊排行中的藝人可進入其頁面。",
+    "kind": {
+      "ALL": "全部",
+      "SOLO": "藝人",
+      "COUPLE": "CP"
+    },
+    "period": "{{days}}天",
+    "kpi": {
+      "subscribers": "訂閱中",
+      "newSubs": "新訂閱",
+      "cancellations": "取消訂閱",
+      "messages": "傳送的訊息",
+      "replies": "粉絲回覆",
+      "engagement": "每則訊息的回覆"
+    },
+    "vsPrevious": "與之前{{days}}天相比",
+    "netChange": "期間淨增 {{value}} 人",
+    "engagementHint": "每則訊息平均收到的回覆數",
+    "same": "無變化",
+    "fromZero": "+{{count}}",
+    "trendSubs": "新訂閱 · 取消訂閱趨勢",
+    "trendActivity": "粉絲回覆 · 傳送訊息趨勢",
+    "rankings": "藝人排行",
+    "more": "完整排行",
+    "less": "收合",
+    "moreCount": "再顯示 {{count}} 項",
+    "fullRanking": "完整排行",
+    "audience": "粉絲分布",
+    "countries": "粉絲國家/地區",
+    "languages": "粉絲語言",
+    "audienceBasis": "以目前訂閱中的 {{count}} 位粉絲為準 · 訂閱多位藝人的粉絲只算一次 · 粉絲較少的國家/地區和語言合併為「其他」",
+    "other": "其他",
+    "unknown": "未知",
+    "deviceLanguage": "裝置語言",
+    "noData": "尚無資料",
+    "noCancellations": "這段期間沒有取消訂閱",
+    "noMessages": "這段期間沒有傳送訊息",
+    "noReplies": "這段期間沒有收到回覆的訊息",
+    "retired": "已停止活動",
+    "daysAgo": "{{count}}天前",
+    "perMessage": "每則 {{value}} 個",
+    "mediaMix": "傳送訊息類型",
+    "topMessages": "回覆最多的訊息",
+    "custom": "選擇日期",
+    "basisRange": "泰國時間 {{from}} ~ {{to}}（{{days}}天）· 增減與之前{{days}}天比較",
+    "weeklyNote": "期間超過3個月，按週彙總顯示",
+    "asOf": "截至{{date}}",
+    "noRecordShort": "當天無紀錄",
+    "noRecord": "該日期早於開始每日紀錄的時間，無法查看訂閱數和粉絲分布",
+    "audienceBasisPast": "截至{{date}}的訂閱 {{count}} 個 · 訂閱多位藝人的粉絲按藝人分別計算 · 粉絲較少的國家/地區和語言合併為「其他」",
+    "todayBasis": "無論選擇哪個期間，都以今天為準",
+    "picker": {
+      "title": "選擇日期",
+      "hint": "請依序點擊開始日期和結束日期（最多{{days}}天）",
+      "selected": "{{from}} ~ {{to}}（{{days}}天）",
+      "thisMonth": "本月",
+      "lastMonth": "上個月",
+      "lastYear": "最近1年",
+      "prevMonth": "上個月",
+      "nextMonth": "下個月",
+      "apply": "套用"
     }
+  },
+  "consoleNav": {
+    "dashboard": "數據看板",
+    "artists": "旗下藝人"
+  },
+  "consoleAlerts": {
+    "newMessage": "{{name}} 傳送了新訊息",
+    "anArtist": "旗下藝人",
+    "tapToView": "點擊查看監控",
+    "unread": "{{count}} 則新訊息",
+    "newLabel": "新訊息"
+  },
+  "records": {
+    "title": "紀錄",
+    "description": "集中查看旗下藝人聊天室中被封鎖的粉絲、被檢舉的回覆和被刪除的訊息。",
+    "tabs": {
+      "blocks": "已封鎖粉絲",
+      "reports": "檢舉",
+      "deleted": "已刪除訊息"
+    },
+    "allArtists": "全部",
+    "by": {
+      "ACTOR": "藝人",
+      "AGENCY_STAFF": "經紀公司",
+      "ADMIN": "Toffee 營運"
+    },
+    "byMe": "我",
+    "blockedMeta": "{{who}}封鎖 · {{date}}",
+    "trigger": "導致封鎖的回覆",
+    "noTrigger": "沒有紀錄導致封鎖的回覆",
+    "reportedMeta": "{{who}}檢舉 · {{date}}",
+    "status": {
+      "PENDING": "待處理",
+      "RESOLVED": "已處理",
+      "DISMISSED": "未發現問題"
+    },
+    "deletedBy": "{{who}}刪除",
+    "hiddenByAdmin": "Toffee 營運依政策隱藏",
+    "deletedMeta": "傳送 {{sent}} · 刪除 {{deleted}}",
+    "empty": {
+      "blocks": "沒有被封鎖的粉絲。",
+      "reports": "沒有檢舉的回覆。",
+      "deleted": "沒有被刪除的訊息。"
+    },
+    "limitNote": "僅顯示最近 {{count}} 筆。更早的紀錄請在上方選擇藝人查看。",
+    "unblockTitle": "要解除對 {{nickname}} 的封鎖嗎？",
+    "unblockBody": "解除後，這位粉絲可以再次傳送回覆。"
+  },
+  "countries": {
+    "TH": "泰國",
+    "KR": "韓國",
+    "JP": "日本",
+    "TW": "台灣",
+    "HK": "香港",
+    "CN": "中國",
+    "VN": "越南",
+    "SG": "新加坡",
+    "MY": "馬來西亞",
+    "PH": "菲律賓",
+    "ID": "印尼",
+    "US": "美國"
   }
 }

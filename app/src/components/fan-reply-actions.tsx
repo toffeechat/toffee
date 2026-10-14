@@ -37,7 +37,7 @@ export function FanReplyActions({ actorId, messageId, fanUserId, nickname, onQuo
       t('block.action'),
       t('common.cancel'),
     );
-    if (ok) block.mutate(fanUserId, { onSuccess: () => setOpen(false) });
+    if (ok) block.mutate({ fanUserId, messageId }, { onSuccess: () => setOpen(false) });
   };
 
   if (!open) {

@@ -106,8 +106,8 @@
     "languageSystem": "跟随设备语言"
   },
   "console": {
-    "title": "我管理的艺人",
-    "empty": "你还没有负责的艺人。",
+    "title": "旗下艺人",
+    "empty": "还没有旗下艺人。",
     "monitoring": "正在监控 {{name}}",
     "tabs": {
       "monitor": "监控",
@@ -139,7 +139,13 @@
     "deleteBody": "消息会立即从粉丝界面消失且无法恢复，已发送的通知无法撤回。艺人界面会显示\"经纪公司删除的消息\"。",
     "deleteConfirm": "删除",
     "deletedByAgency": "经纪公司删除的消息（粉丝看不到）",
-    "allReplies": "全部回复"
+    "allReplies": "全部回复",
+    "description": "旗下艺人列表。点击可查看发送的消息、粉丝回复和统计。",
+    "tabHint": {
+      "monitor": "查看艺人发给粉丝的消息。如有问题消息，可以代为删除。",
+      "replies": "查看粉丝发来的回复。如有问题回复，可以举报或拉黑该粉丝。",
+      "stats": "查看该艺人的订阅、消息、回复趋势和粉丝分布。"
+    }
   },
   "onboarding": {
     "birthDateTitle": "请填写你的出生日期",
@@ -674,20 +680,139 @@
   },
   "dashboard": {
     "title": "数据看板",
-    "subscribers": "订阅者",
-    "newSubs": "新订阅（最近 {{days}} 天）",
-    "cancellations": "取消（最近 {{days}} 天）",
-    "messages": "发送消息（最近 {{days}} 天）",
-    "replies": "粉丝回复（最近 {{days}} 天）",
-    "countPeople": "{{count}} 人",
-    "countItems": "{{count}} 条",
-    "rowSummary": "订阅者 {{subscribers}} · 新订阅 {{newSubs}} · 回复 {{replies}}",
+    "countPeople": "{{count}}人",
+    "countItems": "{{count}}条",
     "sort": {
       "subscribers": "订阅者最多",
-      "idle": "最久未发送",
+      "idle": "最久未发消息",
       "newSubs": "新订阅最多",
       "replies": "回复最多",
-      "messages": "发送最多"
+      "messages": "发送消息最多",
+      "cancellations": "取消订阅最多",
+      "engagement": "粉丝反应最好"
+    },
+    "description": "一屏查看所有旗下艺人的订阅、消息和粉丝反应。点击排行中的艺人可进入其页面。",
+    "kind": {
+      "ALL": "全部",
+      "SOLO": "艺人",
+      "COUPLE": "CP"
+    },
+    "period": "{{days}}天",
+    "kpi": {
+      "subscribers": "订阅中",
+      "newSubs": "新订阅",
+      "cancellations": "取消订阅",
+      "messages": "发送的消息",
+      "replies": "粉丝回复",
+      "engagement": "每条消息的回复"
+    },
+    "vsPrevious": "与之前{{days}}天相比",
+    "netChange": "期间净增 {{value}} 人",
+    "engagementHint": "每条消息平均收到的回复数",
+    "same": "无变化",
+    "fromZero": "+{{count}}",
+    "trendSubs": "新订阅 · 取消订阅趋势",
+    "trendActivity": "粉丝回复 · 发送消息趋势",
+    "rankings": "艺人排行",
+    "more": "完整排行",
+    "less": "收起",
+    "moreCount": "再显示 {{count}} 项",
+    "fullRanking": "完整排行",
+    "audience": "粉丝分布",
+    "countries": "粉丝国家/地区",
+    "languages": "粉丝语言",
+    "audienceBasis": "基于当前订阅中的 {{count}} 位粉丝 · 订阅多位艺人的粉丝只计一次 · 粉丝较少的国家/地区和语言合并为“其他”",
+    "other": "其他",
+    "unknown": "未知",
+    "deviceLanguage": "设备语言",
+    "noData": "暂无数据",
+    "noCancellations": "这段时间没有取消订阅",
+    "noMessages": "这段时间没有发送消息",
+    "noReplies": "这段时间没有收到回复的消息",
+    "retired": "已停止活动",
+    "daysAgo": "{{count}}天前",
+    "perMessage": "每条 {{value}} 个",
+    "mediaMix": "发送消息类型",
+    "topMessages": "回复最多的消息",
+    "custom": "选择日期",
+    "basisRange": "泰国时间 {{from}} ~ {{to}}（{{days}}天）· 增减与之前{{days}}天比较",
+    "weeklyNote": "时间段超过3个月，按周汇总显示",
+    "asOf": "截至{{date}}",
+    "noRecordShort": "当天无记录",
+    "noRecord": "该日期早于开始每日记录的时间，无法查看订阅数和粉丝分布",
+    "audienceBasisPast": "截至{{date}}的订阅 {{count}} 个 · 订阅多位艺人的粉丝按艺人分别计算 · 粉丝较少的国家/地区和语言合并为“其他”",
+    "todayBasis": "无论选择哪个时间段，都以今天为准",
+    "picker": {
+      "title": "选择日期",
+      "hint": "请依次点击开始日期和结束日期（最多{{days}}天）",
+      "selected": "{{from}} ~ {{to}}（{{days}}天）",
+      "thisMonth": "本月",
+      "lastMonth": "上月",
+      "lastYear": "最近1年",
+      "prevMonth": "上个月",
+      "nextMonth": "下个月",
+      "apply": "应用"
     }
+  },
+  "consoleNav": {
+    "dashboard": "数据看板",
+    "artists": "旗下艺人"
+  },
+  "consoleAlerts": {
+    "newMessage": "{{name}} 发送了新消息",
+    "anArtist": "旗下艺人",
+    "tapToView": "点击查看监控",
+    "unread": "{{count}} 条新消息",
+    "newLabel": "新消息"
+  },
+  "records": {
+    "title": "记录",
+    "description": "集中查看旗下艺人房间中被拉黑的粉丝、被举报的回复和被删除的消息。",
+    "tabs": {
+      "blocks": "已拉黑粉丝",
+      "reports": "举报",
+      "deleted": "已删除消息"
+    },
+    "allArtists": "全部",
+    "by": {
+      "ACTOR": "艺人",
+      "AGENCY_STAFF": "经纪公司",
+      "ADMIN": "Toffee 运营"
+    },
+    "byMe": "我",
+    "blockedMeta": "{{who}}拉黑 · {{date}}",
+    "trigger": "导致拉黑的回复",
+    "noTrigger": "没有记录导致拉黑的回复",
+    "reportedMeta": "{{who}}举报 · {{date}}",
+    "status": {
+      "PENDING": "待处理",
+      "RESOLVED": "已处理",
+      "DISMISSED": "未发现问题"
+    },
+    "deletedBy": "{{who}}删除",
+    "hiddenByAdmin": "Toffee 运营根据政策隐藏",
+    "deletedMeta": "发送 {{sent}} · 删除 {{deleted}}",
+    "empty": {
+      "blocks": "没有被拉黑的粉丝。",
+      "reports": "没有举报的回复。",
+      "deleted": "没有被删除的消息。"
+    },
+    "limitNote": "仅显示最近 {{count}} 条。更早的记录请在上方选择艺人查看。",
+    "unblockTitle": "要解除对 {{nickname}} 的拉黑吗？",
+    "unblockBody": "解除后，该粉丝可以再次发送回复。"
+  },
+  "countries": {
+    "TH": "泰国",
+    "KR": "韩国",
+    "JP": "日本",
+    "TW": "台湾",
+    "HK": "香港",
+    "CN": "中国",
+    "VN": "越南",
+    "SG": "新加坡",
+    "MY": "马来西亚",
+    "PH": "菲律宾",
+    "ID": "印度尼西亚",
+    "US": "美国"
   }
 }
