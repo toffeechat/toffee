@@ -61,6 +61,8 @@ try {
     await page.goto(`${WEB}/login`);
     // 웹은 미리 그린 화면에 앱 코드가 붙는 동안(hydration) 입력값이 초기값으로 되돌아갈 수 있음 — 다 뜬 뒤에 입력하고 확인
     await page.waitForLoadState('networkidle');
+    // 데모 로그인은 역할 버튼이 기본(2026-10-15) — 새 팬 가입을 확인하려고 "이메일로"를 골라 직접 입력
+    await page.getByText('이메일로', { exact: true }).click();
     const email = page.getByPlaceholder('you@example.com');
     // 한 번에 채우면(fill) 앱 쪽 입력 상태가 안 바뀌는 경우가 있어 지우고 한 글자씩 입력
     await email.click();
