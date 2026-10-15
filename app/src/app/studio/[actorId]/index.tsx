@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -21,6 +21,8 @@ import { QuoteBlock } from '@/components/quote-block';
 import { VoiceMessage } from '@/components/voice-message';
 import { ChatBackground } from '@/components/chat-background';
 import { DayDivider, sameDay } from '@/components/day-divider';
+import { AlbumGrid } from '@/components/album-grid';
+import { groupAlbumRows, rowHas } from '@/utils/chat-album';
 import { MessageMenu } from '@/components/message-menu';
 import { copyText } from '@/lib/copy-text';
 import { GreetingsForm, greetingsReady, useGreetings } from '@/components/greetings-form';
@@ -37,6 +39,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { dbToLevel, resample } from '@/lib/waveform';
 import { NAME_TOKEN, showNameToken } from '@/utils/name-token';
+import { handleWebEnterKey } from '@/utils/enter-to-send';
 
 // 음량 측정(metering)을 켜서 녹음 중 음파 모양을 모음 — 보낼 때 48칸으로 줄여서 같이 보냄
 const RECORDING_OPTIONS = { ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true };
@@ -52,6 +55,7 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
 
 // 여러 장 보내기(2026-10-13) — 앨범에서 최대 10개까지 고른 순서대로, 한 장씩 메시지로 보냄(팬 화면은 연달아 온 사진을 격자로 묶음)
 const MAX_BATCH = 10;
+const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
 
 function toAttachments(result: ImagePicker.ImagePickerResult): Attachment[] {
   if (result.canceled) return [];
@@ -68,23 +72,29 @@ function toAttachments(result: ImagePicker.ImagePickerResult): Attachment[] {
 // 휴지통 대신 말풍선을 길게 누르면 복사 · 회수(웹은 시간 아래 ⋯로도)
 function MyMessage({
   message,
+  actorId,
   onOpenReplies,
   onRetract,
   senderName,
   isLatest,
-  menuOpen,
+  menuFor,
   onOpenMenu,
   onCloseMenu,
 }: {
-  message: StudioMessage;
+  /** 연달아 보낸 사진·영상이면 album(시간순) — 줄의 나머지 값(답장 수 등)은 가장 최근 것(2026-10-15, 팬 화면과 같은 격자) */
+  message: StudioMessage & { album?: StudioMessage[] };
+  actorId: string;
   isLatest?: boolean;
   onOpenReplies: () => void;
-  onRetract: () => void;
+  /** 회수할 메시지 id — 격자면 길게 누른 그 한 장 */
+  onRetract: (id: string) => void;
   senderName?: string | null;
-  menuOpen: boolean;
-  onOpenMenu: () => void;
+  /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도) */
+  menuFor: string | null;
+  onOpenMenu: (id: string) => void;
   onCloseMenu: () => void;
 }) {
+  const menuOpen = !!menuFor && rowHas(message, menuFor);
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const hiddenByAdmin = !!message.deletedAt && message.deletedByAdmin;
@@ -106,7 +116,7 @@ function MyMessage({
     <View style={styles.sideRow}>
       {/* 웹(PC)은 마우스로 길게 누르기가 어색해서 시간 옆 ⋯로도 */}
       {Platform.OS === 'web' && hasMenu ? (
-        <IconButton icon={MoreHorizontal} size={15} label={t('chat.messageActions')} color={theme.textTertiary} onPress={onOpenMenu} style={styles.metaButton} />
+        <IconButton icon={MoreHorizontal} size={15} label={t('chat.messageActions')} color={theme.textTertiary} onPress={() => onOpenMenu(message.id)} style={styles.metaButton} />
       ) : null}
       <View style={styles.sideTime}>
         {senderName ? (
@@ -148,12 +158,27 @@ function MyMessage({
           {side}
         </View>
       ) : (
-        <Pressable onLongPress={hasMenu ? onOpenMenu : undefined} delayLongPress={350} accessibilityHint={hasMenu ? t('chat.messageActions') : undefined} style={[styles.column, removed && styles.hidden]}>
-          {isMedia ? (
+        <Pressable onLongPress={hasMenu ? () => onOpenMenu(message.id) : undefined} delayLongPress={350} accessibilityHint={hasMenu ? t('chat.messageActions') : undefined} style={[styles.column, removed && styles.hidden]}>
+          {message.album ? (
+            <View style={styles.bubbleLine}>
+              <AlbumGrid items={message.album} actorId={actorId} onLongPressItem={onOpenMenu} />
+              {side}
+            </View>
+          ) : isMedia ? (
             <View style={styles.bubbleLine}>
               <View style={styles.mediaColumn}>
                 {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
-                <MediaTile id={message.id} url={message.mediaUrl} mediaType={message.mediaType as 'PHOTO' | 'VIDEO'} durationMs={message.mediaDurationMs} thumbnailUrl={message.thumbnailUrl} thumbhash={message.thumbhash} />
+                {/* 사진이 누르기를 먼저 받아서 길게 누르기도 사진에 직접(2026-10-15 — 앱에서 사진 회수가 안 되던 문제), actorId로 전체 화면에서 좌우 넘기기 */}
+                <MediaTile
+                  id={message.id}
+                  url={message.mediaUrl}
+                  mediaType={message.mediaType as 'PHOTO' | 'VIDEO'}
+                  durationMs={message.mediaDurationMs}
+                  thumbnailUrl={message.thumbnailUrl}
+                  thumbhash={message.thumbhash}
+                  actorId={actorId}
+                  onLongPress={hasMenu ? () => onOpenMenu(message.id) : undefined}
+                />
               </View>
               {textBubble ? null : side}
             </View>
@@ -170,11 +195,12 @@ function MyMessage({
         <View style={styles.menuWrap}>
           <MessageMenu
             onClose={onCloseMenu}
+            align="right"
             actions={[
               ...(message.body
                 ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: () => (onCloseMenu(), copyText(bodyText)) }]
                 : []),
-              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract()) },
+              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(menuFor ?? message.id)) },
             ]}
           />
         </View>
@@ -399,7 +425,9 @@ export default function StudioChannelScreen() {
 
   const canSend = !send.isPending && !batchStep && !recorderState.isRecording && (!!draft.trim() || !!attachment);
   // 회수한 메시지도 자리는 남김(2026-10-14) — 팬 화면처럼 "회수한 메시지예요", 운영자가 가렸거나 소속사가 회수한 건 이유와 함께
-  const visible = messages ?? [];
+  // 연달아 보낸 글 없는 사진·영상은 팬 화면처럼 격자 한 칸으로(2026-10-15 — 예전엔 한 장씩 따로 보여서 장마다 "답장 없음"이 붙었음)
+  const visible = useMemo(() => messages ?? [], [messages]);
+  const rows = useMemo(() => groupAlbumRows(visible.map((message) => ({ ...message, retracted: !!message.deletedAt })), sameMinute), [visible]);
 
   // 환영·생일 메시지를 아직 안 썼으면 보내기 화면 대신 이것부터(2026-10-13 사용자 결정 — 서버도 비어 있으면 보내기를 거절).
   // 저장하면 같은 쿼리가 바뀌어서 바로 보내기 화면으로
@@ -426,8 +454,8 @@ export default function StudioChannelScreen() {
           <FlatList
             inverted
             // 내가 지운 메시지는 안 보임(운영자가 가린 건 이유와 함께 보임)
-            data={visible}
-            keyExtractor={(item) => item.id}
+            data={rows}
+            keyExtractor={(item) => (item.album ? `album-${item.album[0].id}` : item.id)}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
@@ -437,18 +465,19 @@ export default function StudioChannelScreen() {
             }
             renderItem={({ item, index }) => {
               // 뒤집힌 목록: index+1이 더 오래된 메시지 — 날이 바뀌면 구분선
-              const older = visible[index + 1];
+              const older = rows[index + 1];
               return (
                 <View>
                   {(!older || !sameDay(older.createdAt, item.createdAt)) && <DayDivider iso={item.createdAt} />}
                   <MyMessage
                     message={item}
+                    actorId={actorId}
                     isLatest={index === 0}
                     senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
                     onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
-                    onRetract={() => void retractMessage(item.id)}
-                    menuOpen={menuFor === item.id}
-                    onOpenMenu={() => setMenuFor(item.id)}
+                    onRetract={(id) => void retractMessage(id)}
+                    menuFor={menuFor}
+                    onOpenMenu={setMenuFor}
                     onCloseMenu={() => setMenuFor(null)}
                   />
                 </View>
@@ -608,6 +637,8 @@ export default function StudioChannelScreen() {
             multiline
             numberOfLines={1}
             maxLength={1000}
+            // PC 웹: Enter 보내기, Shift/Ctrl+Enter 줄바꿈(2026-10-15)
+            onKeyPress={(event) => handleWebEnterKey(event, { value: draft, onChange: setDraft, onSend: () => canSend && handleSend() })}
           />
           <Pressable
             onPress={handleSend}

@@ -27,6 +27,7 @@ import { MediaTile } from '@/components/media-tile';
 import { ChatBackground } from '@/components/chat-background';
 import { DayDivider, sameDay } from '@/components/day-divider';
 import { MessageMenu } from '@/components/message-menu';
+import { AlbumGrid } from '@/components/album-grid';
 import { QuoteBlock } from '@/components/quote-block';
 import { TranslatableText } from '@/components/translatable-text';
 import { VoiceMessage } from '@/components/voice-message';
@@ -40,7 +41,7 @@ import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { confirm } from '@/lib/confirm';
 import { useAcceptReplyRules, useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
-import { albumLayout, groupAlbumRows, rowHas } from '@/utils/chat-album';
+import { groupAlbumRows, rowHas } from '@/utils/chat-album';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 메시지를 따라감
 const AT_BOTTOM_PX = 80;
@@ -322,8 +323,9 @@ export default function ChatRoomScreen() {
     retractReply.mutate(message.id, { onError: (err) => setNotice(err instanceof ApiError ? err.message : t('retract.failed')) });
   };
 
-  // 버블 방식: 팬 답장은 가장 최근 스타 메시지에 붙음 — 구독 후 스타 메시지가 아직 없으면 입력창 대신 안내
-  const canReply = messages.some((message) => message.senderType === 'ARTIST');
+  // 버블 방식: 팬 답장은 가장 최근 스타 메시지에 붙음 — 구독 후 스타 메시지가 아직 없으면 보내기를 막고 안내.
+  // 환영·생일 메시지는 화면에서 만든 것이라 답장 대상이 아님(2026-10-15 — 예전엔 환영 메시지도 세서 "답장 3개까지" 안내가 잘못 뜸)
+  const canReply = messages.some((message) => message.senderType === 'ARTIST' && !message.extra);
   const { data: quota } = useReplyQuota(actorId, canReply);
   const outOfReplies = !!quota && quota.remaining === 0;
 
@@ -515,47 +517,46 @@ export default function ChatRoomScreen() {
             </View>
           </>
         )}
-        {showComposer && !searchOpen &&
-          (!canReply || outOfReplies ? (
-            <View style={[styles.waitingBar, { borderTopColor: theme.border }]}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+        {/* 입력칸은 항상 보이고, 답장할 수 없을 땐(첫 메시지 전·이 메시지 답장 다 씀) 안내 + 입력·보내기만 막음(2026-10-15 사용자 요청 — 예전엔 입력칸이 사라져서 당황스러웠음) */}
+        {showComposer && !searchOpen && (
+          <View style={styles.composer}>
+            {!canReply || outOfReplies ? (
+              <ThemedText type="caption" themeColor="textSecondary" style={styles.quota}>
                 {canReply ? t('chat.noRepliesLeft', { limit: quota?.limit }) : t('chat.replyAfterFirst')}
               </ThemedText>
+            ) : quota ? (
+              <ThemedText type="caption" themeColor="textTertiary" style={styles.quota}>
+                {t('chat.repliesLeft', { count: quota.remaining })}
+              </ThemedText>
+            ) : null}
+            <View style={styles.inputRow}>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                editable={canReply && !outOfReplies}
+                placeholder={t('chat.replyPlaceholder')}
+                placeholderTextColor={theme.textTertiary}
+                style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }, !canReply || outOfReplies ? styles.inputDisabled : null, fontFor(400, i18n.language)]}
+                multiline
+                // 웹 textarea가 기본 두 줄 높이로 커지지 않게
+                numberOfLines={1}
+                maxLength={1000}
+              />
+              <Pressable
+                onPress={() => void handleSend()}
+                disabled={sendReply.isPending || !draft.trim() || !canReply || outOfReplies}
+                accessibilityRole="button"
+                accessibilityLabel={t('chat.send')}
+                style={[styles.sendButton, { backgroundColor: draft.trim() && canReply && !outOfReplies ? theme.tint : theme.backgroundElement }]}>
+                {sendReply.isPending ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Icon as={ArrowUp} size={20} strokeWidth={2.25} color={draft.trim() && canReply && !outOfReplies ? '#ffffff' : theme.textTertiary} />
+                )}
+              </Pressable>
             </View>
-          ) : (
-            <View style={styles.composer}>
-              {quota && (
-                <ThemedText type="caption" themeColor="textTertiary" style={styles.quota}>
-                  {t('chat.repliesLeft', { count: quota.remaining })}
-                </ThemedText>
-              )}
-              <View style={styles.inputRow}>
-                <TextInput
-                  value={draft}
-                  onChangeText={setDraft}
-                  placeholder={t('chat.replyPlaceholder')}
-                  placeholderTextColor={theme.textTertiary}
-                  style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }, fontFor(400, i18n.language)]}
-                  multiline
-                  // 웹 textarea가 기본 두 줄 높이로 커지지 않게
-                  numberOfLines={1}
-                  maxLength={1000}
-                />
-                <Pressable
-                  onPress={() => void handleSend()}
-                  disabled={sendReply.isPending || !draft.trim()}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('chat.send')}
-                  style={[styles.sendButton, { backgroundColor: draft.trim() ? theme.tint : theme.backgroundElement }]}>
-                  {sendReply.isPending ? (
-                    <ActivityIndicator color="#ffffff" size="small" />
-                  ) : (
-                    <Icon as={ArrowUp} size={20} strokeWidth={2.25} color={draft.trim() ? '#ffffff' : theme.textTertiary} />
-                  )}
-                </Pressable>
-              </View>
-            </View>
-          ))}
+          </View>
+        )}
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
@@ -587,41 +588,8 @@ function ReadMarker({ label }: { label: string }) {
   );
 }
 
-const ALBUM_WIDTH = 240;
-const ALBUM_GAP = 2;
 
 /** 연달아 온 사진·영상 격자 — 칸을 누르면 전체 화면(그 방의 사진·영상을 좌우로 넘겨 봄) */
-function AlbumGrid({ items, actorId }: { items: ChatMessage[]; actorId: string }) {
-  const lines = albumLayout(items.length);
-  // 줄마다 시작 위치(앞 줄들 칸 수의 합)
-  const starts = lines.map((_, line) => lines.slice(0, line).reduce((sum, n) => sum + n, 0));
-  return (
-    <View style={styles.album}>
-      {lines.map((columns, line) => {
-        const slice = items.slice(starts[line], starts[line] + columns);
-        const cell = (ALBUM_WIDTH - ALBUM_GAP * (columns - 1)) / columns;
-        return (
-          <View key={line} style={styles.albumLine}>
-            {slice.map((item) => (
-              <MediaTile
-                key={item.id}
-                id={item.id}
-                url={item.mediaUrl}
-                mediaType={item.mediaType as 'PHOTO' | 'VIDEO'}
-                durationMs={item.mediaDurationMs}
-                thumbnailUrl={item.thumbnailUrl}
-                thumbhash={item.thumbhash}
-                actorId={actorId}
-                size={{ width: cell, height: columns === 1 ? 280 : cell }}
-              />
-            ))}
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 function MessageRow({
   message,
   avatarUri,
@@ -688,7 +656,7 @@ function MessageRow({
           </ThemedText>
         </View>
       ) : message.album ? (
-        <AlbumGrid items={message.album} actorId={actorId} />
+        <AlbumGrid items={message.album} actorId={actorId} onLongPressItem={hasMenu ? onOpenMenu : undefined} />
       ) : isMedia ? (
         <View style={styles.mediaGroup}>
           {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" mine={message.quotedMe} artistName={actorName ?? ''} />}
@@ -700,6 +668,7 @@ function MessageRow({
             thumbnailUrl={message.thumbnailUrl}
             thumbhash={message.thumbhash}
             actorId={actorId}
+            onLongPress={hasMenu ? onOpenMenu : undefined}
           />
           {message.body ? (
             <View style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
@@ -727,7 +696,7 @@ function MessageRow({
               {message.extra === 'welcome' ? t('chat.welcomeLabel') : t('chat.birthdayLabel')}
             </ThemedText>
           ) : null}
-          {message.body ? message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} /> : <ThemedText>{message.body}</ThemedText> : null}
+          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome /> : message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} /> : <ThemedText>{message.body}</ThemedText> : null}
         </View>
       )}
     </Pressable>
@@ -763,6 +732,7 @@ function MessageRow({
           {menuOpen && (
             <MessageMenu
               onClose={onCloseMenu}
+              align={isArtist ? 'left' : 'right'}
               actions={[
                 ...(message.body ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: onCopy }] : []),
                 ...(canRetract ? [{ key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: onRetract }] : []),
@@ -807,7 +777,8 @@ const styles = StyleSheet.create({
   searchCount: { flexShrink: 0, marginLeft: Spacing.one },
   searchInput: { flex: 1, minWidth: 0, width: '100%', fontSize: 15, paddingVertical: Spacing.two, outlineStyle: 'none' } as object,
   listArea: { flex: 1 },
-  list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three },
+  // 뒤집힌 목록이라 flex-end = 화면 위쪽 — 메시지가 적으면(환영 메시지만 있을 때 등) 위에서부터 보이고(2026-10-15), 화면을 넘으면 맨 아래 최신부터
+  list: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, flexGrow: 1, justifyContent: 'flex-end' },
   // 뒤집힌 목록 안의 빈 화면은 위아래가 뒤집혀 보이지 않게
   flip: { transform: [{ scaleY: -1 }] },
   pageLoading: { marginVertical: Spacing.three },
@@ -847,8 +818,6 @@ const styles = StyleSheet.create({
   },
   newPillText: { flex: 1, minWidth: 0 },
   newPillCount: { borderRadius: Radius.pill, paddingHorizontal: 6, overflow: 'hidden', fontVariant: ['tabular-nums'] },
-  album: { width: ALBUM_WIDTH, gap: ALBUM_GAP, borderRadius: Radius.lg, overflow: 'hidden' },
-  albumLine: { flexDirection: 'row', gap: ALBUM_GAP },
   readMarker: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginVertical: Spacing.three },
   readMarkerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   toast: {
@@ -860,6 +829,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
+  inputDisabled: { opacity: 0.5 },
   composer: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: Spacing.two, gap: 4 },
   quota: { paddingHorizontal: Spacing.two },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two },
@@ -875,6 +845,4 @@ const styles = StyleSheet.create({
     outlineStyle: 'none',
   } as object,
   sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  waitingBar: { padding: Spacing.three, borderTopWidth: StyleSheet.hairlineWidth },
-  center: { textAlign: 'center' },
 });

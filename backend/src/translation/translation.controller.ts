@@ -17,6 +17,13 @@ export class TranslationController {
 
   // 번역 버튼 — 비용이 드는 호출이라 사람당 1분에 30번까지
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Post('extras/welcome/translate')
+  @HttpCode(HttpStatus.OK)
+  translateWelcome(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string, @Body() dto: TranslateMessageDto) {
+    return this.translation.translateWelcome(user.id, actorId, dto.targetLanguage);
+  }
+
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post(':messageId/translate')
   @HttpCode(HttpStatus.OK)
   translate(

@@ -21,6 +21,7 @@ import { CoupleCard } from '@/components/couple-card';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { formatPrice } from '@/utils/price';
 import { useTheme } from '@/hooks/use-theme';
+import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
 // 등록 후 이 기간 안이면 "NEW"
@@ -87,15 +88,16 @@ export default function DiscoverScreen() {
   const open = (actor: Actor) => router.push(`/actor/${actor.id}`);
   const contentWidth = Math.min(width, MaxContentWidth);
   const cardWidth = (contentWidth - Spacing.four * 2 - Spacing.three) / 2;
-  const refreshing = newest.isRefetching || female.isRefetching || male.isRefetching || couples.isRefetching;
-  const refresh = () => {
-    void newest.refetch();
-    void female.refetch();
-    void male.refetch();
-    void couples.refetch();
-    if (view.kind === 'agency') void agencyList.refetch();
-    if (searching) void search.refetch();
-  };
+  const { refreshing, onRefresh: refresh } = useManualRefresh(() =>
+    Promise.all([
+      newest.refetch(),
+      female.refetch(),
+      male.refetch(),
+      couples.refetch(),
+      ...(view.kind === 'agency' ? [agencyList.refetch()] : []),
+      ...(searching ? [search.refetch()] : []),
+    ]),
+  );
 
   const personRow = (rows: Actor[] | undefined, title: string, next: DiscoverView) =>
     (rows?.length ?? 0) > 0 ? (

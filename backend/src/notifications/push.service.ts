@@ -24,20 +24,24 @@ const FCM_BATCH_SIZE = 500;
 export interface PushDeviceTarget {
   token: string;
   user: PushRecipient;
+  /** 앱 아이콘 숫자(안 읽은 아티스트 메시지 합계) — 팬 알림만. 없으면 아이콘 숫자는 그대로 둠 */
+  badge?: number;
 }
 
 /** 기기별 메시지 만들기 — 받는 사람마다 언어·이름이 달라서 기기마다 따로 조립(순수 함수, 테스트용으로 분리) */
 export function buildPushMessages(devices: PushDeviceTarget[], compose: ComposePush, data?: Record<string, string>): Message[] {
-  return devices.map(({ token, user }) => {
+  return devices.map(({ token, user, badge }) => {
     const { title, body } = compose(user);
+    const hasBadge = badge !== undefined;
     return {
       token,
       notification: { title, body },
       data,
-      android: { priority: 'high', notification: { channelId: 'messages' } },
+      android: { priority: 'high', notification: { channelId: 'messages', ...(hasBadge ? { notificationCount: badge } : {}) } },
       // mutable-content: 아이폰이 알림을 띄우기 전에 앱의 알림 확장(ToffeeNotificationService)이 data의 senderName·senderImage로
       // 카톡처럼 보낸 사람 사진이 있는 "대화 알림"으로 바꿈(2026-10-13). 확장이 없거나 실패하면 원래 알림 그대로
-      apns: { payload: { aps: { sound: 'default', 'mutable-content': 1 } } },
+      // badge: 앱을 열지 않아도 아이콘 숫자가 바뀌게(2026-10-15 실기기 — 예전엔 앱이 인박스를 열 때만 숫자를 정해서 앱을 열기 전엔 안 보였음)
+      apns: { payload: { aps: { sound: 'default', 'mutable-content': 1, ...(hasBadge ? { badge } : {}) } } },
     };
   });
 }
@@ -54,6 +58,12 @@ export function chunk<T>(items: T[], size: number): T[][] {
  * (환불 기준 경고는 놓치면 안 돼서 이 설정과 상관없이 감)
  */
 export type PushSetting = 'notifyArtistMessages' | 'notifyIdleAlerts';
+
+export interface SendOptions {
+  setting?: PushSetting;
+  /** 팬 알림 — 받는 사람마다 안 읽은 아티스트 메시지 합계를 앱 아이콘 숫자로 같이 보냄(인박스 unreadCount와 같은 기준) */
+  withUnreadBadge?: boolean;
+}
 
 @Injectable()
 export class PushService implements OnModuleInit {
@@ -76,8 +86,8 @@ export class PushService implements OnModuleInit {
   }
 
   /** 한 사람의 모든 기기로 */
-  sendToUser(userId: string, compose: ComposePush, data?: Record<string, string>): Promise<void> {
-    return this.sendToUsers([userId], compose, data);
+  sendToUser(userId: string, compose: ComposePush, data?: Record<string, string>, options?: SendOptions): Promise<void> {
+    return this.sendToUsers([userId], compose, data, options);
   }
 
   /**
@@ -85,7 +95,8 @@ export class PushService implements OnModuleInit {
    * (구독자가 수천 명이어도 사람마다 따로 요청하지 않게). FCM이 죽었다고 알려준 토큰은 바로 삭제.
    * 실패는 로그만 남기고 호출한 쪽 흐름을 막지 않음(best-effort).
    */
-  async sendToUsers(userIds: string[], compose: ComposePush, data?: Record<string, string>, setting?: PushSetting): Promise<void> {
+  async sendToUsers(userIds: string[], compose: ComposePush, data?: Record<string, string>, options: SendOptions = {}): Promise<void> {
+    const { setting } = options;
     if (!this.app || userIds.length === 0) return;
     // 정지·영구차단·탈퇴한 계정엔 보내지 않음(예전엔 구독만 보고 보내서 제재 중인 팬도 알림을 계속 받았음, 2026-09-28 점검).
     // 정지는 기간이 지났으면 다시 받음(로그인 판단과 같은 기준)
@@ -100,15 +111,17 @@ export class PushService implements OnModuleInit {
           ...(setting ? { [setting]: true } : {}),
         },
       },
-      select: { token: true, user: { select: { locale: true, displayName: true, nickname: true } } },
+      select: { token: true, userId: true, user: { select: { locale: true, displayName: true, nickname: true } } },
     });
     if (devices.length === 0) return;
 
+    const badges = options.withUnreadBadge ? await this.unreadBadges([...new Set(devices.map((device) => device.userId))]) : null;
     const messaging = getMessaging(this.app);
     const deadTokens: string[] = [];
-    const targets = devices.map(({ token, user }) => ({
+    const targets = devices.map(({ token, userId, user }) => ({
       token,
       user: { locale: user.locale, displayName: user.nickname ?? user.displayName },
+      ...(badges ? { badge: badges.get(userId) ?? 0 } : {}),
     }));
     for (const batch of chunk(buildPushMessages(targets, compose, data), FCM_BATCH_SIZE)) {
       try {
@@ -131,6 +144,30 @@ export class PushService implements OnModuleInit {
     if (deadTokens.length > 0) await this.prisma.pushDevice.deleteMany({ where: { token: { in: deadTokens } } });
   }
 
+  /**
+   * 사람마다 안 읽은 아티스트 메시지 합계 — 인박스(SubscriptionsService.listMine)의 unreadCount를 모든 방에 더한 것과 같은 기준
+   * (구독 중인 방, 구독 시작·마지막으로 본 시각 이후, 지운 메시지 제외). 구독자가 많아도 한 번의 쿼리로
+   */
+  private async unreadBadges(userIds: string[]): Promise<Map<string, number>> {
+    try {
+      const rows = await this.prisma.$queryRaw<{ userId: string; count: number }[]>`
+        SELECT s."userId", COUNT(m."id")::int AS "count"
+        FROM "Subscription" s
+        JOIN "Message" m
+          ON m."actorId" = s."actorId"
+         AND m."senderType" = 'ARTIST'
+         AND m."deletedAt" IS NULL
+         AND m."createdAt" > GREATEST(s."startedAt", COALESCE(s."lastReadAt", s."startedAt"))
+        WHERE s."userId" = ANY(${userIds}::text[]) AND s."cancelledAt" IS NULL
+        GROUP BY s."userId"`;
+      return new Map(rows.map((row) => [row.userId, Number(row.count)]));
+    } catch (error) {
+      // 숫자를 못 구해도 알림은 보냄(아이콘 숫자만 빠짐)
+      this.logger.warn(`안 읽은 수 계산 실패: ${error instanceof Error ? error.message : String(error)}`);
+      return new Map();
+    }
+  }
+
   // 배우가 새 메시지를 보낼 때 현재 소속사 스태프 전원에게 알림(모니터링용) — best-effort
   async notifyActorStaff(actorId: string, compose: ComposePush, data?: Record<string, string>, setting?: PushSetting): Promise<void> {
     // 커플방은 두 멤버 배우의 소속사 직원 모두(각 소속사는 자기 배우가 든 커플방을 모니터링, 2026-09-29)
@@ -148,7 +185,7 @@ export class PushService implements OnModuleInit {
       staff.map((user) => user.id),
       compose,
       data,
-      setting,
+      { setting },
     );
   }
 }

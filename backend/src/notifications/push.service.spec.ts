@@ -40,6 +40,20 @@ describe('PushService', () => {
     expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
   });
 
+  it('안 읽은 수가 있으면 아이폰·안드로이드 앱 아이콘 숫자로, 없으면 숫자를 건드리지 않음(2026-10-15)', () => {
+    const [withBadge, without] = buildPushMessages(
+      [
+        { token: 'a', user: { locale: 'ko', displayName: '민지' }, badge: 3 },
+        { token: 'b', user: { locale: 'ko', displayName: '수아' } },
+      ],
+      () => ({ title: 'T', body: 'B' }),
+    ) as unknown as { apns: { payload: { aps: Record<string, unknown> } }; android: { notification: Record<string, unknown> } }[];
+    expect(withBadge.apns.payload.aps.badge).toBe(3);
+    expect(withBadge.android.notification.notificationCount).toBe(3);
+    expect(without.apns.payload.aps).not.toHaveProperty('badge');
+    expect(without.android.notification).not.toHaveProperty('notificationCount');
+  });
+
   it('1,200개 기기는 500개씩 3번에 나눠 보내고, 죽은 토큰만 지운다', async () => {
     const { service, prisma } = setup(1200);
     sendEach.mockImplementation((batch: unknown[]) =>

@@ -125,7 +125,7 @@ export class IdleReminderService {
           return { title: t.idleActorTitle(fans), body: t.idleActorBody(days, roomName) };
         },
         data,
-        'notifyIdleAlerts',
+        { setting: 'notifyIdleAlerts' },
       );
       if (stage >= rule.escalateDays) {
         await this.push.notifyActorStaff(

@@ -62,6 +62,13 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   await prisma.adminAction.deleteMany();
   await prisma.actorFanBlock.deleteMany();
   await prisma.subscriptionEvent.deleteMany();
+  // 고정 ID 데모 계정의 푸시 기기는 초기화 뒤에 그대로 되살림(2026-10-15 실기기) — 데모 계정은 초기화해도 로그인이 유지돼서
+  // 앱이 기기를 다시 등록하지 않음(앱을 완전히 껐다 켜기 전까지) → 그동안 알림·아이콘 숫자가 조용히 안 오던 문제
+  const demoUserIds: string[] = Object.values(DEMO_IDS);
+  const keptDevices = await prisma.pushDevice.findMany({
+    where: { userId: { in: demoUserIds } },
+    select: { userId: true, token: true, platform: true },
+  });
   await prisma.pushDevice.deleteMany();
   await prisma.parentalConsent.deleteMany();
   await prisma.report.deleteMany();
@@ -376,6 +383,11 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   await seedStatsCrowd(prisma, { staffId: staff.id, caramelId: caramel.id, nougatId: nougat.id });
   await seedDailyStats(prisma);
+
+  // 데모 계정이 다시 만들어진 뒤 푸시 기기 되살리기(위에서 기억해 둔 것 — 소셜 로그인 계정 것은 계정과 함께 사라짐)
+  const recreated = new Set((await prisma.user.findMany({ where: { id: { in: keptDevices.map((device) => device.userId) } }, select: { id: true } })).map((user) => user.id));
+  const restorable = keptDevices.filter((device) => recreated.has(device.userId));
+  if (restorable.length > 0) await prisma.pushDevice.createMany({ data: restorable, skipDuplicates: true });
 
   console.log('시드 완료:', {
     actors: [caramel.chatDisplayName, nougat.chatDisplayName],

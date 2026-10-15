@@ -4,17 +4,21 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, type NativeScrollEv
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { CornerUpLeft } from 'lucide-react-native';
 
 import { Avatar } from '@/components/ui/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
 import { SideTime } from '@/components/side-time';
+import { MediaTile } from '@/components/media-tile';
+import { VoiceMessage } from '@/components/voice-message';
+import { IconButton } from '@/components/ui/icon-button';
 import { DayDivider, sameDay } from '@/components/day-divider';
 import type { FanReply } from '@/hooks/use-console';
 import { useMessageReplies, useStudioMessages } from '@/hooks/use-studio';
 import { useTheme } from '@/hooks/use-theme';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { showNameToken } from '@/utils/name-token';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 답장이 오면 따라 내려감
@@ -73,16 +77,31 @@ export default function MessageRepliesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* 위에 고정된 원래 메시지 — 토피룸 말풍선과 같은 모양(내 메시지라 오른쪽, 시간은 왼쪽 옆, 2026-10-15 사용자 요청 — 예전엔 연한 상자에 글만) */}
       {original && (
-        <ThemedView type="tintSoft" style={styles.original}>
-          {original.mediaType !== 'TEXT' && (
-            <ThemedText type="smallBold">{t(`studio.media.${original.mediaType}`)}</ThemedText>
-          )}
-          {original.body && (
-            <ThemedText type="small" numberOfLines={3}>
-              {showNameToken(original.body, t('studio.fanNickname'))}
-            </ThemedText>
-          )}
+        <ThemedView style={[styles.original, { borderBottomColor: theme.border }]}>
+          <ThemedView style={styles.originalLine}>
+            {(original.mediaType === 'PHOTO' || original.mediaType === 'VIDEO') && (
+              <MediaTile
+                id={original.id}
+                url={original.mediaUrl}
+                mediaType={original.mediaType}
+                durationMs={original.mediaDurationMs}
+                thumbnailUrl={original.thumbnailUrl}
+                thumbhash={original.thumbhash}
+                size={{ width: 96, height: 96, radius: Radius.md }}
+              />
+            )}
+            {original.body || original.mediaType === 'AUDIO' ? (
+              <ThemedView style={[styles.originalBubble, { backgroundColor: theme.tintSoft }]}>
+                {original.mediaType === 'AUDIO' ? (
+                  <VoiceMessage id={original.id} url={original.mediaUrl} durationMs={original.mediaDurationMs} waveform={original.waveform} tone="dark" />
+                ) : null}
+                {original.body ? <ThemedText numberOfLines={4}>{showNameToken(original.body, t('studio.fanNickname'))}</ThemedText> : null}
+              </ThemedView>
+            ) : null}
+            <SideTime at={original.createdAt} />
+          </ThemedView>
           <Pressable onPress={() => router.push(`/blocks/${actorId}`)} hitSlop={8} style={styles.blocksLink}>
             <ThemedText type="small" themeColor="textSecondary">
               {t('block.manage')} ›
@@ -110,7 +129,7 @@ export default function MessageRepliesScreen() {
             onEndReachedThreshold={0.3}
             ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : null}
             ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
+              <ThemedText type="small" themeColor="textSecondary" style={[styles.empty, styles.flip]}>
                 {t('studio.repliesEmpty')}
               </ThemedText>
             }
@@ -195,6 +214,10 @@ function ReplyBubble({
             </ThemedView>
             <SideTime at={item.createdAt} />
           </Pressable>
+          {/* 바로 답장하기 화살표(2026-10-15 사용자 요청 — 예전엔 길게 누르거나 ⋯ 메뉴 안에만 있었음) */}
+          {item.fanUser && !item.retracted && item.body && !menuOpen ? (
+            <IconButton icon={CornerUpLeft} size={18} label={t('quote.action')} color={theme.tint} onPress={onQuote} style={styles.quickReply} />
+          ) : null}
           {/* 시간 옆 ⋯ — 펼치면 복사·답장하기·신고·차단(좁으면 다음 줄로) */}
           {item.fanUser && (
             <FanReplyActions
@@ -203,7 +226,6 @@ function ReplyBubble({
               fanUserId={item.fanUser.id}
               nickname={item.fanUser.nickname ?? ''}
               body={item.retracted ? null : item.body}
-              onQuote={onQuote}
               open={menuOpen}
               onOpenChange={onMenuChange}
             />
@@ -216,10 +238,15 @@ function ReplyBubble({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  original: { margin: Spacing.three, marginBottom: 0, borderRadius: 14, padding: Spacing.three, gap: 4 },
+  original: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, gap: Spacing.one, borderBottomWidth: StyleSheet.hairlineWidth },
+  originalLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, backgroundColor: 'transparent' },
+  originalBubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6, flexShrink: 1, maxWidth: '80%' },
   loading: { marginTop: Spacing.six },
   listArea: { flex: 1 },
-  list: { padding: Spacing.three, gap: Spacing.two },
+  // 뒤집힌 목록이라 flex-end = 화면 위쪽 — 답장이 적으면 원래 메시지 바로 아래부터 쌓이고(2026-10-15 사용자 요청, 예전엔 맨 아래에 붙음),
+  // 화면을 넘으면 맨 아래(최신)를 보여 주며 새 답장을 따라 내려감
+  list: { padding: Spacing.three, gap: Spacing.two, flexGrow: 1, justifyContent: 'flex-end' },
+  flip: { transform: [{ scaleY: -1 }] },
   empty: { textAlign: 'center', marginTop: Spacing.four },
   blocksLink: { alignSelf: 'flex-end' },
   fanRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two, backgroundColor: 'transparent' },
@@ -227,6 +254,7 @@ const styles = StyleSheet.create({
   bubbleLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: Spacing.two, rowGap: Spacing.one, backgroundColor: 'transparent' },
   bubbleWithTime: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 6, flexShrink: 1, maxWidth: '88%', backgroundColor: 'transparent' },
   bubble: { borderRadius: 16, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexShrink: 1 },
+  quickReply: { width: 28, height: 28 },
   retracted: { borderWidth: StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
   transparent: { backgroundColor: 'transparent' },
   newPill: {

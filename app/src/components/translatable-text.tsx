@@ -5,7 +5,7 @@ import { Languages } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
-import { useMessageTranslation } from '@/hooks/use-messages';
+import { useMessageTranslation, useWelcomeTranslation } from '@/hooks/use-messages';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
 import { needsTranslation } from '@/utils/detect-script';
@@ -15,12 +15,27 @@ import { Spacing } from '@/constants/theme';
  * 말풍선 글 + 번역(2026-09-29) — 글이 지금 앱 언어와 다른 글자로 쓰였으면 아래에 "번역 보기". 누르면 번역이 원문 아래에 붙고, 다시 누르면
  * 접힘(원문은 항상 보임 — 번역이 틀릴 수 있어서). 팬 화면의 스타 메시지, 스타 화면의 팬 답장에 씀.
  */
-export function TranslatableText({ actorId, messageId, text, display }: { actorId: string; messageId: string; text: string; display?: string }) {
+export function TranslatableText({
+  actorId,
+  messageId,
+  text,
+  display,
+  welcome,
+}: {
+  actorId: string;
+  messageId: string;
+  text: string;
+  display?: string;
+  /** 환영 메시지(메시지 행이 아님) — 따로 번역(2026-10-15) */
+  welcome?: boolean;
+}) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const translatable = needsTranslation(text, i18n.language);
-  const translation = useMessageTranslation(actorId, messageId, i18n.language, translatable && open);
+  const messageTranslation = useMessageTranslation(actorId, messageId, i18n.language, !welcome && translatable && open);
+  const welcomeTranslation = useWelcomeTranslation(actorId, i18n.language, !!welcome && translatable && open);
+  const translation = welcome ? welcomeTranslation : messageTranslation;
 
   return (
     <View>

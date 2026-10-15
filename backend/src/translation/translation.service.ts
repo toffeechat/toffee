@@ -17,6 +17,7 @@ import {
 
 const NAME_PLACEHOLDER = '{{name}}';
 const DEFAULT_MODEL = 'claude-opus-5-5';
+const WELCOME_CACHE_SIZE = 500;
 
 /**
  * 메시지 번역(2026-09-29, 사용자 결정: 글로벌 서비스라 필수). 누가 번역 버튼을 누를 때만(지연 번역), 메시지 × 언어마다 한 번 번역해서
@@ -30,6 +31,8 @@ const DEFAULT_MODEL = 'claude-opus-5-5';
 export class TranslationService {
   private readonly logger = new Logger(TranslationService.name);
   private readonly provider: TranslationProvider | null;
+  // 환영 메시지 번역 기억(방 × 언어 × 원문) — 오래된 것부터 버림
+  private readonly welcomeCache = new Map<string, string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -93,6 +96,36 @@ export class TranslationService {
       text = text.replaceAll(NAME_PLACEHOLDER, requester.nickname ?? requester.displayName ?? '');
     }
     return { messageId: message.id, language: target, text };
+  }
+
+  /**
+   * 환영 메시지 번역(2026-10-15 실기기 — 환영 메시지만 "번역 보기"가 없었음). 환영 메시지는 메시지 행이 아니라(구독 직후 화면에서 만들어 보여 줌)
+   * MessageTranslation에 못 넣어서 {{name}}이 든 원문 × 언어로 서버 메모리에 잠깐 기억(같은 방 팬들이 같은 언어로 누르면 한 번만 번역).
+   * 아티스트가 문구를 바꾸면 원문이 달라져서 자연히 새로 번역됨
+   */
+  async translateWelcome(requesterId: string, actorId: string, target: SupportedLocale) {
+    if (!this.provider) throw new ServiceUnavailableException(appError('TRANSLATION_UNAVAILABLE'));
+    await ensureActiveSubscription(this.prisma, requesterId, actorId);
+    const [actor, requester] = await Promise.all([
+      this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { welcomeMessage: true, gender: true } }),
+      this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { nickname: true, displayName: true } }),
+    ]);
+    if (!actor.welcomeMessage) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
+    const key = `${actorId}\u0000${target}\u0000${actor.welcomeMessage}`;
+    let text = this.welcomeCache.get(key);
+    if (text === undefined) {
+      try {
+        text = await this.provider.translate(actor.welcomeMessage, target, { role: 'artist', gender: actor.gender ?? null });
+      } catch (error) {
+        this.logger.warn(`환영 메시지 번역 실패(${this.provider.name}): ${String(error)}`);
+        throw new ServiceUnavailableException(appError('TRANSLATION_FAILED'));
+      }
+      if (this.provider.cacheable) {
+        if (this.welcomeCache.size >= WELCOME_CACHE_SIZE) this.welcomeCache.delete(this.welcomeCache.keys().next().value!);
+        this.welcomeCache.set(key, text);
+      }
+    }
+    return { language: target, text: text.replaceAll(NAME_PLACEHOLDER, requester.nickname ?? requester.displayName ?? '') };
   }
 
   private async cachedOrTranslate(messageId: string, body: string, target: SupportedLocale, speaker: TranslationSpeaker): Promise<string> {

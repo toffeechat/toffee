@@ -22,11 +22,11 @@ export interface MessageAction {
  * 말풍선을 길게 누르면 그 아래 펼쳐지는 메뉴(2026-10-14 — 팬·아티스트·소속사 공통, 카톡처럼): 복사 · 회수(내 메시지) · 신고·차단(남의 메시지).
  * 예전엔 아티스트·소속사 화면에 휴지통 아이콘이 말풍선 밑에 따로 있어서 "답장 삭제"처럼 보였음
  */
-export function MessageMenu({ actions, onClose }: { actions: MessageAction[]; onClose: () => void }) {
+export function MessageMenu({ actions, onClose, align = 'left' }: { actions: MessageAction[]; onClose: () => void; align?: 'left' | 'right' }) {
   const theme = useTheme();
   const { t } = useTranslation();
   return (
-    <View style={[styles.menu, { backgroundColor: theme.background, borderColor: theme.border }]}>
+    <View style={[styles.menu, align === 'right' ? styles.right : styles.left, { backgroundColor: theme.background, borderColor: theme.border }]}>
       {actions.map((action) => {
         const color = action.danger ? theme.danger : action.accent ? theme.tint : theme.text;
         return (
@@ -44,15 +44,18 @@ export function MessageMenu({ actions, onClose }: { actions: MessageAction[]; on
 }
 
 const styles = StyleSheet.create({
+  // 한 줄로(2026-10-15 실기기 — 짧은 말풍선 밑에선 폭이 좁아 "복사 회수 / X"처럼 줄이 바뀌었음). 줄바꿈 없이 내용 폭만큼 넓어짐
   menu: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    flexShrink: 0,
     alignItems: 'center',
-    alignSelf: 'flex-start',
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: Radius.md,
     paddingLeft: Spacing.three,
   },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: Spacing.two, paddingRight: Spacing.three },
+  left: { alignSelf: 'flex-start' },
+  right: { alignSelf: 'flex-end' },
+  item: { flexDirection: 'row', flexShrink: 0, alignItems: 'center', gap: 6, paddingVertical: Spacing.two, paddingRight: Spacing.three },
   close: { width: 36, height: 36 },
 });

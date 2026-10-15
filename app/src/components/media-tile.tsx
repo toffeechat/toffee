@@ -20,13 +20,15 @@ interface Props {
   actorId?: string;
   /** 모아보기 격자처럼 크기를 바깥에서 정할 때 */
   size?: { width: number; height: number; radius?: number };
+  /** 길게 누르기(복사·회수·신고 메뉴) — 사진이 누르기를 먼저 받아서 바깥 말풍선의 길게 누르기가 앱에서 안 먹던 문제(2026-10-15) */
+  onLongPress?: () => void;
 }
 
 /**
  * 말풍선 안의 사진/영상 — 누르면 전체 화면(확대·넘겨보기·저장). 영상은 첫 장면 사진(thumbnailUrl) 위에 ▶ + 길이 —
  * 썸네일이 없으면(예전 메시지, 캡처 실패) 어두운 타일로. 사진은 받는 동안 흐린 미리보기(thumbhash)를 먼저 그림.
  */
-export function MediaTile({ id, url, mediaType, durationMs, thumbnailUrl, thumbhash, actorId, size }: Props) {
+export function MediaTile({ id, url, mediaType, durationMs, thumbnailUrl, thumbhash, actorId, size, onLongPress }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const placeholder = thumbhash ? { thumbhash } : undefined;
@@ -35,7 +37,7 @@ export function MediaTile({ id, url, mediaType, durationMs, thumbnailUrl, thumbh
   };
   const box = size ? { width: size.width, height: size.height, borderRadius: size.radius ?? 0 } : undefined;
   return (
-    <Pressable onPress={open} disabled={!url} accessibilityRole="imagebutton" accessibilityLabel={t('media.open')}>
+    <Pressable onPress={open} onLongPress={onLongPress} delayLongPress={350} disabled={!url && !onLongPress} accessibilityRole="imagebutton" accessibilityLabel={t('media.open')}>
       {mediaType === 'PHOTO' ? (
         <Image source={{ uri: url ?? undefined }} placeholder={placeholder} style={[styles.photo, box]} contentFit="cover" transition={200} />
       ) : (
