@@ -1000,8 +1000,10 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
   아이콘 배경 `#F3EFFD`), Expo 템플릿의 파란 스플래시 애니메이션(`animated-icon`)은 `splash-overlay`(네이티브 스플래시와
   같은 화면 → 250ms 페이드)로 교체.
   **EAS 연결(2026-10-01)**: `owner: 'toffeechat-team'`(Expo 조직 — 개인 계정 `toffeechat`이 아니라 조직 소유), `extra.eas.projectId`
-  `994e5a33-…`. 운영·개발 변형이 같은 EAS 프로젝트(slug `toffee`)를 쓰고 빌드 프로필로만 나뉨. `expo-updates`는 아직 없음
-  (OTA 쓸 때 `updates.url = https://u.expo.dev/<projectId>` 추가).
+  `994e5a33-…`. 운영·개발 변형이 같은 EAS 프로젝트(slug `toffee`)를 쓰고 빌드 프로필로만 나뉨. **OTA(2026-10-15)**: `expo-updates` +
+  `updates.url = https://u.expo.dev/<projectId>`, eas.json `preview`·`production`에 `channel`(프로필 이름과 같음), `runtimeVersion: appVersion`.
+  내려보내기는 `npm run ota -- <프로필> "메시지"`(`app/scripts/ota.mjs` — eas update는 빌드 프로필 env를 안 읽어서 스크립트가 넣어 줌). 절차는
+  `device-build.md` 7번.
   **실기기 빌드(2026-10-02)**: 절차는 `device-build.md`. `preview` = 내부 배포 + 데모 서버 + 입장 코드 로그인, Sentry 소스맵 업로드는
   `SENTRY_DISABLE_AUTO_UPLOAD=true`(토큰 넣으면 제거). 카카오 플러그인은 `ios.handleKakaoOpenUrl`·`android.authCodeHandlerActivity`를 꼭
   넘겨야 함(안 넘기면 키 확인만 하고 URL scheme·AppDelegate·Activity를 안 넣음). 네이티브 설정은 리눅스에서도

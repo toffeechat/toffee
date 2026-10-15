@@ -42,6 +42,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.3",
+    "expo-updates": "~57.0.26",
     "expo-video": "~57.0.3",
     "expo-video-thumbnails": "~57.0.0",
     "expo-web-browser": "~57.0.2",
@@ -76,7 +77,8 @@
     "build:web": "expo export -p web",
     "lint": "expo lint",
     "test": "vitest run",
-    "e2e": "node e2e/run.mjs"
+    "e2e": "node e2e/run.mjs",
+    "ota": "node scripts/ota.mjs"
   },
   "private": true
 }
