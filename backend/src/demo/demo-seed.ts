@@ -25,7 +25,10 @@ export const DEMO_IDS = {
   cookie: demoId(16),
   choco: demoId(17),
   sweetAgency: demoId(3),
-  pairBundle: demoId(21),
+  // CP 묶음 3종(2026-10-15 사용자 결정 — A+AB / B+AB / 전체, CP 없는 A+B 묶음은 뺌)
+  caramelCpBundle: demoId(21),
+  macaronCpBundle: demoId(22),
+  cpAllBundle: demoId(23),
   staff: demoId(101),
   formerStaff: demoId(102),
   admin: demoId(103),
@@ -223,7 +226,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: { selfUser: { connect: { email: 'caramel-self@toffee.demo' } } },
   });
 
-  // 팬 2명 — fan1은 caramel만, fan2는 둘 다 구독(CP 할인 시나리오). 가입 절차(생년월일)까지 마친 성인 팬으로 —
+  // 팬 2명 — fan1은 caramel만, fan2는 CP 전체 묶음(캐러멜·마카롱·CP방) + 누가 개인 구독. 가입 절차(생년월일)까지 마친 성인 팬으로 —
   // 생년월일이 없으면 로그인하자마자 온보딩 화면만 나오고, 서버도 구독을 막음(2026-09-28)
   const ADULT = { birthDate: new Date('2000-03-03') };
   const fan1 = await prisma.user.create({
@@ -235,19 +238,30 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       ...AGREED, ...ADULT, id: DEMO_IDS.fan2, role: Role.USER, displayName: 'Ploy', nickname: 'nougat_lover', email: 'fan2@toffee.demo' },
   });
 
-  // 묶음 상품(2026-09-29) — 캐러멜 + 누가를 개인 구독 합계(฿198)보다 싸게
-  const pairBundle = await prisma.bundle.create({
+  // 묶음 상품 — CP(캐러멜·마카롱·CP방)마다 3종(2026-10-15 사용자 결정): 개인방 + CP방 2종(따로 ฿168 → ฿139)과 전체(따로 ฿267 → ฿199).
+  // 많이 묶을수록 더 싸게 해서 "전체"로 유도. 예전 "캐러멜 + 누가"(CP 없는 A+B)는 헷갈려서 뺌
+  await prisma.bundle.create({
+    data: { id: DEMO_IDS.caramelCpBundle, name: 'Caramel + Caramel & Macaron', priceCents: 13900, actors: { create: [{ actorId: caramel.id }, { actorId: DEMO_IDS.couple }] } },
+  });
+  await prisma.bundle.create({
+    data: { id: DEMO_IDS.macaronCpBundle, name: 'Macaron + Caramel & Macaron', priceCents: 13900, actors: { create: [{ actorId: DEMO_IDS.macaron }, { actorId: DEMO_IDS.couple }] } },
+  });
+  const cpAllBundle = await prisma.bundle.create({
     data: {
-      id: DEMO_IDS.pairBundle,
-      name: 'Caramel + Nougat',
-      priceCents: 15900,
-      actors: { create: [{ actorId: caramel.id }, { actorId: nougat.id }] },
+      id: DEMO_IDS.cpAllBundle,
+      name: 'Caramel & Macaron — All',
+      priceCents: 19900,
+      actors: { create: [{ actorId: caramel.id }, { actorId: DEMO_IDS.macaron }, { actorId: DEMO_IDS.couple }] },
     },
   });
 
-  // 구매(결제 단위)와 방 이용권(Subscription)을 같이 — fan1은 캐러멜 개인 구독, fan2는 묶음으로 두 방
+  // 구매(결제 단위)와 방 이용권(Subscription)을 같이 — fan1은 캐러멜 개인 구독, fan2는 CP 전체 묶음으로 세 방 + 누가 개인
   await prisma.purchase.create({ data: { userId: fan1.id, actorId: caramel.id, priceCents: caramel.monthlyPriceCents, startedAt: daysAgo(5) } });
-  await prisma.purchase.create({ data: { userId: fan2.id, bundleId: pairBundle.id, priceCents: pairBundle.priceCents, startedAt: daysAgo(20) } });
+  await prisma.purchase.create({ data: { userId: fan2.id, bundleId: cpAllBundle.id, priceCents: cpAllBundle.priceCents, startedAt: daysAgo(20) } });
+  await prisma.purchase.create({ data: { userId: fan2.id, actorId: nougat.id, priceCents: nougat.monthlyPriceCents, startedAt: daysAgo(20) } });
+  for (const actorId of [DEMO_IDS.macaron, DEMO_IDS.couple]) {
+    await prisma.subscription.create({ data: { userId: fan2.id, actorId, startedAt: daysAgo(20) } });
+  }
   const fan1Sub = await prisma.subscription.create({
     data: { userId: fan1.id, actorId: caramel.id, startedAt: daysAgo(5) },
   });
@@ -322,6 +336,34 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ค่ะ พรุ่งนี้มีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยค่ะ 🥹', createdAt: daysAgo(2) },
     ],
   });
+  // CP방 대화(2026-10-15 사용자 요청) — 두 아티스트가 서로의 메시지에 답장(상대 메시지 인용). fan2(CP 전체 묶음)로 보면 "Macaron의 메시지" 인용 말풍선
+  const cpOpening = await prisma.message.create({
+    data: { actorId: DEMO_IDS.couple, senderActorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'วันนี้ถ่ายซีนคู่กับมาการองสนุกมาก 💕 {{name}} รอดูนะ!', createdAt: daysAgo(3) },
+  });
+  await prisma.message.create({
+    data: {
+      actorId: DEMO_IDS.couple,
+      senderActorId: DEMO_IDS.macaron,
+      senderType: MessageSenderType.ARTIST,
+      replyToMessageId: cpOpening.id,
+      body: 'เหนื่อยแต่หัวเราะทั้งวันเลย 555 ขอบคุณที่ดูแลกันนะ',
+      createdAt: new Date(daysAgo(3).getTime() + 4 * 60 * 1000),
+    },
+  });
+  const cpLive = await prisma.message.create({
+    data: { actorId: DEMO_IDS.couple, senderActorId: DEMO_IDS.macaron, senderType: MessageSenderType.ARTIST, body: '{{name}} พรุ่งนี้สองทุ่มเราจะไลฟ์ด้วยกันนะ! 📺', createdAt: daysAgo(1) },
+  });
+  await prisma.message.create({
+    data: {
+      actorId: DEMO_IDS.couple,
+      senderActorId: caramel.id,
+      senderType: MessageSenderType.ARTIST,
+      replyToMessageId: cpLive.id,
+      body: 'อย่าลืมตื่นนอนก่อนไลฟ์นะ มาการอง 😆',
+      createdAt: new Date(daysAgo(1).getTime() + 2 * 60 * 1000),
+    },
+  });
+
   // 반대 방향 — 아티스트(한국어 화면)가 답장 목록에서 태국어 팬 답장의 "번역 보기"를 눌러 볼 수 있게
   const thaiBroadcast = await prisma.message.create({
     data: { actorId: caramel.id, senderType: MessageSenderType.ARTIST, body: '{{name}} สุดสัปดาห์นี้จะไปแถวประตูน้ำ มีร้านอร่อยแนะนำไหม?', createdAt: daysAgo(4) },

@@ -477,6 +477,9 @@
     "logout": "ログアウト"
   },
   "bundle": {
+    "withCoupleTitle": "CPと一緒に購読するとお得",
+    "withSoloTitle": "アーティストの個人ルームと一緒にお得",
+    "withCoupleHint": "個人ルームとCPルームをまとめて購読すると、別々より安くなります。",
     "sectionTitle": "セットでお得に",
     "sectionHint": "複数のアーティストをまとめて購読すると、別々に購読するよりお得です。",
     "saveVsSingle": "別々に購読するより{{percent}}%お得",
@@ -509,6 +512,8 @@
     "offline": "インターネットに接続されていません"
   },
   "couple": {
+    "soloSectionTitle": "CPルームだけ購読",
+    "inBundleHint": "上のセットにも含まれています。2人のアーティストが一緒にメッセージを送るルームです。",
     "sectionTitle": "CP",
     "sectionHint": "2人のアーティストが一緒にメッセージを送るルームです。個人ルームとは別に購読します。",
     "discoverTitle": "CP",

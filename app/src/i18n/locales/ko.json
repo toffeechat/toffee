@@ -477,6 +477,9 @@
     "logout": "로그아웃"
   },
   "bundle": {
+    "withCoupleTitle": "CP와 함께 구독하면 더 저렴해요",
+    "withSoloTitle": "아티스트 개인방과 함께 더 저렴하게",
+    "withCoupleHint": "개인방과 CP방을 묶어 구독하면 따로 구독할 때보다 싸요.",
     "sectionTitle": "묶음으로 더 저렴하게",
     "sectionHint": "여러 아티스트를 한 번에 구독하면 따로 구독할 때보다 싸요.",
     "saveVsSingle": "따로 구독보다 {{percent}}% 할인",
@@ -509,6 +512,8 @@
     "offline": "인터넷 연결이 끊겼어요"
   },
   "couple": {
+    "soloSectionTitle": "CP방만 따로 구독",
+    "inBundleHint": "위 묶음에도 들어 있어요. 두 아티스트가 함께 메시지를 보내는 방이에요.",
     "sectionTitle": "CP",
     "sectionHint": "두 아티스트가 함께 메시지를 보내는 방이에요. 개인 구독과 따로 구독해요.",
     "discoverTitle": "CP",

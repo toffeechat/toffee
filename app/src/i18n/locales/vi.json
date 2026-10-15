@@ -477,6 +477,9 @@
     "logout": "Đăng xuất"
   },
   "bundle": {
+    "withCoupleTitle": "Đăng ký kèm phòng CP rẻ hơn",
+    "withSoloTitle": "Đăng ký kèm phòng riêng của nghệ sĩ rẻ hơn",
+    "withCoupleHint": "Đăng ký phòng riêng và phòng CP cùng lúc rẻ hơn đăng ký riêng.",
     "sectionTitle": "Tiết kiệm với gói combo",
     "sectionHint": "Đăng ký nhiều nghệ sĩ cùng lúc với giá rẻ hơn đăng ký riêng lẻ.",
     "saveVsSingle": "Rẻ hơn {{percent}}% so với đăng ký riêng",
@@ -509,6 +512,8 @@
     "offline": "Bạn đang ngoại tuyến"
   },
   "couple": {
+    "soloSectionTitle": "Chỉ đăng ký phòng CP",
+    "inBundleHint": "Cũng có trong gói phía trên. Đây là phòng hai nghệ sĩ cùng gửi tin nhắn.",
     "sectionTitle": "CP",
     "sectionHint": "Phòng nơi hai nghệ sĩ cùng nhắn tin cho bạn. Đăng ký riêng, tách biệt với phòng cá nhân.",
     "discoverTitle": "CP",

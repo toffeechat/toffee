@@ -477,6 +477,9 @@
     "logout": "退出登录"
   },
   "bundle": {
+    "withCoupleTitle": "和CP一起订阅更划算",
+    "withSoloTitle": "和艺人个人房一起订阅更划算",
+    "withCoupleHint": "个人房和CP房一起订阅比分开订阅更便宜。",
     "sectionTitle": "套餐更划算",
     "sectionHint": "一次订阅多位艺人，比分别订阅更便宜。",
     "saveVsSingle": "比单独订阅便宜 {{percent}}%",
@@ -509,6 +512,8 @@
     "offline": "网络已断开"
   },
   "couple": {
+    "soloSectionTitle": "只订阅CP房",
+    "inBundleHint": "也包含在上面的套餐里。这是两位艺人一起发消息的房间。",
     "sectionTitle": "CP",
     "sectionHint": "两位艺人一起给你发消息的房间，需与个人房间分开订阅。",
     "discoverTitle": "CP",
