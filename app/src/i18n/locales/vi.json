@@ -816,6 +816,7 @@
   "retract": {
     "action": "Thu hồi",
     "title": "Thu hồi tin nhắn này?",
+    "albumTitle": "Thu hồi tất cả {{count}} ảnh?",
     "artistBody": "Fan sẽ thấy \"Tin nhắn đã được thu hồi\". Thông báo đã gửi không thể thu hồi.",
     "agencyBody": "Tin nhắn sẽ biến mất khỏi màn hình fan mà không để lại dấu vết. Thông báo đã gửi không thể thu hồi, và nghệ sĩ sẽ thấy \"Công ty quản lý đã thu hồi\".",
     "fanBody": "Mọi người sẽ thấy \"Tin nhắn đã được thu hồi\". Số lượt trả lời đã dùng không được hoàn lại.",
@@ -830,5 +831,10 @@
     "remove": "Dùng mặc định",
     "removeTitle": "Dùng hình nền mặc định",
     "removeConfirm": "Xóa ảnh nền và dùng hình nền mặc định."
+  },
+  "appVersion": {
+    "version": "Phiên bản {{version}}",
+    "embedded": "gốc",
+    "update": "cập nhật {{date}}"
   }
 }

@@ -22,7 +22,7 @@ import { VoiceMessage } from '@/components/voice-message';
 import { ChatBackground } from '@/components/chat-background';
 import { DayDivider, sameDay } from '@/components/day-divider';
 import { AlbumGrid } from '@/components/album-grid';
-import { groupAlbumRows, rowHas } from '@/utils/chat-album';
+import { collapseRetracted, groupAlbumRows, rowHas } from '@/utils/chat-album';
 import { MessageMenu } from '@/components/message-menu';
 import { copyText } from '@/lib/copy-text';
 import { GreetingsForm, greetingsReady, useGreetings } from '@/components/greetings-form';
@@ -86,8 +86,8 @@ function MyMessage({
   actorId: string;
   isLatest?: boolean;
   onOpenReplies: () => void;
-  /** 회수할 메시지 id — 격자면 길게 누른 그 한 장 */
-  onRetract: (id: string) => void;
+  /** 회수할 메시지 id들 — 사진 격자면 묶음 전체 */
+  onRetract: (ids: string[]) => void;
   senderName?: string | null;
   /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도) */
   menuFor: string | null;
@@ -200,7 +200,7 @@ function MyMessage({
               ...(message.body
                 ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: () => (onCloseMenu(), copyText(bodyText)) }]
                 : []),
-              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(menuFor ?? message.id)) },
+              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(message.album ? message.album.map((item) => item.id) : [message.id])) },
             ]}
           />
         </View>
@@ -290,10 +290,21 @@ export default function StudioChannelScreen() {
   }, [actor, navigation, router, actorId, t]);
 
   const [menuFor, setMenuFor] = useState<string | null>(null);
-  const retractMessage = async (messageId: string) => {
-    const ok = await confirm(t('retract.title'), t('retract.artistBody'), t('retract.action'), t('common.cancel'));
+  // 사진 묶음은 통째로 회수(2026-10-15 사용자 결정 — 카톡·버블처럼 같이 보낸 사진은 한 메시지처럼). 메시지는 한 장씩 저장돼 있어서 하나씩 회수
+  const retractMessages = async (messageIds: string[]) => {
+    const album = messageIds.length > 1;
+    const ok = await confirm(
+      album ? t('retract.albumTitle', { count: messageIds.length }) : t('retract.title'),
+      t('retract.artistBody'),
+      t('retract.action'),
+      t('common.cancel'),
+    );
     if (!ok) return;
-    deleteBroadcast.mutate(messageId, { onError: () => setNotice({ text: t('retract.failed'), error: true }) });
+    try {
+      for (const id of messageIds) await deleteBroadcast.mutateAsync(id);
+    } catch {
+      setNotice({ text: t('retract.failed'), error: true });
+    }
   };
 
   const pickFromLibrary = async () => {
@@ -427,7 +438,10 @@ export default function StudioChannelScreen() {
   // 회수한 메시지도 자리는 남김(2026-10-14) — 팬 화면처럼 "회수한 메시지예요", 운영자가 가렸거나 소속사가 회수한 건 이유와 함께
   // 연달아 보낸 글 없는 사진·영상은 팬 화면처럼 격자 한 칸으로(2026-10-15 — 예전엔 한 장씩 따로 보여서 장마다 "답장 없음"이 붙었음)
   const visible = useMemo(() => messages ?? [], [messages]);
-  const rows = useMemo(() => groupAlbumRows(visible.map((message) => ({ ...message, retracted: !!message.deletedAt })), sameMinute), [visible]);
+  const rows = useMemo(
+    () => collapseRetracted(groupAlbumRows(visible.map((message) => ({ ...message, retracted: !!message.deletedAt })), sameMinute), sameMinute),
+    [visible],
+  );
 
   // 환영·생일 메시지를 아직 안 썼으면 보내기 화면 대신 이것부터(2026-10-13 사용자 결정 — 서버도 비어 있으면 보내기를 거절).
   // 저장하면 같은 쿼리가 바뀌어서 바로 보내기 화면으로
@@ -475,7 +489,7 @@ export default function StudioChannelScreen() {
                     isLatest={index === 0}
                     senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
                     onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
-                    onRetract={(id) => void retractMessage(id)}
+                    onRetract={(ids) => void retractMessages(ids)}
                     menuFor={menuFor}
                     onOpenMenu={setMenuFor}
                     onCloseMenu={() => setMenuFor(null)}

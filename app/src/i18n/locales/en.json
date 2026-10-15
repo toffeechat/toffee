@@ -816,6 +816,7 @@
   "retract": {
     "action": "Unsend",
     "title": "Unsend this message?",
+    "albumTitle": "Retract all {{count}} photos?",
     "artistBody": "Fans will see \"This message was unsent\" instead. Notifications already delivered can't be recalled.",
     "agencyBody": "It disappears from fans' screens without a trace. Notifications already delivered can't be recalled, and the artist will see \"Unsent by your agency\".",
     "fanBody": "Everyone will see \"This message was unsent\" instead. Your reply count is not restored.",
@@ -830,5 +831,10 @@
     "remove": "Use default",
     "removeTitle": "Use default background",
     "removeConfirm": "Remove the background photo and use the default background."
+  },
+  "appVersion": {
+    "version": "Version {{version}}",
+    "embedded": "built-in",
+    "update": "updated {{date}}"
   }
 }

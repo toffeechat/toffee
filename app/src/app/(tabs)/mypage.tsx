@@ -7,6 +7,7 @@ import { Bell, CircleHelp, CreditCard, FileText, Globe, KeyRound, LifeBuoy, LogO
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
+import { AppVersion } from '@/components/app-version';
 import { ListRow } from '@/components/ui/list-row';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
@@ -165,6 +166,7 @@ export default function ProfileScreen() {
             ))}
           </View>
         ) : null}
+        <AppVersion />
       </ScrollView>
     </SafeAreaView>
   );

@@ -816,6 +816,7 @@
   "retract": {
     "action": "撤回",
     "title": "要撤回这条消息吗？",
+    "albumTitle": "要撤回全部 {{count}} 张照片吗？",
     "artistBody": "粉丝将看到“此消息已撤回”。已送达的通知无法撤回。",
     "agencyBody": "将从粉丝画面中不留痕迹地消失。已送达的通知无法撤回，艺人画面会显示“经纪公司撤回的消息”。",
     "fanBody": "所有人都会看到“此消息已撤回”。已发送的回复次数不会恢复。",
@@ -830,5 +831,10 @@
     "remove": "恢复默认",
     "removeTitle": "恢复默认背景",
     "removeConfirm": "删除背景照片并恢复默认背景。"
+  },
+  "appVersion": {
+    "version": "版本 {{version}}",
+    "embedded": "初始",
+    "update": "更新于 {{date}}"
   }
 }

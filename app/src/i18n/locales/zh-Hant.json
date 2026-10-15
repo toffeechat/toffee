@@ -816,6 +816,7 @@
   "retract": {
     "action": "收回",
     "title": "要收回這則訊息嗎？",
+    "albumTitle": "要收回全部 {{count}} 張照片嗎？",
     "artistBody": "粉絲將看到「此訊息已收回」。已送達的通知無法收回。",
     "agencyBody": "將從粉絲畫面中不留痕跡地消失。已送達的通知無法收回，藝人畫面會顯示「經紀公司收回的訊息」。",
     "fanBody": "所有人都會看到「此訊息已收回」。已傳送的回覆次數不會恢復。",
@@ -830,5 +831,10 @@
     "remove": "恢復預設",
     "removeTitle": "恢復預設背景",
     "removeConfirm": "刪除背景照片並恢復預設背景。"
+  },
+  "appVersion": {
+    "version": "版本 {{version}}",
+    "embedded": "初始",
+    "update": "更新於 {{date}}"
   }
 }
