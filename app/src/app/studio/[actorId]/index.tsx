@@ -154,7 +154,7 @@ function MyMessage({
       )}
       {retracted ? (
         <View style={styles.bubbleLine}>
-          <View style={[styles.bubble, styles.retracted, { borderColor: theme.border }]}>
+          <View style={[styles.bubble, styles.retracted, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
             <ThemedText type="small" themeColor="textTertiary">
               {t('retract.mine')}
             </ThemedText>

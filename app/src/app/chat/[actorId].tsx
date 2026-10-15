@@ -669,7 +669,7 @@ function MessageRow({
       }}
       style={[styles.bubbleWrap, highlighted && { borderRadius: Radius.lg + 2, borderWidth: 2, borderColor: theme.tint }]}>
       {message.retracted ? (
-        <View style={[styles.bubble, styles.retracted, { borderColor: theme.border }]}>
+        <View style={[styles.bubble, styles.retracted, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
           <ThemedText type="small" themeColor="textTertiary">
             {t('retract.placeholder')}
           </ThemedText>
