@@ -45,7 +45,10 @@ export const DEMO_IDS = {
 // 데모 이미지(2026-10-12 사용자 요청: "연예인 이미지도 가상으로") — 실존 인물이 아닌 일러스트. 파일은 앱 웹 데모의 정적 폴더
 // app/public/demo/에 있고 웹 데모(Cloudflare Pages)가 그대로 서비스함. 다른 곳에 두면 DEMO_ASSET_BASE_URL로 바꿈
 const DEMO_ASSET_BASE = (process.env.DEMO_ASSET_BASE_URL || 'https://demo.toffeechat.app/demo').replace(/\/$/, '');
-const demoImage = (name: string) => `${DEMO_ASSET_BASE}/${name}.jpg`;
+// 사진 파일을 같은 이름으로 바꾸면 앱(expo-image)이 주소 기준으로 저장해 둔 예전 사진을 계속 보여 줌(2026-10-15 실기기: 새 얼굴 사진이 안 바뀜)
+// → 사진을 교체할 때마다 이 값을 올리고 데모 초기화. 주소가 달라져서 앱이 새로 받음
+const DEMO_ASSET_VERSION = '20261015';
+const demoImage = (name: string) => `${DEMO_ASSET_BASE}/${name}.jpg?v=${DEMO_ASSET_VERSION}`;
 
 // 환영·생일 메시지(2026-10-13부터 필수 — 없으면 아티스트가 메시지를 못 보냄) — 데모 아티스트 공통
 const DEMO_GREETINGS = {
