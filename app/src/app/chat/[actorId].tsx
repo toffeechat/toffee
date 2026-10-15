@@ -29,6 +29,7 @@ import { DayDivider, sameDay } from '@/components/day-divider';
 import { MessageMenu } from '@/components/message-menu';
 import { AlbumGrid } from '@/components/album-grid';
 import { QuoteBlock } from '@/components/quote-block';
+import { needsTranslation } from '@/utils/detect-script';
 import { TranslatableText } from '@/components/translatable-text';
 import { VoiceMessage } from '@/components/voice-message';
 import { ApiError } from '@/lib/api-client';
@@ -634,6 +635,10 @@ function MessageRow({
   const canReport = isArtist && !message.extra && !message.retracted;
   const canRetract = !isArtist && !message.extra && !message.retracted;
   const hasMenu = !message.retracted && (canReport || canRetract || !!message.body);
+  // 아티스트가 팬 답장을 인용한 메시지(2026-10-15 사용자 요청): 인용은 아티스트 말풍선 위에 따로 선 말풍선으로, "번역 보기" 하나로 둘 다 번역
+  const quote = !message.retracted && !message.album ? message.replyTo : null;
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const quoteTranslatable = !!quote && !quote.hidden && !!quote.body && needsTranslation(quote.body, i18n.language);
 
   const bubble = (
     <Pressable
@@ -659,7 +664,6 @@ function MessageRow({
         <AlbumGrid items={message.album} actorId={actorId} onLongPressItem={hasMenu ? onOpenMenu : undefined} />
       ) : isMedia ? (
         <View style={styles.mediaGroup}>
-          {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" mine={message.quotedMe} artistName={actorName ?? ''} />}
           <MediaTile
             id={message.id}
             url={message.mediaUrl}
@@ -672,13 +676,12 @@ function MessageRow({
           />
           {message.body ? (
             <View style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-              <TranslatableText actorId={actorId} messageId={message.id} text={message.body} />
+              <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} />
             </View>
           ) : null}
         </View>
       ) : (
         <View style={[styles.bubble, { backgroundColor: isArtist ? theme.backgroundElement : theme.tintSoft }]}>
-          {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" mine={message.quotedMe} artistName={actorName ?? ''} />}
           {message.mediaType === 'AUDIO' ? (
             <VoiceMessage
               id={message.id}
@@ -696,7 +699,7 @@ function MessageRow({
               {message.extra === 'welcome' ? t('chat.welcomeLabel') : t('chat.birthdayLabel')}
             </ThemedText>
           ) : null}
-          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome /> : message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} /> : <ThemedText>{message.body}</ThemedText> : null}
+          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome /> : message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} /> : <ThemedText>{message.body}</ThemedText> : null}
         </View>
       )}
     </Pressable>
@@ -719,6 +722,11 @@ function MessageRow({
             <ThemedText type="captionBold" themeColor="textSecondary" style={styles.senderLabel} numberOfLines={1}>
               {actorName}
             </ThemedText>
+          ) : null}
+          {quote ? (
+            <View style={styles.quoteLine}>
+              <QuoteBlock quote={quote} tone="dark" mine={message.quotedMe} artistName={actorName ?? ''} standalone translate={{ actorId, open: translateOpen }} />
+            </View>
           ) : null}
           {/* 시간은 말풍선 옆 아래(카톡처럼 — 받은 메시지는 오른쪽, 내 답장은 왼쪽, 2026-10-12 사용자 요청. 예전엔 말풍선 밑) */}
           <View style={[styles.bubbleLine, isArtist ? styles.bubbleLineLeft : styles.bubbleLineRight]}>
@@ -790,6 +798,7 @@ const styles = StyleSheet.create({
   lineRight: { justifyContent: 'flex-end' },
   avatarSlot: { width: 36 },
   column: { maxWidth: '86%', gap: 4 },
+  quoteLine: { maxWidth: '100%' },
   columnLeft: { alignItems: 'flex-start' },
   columnRight: { alignItems: 'flex-end' },
   bubbleWrap: { maxWidth: '100%', flexShrink: 1 },
