@@ -208,7 +208,7 @@
     "uploading": "アップロード中 {{percent}}%",
     "cancelUpload": "アップロードを中止",
     "uploadCancelled": "アップロードを中止しました。",
-    "profileButton": "マイプロフィール",
+    "profileButton": "Toffee Roomの設定",
     "stopRecordingShort": "録音を終了",
     "cancelQuote": "引用を取り消す",
     "emptyTitle": "最初のメッセージを送りましょう",
@@ -288,7 +288,9 @@
     "failed": "写真を変更できませんでした。もう一度お試しください。"
   },
   "studioProfile": {
-    "title": "マイプロフィール",
+    "title": "Toffee Roomの設定",
+    "sectionProfile": "プロフィール",
+    "sectionRoom": "Toffee Room",
     "headerButton": "プロフィール",
     "nickname": "ニックネーム",
     "nicknameHint": "Toffee Roomでファンに表示される名前です。いつでも変更できます。",

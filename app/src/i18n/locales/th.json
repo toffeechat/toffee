@@ -208,7 +208,7 @@
     "uploading": "กำลังอัปโหลด {{percent}}%",
     "cancelUpload": "ยกเลิกการอัปโหลด",
     "uploadCancelled": "ยกเลิกการอัปโหลดแล้ว",
-    "profileButton": "โปรไฟล์ของฉัน",
+    "profileButton": "ตั้งค่า Toffee Room",
     "stopRecordingShort": "หยุดบันทึก",
     "cancelQuote": "ยกเลิกการอ้างอิง",
     "emptyTitle": "ส่งข้อความแรกของคุณ",
@@ -288,7 +288,9 @@
     "failed": "เปลี่ยนรูปไม่สำเร็จ โปรดลองอีกครั้ง"
   },
   "studioProfile": {
-    "title": "โปรไฟล์ของฉัน",
+    "title": "ตั้งค่า Toffee Room",
+    "sectionProfile": "โปรไฟล์",
+    "sectionRoom": "Toffee Room",
     "headerButton": "โปรไฟล์",
     "nickname": "ชื่อเล่น",
     "nicknameHint": "ชื่อที่แฟน ๆ เห็นใน Toffee Room เปลี่ยนได้ทุกเมื่อ",
