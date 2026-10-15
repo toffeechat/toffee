@@ -463,11 +463,19 @@
     "dm": "Subscribing unlocks 1:1 messages",
     "media": "Photos, voice and video, straight from them",
     "paid": "Paid subscription · no free tier",
-    "devTitle": "Developer email sign-in",
-    "devHint": "Sign-in for development and demos. The released app hides this and shows only social sign-in buttons.",
+    "devTitle": "Demo sign-in",
+    "devHint": "Choose which view to try and enter your access code. The released app hides this.",
     "email": "Email",
     "code": "Access code (only if you were given one)",
-    "continue": "Continue"
+    "continue": "Continue",
+    "demoRole": {
+      "agency": "Agency",
+      "artist": "Artist",
+      "fan": "Fan",
+      "admin": "Admin",
+      "email": "By email"
+    },
+    "adminCode": "Admin code"
   },
   "underage": {
     "title": "You must be {{age}} or older",
