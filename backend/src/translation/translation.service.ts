@@ -7,6 +7,7 @@ import { appError } from '../common/i18n/app-error.js';
 import type { SupportedLocale } from '../common/i18n/locales.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
 import { ensureCanViewActor } from '../common/authorization/actor-access.js';
+import { quoteInclude, toQuote } from '../messages/messages.service.js';
 import {
   ClaudeTranslationProvider,
   FakeTranslationProvider,
@@ -80,7 +81,9 @@ export class TranslationService {
     if (requester.role === Role.USER) {
       // 팬은 자기 채팅방에 보이는 메시지만(다른 팬 답장·구독 전 메시지는 안 보이므로 번역도 불가 — 있는지조차 알려 주지 않게 404)
       const subscription = await ensureActiveSubscription(this.prisma, requesterId, actorId);
-      const visible = message.createdAt >= subscription.startedAt && (message.senderType === MessageSenderType.ARTIST || message.fanUserId === requesterId);
+      const visible =
+        (message.createdAt >= subscription.startedAt && (message.senderType === MessageSenderType.ARTIST || message.fanUserId === requesterId)) ||
+        (await this.isVisibleQuote(message.id, actorId, subscription.startedAt));
       if (!visible) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
     } else {
       await ensureCanViewActor(this.prisma, requesterId, actorId);
@@ -96,6 +99,21 @@ export class TranslationService {
       text = text.replaceAll(NAME_PLACEHOLDER, requester.nickname ?? requester.displayName ?? '');
     }
     return { messageId: message.id, language: target, text };
+  }
+
+  /**
+   * 아티스트가 인용해서 답한 다른 팬의 답장(2026-10-15 — 팬 화면에서 인용 말풍선과 아티스트 말풍선을 "번역 보기" 한 번에) — 그 인용 답장이 이 팬에게
+   * 보이고(구독 시작 이후·지워지지 않음) 인용이 가려지지 않았을 때만(정지·차단·신고 처리·회수된 팬 답장은 화면에서도 가려지므로 번역도 불가)
+   */
+  private async isVisibleQuote(messageId: string, actorId: string, since: Date): Promise<boolean> {
+    const quoting = await this.prisma.message.findFirst({
+      where: { actorId, replyToMessageId: messageId, senderType: MessageSenderType.ARTIST, deletedAt: null, createdAt: { gte: since } },
+      select: { id: true },
+    });
+    if (!quoting) return false;
+    const source = await this.prisma.message.findUnique({ where: { id: messageId }, select: quoteInclude(actorId).replyTo.select });
+    const quote = toQuote(source);
+    return !!quote && !quote.hidden;
   }
 
   /**

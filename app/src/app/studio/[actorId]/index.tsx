@@ -133,7 +133,6 @@ function MyMessage({
   const textBubble =
     !isMedia || message.body ? (
       <View style={[styles.bubble, { backgroundColor: theme.tintSoft }]}>
-        {!isMedia && message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
         {message.mediaType === 'AUDIO' ? (
           <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
         ) : null}
@@ -159,6 +158,8 @@ function MyMessage({
         </View>
       ) : (
         <Pressable onLongPress={hasMenu ? () => onOpenMenu(message.id) : undefined} delayLongPress={350} accessibilityHint={hasMenu ? t('chat.messageActions') : undefined} style={[styles.column, removed && styles.hidden]}>
+          {/* 인용한 팬 답장은 내 말풍선 위에 따로 선 말풍선으로(2026-10-15 사용자 요청 — 팬 화면과 같게) */}
+          {message.replyTo && !message.album ? <QuoteBlock quote={message.replyTo} tone="dark" standalone /> : null}
           {message.album ? (
             <View style={styles.bubbleLine}>
               <AlbumGrid items={message.album} actorId={actorId} onLongPressItem={onOpenMenu} />
@@ -167,7 +168,6 @@ function MyMessage({
           ) : isMedia ? (
             <View style={styles.bubbleLine}>
               <View style={styles.mediaColumn}>
-                {message.replyTo && <QuoteBlock quote={message.replyTo} tone="dark" />}
                 {/* 사진이 누르기를 먼저 받아서 길게 누르기도 사진에 직접(2026-10-15 — 앱에서 사진 회수가 안 되던 문제), actorId로 전체 화면에서 좌우 넘기기 */}
                 <MediaTile
                   id={message.id}

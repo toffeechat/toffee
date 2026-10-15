@@ -182,7 +182,6 @@ function MonitorBubble({
   const textBubble =
     !isMedia || message.body ? (
       <View style={[styles.bubble, styles.bubbleBody, { backgroundColor: theme.backgroundElement }]}>
-        {message.replyTo ? <QuoteBlock quote={message.replyTo} tone="dark" /> : null}
         {message.mediaType === 'AUDIO' ? (
           <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
         ) : null}
@@ -201,6 +200,8 @@ function MonitorBubble({
             {t(removedBy === 'admin' ? 'studio.hiddenByAdmin' : removedBy === 'agency' ? 'console.deletedByAgency' : 'console.deletedByActor')}
           </ThemedText>
         ) : null}
+        {/* 인용한 팬 답장은 따로 선 말풍선으로(2026-10-15, 팬 화면과 같게) */}
+        {message.replyTo ? <QuoteBlock quote={message.replyTo} tone="dark" standalone /> : null}
         <Pressable
           onLongPress={removedBy ? undefined : () => onMenuChange(true)}
           delayLongPress={350}
