@@ -75,6 +75,7 @@ function MyMessage({
   actorId,
   onOpenReplies,
   onRetract,
+  onQuote,
   senderName,
   isLatest,
   menuFor,
@@ -88,6 +89,8 @@ function MyMessage({
   onOpenReplies: () => void;
   /** 회수할 메시지 id들 — 사진 격자면 묶음 전체 */
   onRetract: (ids: string[]) => void;
+  /** CP방에서 상대 아티스트 메시지에 답장(인용) */
+  onQuote?: () => void;
   senderName?: string | null;
   /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도) */
   menuFor: string | null;
@@ -200,7 +203,10 @@ function MyMessage({
               ...(message.body
                 ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: () => (onCloseMenu(), copyText(bodyText)) }]
                 : []),
-              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(message.album ? message.album.map((item) => item.id) : [message.id])) },
+              // CP방 상대 아티스트 메시지엔 회수 대신 답장(2026-10-15 — 두 아티스트가 서로 답장, 팬 화면엔 인용 말풍선 두 개로)
+              ...(onQuote && message.mine === false
+                ? [{ key: 'quote', label: t('quote.action'), icon: CornerUpLeft, accent: true, onPress: () => (onCloseMenu(), onQuote()) }]
+                : [{ key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(message.album ? message.album.map((item) => item.id) : [message.id])) }]),
             ]}
           />
         </View>
@@ -490,6 +496,16 @@ export default function StudioChannelScreen() {
                     senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
                     onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
                     onRetract={(ids) => void retractMessages(ids)}
+                    onQuote={
+                      actor?.kind === 'COUPLE' && item.mine === false && !item.deletedAt && !item.album
+                        ? () =>
+                            router.setParams({
+                              quoteId: item.id,
+                              quoteNickname: item.sender?.chatDisplayName ?? '',
+                              quoteBody: (item.body ? showNameToken(item.body, t('studio.fanNickname')) : t(`studio.media.${item.mediaType}`)).slice(0, 120),
+                            })
+                        : undefined
+                    }
                     menuFor={menuFor}
                     onOpenMenu={setMenuFor}
                     onCloseMenu={() => setMenuFor(null)}

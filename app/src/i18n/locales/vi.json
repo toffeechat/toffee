@@ -242,6 +242,7 @@
     "rule": "Trùng biệt danh với người khác cũng không sao. Trong 24 giờ đầu sau khi đăng ký, bạn có thể đổi thoải mái; sau đó, mỗi lần đổi xong phải chờ 7 ngày mới đổi lại được."
   },
   "quote": {
+    "fromArtist": "Tin nhắn của {{name}}",
     "replyTo": "Trả lời {{nickname}}",
     "hidden": "Tin nhắn này đã bị ẩn",
     "action": "Trả lời",

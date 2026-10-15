@@ -8,6 +8,8 @@ export interface MessageQuote {
   /** 인용한 팬 답장을 그 팬이 회수함(2026-10-14) — "회수된 메시지입니다" */
   retracted?: boolean;
   nickname: string | null;
+  /** CP방에서 상대 아티스트 메시지를 인용했으면 그 아티스트 이름(2026-10-15) — 팬 답장 인용이면 없음 */
+  artistName?: string | null;
   body: string | null;
 }
 

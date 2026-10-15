@@ -242,6 +242,7 @@
     "rule": "和别人重复也没关系。注册后24小时内可自由修改，之后每次修改需间隔7天。"
   },
   "quote": {
+    "fromArtist": "{{name}}的消息",
     "replyTo": "回复 {{nickname}}",
     "hidden": "这条消息已被隐藏",
     "action": "回复",

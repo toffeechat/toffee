@@ -112,7 +112,7 @@ export class TranslationService {
     });
     if (!quoting) return false;
     const source = await this.prisma.message.findUnique({ where: { id: messageId }, select: quoteInclude(actorId).replyTo.select });
-    const quote = toQuote(source);
+    const quote = toQuote(source, MessageSenderType.ARTIST);
     return !!quote && !quote.hidden;
   }
 

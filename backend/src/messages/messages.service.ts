@@ -30,6 +30,8 @@ export function quoteInclude(actorId: string) {
         fanUserId: true,
         // 팬이 회수한 답장(2026-10-14) — 인용 칸에 "회수된 메시지"
         deletedAt: true,
+        // CP방에서 상대 아티스트 메시지를 인용한 경우(2026-10-15) — 인용 칸 제목에 그 아티스트 이름
+        senderActor: { select: { chatDisplayName: true } },
         fanUser: {
           select: {
             nickname: true,
@@ -51,6 +53,7 @@ interface QuotedSource {
   body: string | null;
   mediaType: MessageMediaType;
   deletedAt?: Date | null;
+  senderActor?: { chatDisplayName: string } | null;
   fanUser: { nickname: string | null; status: UserStatus; deletedAt?: Date | null; blockedInChannels?: { id: string }[] } | null;
   reports: { id: string }[];
 }
@@ -60,8 +63,23 @@ interface QuotedSource {
  * 안 보여줌, 버블 방식). 인용된 팬이 정지·차단됐거나 그 메시지가 신고 처리(RESOLVED)됐으면 내용을 가림.
  * 인용 답장은 전체 구독자에게 보이므로 팬은 닉네임으로만(2026-09-28 확정).
  */
-export function toQuote(source: QuotedSource | null) {
-  if (!source || source.senderType !== MessageSenderType.FAN) return null;
+// quotingSenderType: 인용한 쪽 — 팬 답장의 replyTo는 "보낸 시점의 최신 아티스트 메시지"로 자동으로 묶인 거라 인용이 아님. 아티스트 메시지를 인용한 건
+// 아티스트(CP방 상대)가 보낸 경우만
+export function toQuote(source: QuotedSource | null, quotingSenderType?: MessageSenderType) {
+  if (!source) return null;
+  // CP방 두 아티스트가 서로의 메시지에 답장(2026-10-15 사용자 결정, 1차) — 아티스트는 공개된 사람이라 이름을 그대로, 회수됐으면 "회수된 메시지"
+  if (source.senderType === MessageSenderType.ARTIST && quotingSenderType === MessageSenderType.ARTIST) {
+    const retracted = !!source.deletedAt;
+    return {
+      id: source.id,
+      hidden: retracted,
+      retracted,
+      nickname: null,
+      artistName: source.senderActor?.chatDisplayName ?? null,
+      body: retracted || !source.body ? null : source.body.slice(0, QUOTE_PREVIEW_LENGTH),
+    };
+  }
+  if (source.senderType !== MessageSenderType.FAN) return null;
   const hidden =
     !source.fanUser ||
     source.fanUser.status !== UserStatus.ACTIVE ||
@@ -83,9 +101,9 @@ function notBlockedIn(actorId: string) {
   return { blockedInChannels: { none: { actorId } } };
 }
 
-function withQuote<T extends { replyTo: QuotedSource | null }>(message: T) {
+function withQuote<T extends { replyTo: QuotedSource | null; senderType: MessageSenderType }>(message: T) {
   const { replyTo, ...rest } = message;
-  return { ...rest, replyTo: toQuote(replyTo) };
+  return { ...rest, replyTo: toQuote(replyTo, message.senderType) };
 }
 
 /**
@@ -190,7 +208,14 @@ export class MessagesService {
           const quoted = withQuote(message);
           return {
             ...quoted,
-            replyTo: quoted.replyTo ? { ...quoted.replyTo, nickname: null } : null,
+            // 상대 아티스트 메시지를 인용한 거면(CP방) 그 글의 {{name}}도 이 팬 이름으로
+            replyTo: quoted.replyTo
+              ? {
+                  ...quoted.replyTo,
+                  nickname: null,
+                  body: quoted.replyTo.artistName && quoted.replyTo.body ? personalize(quoted.replyTo.body, fan.nickname ?? fan.displayName) : quoted.replyTo.body,
+                }
+              : null,
             quotedMe: message.senderType === MessageSenderType.ARTIST && message.replyTo?.fanUserId === userId,
           };
         }).map((message) =>
@@ -343,13 +368,22 @@ export class MessagesService {
       throw new BadRequestException(appError('GREETINGS_REQUIRED'));
     }
     const mediaKey = dto.mediaType === MessageMediaType.TEXT ? null : dto.mediaKey!;
-    // 인용 답장: 같은 배우 채널의 팬 메시지만 인용 가능(다른 채널 메시지·스타 메시지 인용 불가)
+    // 인용 답장: 같은 방의 팬 메시지, 또는 CP방이면 상대 아티스트의 메시지(2026-10-15)만. 다른 방·내 메시지·회수된 메시지는 불가
+    let quotedArtistActorId: string | null = null;
     if (dto.replyToMessageId) {
       const quoted = await this.prisma.message.findFirst({
-        where: { id: dto.replyToMessageId, actorId, senderType: MessageSenderType.FAN },
-        select: { id: true },
+        where: { id: dto.replyToMessageId, actorId },
+        select: { senderType: true, senderActorId: true, deletedAt: true },
       });
-      if (!quoted) throw new BadRequestException(appError('QUOTE_INVALID'));
+      const fanQuote = quoted?.senderType === MessageSenderType.FAN;
+      const partnerQuote =
+        quoted?.senderType === MessageSenderType.ARTIST &&
+        greetings.kind === ActorKind.COUPLE &&
+        !quoted.deletedAt &&
+        !!quoted.senderActorId &&
+        quoted.senderActorId !== senderActorId;
+      if (!fanQuote && !partnerQuote) throw new BadRequestException(appError('QUOTE_INVALID'));
+      if (partnerQuote) quotedArtistActorId = quoted!.senderActorId;
     }
     if (mediaKey) await this.mediaService.verifyForAttach(actorId, 'message', dto.mediaType as Exclude<MessageMediaType, 'TEXT'>, mediaKey);
     const thumbnailKey = dto.mediaType === MessageMediaType.VIDEO && dto.thumbnailKey ? dto.thumbnailKey : null;
@@ -424,6 +458,23 @@ export class MessagesService {
         { withUnreadBadge: true },
       )
       .catch(() => {});
+    // CP방에서 상대 아티스트 메시지에 답장했으면 그 아티스트에게 "○○님이 내 메시지에 답장했어요"(2026-10-15) — 누르면 스튜디오
+    if (quotedArtistActorId) {
+      const partner = await this.prisma.actor.findUnique({ where: { id: quotedArtistActorId }, select: { selfUserId: true } });
+      const senderName = message.sender?.chatDisplayName ?? actor.chatDisplayName;
+      if (partner?.selfUserId) {
+        void this.pushService
+          .sendToUser(
+            partner.selfUserId,
+            ({ locale }) => ({
+              title: pushStrings(locale).quotedReplyTitle(senderName),
+              body: (pushStrings(locale).quotedReplyPrefix + (dto.body ? dto.body : pushStrings(locale).media[dto.mediaType])).slice(0, PUSH_PREVIEW_LENGTH + 20),
+            }),
+            { ...pushData, type: 'QUOTED_REPLY', senderName },
+          )
+          .catch(() => {});
+      }
+    }
     if (notifyQuotedFan && quotedFanId) {
       void this.pushService
         .sendToUser(
@@ -495,6 +546,8 @@ export class MessagesService {
   // 소속사 모니터링 — 배우가 실제로 보낸 메시지를 읽기 전용으로 확인(개인화 치환 없이 원문 그대로)
   async listBroadcasts(requesterId: string, actorId: string) {
     await ensureCanViewActor(this.prisma, requesterId, actorId);
+    // 보는 사람이 아티스트 본인이면 자기 배우 id — CP방에서 내 메시지/상대 메시지 구분(상대 메시지엔 "답장", 2026-10-15)
+    const selfActor = await this.prisma.actor.findFirst({ where: { selfUserId: requesterId }, select: { id: true } });
     const messages = await this.prisma.message.findMany({
       where: { actorId, senderType: MessageSenderType.ARTIST },
       orderBy: { createdAt: 'desc' },
@@ -527,6 +580,7 @@ export class MessagesService {
         messages.map(({ _count, ...message }) => ({
           ...withQuote(message),
           replyCount: _count.replies,
+          mine: !!selfActor && message.senderActorId === selfActor.id,
           ...(previewIds.has(message.id) ? { recentReplies: previews.get(message.id) ?? [] } : {}),
         })),
       ),
