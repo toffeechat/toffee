@@ -202,7 +202,7 @@ function ReplyBubble({
             accessibilityHint={item.fanUser ? t('chat.messageActions') : undefined}
             style={styles.bubbleWithTime}>
             <ThemedView
-              style={[styles.bubble, item.retracted ? [styles.retracted, { borderColor: theme.border }] : { backgroundColor: theme.backgroundElement }]}>
+              style={[styles.bubble, item.retracted ? [styles.retracted, { borderColor: theme.border, backgroundColor: theme.backgroundElement }] : { backgroundColor: theme.backgroundElement }]}>
               {item.retracted ? (
                 <ThemedText type="small" themeColor="textTertiary">
                   {t('retract.placeholder')}
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   bubbleWithTime: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 6, flexShrink: 1, maxWidth: '88%', backgroundColor: 'transparent' },
   bubble: { borderRadius: 16, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexShrink: 1 },
   quickReply: { width: 28, height: 28 },
-  retracted: { borderWidth: StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
+  retracted: { borderWidth: StyleSheet.hairlineWidth },
   transparent: { backgroundColor: 'transparent' },
   newPill: {
     position: 'absolute',

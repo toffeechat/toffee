@@ -266,7 +266,7 @@ function ReplyBubble({ reply, actorId, menuOpen, onMenuChange }: { reply: FanRep
           <Pressable
             onLongPress={fan ? () => onMenuChange(true) : undefined}
             delayLongPress={350}
-            style={[styles.bubble, styles.bubbleBody, reply.retracted ? [styles.retracted, { borderColor: theme.border }] : { backgroundColor: theme.backgroundElement }]}>
+            style={[styles.bubble, styles.bubbleBody, reply.retracted ? [styles.retracted, { borderColor: theme.border, backgroundColor: theme.backgroundElement }] : { backgroundColor: theme.backgroundElement }]}>
             {reply.retracted ? (
               <ThemedText type="small" themeColor="textTertiary">
                 {t('retract.placeholder')}

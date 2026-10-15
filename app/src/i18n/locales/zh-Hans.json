@@ -58,6 +58,7 @@
     "noConversation": "还没有消息"
   },
   "chat": {
+    "scrollToBottom": "回到最新",
     "loadFailed": "无法加载聊天。请确认你是否已订阅该艺人。",
     "replyPlaceholder": "发送消息…",
     "send": "发送",
@@ -72,7 +73,7 @@
     "unmute": "开启通知",
     "muted": "已关闭此 Toffee Room 的通知，仍会照常收到消息。",
     "unmuted": "已开启此 Toffee Room 的通知。",
-    "report": "举报",
+    "report": "举报问题",
     "closeMenu": "关闭",
     "messageActions": "长按打开菜单",
     "newMessages": "{{count}} 条新消息 ↓",
@@ -629,7 +630,7 @@
   },
   "greetings": {
     "welcomeTitle": "欢迎消息",
-    "welcomeHint": "会显示在新订阅粉丝的 Toffee Room 最开头。写 {{name}} 会替换为粉丝的昵称。",
+    "welcomeHint": "会显示在新订阅粉丝的 Toffee Room 最开头。点下方的“插入粉丝名字”，那个位置会换成每位粉丝的昵称。",
     "birthdayTitle": "生日祝福",
     "birthdayHint": "会在开启生日提醒的粉丝生日当天早上（泰国时间 9 点）自动发送。你看不到粉丝的生日日期。",
     "placeholder": "例如：{{name}}，欢迎你！",

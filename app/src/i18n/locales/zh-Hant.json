@@ -58,6 +58,7 @@
     "noConversation": "還沒有訊息"
   },
   "chat": {
+    "scrollToBottom": "回到最新",
     "loadFailed": "無法載入聊天。請確認你是否已訂閱這位藝人。",
     "replyPlaceholder": "傳送訊息…",
     "send": "傳送",
@@ -72,7 +73,7 @@
     "unmute": "開啟通知",
     "muted": "已關閉此 Toffee Room 的通知，仍會照常收到訊息。",
     "unmuted": "已開啟此 Toffee Room 的通知。",
-    "report": "檢舉",
+    "report": "檢舉問題",
     "closeMenu": "關閉",
     "messageActions": "長按開啟選單",
     "newMessages": "{{count}} 則新訊息 ↓",
@@ -629,7 +630,7 @@
   },
   "greetings": {
     "welcomeTitle": "歡迎訊息",
-    "welcomeHint": "會顯示在新訂閱粉絲的 Toffee Room 最開頭。寫 {{name}} 會替換成粉絲的暱稱。",
+    "welcomeHint": "會顯示在新訂閱粉絲的 Toffee Room 最開頭。點下方的「插入粉絲名字」，那個位置會換成每位粉絲的暱稱。",
     "birthdayTitle": "生日祝福",
     "birthdayHint": "會在開啟生日提醒的粉絲生日當天早上（泰國時間 9 點）自動傳送。你看不到粉絲的生日日期。",
     "placeholder": "例如：{{name}}，歡迎你！",

@@ -28,6 +28,7 @@ import { ChatBackground } from '@/components/chat-background';
 import { DayDivider, sameDay } from '@/components/day-divider';
 import { MessageMenu } from '@/components/message-menu';
 import { AlbumGrid } from '@/components/album-grid';
+import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { QuoteBlock } from '@/components/quote-block';
 import { needsTranslation } from '@/utils/detect-script';
 import { TranslatableText } from '@/components/translatable-text';
@@ -422,6 +423,7 @@ export default function ChatRoomScreen() {
           );
         }}
       />
+      {!atBottom && !unseenPreview ? <ScrollToBottomButton onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })} /> : null}
       {unseenPreview && (
         <Pressable
           onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
@@ -667,7 +669,7 @@ function MessageRow({
       }}
       style={[styles.bubbleWrap, highlighted && { borderRadius: Radius.lg + 2, borderWidth: 2, borderColor: theme.tint }]}>
       {message.retracted ? (
-        <View style={[styles.bubble, styles.retracted, { borderColor: theme.border }]}>
+        <View style={[styles.bubble, styles.retracted, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
           <ThemedText type="small" themeColor="textTertiary">
             {t('retract.placeholder')}
           </ThemedText>
@@ -756,7 +758,8 @@ function MessageRow({
               actions={[
                 ...(message.body ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: onCopy }] : []),
                 ...(canRetract ? [{ key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: onRetract }] : []),
-                ...(canReport ? [{ key: 'report', label: t('chat.report'), icon: Flag, danger: true, onPress: onReport }] : []),
+                // 문제 신고는 맨 뒤에 흐리게(2026-10-15 — 앱 심사상 꼭 있어야 하지만 눈에 띌 필요는 없음)
+                ...(canReport ? [{ key: 'report', label: t('chat.report'), icon: Flag, muted: true, onPress: onReport }] : []),
               ]}
             />
           )}
