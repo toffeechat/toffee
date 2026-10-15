@@ -33,7 +33,11 @@ const config: ExpoConfig = {
   icon: './assets/images/icon.png',
   scheme: IS_PRODUCTION ? 'toffee' : 'toffee-dev',
   userInterfaceStyle: 'automatic',
+  // OTA(EAS Update, 2026-10-15 도입) — 화면·문구 같은 JS만 바뀐 수정은 새 빌드 없이 내려보냄. 같은 앱 버전(version)끼리만 받으므로
+  // 네이티브(폰 기능·설정)를 바꾸면 버전을 올려 새로 빌드. 버전을 올리기 전에 쌓인 수정을 먼저 OTA로 보낼 것(젤리 2026-08-26 교훈:
+  // 순서를 거꾸로 하면 이전 버전 사용자는 다음 빌드가 깔릴 때까지 어떤 수정도 못 받음). 내려보내기: docs/engineering/device-build.md "OTA"
   runtimeVersion: { policy: 'appVersion' },
+  updates: { url: 'https://u.expo.dev/994e5a33-559f-4a23-ac9d-c47e386ffd33' },
   ios: {
     bundleIdentifier: APP_ID,
     // Sign in with Apple — 다른 소셜 로그인을 넣으면 애플 심사 규칙상 같이 있어야 함

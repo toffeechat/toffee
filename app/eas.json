@@ -26,6 +26,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api-demo.toffeechat.app",
         "EXPO_PUBLIC_ENABLE_DEV_LOGIN": "true",
@@ -43,6 +44,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
       "env": {
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_SUPPORT_EMAIL": "support@toffeechat.app",
