@@ -155,5 +155,5 @@ Casual smartphone photo look, slight grain, natural skin texture, no beauty filt
 ## 5. 다 만든 뒤
 
 파일 이름을 위 표대로 바꿔서 대화에 올려 주면 Claude가: 크기 맞추기(600×800 / 800×800), 공식 사진에서 정사각 대화방 사진
-(`*-chat.jpg`, 400×400) 잘라 만들기, `app/public/demo/`에 교체, 제안서 화면 캡처 갱신까지 한다. 코드(`demo-seed.ts`)는 파일
-이름이 같으므로 고칠 필요 없음 — 데모 사이트는 배포 후 운영자 화면 "데모 초기화" 없이도 사진이 바뀐다(같은 주소의 파일을 교체하므로).
+(`*-chat.jpg`, 400×400) 잘라 만들기, `app/public/demo/`에 교체, 제안서 화면 캡처 갱신까지 한다. 사진을 같은 이름으로 덮어쓰면 앱이 예전 사진을 계속 보여 주므로(주소 기준으로 저장해 둠), `backend/src/demo/demo-seed.ts`의
+`DEMO_ASSET_VERSION` 값을 올리고, 배포 뒤 운영자 화면에서 **"데모 초기화"**를 눌러야 바뀐다.
