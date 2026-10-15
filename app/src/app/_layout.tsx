@@ -25,6 +25,7 @@ import { Colors, fontFor } from '@/constants/theme';
 import { LocalePreferenceProvider } from '@/i18n/locale-preference-context';
 import { useSyncLocale } from '@/hooks/use-sync-locale';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useOtaUpdate } from '@/hooks/use-ota-update';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useRealtimeSync } from '@/lib/realtime';
@@ -132,6 +133,8 @@ function SessionEffects() {
 }
 
 function RootLayout() {
+  // 새 OTA가 있으면 켤 때 바로 적용(로그인과 상관없이)
+  useOtaUpdate();
   const { t, i18n } = useTranslation();
   const colorScheme = useColorScheme();
   const palette = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
