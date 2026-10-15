@@ -78,7 +78,7 @@ export function InAppBanner() {
         {payload.avatar !== undefined ? (
           <Avatar uri={payload.avatar} size={36} />
         ) : (
-          <Image source={require('@/../assets/brand/t-icon-black.png')} style={styles.icon} contentFit="contain" />
+          <Image source={require('@/../assets/brand/app-icon-small.png')} style={styles.icon} contentFit="contain" />
         )}
         <View style={styles.body}>
           {payload.title ? (

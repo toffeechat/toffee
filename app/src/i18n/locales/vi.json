@@ -463,11 +463,19 @@
     "dm": "Đăng ký để mở tin nhắn riêng 1:1",
     "media": "Ảnh, giọng nói và video gửi trực tiếp từ họ",
     "paid": "Đăng ký trả phí · không có gói miễn phí",
-    "devTitle": "Đăng nhập email dành cho nhà phát triển",
-    "devHint": "Đăng nhập dùng cho phát triển và demo. Ứng dụng chính thức sẽ ẩn mục này và chỉ hiển thị nút đăng nhập bằng mạng xã hội.",
+    "devTitle": "Đăng nhập demo",
+    "devHint": "Chọn giao diện muốn dùng thử và nhập mã truy cập. Ứng dụng chính thức sẽ ẩn mục này.",
     "email": "Email",
     "code": "Mã truy cập (chỉ khi bạn được cung cấp)",
-    "continue": "Tiếp tục"
+    "continue": "Tiếp tục",
+    "demoRole": {
+      "agency": "Công ty quản lý",
+      "artist": "Nghệ sĩ",
+      "fan": "Fan",
+      "admin": "Quản trị viên",
+      "email": "Bằng email"
+    },
+    "adminCode": "Mã quản trị viên"
   },
   "underage": {
     "title": "Bạn phải từ {{age}} tuổi trở lên",

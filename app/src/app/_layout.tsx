@@ -27,6 +27,7 @@ import { useSyncLocale } from '@/hooks/use-sync-locale';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useOtaUpdate } from '@/hooks/use-ota-update';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { peekDemoLink } from '@/lib/demo-entry';
 import { useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useRealtimeSync } from '@/lib/realtime';
 import { useConsoleWebAlerts } from '@/lib/console-alerts';
@@ -122,8 +123,21 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 export default Sentry.wrap(RootLayout);
 
+// 데모 링크(`?demo=코드&as=역할`, 2026-10-15)로 들어왔는데 이미 다른 데모 계정으로 로그인돼 있으면 로그아웃 → 로그인 화면이 링크의 역할로
+// 바로 다시 로그인함(예: 팬 링크로 둘러본 소속사가 소속사 링크를 눌렀는데 팬 화면이 그대로 뜨는 일이 없게)
+function useDemoLinkSwitch() {
+  const { token, isLoading, logout } = useAuth();
+  useEffect(() => {
+    const link = peekDemoLink();
+    if (!isLoading && token && link?.role && link.code) void logout();
+    // 앱이 뜬 직후 한 번만 판단하면 됨(링크 내용은 로그인 화면이 가져가면 비워짐)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+}
+
 // 로그인 상태에 따라 돌아야 하는 백그라운드 작업들(언어 동기화, 푸시 등록·알림 처리, 실시간 연결)
 function SessionEffects() {
+  useDemoLinkSwitch();
   useSyncLocale();
   usePushNotifications();
   const { token } = useAuth();

@@ -996,8 +996,10 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 - **앱 설정(`app/app.config.ts`, `eas.json`)**: 젤리 방식 — `APP_VARIANT=production`(eas production 프로필만)일 때만 운영 번들 ID
   `com.toffeechat.app`(잠정), 그 외 `.dev` + 이름 "Toffee Dev" + 스킴 `toffee-dev`. Firebase 설정 파일도 변형별
   (`GoogleService-Info(.dev).plist`, `google-services(.dev).json`, 아직 없음). iOS 권한 문구는 `infoPlist` 기본(영어) +
-  `locales/*.json` 6개 언어. 아이콘·스플래시는 `docs/product/brand/logo/t-icon-black-mono-a.png`에서 생성(흰 배경 제거,
-  아이콘 배경 `#F3EFFD`), Expo 템플릿의 파란 스플래시 애니메이션(`animated-icon`)은 `splash-overlay`(네이티브 스플래시와
+  `locales/*.json` 6개 언어. 아이콘·스플래시는 **2026-10-15부터** `docs/product/brand/logo/toffee-*.svg`에서 생성(iOS `icon.png` 1024 알파 없음,
+  안드로이드 적응형 배경 `#0F1115` + 전경은 지름 60% 원 안에 맞춤, `monochromeImage`, `expo-notifications`의 `icon`
+  = `notification-icon.png` 96px 흰 실루엣, 스플래시 400×392 — `splash-overlay.tsx`의 `ICON_ASPECT`와 맞출 것, 앱 안 배너는
+  `assets/brand/app-icon-small.png`). 예전엔 `t-icon-black-mono-a.png`에서 생성(배경 `#F3EFFD`), Expo 템플릿의 파란 스플래시 애니메이션(`animated-icon`)은 `splash-overlay`(네이티브 스플래시와
   같은 화면 → 250ms 페이드)로 교체.
   **EAS 연결(2026-10-01)**: `owner: 'toffeechat-team'`(Expo 조직 — 개인 계정 `toffeechat`이 아니라 조직 소유), `extra.eas.projectId`
   `994e5a33-…`. 운영·개발 변형이 같은 EAS 프로젝트(slug `toffee`)를 쓰고 빌드 프로필로만 나뉨. **OTA(2026-10-15)**: `expo-updates` +
@@ -1346,6 +1348,12 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   동적 경로(`/actor/[id]`)도 별도 `_redirects` 없이 직접 열림. Pages 설정: 루트 `app`, 빌드 `npm run build:web`(`expo export -p web`),
   출력 `dist`, 변수 `EXPO_PUBLIC_API_URL`·`EXPO_PUBLIC_ENABLE_DEV_LOGIN=true`·`EXPO_PUBLIC_SUPPORT_EMAIL`·`NODE_VERSION=22`.
   서버 CORS는 `app.enableCors()`(전체 허용)라 추가 설정 없음.
+- **데모 로그인 간소화**(2026-10-15): `app/src/lib/demo-entry.ts` — 역할(`agency`/`artist`/`fan`/`admin`) → 시드 고정 계정 이메일
+  (`staff@`·`caramel-self@`·`fan1@`·`admin@toffee.demo`). 서버는 그대로 `/auth/dev-login`(이메일+코드), 운영자 코드 분리도 서버 몫.
+  링크 `?demo=<코드>&as=<역할>`은 모듈 로드 때 한 번 읽고(`readLinkOnce`, `SHOW_DEV_LOGIN`인 웹만) `history.replaceState`로 `demo`·`as`만
+  지움 — AuthGate가 `/login`으로 replace하면서 검색어가 사라지기 전에 잡으려고 `_layout.tsx`에서 import. 파라미터 이름이 `code`가 아닌 건
+  `/oauth/<회사>?code=` 복귀와 안 겹치게. 로그인 화면이 `takeDemoLink()`로 한 번만 소비해 자동 dev-login, 이미 토큰이 있으면
+  `_layout`의 `useDemoLinkSwitch`가 먼저 `logout()`. 코드·마지막 역할은 `preference-storage`(`toffee_demo_code`/`toffee_demo_role`, 운영자는 저장 안 함).
 
 
 ## 채팅방 묶음 기준·헤더·대화방 프로필 카드 (2026-10-02)
