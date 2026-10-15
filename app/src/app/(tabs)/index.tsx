@@ -17,7 +17,6 @@ import { IconButton } from '@/components/ui/icon-button';
 import { SearchField } from '@/components/ui/search-field';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useActors, useAgencies, useCoupleRooms, type Actor } from '@/hooks/use-actors';
-import { CoupleCard } from '@/components/couple-card';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { formatPrice } from '@/utils/price';
 import { useTheme } from '@/hooks/use-theme';
@@ -201,10 +200,9 @@ export default function DiscoverScreen() {
         <View style={styles.section}>
           <SectionHeader title={t('discover.coupleTitle')} action={t('discover.seeAll')} onAction={() => setView({ kind: 'couple' })} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
-            {couples.data!.map((room) => (
-              <View key={room.id} style={styles.coupleItem}>
-                <CoupleCard room={room} onPress={() => open(room)} />
-              </View>
+            {/* 다른 줄과 같은 사진 카드로(2026-10-15 사용자 요청 — 예전엔 폭 300 가로 카드라 CP가 적으면 오른쪽이 애매하게 비었음) */}
+            {couples.data!.slice(0, 8).map((room) => (
+              <ActorPhotoCard key={room.id} actor={room} width={Math.min(cardWidth, 200)} subscribed={subscribed.has(room.id)} onPress={() => open(room)} />
             ))}
           </ScrollView>
         </View>
@@ -300,7 +298,6 @@ function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; w
 }
 
 const styles = StyleSheet.create({
-  coupleItem: { width: 300 },
   container: { flex: 1 },
   content: { paddingBottom: Spacing.five, width: '100%', alignSelf: 'center' },
   search: { marginHorizontal: Spacing.four },

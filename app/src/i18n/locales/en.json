@@ -477,6 +477,9 @@
     "logout": "Log out"
   },
   "bundle": {
+    "withCoupleTitle": "Save more with the CP room",
+    "withSoloTitle": "Save more with the artists' rooms",
+    "withCoupleHint": "Subscribing to solo and CP rooms together costs less than separately.",
     "sectionTitle": "Save with a bundle",
     "sectionHint": "Subscribe to several artists at once for less than subscribing separately.",
     "saveVsSingle": "{{percent}}% off vs. separately",
@@ -509,6 +512,8 @@
     "offline": "You're offline"
   },
   "couple": {
+    "soloSectionTitle": "Subscribe to the CP room only",
+    "inBundleHint": "Also included in the bundles above. Both artists send messages here together.",
     "sectionTitle": "CP",
     "sectionHint": "A room where two artists message you together. Subscribed to separately from individual rooms.",
     "discoverTitle": "CP",

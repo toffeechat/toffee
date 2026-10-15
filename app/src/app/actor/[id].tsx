@@ -42,6 +42,9 @@ export default function ActorProfileScreen() {
   const { data: couples } = useActorCouples(id, !!actor && !isCouple);
   const ownedBundleIds = new Set(subscriptions?.flatMap((sub) => sub.coveredBy.map((cover) => cover.bundle?.id)).filter(Boolean));
   const offers = (bundles ?? []).filter((bundle) => !ownedBundleIds.has(bundle.id));
+  // 1인 아티스트의 묶음 중 CP방이 들어 있는 게 있으면 "CP와 함께 구독하면 더 저렴해요"
+  const coupleIds = new Set((couples ?? []).map((room) => room.id));
+  const withCouple = offers.some((bundle) => bundle.actors.some((member) => coupleIds.has(member.id)));
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   if (isLoading) {
@@ -127,25 +130,13 @@ export default function ActorProfileScreen() {
             </ThemedText>
           </View>
 
-          {/* 이 배우의 커플방 */}
-          {!isCouple && (couples?.length ?? 0) > 0 ? (
-            <View style={styles.bundles}>
-              <ThemedText type="headline">{t('couple.sectionTitle')}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('couple.sectionHint')}
-              </ThemedText>
-              {couples!.map((room) => (
-                <CoupleCard key={room.id} room={room} onPress={() => router.push({ pathname: '/actor/[id]', params: { id: room.id } })} />
-              ))}
-            </View>
-          ) : null}
-
-          {/* 묶음으로 더 저렴하게 — 이미 구독 중인 묶음은 빼고, 활동 종료한 배우면 안 보임(서버가 걸러 줌) */}
+          {/* 묶음으로 더 저렴하게 — 구독 버튼 바로 아래(2026-10-15 사용자 요청: 개인방·CP방·묶음 관계가 헷갈려서). 1인 아티스트는 "CP와 함께",
+              CP방은 "아티스트 개인방과 함께". 이미 구독 중인 묶음은 빼고, 활동 종료한 배우면 안 보임(서버가 걸러 줌) */}
           {offers.length > 0 && !actor.retiredAt ? (
             <View style={styles.bundles}>
-              <ThemedText type="headline">{t('bundle.sectionTitle')}</ThemedText>
+              <ThemedText type="headline">{t(isCouple ? 'bundle.withSoloTitle' : withCouple ? 'bundle.withCoupleTitle' : 'bundle.sectionTitle')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {t('bundle.sectionHint')}
+                {t(isCouple || withCouple ? 'bundle.withCoupleHint' : 'bundle.sectionHint')}
               </ThemedText>
               {offers.map((bundle) => (
                 <BundleCard
@@ -153,6 +144,19 @@ export default function ActorProfileScreen() {
                   bundle={bundle}
                   onPress={() => router.push({ pathname: '/subscribe/bundle/[bundleId]', params: { bundleId: bundle.id } })}
                 />
+              ))}
+            </View>
+          ) : null}
+
+          {/* 이 배우의 CP방 따로 구독(2026-10-15 — 묶음 아래로, 묶음에 들어 있으면 그렇다고) */}
+          {!isCouple && (couples?.length ?? 0) > 0 ? (
+            <View style={styles.bundles}>
+              <ThemedText type="headline">{t('couple.soloSectionTitle')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {withCouple && !actor.retiredAt ? t('couple.inBundleHint') : t('couple.sectionHint')}
+              </ThemedText>
+              {couples!.map((room) => (
+                <CoupleCard key={room.id} room={room} onPress={() => router.push({ pathname: '/actor/[id]', params: { id: room.id } })} />
               ))}
             </View>
           ) : null}
