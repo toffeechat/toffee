@@ -169,7 +169,7 @@ describe('MessagesService.sendBroadcast 인용 답장 알림', () => {
       subscription: { findMany: ReturnType<typeof vi.fn> };
     };
     prisma.message.create.mockResolvedValue({ id: 'm1', mediaKey: null, mediaUrl: null, replyTo });
-    prisma.message.findFirst = vi.fn().mockResolvedValue({ id: 'fan-msg' });
+    prisma.message.findFirst = vi.fn().mockResolvedValue({ senderType: 'FAN', senderActorId: null, deletedAt: null });
     prisma.subscription.findMany.mockResolvedValue(subscribers.map((userId) => ({ userId })));
     return ctx;
   }
@@ -233,7 +233,14 @@ describe('인용 답장 요약(toQuote)', () => {
 
   it('아티스트 메시지(팬 답장이 자동으로 묶인 경우)는 인용이 아님', () => {
     expect(toQuote({ ...base, senderType: 'ARTIST', fanUser: null })).toBeNull();
+    expect(toQuote({ ...base, senderType: 'ARTIST', fanUser: null }, 'FAN')).toBeNull();
     expect(toQuote(null)).toBeNull();
+  });
+
+  it('CP방에서 아티스트가 상대 아티스트 메시지를 인용하면 이름과 글을 보여 줌(2026-10-15)', () => {
+    const quote = toQuote({ ...base, senderType: 'ARTIST', fanUser: null, senderActor: { chatDisplayName: '누가' } }, 'ARTIST');
+    expect(quote).toMatchObject({ hidden: false, artistName: '누가', nickname: null });
+    expect(toQuote({ ...base, senderType: 'ARTIST', fanUser: null, deletedAt: new Date() }, 'ARTIST')).toMatchObject({ hidden: true, retracted: true, body: null });
   });
 });
 
@@ -306,6 +313,7 @@ describe('MessagesService.listBroadcasts 팬 답장 흐름 미리보기', () => 
     );
     const prisma = {
       user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ role: Role.ADMIN }) },
+      actor: { findFirst: vi.fn().mockResolvedValue(null) },
       message: { findMany },
     } as unknown as PrismaService;
     const media = { withReadUrls: vi.fn((items: object[]) => Promise.resolve(items)) } as unknown as MediaService;
@@ -347,6 +355,7 @@ describe('MessagesService.listReplies 나눠 받기', () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
       user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ role: Role.ADMIN }) },
+      actor: { findFirst: vi.fn().mockResolvedValue(null) },
       message: { findMany },
     } as unknown as PrismaService;
     const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, {} as MediaService, config(), realtime);

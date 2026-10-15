@@ -61,9 +61,11 @@ export function QuoteBlock({
         <>
           {mine ? null : (
             <ThemedText type="smallBold" style={{ color }}>
-              {artistName !== undefined
-                ? t('quote.artistReply', { name: artistName })
-                : t('quote.replyTo', { nickname: quote.nickname ?? t('console.noNickname') })}
+              {quote.artistName
+                ? t('quote.fromArtist', { name: quote.artistName })
+                : artistName !== undefined
+                  ? t('quote.artistReply', { name: artistName })
+                  : t('quote.replyTo', { nickname: quote.nickname ?? t('console.noNickname') })}
             </ThemedText>
           )}
           <ThemedText type="small" style={{ color, opacity: 0.85 }} numberOfLines={standalone ? 6 : 2}>

@@ -242,6 +242,7 @@
     "rule": "It's fine if someone else has the same nickname. You can change it freely for 24 hours after signing up; after that, once you change it you can change it again 7 days later."
   },
   "quote": {
+    "fromArtist": "{{name}}'s message",
     "replyTo": "Replying to {{nickname}}",
     "hidden": "This message is hidden",
     "action": "Reply",

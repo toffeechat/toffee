@@ -20,6 +20,8 @@ export interface ReplyPreview {
 
 export interface StudioMessage extends ChatMessage {
   replyCount: number;
+  /** 보는 아티스트 본인이 보낸 메시지 — CP방에서 상대 메시지엔 회수 대신 "답장"(2026-10-15) */
+  mine?: boolean;
   /** 최근 메시지에만 있음 — 없으면 오래된 메시지(답장 줄 없이 숫자만) */
   recentReplies?: ReplyPreview[];
 }
