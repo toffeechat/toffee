@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { AtSign } from 'lucide-react-native';
+
 import { ThemedText } from '@/components/themed-text';
+import { Icon } from '@/components/ui/icon';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
+import { NAME_TOKEN } from '@/utils/name-token';
 
 export type Greetings = { welcomeMessage: string | null; birthdayMessage: string | null };
 
@@ -48,6 +52,22 @@ export function GreetingsForm({ actorId, couple = false }: { actorId: string; co
     onError: (e) => setMessage({ text: e instanceof ApiError ? e.message : t('studioProfile.saveFailed'), error: true }),
   });
   const edit = (key: keyof typeof value) => (text: string) => (setDraft({ ...value, [key]: text }), setMessage(null));
+  // "팬 이름 넣기"(2026-10-15 사용자 요청 — {{name}}을 직접 치지 않게): 커서 자리에, 커서를 모르면 끝에 넣음
+  const [cursor, setCursor] = useState<Record<string, number>>({});
+  const insertName = (key: keyof typeof value) => {
+    const text = value[key];
+    const at = Math.min(cursor[key] ?? text.length, text.length);
+    edit(key)(text.slice(0, at) + NAME_TOKEN + text.slice(at));
+    setCursor((c) => ({ ...c, [key]: at + NAME_TOKEN.length }));
+  };
+  const nameButton = (key: keyof typeof value) => (
+    <View style={styles.nameRow}>
+      <Pressable onPress={() => insertName(key)} accessibilityRole="button" accessibilityHint={t('studio.insertNameHint')} style={[styles.nameChip, { backgroundColor: theme.background }]}>
+        <Icon as={AtSign} size={15} color={theme.tint} />
+        <ThemedText type="smallMedium">{t('studio.insertName')}</ThemedText>
+      </Pressable>
+    </View>
+  );
   const inputStyle = [styles.input, styles.multiline, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }];
   const disabled = !draft || !complete || save.isPending;
 
@@ -57,7 +77,12 @@ export function GreetingsForm({ actorId, couple = false }: { actorId: string; co
       <ThemedText type="small" themeColor="textSecondary">
         {t('greetings.welcomeHint')}
       </ThemedText>
-      <TextInput value={value.welcomeMessage} onChangeText={edit('welcomeMessage')} multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+      <TextInput
+        value={value.welcomeMessage}
+        onChangeText={edit('welcomeMessage')}
+        onSelectionChange={(e) => setCursor((c) => ({ ...c, welcomeMessage: e.nativeEvent.selection.end }))}
+        multiline maxLength={1000} placeholder={t('greetings.placeholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+      {nameButton('welcomeMessage')}
       {couple ? null : (
         <>
           <ThemedText type="smallBold" style={styles.spaced}>
@@ -66,7 +91,12 @@ export function GreetingsForm({ actorId, couple = false }: { actorId: string; co
           <ThemedText type="small" themeColor="textSecondary">
             {t('greetings.birthdayHint')}
           </ThemedText>
-          <TextInput value={value.birthdayMessage} onChangeText={edit('birthdayMessage')} multiline maxLength={1000} placeholder={t('greetings.birthdayPlaceholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+          <TextInput
+            value={value.birthdayMessage}
+            onChangeText={edit('birthdayMessage')}
+            onSelectionChange={(e) => setCursor((c) => ({ ...c, birthdayMessage: e.nativeEvent.selection.end }))}
+            multiline maxLength={1000} placeholder={t('greetings.birthdayPlaceholder')} placeholderTextColor={theme.textSecondary} style={inputStyle} />
+          {nameButton('birthdayMessage')}
         </>
       )}
       {message ? (
@@ -99,4 +129,6 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   multiline: { minHeight: 88, textAlignVertical: 'top' },
   spaced: { marginTop: Spacing.two },
+  nameRow: { flexDirection: 'row' },
+  nameChip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 32, paddingHorizontal: Spacing.three - 4, borderRadius: Radius.pill },
 });

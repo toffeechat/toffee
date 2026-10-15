@@ -10,3 +10,29 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/* 웹 스크롤바(2026-10-15 사용자 요청) — 기본 회색 굵은 막대가 토피룸 배경 사진 위에서 거슬려서, 얇고 반투명하게(가까이 가면 진해짐).
+   배경(트랙)은 투명이라 사진·다크 모드 어디서나 어울림. 앱(네이티브)엔 영향 없음 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 127, 140, 0.45) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(127, 127, 140, 0.4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(127, 127, 140, 0.7);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

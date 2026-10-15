@@ -58,6 +58,7 @@
     "noConversation": "まだメッセージがありません"
   },
   "chat": {
+    "scrollToBottom": "最新へ移動",
     "loadFailed": "トークを読み込めませんでした。このアーティストを購読しているか確認してください。",
     "replyPlaceholder": "メッセージを送信…",
     "send": "送信",
@@ -72,7 +73,7 @@
     "unmute": "通知をオン",
     "muted": "このToffee Roomの通知をオフにしました。メッセージは引き続き届きます。",
     "unmuted": "このToffee Roomの通知をオンにしました。",
-    "report": "通報",
+    "report": "問題を報告",
     "closeMenu": "閉じる",
     "messageActions": "長押しでメニュー",
     "newMessages": "新着 {{count}}件 ↓",
@@ -627,7 +628,7 @@
   },
   "greetings": {
     "welcomeTitle": "ウェルカムメッセージ",
-    "welcomeHint": "新しく購読したファンのToffee Roomの最初に表示されます。{{name}}と書くとファンのニックネームに変わります。",
+    "welcomeHint": "新しく購読したファンのToffee Roomの最初に表示されます。下の「ファンの名前を入れる」を押すと、その位置がファンごとのニックネームに変わります。",
     "birthdayTitle": "誕生日メッセージ",
     "birthdayHint": "誕生日通知をオンにしたファンに、誕生日の朝（タイ時間9時）に自動で届きます。ファンの誕生日は表示されません。",
     "placeholder": "例：{{name}}さん、ようこそ！",
