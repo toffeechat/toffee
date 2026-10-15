@@ -16,6 +16,8 @@ export interface MessageAction {
   danger?: boolean;
   /** 강조색(답장하기 등) */
   accent?: boolean;
+  /** 흐린 글자(문제 신고처럼 눈에 덜 띄어야 하는 것, 2026-10-15) */
+  muted?: boolean;
 }
 
 /**
@@ -28,7 +30,7 @@ export function MessageMenu({ actions, onClose, align = 'left' }: { actions: Mes
   return (
     <View style={[styles.menu, align === 'right' ? styles.right : styles.left, { backgroundColor: theme.background, borderColor: theme.border }]}>
       {actions.map((action) => {
-        const color = action.danger ? theme.danger : action.accent ? theme.tint : theme.text;
+        const color = action.danger ? theme.danger : action.accent ? theme.tint : action.muted ? theme.textSecondary : theme.text;
         return (
           <Pressable key={action.key} onPress={action.onPress} style={styles.item} accessibilityRole="button" hitSlop={4}>
             <Icon as={action.icon} size={16} color={color} />

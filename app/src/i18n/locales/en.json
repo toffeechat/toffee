@@ -58,6 +58,7 @@
     "noConversation": "No messages yet"
   },
   "chat": {
+    "scrollToBottom": "Jump to latest",
     "loadFailed": "Couldn't load this chat. Please check that you're subscribed to this artist.",
     "replyPlaceholder": "Message…",
     "send": "Send",
@@ -72,7 +73,7 @@
     "unmute": "Unmute notifications",
     "muted": "Notifications for this Toffee Room are off. You'll still receive messages.",
     "unmuted": "Notifications for this Toffee Room are on.",
-    "report": "Report",
+    "report": "Report a problem",
     "closeMenu": "Close",
     "messageActions": "Long-press for options",
     "newMessages": "{{count}} new ↓",
@@ -627,7 +628,7 @@
   },
   "greetings": {
     "welcomeTitle": "Welcome message",
-    "welcomeHint": "Shown at the very start of a new subscriber's Toffee Room. Write {{name}} and it becomes the fan's nickname.",
+    "welcomeHint": "Shown at the very start of a new subscriber's Toffee Room. Tap 'Insert fan name' below and that spot becomes each fan's nickname.",
     "birthdayTitle": "Birthday message",
     "birthdayHint": "Sent automatically on the morning of the fan's birthday (9 AM Thailand time) to fans who turned on birthday messages. You won't see their birth date.",
     "placeholder": "e.g. Hi {{name}}, so glad you’re here!",

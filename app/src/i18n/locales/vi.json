@@ -58,6 +58,7 @@
     "noConversation": "Chưa có tin nhắn"
   },
   "chat": {
+    "scrollToBottom": "Đến tin mới nhất",
     "loadFailed": "Không tải được cuộc trò chuyện này. Vui lòng kiểm tra xem bạn đã đăng ký nghệ sĩ này chưa.",
     "replyPlaceholder": "Nhắn tin…",
     "send": "Gửi",
@@ -72,7 +73,7 @@
     "unmute": "Bật thông báo",
     "muted": "Đã tắt thông báo cho Toffee Room này. Bạn vẫn nhận được tin nhắn.",
     "unmuted": "Đã bật thông báo cho Toffee Room này.",
-    "report": "Báo cáo",
+    "report": "Báo cáo vấn đề",
     "closeMenu": "Đóng",
     "messageActions": "Nhấn giữ để mở menu",
     "newMessages": "{{count}} tin mới ↓",
@@ -627,7 +628,7 @@
   },
   "greetings": {
     "welcomeTitle": "Tin nhắn chào mừng",
-    "welcomeHint": "Hiển thị ở đầu Toffee Room của fan mới đăng ký. Viết {{name}} sẽ được thay bằng biệt danh của fan.",
+    "welcomeHint": "Hiển thị ở đầu Toffee Room của fan mới đăng ký. Nhấn \"Chèn tên fan\" bên dưới, chỗ đó sẽ thành biệt danh của từng fan.",
     "birthdayTitle": "Lời chúc sinh nhật",
     "birthdayHint": "Tự động gửi vào sáng ngày sinh nhật (9 giờ theo giờ Thái Lan) cho fan đã bật thông báo sinh nhật. Bạn sẽ không thấy ngày sinh của fan.",
     "placeholder": "VD: Chào {{name}}, rất vui được gặp bạn!",

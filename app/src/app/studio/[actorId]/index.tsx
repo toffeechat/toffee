@@ -22,6 +22,7 @@ import { VoiceMessage } from '@/components/voice-message';
 import { ChatBackground } from '@/components/chat-background';
 import { DayDivider, sameDay } from '@/components/day-divider';
 import { AlbumGrid } from '@/components/album-grid';
+import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { collapseRetracted, groupAlbumRows, rowHas } from '@/utils/chat-album';
 import { MessageMenu } from '@/components/message-menu';
 import { copyText } from '@/lib/copy-text';
@@ -55,6 +56,7 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
 
 // 여러 장 보내기(2026-10-13) — 앨범에서 최대 10개까지 고른 순서대로, 한 장씩 메시지로 보냄(팬 화면은 연달아 온 사진을 격자로 묶음)
 const MAX_BATCH = 10;
+type StudioRow = StudioMessage & { album?: StudioMessage[]; retracted?: boolean };
 const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
 
 function toAttachments(result: ImagePicker.ImagePickerResult): Attachment[] {
@@ -444,6 +446,8 @@ export default function StudioChannelScreen() {
   // 회수한 메시지도 자리는 남김(2026-10-14) — 팬 화면처럼 "회수한 메시지예요", 운영자가 가렸거나 소속사가 회수한 건 이유와 함께
   // 연달아 보낸 글 없는 사진·영상은 팬 화면처럼 격자 한 칸으로(2026-10-15 — 예전엔 한 장씩 따로 보여서 장마다 "답장 없음"이 붙었음)
   const visible = useMemo(() => messages ?? [], [messages]);
+  const listRef = useRef<FlatList<StudioRow>>(null);
+  const [atBottom, setAtBottom] = useState(true);
   const rows = useMemo(
     () => collapseRetracted(groupAlbumRows(visible.map((message) => ({ ...message, retracted: !!message.deletedAt })), sameMinute), sameMinute),
     [visible],
@@ -471,49 +475,56 @@ export default function StudioChannelScreen() {
         {isLoading ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
         ) : (
-          <FlatList
-            inverted
-            // 내가 지운 메시지는 안 보임(운영자가 가린 건 이유와 함께 보임)
-            data={rows}
-            keyExtractor={(item) => (item.album ? `album-${item.album[0].id}` : item.id)}
-            contentContainerStyle={styles.list}
-            keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={
-              <View style={styles.flip}>
-                <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />
-              </View>
-            }
-            renderItem={({ item, index }) => {
-              // 뒤집힌 목록: index+1이 더 오래된 메시지 — 날이 바뀌면 구분선
-              const older = rows[index + 1];
-              return (
-                <View>
-                  {(!older || !sameDay(older.createdAt, item.createdAt)) && <DayDivider iso={item.createdAt} />}
-                  <MyMessage
-                    message={item}
-                    actorId={actorId}
-                    isLatest={index === 0}
-                    senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
-                    onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
-                    onRetract={(ids) => void retractMessages(ids)}
-                    onQuote={
-                      actor?.kind === 'COUPLE' && item.mine === false && !item.deletedAt && !item.album
-                        ? () =>
-                            router.setParams({
-                              quoteId: item.id,
-                              quoteNickname: item.sender?.chatDisplayName ?? '',
-                              quoteBody: (item.body ? showNameToken(item.body, t('studio.fanNickname')) : t(`studio.media.${item.mediaType}`)).slice(0, 120),
-                            })
-                        : undefined
-                    }
-                    menuFor={menuFor}
-                    onOpenMenu={setMenuFor}
-                    onCloseMenu={() => setMenuFor(null)}
-                  />
+          <View style={styles.listArea}>
+            <FlatList
+            ref={listRef}
+            onScroll={(event) => setAtBottom(event.nativeEvent.contentOffset.y < 80)}
+            scrollEventThrottle={100}
+              inverted
+              // 내가 지운 메시지는 안 보임(운영자가 가린 건 이유와 함께 보임)
+              data={rows}
+              keyExtractor={(item) => (item.album ? `album-${item.album[0].id}` : item.id)}
+              contentContainerStyle={styles.list}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View style={styles.flip}>
+                  <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />
                 </View>
-              );
-            }}
-          />
+              }
+              renderItem={({ item, index }) => {
+                // 뒤집힌 목록: index+1이 더 오래된 메시지 — 날이 바뀌면 구분선
+                const older = rows[index + 1];
+                return (
+                  <View>
+                    {(!older || !sameDay(older.createdAt, item.createdAt)) && <DayDivider iso={item.createdAt} />}
+                    <MyMessage
+                      message={item}
+                      actorId={actorId}
+                      isLatest={index === 0}
+                      senderName={actor?.kind === 'COUPLE' ? (item.sender?.chatDisplayName ?? null) : null}
+                      onOpenReplies={() => router.push(`/studio/${actorId}/replies/${item.id}`)}
+                      onRetract={(ids) => void retractMessages(ids)}
+                      onQuote={
+                        actor?.kind === 'COUPLE' && item.mine === false && !item.deletedAt && !item.album
+                          ? () =>
+                              router.setParams({
+                                quoteId: item.id,
+                                quoteNickname: item.sender?.chatDisplayName ?? '',
+                                quoteBody: (item.body ? showNameToken(item.body, t('studio.fanNickname')) : t(`studio.media.${item.mediaType}`)).slice(0, 120),
+                              })
+                          : undefined
+                      }
+                      menuFor={menuFor}
+                      onOpenMenu={setMenuFor}
+                      onCloseMenu={() => setMenuFor(null)}
+                    />
+                  </View>
+                );
+              }}
+            />
+            {/* 위로 올려 보는 중이면 맨 아래로(2026-10-15, 카톡처럼) */}
+            {!atBottom ? <ScrollToBottomButton onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })} /> : null}
+          </View>
         )}
 
         {notice && (
@@ -689,6 +700,7 @@ export default function StudioChannelScreen() {
 }
 
 const styles = StyleSheet.create({
+  listArea: { flex: 1 },
   container: { flex: 1 },
   inner: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   headerTitle: { maxWidth: 240, alignItems: 'center' },

@@ -58,6 +58,7 @@
     "noConversation": "아직 대화가 없어요"
   },
   "chat": {
+    "scrollToBottom": "맨 아래로",
     "loadFailed": "대화를 불러오지 못했어요. 구독 중인 아티스트인지 확인해주세요.",
     "replyPlaceholder": "메시지 보내기",
     "send": "보내기",
@@ -72,7 +73,7 @@
     "unmute": "알림 켜기",
     "muted": "이 토피룸 알림을 껐어요. 메시지는 그대로 받아요.",
     "unmuted": "이 토피룸 알림을 켰어요.",
-    "report": "신고",
+    "report": "문제 신고",
     "closeMenu": "닫기",
     "messageActions": "길게 눌러 메뉴 열기",
     "newMessages": "새 메시지 {{count}}개 ↓",
@@ -627,7 +628,7 @@
   },
   "greetings": {
     "welcomeTitle": "환영 메시지",
-    "welcomeHint": "새로 구독한 팬의 토피룸 맨 처음에 보여요. {{name}}이라고 쓰면 팬 닉네임으로 바뀌어요.",
+    "welcomeHint": "새로 구독한 팬의 토피룸 맨 처음에 보여요. 아래 '팬 이름 넣기'를 누르면 그 자리가 팬마다 그 팬의 닉네임으로 바뀌어요.",
     "birthdayTitle": "생일 축하 메시지",
     "birthdayHint": "생일 알림을 켠 팬에게 생일 아침(태국 시간 9시)에 자동으로 가요. 팬의 생일 날짜는 보이지 않아요.",
     "placeholder": "예: {{name}}님, 반가워요!",
