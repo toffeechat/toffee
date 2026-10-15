@@ -9,7 +9,7 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 // 첫 화면이 준비되면 네이티브 스플래시를 내린 뒤 이 화면을 살짝 흐려지며 사라지게 — 뚝 끊기는 전환을 막음.
 // (예전엔 Expo 템플릿의 파란 화면 + Expo 로고 애니메이션이 그대로 남아 있었음)
 const ICON_WIDTH = 96;
-const ICON_ASPECT = 765 / 735;
+const ICON_ASPECT = 392 / 400; // splash-icon(-dark).png 세로/가로
 
 export function SplashOverlay() {
   const dark = useColorScheme() === 'dark';

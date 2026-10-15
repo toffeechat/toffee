@@ -20,7 +20,7 @@ const NAVER_URL_SCHEME = variantEnv('EXPO_PUBLIC_NAVER_URL_SCHEME');
 // 구글 iOS 클라이언트 ID를 뒤집은 값(com.googleusercontent.apps.xxxx) — GoogleService-Info.plist의 REVERSED_CLIENT_ID
 const GOOGLE_IOS_URL_SCHEME = variantEnv('EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME');
 
-const BRAND_BACKGROUND = '#F3EFFD'; // 앱 아이콘 배경(브랜드 앱 아이콘 시안 t-icon-app-icon-light.png)
+const BRAND_BACKGROUND = '#0F1115'; // 앱 아이콘 배경 Charcoal(2026-10-15 새 아이콘 — 원본 docs/product/brand/logo/toffee-icon.svg)
 
 const config: ExpoConfig = {
   name: IS_PRODUCTION ? 'Toffee' : 'Toffee Dev',
@@ -123,7 +123,8 @@ const config: ExpoConfig = {
     // 링크 단계에서 충돌함(RNFirebase가 pod install을 막음). 2026-10-04 첫 EAS iOS 빌드에서 발견
     ['@react-native-firebase/app', { ios: { disableSPM: true } }],
     '@react-native-firebase/messaging',
-    ['expo-notifications', { color: '#7C8CFF' }],
+    // 안드로이드 상태 표시줄 알림 아이콘은 흰 실루엣이어야 함(없으면 앱 아이콘이 흰 네모로 뭉개져 보임)
+    ['expo-notifications', { color: '#7C8CFF', icon: './assets/images/notification-icon.png' }],
     // 아이폰 푸시를 카톡처럼 "보낸 사람(아티스트) 사진이 있는 대화 알림"으로(2026-10-13) — 알림 확장 타깃 추가, 아래 extra.eas appExtensions와 짝
     './plugins/with-notification-service',
     // 카카오 SDK 저장소(안드로이드) — 패키지가 설치돼 있으면 키가 없어도 빌드에 필요
