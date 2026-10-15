@@ -36,13 +36,14 @@ import { ApiError } from '@/lib/api-client';
 import { saveMedia } from '@/lib/save-media';
 import { useActor } from '@/hooks/use-actors';
 import { useActorMessages, useChatExtras, useChatSearch, useReplyQuota, useRetractReply, useSendReply, type ChatMessage } from '@/hooks/use-messages';
-import { useMySubscriptions, useSetNotificationsMuted } from '@/hooks/use-subscriptions';
+import { useMySubscriptions, useSetNotificationsMuted, type Subscription } from '@/hooks/use-subscriptions';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/use-theme';
 import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { confirm } from '@/lib/confirm';
 import { useAcceptReplyRules, useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
-import { groupAlbumRows, rowHas } from '@/utils/chat-album';
+import { collapseRetracted, groupAlbumRows, rowHas } from '@/utils/chat-album';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 메시지를 따라감
 const AT_BOTTOM_PX = 80;
@@ -55,7 +56,7 @@ const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 
 // 환영 메시지·생일 축하 — 서버 메시지가 아니라 목록에만 끼워 넣는 말풍선(신고·번역 없음, 복사만)
 // album: 같은 분에 연달아 온 글 없는 사진·영상 묶음(카톡처럼 격자 한 칸, 2026-10-13) — 시간순. 묶음 줄의 나머지 값은 가장 최근 것
 type ChatItem = ChatMessage & { extra?: 'welcome' | 'birthday'; album?: ChatMessage[] };
-const groupAlbums = (messages: ChatItem[]) => groupAlbumRows(messages, sameMinute);
+const groupAlbums = (messages: ChatItem[]) => collapseRetracted(groupAlbumRows(messages, sameMinute), sameMinute);
 const extraMessage = (actorId: string, id: string, body: string, createdAt: string, extra: ChatItem['extra']): ChatItem => ({
   id,
   actorId,
@@ -90,6 +91,17 @@ export default function ChatRoomScreen() {
   const setMuted = useSetNotificationsMuted(actorId);
   const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useActorMessages(actorId);
   const notSubscribed = error instanceof ApiError && error.status === 403;
+  // 들어오면 토피룸 목록의 이 방 안 읽음 숫자를 바로 0으로, 나가면 목록을 바로 새로(2026-10-15 실기기 — 서버는 대화를 불러올 때 읽음 처리하는데
+  // 목록은 받아 둔 걸 보여 주다 30초마다 새로 받아서, 알림 눌러 보고 돌아와도 숫자가 한참 남아 있었음)
+  const queryClient = useQueryClient();
+  const loaded = !!data;
+  useEffect(() => {
+    if (!loaded) return;
+    queryClient.setQueryData<Subscription[]>(['my-subscriptions'], (subs) =>
+      subs?.map((sub) => (sub.actorId === actorId ? { ...sub, unreadCount: 0, unreadQuotedReply: false } : sub)),
+    );
+    return () => void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+  }, [loaded, actorId, queryClient]);
   const sendReply = useSendReply(actorId);
   const retractReply = useRetractReply(actorId);
   const { data: onboarding } = useOnboardingStatus();

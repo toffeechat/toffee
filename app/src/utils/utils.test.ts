@@ -5,7 +5,7 @@ import { currentMonth, shiftMonth } from './month';
 import { showNameToken } from './name-token';
 import { STORE_PRODUCT_ID_PATTERN } from './store-product';
 import { orderedProviders } from '@/components/social-button-style';
-import { albumLayout, groupAlbumRows, rowHas } from './chat-album';
+import { albumLayout, collapseRetracted, groupAlbumRows, rowHas } from './chat-album';
 
 describe('번역 보기를 보여 줄지(글자 종류)', () => {
   it('글자 종류 판별', () => {
@@ -97,5 +97,31 @@ describe('채팅방 사진 묶음', () => {
   });
   it('격자 줄 나누기', () => {
     expect([2, 3, 4, 5, 6, 7, 10].map(albumLayout)).toEqual([[2], [3], [2, 2], [3, 2], [3, 3], [3, 2, 2], [3, 3, 2, 2]]);
+  });
+});
+
+describe('연달아 회수된 아티스트 메시지 한 줄로(사진 묶음 통째 회수)', () => {
+  const sameMinute = (a: string, b: string) => a.slice(0, 16) === b.slice(0, 16);
+  const m = (id: string, at: string, extra: Partial<{ retracted: boolean; senderType: 'ARTIST' | 'FAN' }> = {}) => ({
+    id,
+    senderType: 'ARTIST' as const,
+    mediaType: 'PHOTO',
+    body: null,
+    createdAt: at,
+    sender: { id: 'caramel' },
+    ...extra,
+  });
+  it('같은 분에 연달아 회수된 건 가장 최근 것 하나만 남김', () => {
+    const rows = [m('3', '2026-10-15T10:00:30Z', { retracted: true }), m('2', '2026-10-15T10:00:20Z', { retracted: true }), m('1', '2026-10-15T10:00:10Z', { retracted: true })];
+    expect(collapseRetracted(rows, sameMinute).map((r) => r.id)).toEqual(['3']);
+  });
+  it('사이에 다른 메시지가 있거나 분이 다르면 따로', () => {
+    const rows = [
+      m('4', '2026-10-15T10:05:00Z', { retracted: true }),
+      m('3', '2026-10-15T10:00:30Z', { retracted: true }),
+      m('2', '2026-10-15T10:00:20Z'),
+      m('1', '2026-10-15T10:00:10Z', { retracted: true }),
+    ];
+    expect(collapseRetracted(rows, sameMinute).map((r) => r.id)).toEqual(['4', '3', '2', '1']);
   });
 });

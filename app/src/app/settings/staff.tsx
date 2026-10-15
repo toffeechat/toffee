@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Bell, Globe, KeyRound, LogOut, Moon, Wallet } from 'lucide-react-native';
 
+import { AppVersion } from '@/components/app-version';
 import { ListRow } from '@/components/ui/list-row';
 import { useWideLayout } from '@/components/wide-shell';
 import { PROVIDER_NAMES } from '@/components/social-button-style';
@@ -45,6 +46,7 @@ export default function StaffSettingsScreen() {
       />
       <ListRow icon={KeyRound} title={t('profile.loginInfo')} value={providers || undefined} subtitle={me?.email ?? t('profile.noEmail')} showChevron={false} />
       <ListRow icon={LogOut} title={t('profile.logout')} onPress={() => void logout()} showChevron={false} />
+      <AppVersion />
     </ScrollView>
   );
 }

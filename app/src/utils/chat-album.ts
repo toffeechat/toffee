@@ -40,6 +40,18 @@ export function groupAlbumRows<T extends AlbumCandidate>(messages: T[], sameMinu
   return rows;
 }
 
+/**
+ * 연달아 회수된 아티스트 메시지는 한 줄로(2026-10-15 — 사진 묶음을 통째로 회수하면 장 수만큼 "회수된 메시지입니다"가 줄줄이 생겨서). 최신 → 오래된 순 목록에서
+ * 바로 앞(더 최신) 줄도 같은 분에 회수된 아티스트 메시지면 뺌
+ */
+export function collapseRetracted<T extends AlbumCandidate>(rows: T[], sameMinute: (a: string, b: string) => boolean): T[] {
+  return rows.filter((row, index) => {
+    const newer = rows[index - 1];
+    const retractedArtist = (m: T | undefined) => !!m && m.senderType === 'ARTIST' && !!m.retracted;
+    return !(retractedArtist(row) && retractedArtist(newer) && newer!.sender?.id === row.sender?.id && sameMinute(newer!.createdAt, row.createdAt));
+  });
+}
+
 /** 이 줄이 그 메시지를 담고 있는지(묶음이면 안의 메시지까지) — 알림·검색으로 이동, 읽음 줄 위치 */
 export const rowHas = (row: { id: string; album?: { id: string }[] }, id: string | null | undefined) =>
   !!id && (row.id === id || !!row.album?.some((m) => m.id === id));
