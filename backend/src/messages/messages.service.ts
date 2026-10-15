@@ -229,12 +229,16 @@ export class MessagesService {
    * 사진·영상만, 최신 → 오래된 순으로 limit개(before 이전). total은 "3 / 12" 표시용.
    */
   async listMediaForFan(userId: string, actorId: string, page: { limit?: number; before?: string } = {}) {
-    const subscription = await ensureActiveSubscription(this.prisma, userId, actorId);
+    // 팬은 구독 시작 이후 것만, 아티스트 본인·소속사·운영자는 그 방 전체(2026-10-15 — 스튜디오 사진 전체 화면에서도 좌우로 넘겨 보게)
+    const { role } = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { role: true } });
+    let since: Date | undefined;
+    if (role === Role.USER) since = (await ensureActiveSubscription(this.prisma, userId, actorId)).startedAt;
+    else await ensureCanViewActor(this.prisma, userId, actorId);
     const where = {
       actorId,
       senderType: MessageSenderType.ARTIST,
       deletedAt: null,
-      createdAt: { gte: subscription.startedAt },
+      ...(since ? { createdAt: { gte: since } } : {}),
       mediaType: { in: [MessageMediaType.PHOTO, MessageMediaType.VIDEO] },
       // 저장소에 올린 파일(mediaKey) 또는 예전 방식 주소(mediaUrl) — 둘 다 없는 건 뺌
       OR: [{ mediaKey: { not: null } }, { mediaUrl: { not: null } }],
@@ -416,6 +420,7 @@ export class MessagesService {
         notifyQuotedFan ? pushRecipients.filter((userId) => userId !== quotedFanId) : pushRecipients,
         ({ locale, displayName }) => ({ title: actor.chatDisplayName, body: preview(locale, displayName) }),
         fanPushData,
+        { withUnreadBadge: true },
       )
       .catch(() => {});
     if (notifyQuotedFan && quotedFanId) {
@@ -428,6 +433,7 @@ export class MessagesService {
             body: (pushStrings(locale).quotedReplyPrefix + preview(locale, displayName)).slice(0, PUSH_PREVIEW_LENGTH + 20),
           }),
           { ...fanPushData, type: 'QUOTED_REPLY' },
+          { withUnreadBadge: true },
         )
         .catch(() => {});
     }

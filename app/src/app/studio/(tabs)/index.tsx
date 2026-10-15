@@ -7,6 +7,7 @@ import { RoomListRow } from '@/components/room-list-row';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useMyActors } from '@/hooks/use-console';
 import { useTheme } from '@/hooks/use-theme';
+import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 /**
@@ -17,7 +18,8 @@ export default function StudioRoomsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const { data: actors, isLoading, refetch, isRefetching } = useMyActors();
+  const { data: actors, isLoading, refetch } = useMyActors();
+  const { refreshing, onRefresh } = useManualRefresh(refetch);
   const rooms = [...(actors ?? [])].sort(
     (a, b) => new Date(b.lastMessage?.createdAt ?? 0).getTime() - new Date(a.lastMessage?.createdAt ?? 0).getTime(),
   );
@@ -29,7 +31,7 @@ export default function StudioRoomsScreen() {
       keyExtractor={(item) => item.id}
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={theme.tint} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.tint} />}
       ListEmptyComponent={<EmptyState icon={MessageCircle} title={t('studio.noActor')} />}
       renderItem={({ item }) => <RoomListRow actor={item} onPress={() => router.push(`/studio/${item.id}`)} />}
     />

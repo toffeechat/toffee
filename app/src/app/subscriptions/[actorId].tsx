@@ -78,7 +78,9 @@ export default function SubscriptionDetailScreen() {
     bundleCover?.bundle
       ? [t('manage.price'), t('bundle.via', { name: bundleCover.bundle.name })]
       : [t('manage.price'), `${formatPrice(sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`],
-    [t('manage.started'), new Date(sub.startedAt).toLocaleDateString(i18n.language)],
+    // 끊기지 않고 이어진 이번 구독의 시작일 + 며칠째(시작한 날이 1일째) — 장기 구독 혜택의 기준(2026-10-15 사용자 결정: 여러 번 나눠 구독한 걸
+    // 합치지 않고 한 번 이어서 구독한 기간만). startedAt은 해지·만료 후 다시 구독하면 새로 시작되고 개인 → 묶음 전환처럼 안 끊기면 그대로
+    [t('manage.started'), t('manage.startedDays', { date: new Date(sub.startedAt).toLocaleDateString(i18n.language), days: daysSince(sub.startedAt) })],
     endsOn ? [t('manage.endsOn'), endsOn] : [t('manage.nextBilling'), t('manage.nextBillingStore')],
   ];
 
@@ -129,3 +131,6 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: Spacing.three },
   actions: { gap: Spacing.two, marginTop: Spacing.four },
 });
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const daysSince = (iso: string) => Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / DAY_MS) + 1);

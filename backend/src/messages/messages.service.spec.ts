@@ -108,7 +108,8 @@ describe('MessagesService.sendBroadcast 푸시 문구', () => {
     const actor = (prisma as unknown as { actor: Record<string, ReturnType<typeof vi.fn>> }).actor;
     actor.findUniqueOrThrow.mockResolvedValue({ chatDisplayName: '캐러멜', kind: 'SOLO', welcomeMessage: '환영', birthdayMessage: '축하', chatProfileImageUrl: 'https://img/caramel.jpg' });
     await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕' });
-    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-1'], expect.any(Function), expect.objectContaining({ senderName: '캐러멜', senderImage: 'https://img/caramel.jpg' }));
+    // 팬 알림엔 앱 아이콘 숫자(안 읽은 수)도 같이(2026-10-15)
+    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-1'], expect.any(Function), expect.objectContaining({ senderName: '캐러멜', senderImage: 'https://img/caramel.jpg' }), { withUnreadBadge: true });
     expect(push.notifyActorStaff).toHaveBeenCalledWith('actor-1', expect.any(Function), expect.objectContaining({ senderName: '캐러멜', senderImage: 'https://img/caramel.jpg' }), 'notifyArtistMessages');
   });
 
@@ -177,11 +178,12 @@ describe('MessagesService.sendBroadcast 인용 답장 알림', () => {
     const { service, push } = setupQuote(quoted());
     await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '고마워', replyToMessageId: 'fan-msg' });
 
-    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-2'], expect.any(Function), expect.anything());
+    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-2'], expect.any(Function), expect.anything(), { withUnreadBadge: true });
     expect(push.sendToUser).toHaveBeenCalledWith(
       'fan-1',
       expect.any(Function),
       expect.objectContaining({ type: 'QUOTED_REPLY', actorId: 'actor-1', messageId: 'm1' }),
+      { withUnreadBadge: true },
     );
     const compose = vi.mocked(push.sendToUser).mock.calls[0][1];
     expect(compose({ locale: 'ko', displayName: '민지' })).toEqual({ title: '캐러멜님이 내 메시지에 답장했어요', body: '내 메시지에 답장 · 고마워' });
@@ -191,7 +193,7 @@ describe('MessagesService.sendBroadcast 인용 답장 알림', () => {
     const { service, push } = setupQuote(quoted(), ['fan-2']);
     await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '고마워', replyToMessageId: 'fan-msg' });
     expect(push.sendToUser).not.toHaveBeenCalled();
-    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-2'], expect.any(Function), expect.anything());
+    expect(push.sendToUsers).toHaveBeenCalledWith(['fan-2'], expect.any(Function), expect.anything(), { withUnreadBadge: true });
   });
 
   it('정지·차단돼서 인용이 가려진 팬에겐 따로 알리지 않음', async () => {

@@ -176,6 +176,17 @@ export function useMessageTranslation(actorId: string, messageId: string, langua
   });
 }
 
+/** 환영 메시지 번역(2026-10-15) — 메시지 행이 아니라 따로 */
+export function useWelcomeTranslation(actorId: string, language: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['translation', 'welcome', actorId, language],
+    queryFn: () => apiClient.post<{ text: string }>(`/actors/${actorId}/messages/extras/welcome/translate`, { targetLanguage: language }),
+    enabled,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export interface ChatExtras {
   welcome: { body: string; createdAt: string } | null;
   birthdays: { id: string; body: string; createdAt: string }[];

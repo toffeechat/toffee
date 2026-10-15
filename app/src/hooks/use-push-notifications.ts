@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -24,7 +25,16 @@ export function usePushNotifications(): void {
   useEffect(() => {
     if (!token) return;
     registerThisDevice().catch(() => {});
-    return subscribeTokenRefresh();
+    // 앱으로 돌아올 때마다 다시 등록(2026-10-15 실기기) — 서버에서 기기가 빠졌을 때(데모 초기화 등) 앱을 완전히 껐다 켜기 전까지
+    // 알림이 조용히 끊겼음. 서버는 같은 토큰이면 덮어쓰기만 하고, 권한 창은 처음 한 번만 뜸
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') registerThisDevice().catch(() => {});
+    });
+    const unsubscribeRefresh = subscribeTokenRefresh();
+    return () => {
+      appState.remove();
+      unsubscribeRefresh();
+    };
   }, [token]);
 
   useEffect(() => {

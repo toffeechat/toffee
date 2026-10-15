@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import type { ReplyPreview } from '@/hooks/use-studio';
 
 const ROTATE_MS = 2500;
@@ -14,7 +14,7 @@ const SLIDE_PX = 14;
 /**
  * 스타 메시지 아래 "팬 답장 줄" — 버블·위버스처럼 팬 답장이 온 순서대로 한 줄씩 위로 넘어가며 보이고, 누르면 답장
  * 채팅 화면. 새 답장이 들어와도 건너뛰지 않고 순서가 되면 이어서 보여줌(끝까지 가면 처음부터 다시). 답장이 아직
- * 없으면 "기다리는 중" 줄. 기기에서 "동작 줄이기"를 켰으면 넘어가는 효과 없이 바뀜.
+ * 없으면 "기다리는 중" 작은 알약. 기기에서 "동작 줄이기"를 켰으면 넘어가는 효과 없이 바뀜.
  */
 export function ReplyTicker({ replies, count, onPress }: { replies: ReplyPreview[]; count: number; onPress: () => void }) {
   const theme = useTheme();
@@ -46,34 +46,41 @@ export function ReplyTicker({ replies, count, onPress }: { replies: ReplyPreview
 
   const nickname = reply ? (reply.nickname ?? t('console.noNickname')) : '';
 
+  // 답장이 아직 없으면 글자 길이만큼의 작은 알약(2026-10-15 사용자 요청 — 예전엔 빈 넓은 상자라 어색했음)
+  if (!reply) {
+    return (
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t('studio.waitingReplies')} style={styles.pressable} hitSlop={6}>
+        <ThemedView style={[styles.waiting, { backgroundColor: theme.backgroundElement }]}>
+          <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+            {t('studio.waitingReplies')}
+          </ThemedText>
+        </ThemedView>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={reply ? `${t('studio.replies', { count })}. ${nickname}: ${reply.body}` : t('studio.waitingReplies')}
+      accessibilityLabel={`${t('studio.replies', { count })}. ${nickname}: ${reply.body}`}
       style={styles.pressable}>
       <ThemedView style={[styles.box, { backgroundColor: theme.backgroundElement }]}>
-        {reply ? (
-          <Animated.View
-            style={[
-              styles.line,
-              {
-                opacity: progress,
-                transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [SLIDE_PX, 0] }) }],
-              },
-            ]}>
-            <ThemedText type="smallBold" numberOfLines={1} style={styles.nickname}>
-              {nickname}
-            </ThemedText>
-            <ThemedText type="small" numberOfLines={1} style={styles.body}>
-              {reply.body}
-            </ThemedText>
-          </Animated.View>
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.body}>
-            {t('studio.waitingReplies')}
+        <Animated.View
+          style={[
+            styles.line,
+            {
+              opacity: progress,
+              transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [SLIDE_PX, 0] }) }],
+            },
+          ]}>
+          <ThemedText type="smallBold" numberOfLines={1} style={styles.nickname}>
+            {nickname}
           </ThemedText>
-        )}
+          <ThemedText type="small" numberOfLines={1} style={styles.body}>
+            {reply.body}
+          </ThemedText>
+        </Animated.View>
         {count > 0 && (
           <ThemedText type="smallBold" style={[styles.count, { color: theme.tint }]}>
             {t('studio.replies', { count })} ›
@@ -108,6 +115,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     overflow: 'hidden',
   },
+  waiting: { borderRadius: Radius.pill, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
   line: { flex: 1, flexDirection: 'row', gap: Spacing.one, alignItems: 'center' },
   nickname: { flexShrink: 1, maxWidth: '50%' },
   body: { flex: 1 },

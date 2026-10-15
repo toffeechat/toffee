@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/icon';
 import { useAgencyRecords, useMyActors, type AgencyRecords, type RecordFan, type RecordRoom } from '@/hooks/use-console';
 import { useUnblockFan } from '@/hooks/use-safety';
 import { useTheme } from '@/hooks/use-theme';
+import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { showNameToken } from '@/utils/name-token';
@@ -28,7 +29,8 @@ export default function ConsoleRecordsScreen() {
   const [tab, setTab] = useState<Tab>('blocks');
   const [actorId, setActorId] = useState<string | null>(null);
   const { data: actors } = useMyActors();
-  const { data, isLoading, isFetching, refetch } = useAgencyRecords(actorId);
+  const { data, isLoading, refetch } = useAgencyRecords(actorId);
+  const { refreshing, onRefresh } = useManualRefresh(refetch);
 
   const counts = { blocks: data?.blocks.length ?? 0, reports: data?.reports.length ?? 0, deleted: data?.deleted.length ?? 0 };
   const list = data ? data[tab] : [];
@@ -39,7 +41,7 @@ export default function ConsoleRecordsScreen() {
         data={list as AgencyRecords[Tab][number][]}
         keyExtractor={(item, index) => `${tab}-${'id' in item ? item.id : `${item.room?.id}-${item.fanUser?.id ?? index}`}`}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={isFetching && !isLoading} onRefresh={() => void refetch()} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={styles.header}>
             <ScreenIntro text={t('records.description')} />

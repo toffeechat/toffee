@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { selectionParams, useAgencyDashboard, type RoomKindFilter, type StatsSelection } from '@/hooks/use-console';
 import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
+import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { RANK_METRICS, type RankMetric } from '@/utils/dashboard-rank';
 import { Spacing } from '@/constants/theme';
 
@@ -33,6 +34,7 @@ export default function AgencyDashboardScreen() {
   const [kind, setKind] = useState<RoomKindFilter>('ALL');
   const [width, setWidth] = useState(0);
   const { data, isLoading, isFetching, refetch } = useAgencyDashboard(selection, kind);
+  const { refreshing, onRefresh } = useManualRefresh(refetch);
   const rankCell = cellStyle(width, width >= 1100 ? 3 : width >= 640 ? 2 : 1);
   // 오래 안 보낸 순은 기간과 상관없이 오늘 기준, 구독자 순은 지난 날짜면 그날 기준
   const rankCaption = (metric: RankMetric, asOf: string | null) =>
@@ -42,7 +44,7 @@ export default function AgencyDashboardScreen() {
     <ScrollView
       style={{ backgroundColor: theme.backgroundElement }}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.three }]}
-      refreshControl={<RefreshControl refreshing={isFetching && !isLoading} onRefresh={() => void refetch()} />}>
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.inner} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
         <View style={styles.header}>
           <View style={styles.flex}>
