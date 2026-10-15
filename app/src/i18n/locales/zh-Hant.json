@@ -209,7 +209,7 @@
     "uploading": "上傳中 {{percent}}%",
     "cancelUpload": "取消上傳",
     "uploadCancelled": "已取消上傳。",
-    "profileButton": "我的資料",
+    "profileButton": "Toffee Room 設定",
     "stopRecordingShort": "結束錄音",
     "cancelQuote": "取消引用",
     "emptyTitle": "傳送第一則訊息吧",
@@ -289,7 +289,9 @@
     "failed": "無法更換照片，請重試。"
   },
   "studioProfile": {
-    "title": "我的資料",
+    "title": "Toffee Room 設定",
+    "sectionProfile": "資料",
+    "sectionRoom": "Toffee Room",
     "headerButton": "資料",
     "nickname": "暱稱",
     "nicknameHint": "這是粉絲在 Toffee Room 中看到的名字，可以隨時修改。",

@@ -209,7 +209,7 @@
     "uploading": "올리는 중 {{percent}}%",
     "cancelUpload": "업로드 취소",
     "uploadCancelled": "업로드를 취소했어요.",
-    "profileButton": "내 프로필",
+    "profileButton": "토피룸 설정",
     "stopRecordingShort": "녹음 끝내기",
     "cancelQuote": "인용 취소",
     "emptyTitle": "첫 메시지를 보내 보세요",
@@ -289,7 +289,9 @@
     "failed": "사진을 바꾸지 못했어요. 다시 시도해 주세요."
   },
   "studioProfile": {
-    "title": "내 프로필",
+    "title": "토피룸 설정",
+    "sectionProfile": "프로필",
+    "sectionRoom": "토피룸",
     "headerButton": "프로필",
     "nickname": "닉네임",
     "nicknameHint": "토피룸에서 팬들에게 보이는 이름이에요. 언제든 바꿀 수 있어요.",

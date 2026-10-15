@@ -209,7 +209,7 @@
     "uploading": "上传中 {{percent}}%",
     "cancelUpload": "取消上传",
     "uploadCancelled": "已取消上传。",
-    "profileButton": "我的资料",
+    "profileButton": "Toffee Room 设置",
     "stopRecordingShort": "结束录音",
     "cancelQuote": "取消引用",
     "emptyTitle": "发送第一条消息吧",
@@ -289,7 +289,9 @@
     "failed": "无法更换照片，请重试。"
   },
   "studioProfile": {
-    "title": "我的资料",
+    "title": "Toffee Room 设置",
+    "sectionProfile": "资料",
+    "sectionRoom": "Toffee Room",
     "headerButton": "资料",
     "nickname": "昵称",
     "nicknameHint": "这是粉丝在 Toffee Room 中看到的名字，可以随时修改。",

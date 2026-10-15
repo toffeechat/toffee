@@ -12,7 +12,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { ArrowUp, AtSign, Camera, Copy, CornerUpLeft, ImagePlus, Mic, MoreHorizontal, Send, Square, Undo2, UserRound, Video, X } from 'lucide-react-native';
+import { ArrowUp, AtSign, Camera, Copy, CornerUpLeft, ImagePlus, Mic, MoreHorizontal, Send, Settings, Square, Undo2, Video, X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MediaTile } from '@/components/media-tile';
@@ -293,7 +293,8 @@ export default function StudioChannelScreen() {
             ) : null}
           </View>
         ) : null,
-      headerRight: () => <IconButton icon={UserRound} label={t('studio.profileButton')} onPress={() => router.push(`/studio/${actorId}/profile`)} />,
+      // 톱니바퀴 = 이 토피룸 설정(프로필·배경·인사 메시지). 사람 아이콘은 '내 프로필'로만 읽혀서 바꿈(2026-10-15 사용자)
+      headerRight: () => <IconButton icon={Settings} label={t('studio.profileButton')} onPress={() => router.push(`/studio/${actorId}/profile`)} />,
     });
   }, [actor, navigation, router, actorId, t]);
 

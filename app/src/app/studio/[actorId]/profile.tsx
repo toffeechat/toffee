@@ -17,7 +17,8 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { Spacing } from '@/constants/theme';
 
 /**
- * 배우 본인의 "내 프로필" — 채팅방에 보이는 닉네임·사진은 배우가 직접, 공식 사진·공식 이름은 운영자가 관리
+ * 배우 본인의 "토피룸 설정"(2026-10-15 "내 프로필"에서 이름 변경) — 프로필(사진·닉네임)과 토피룸(배경·인사 메시지)
+ * 두 묶음. 채팅방에 보이는 닉네임·사진은 배우가 직접, 공식 사진·공식 이름은 운영자가 관리
  * (2026-09-28 사용자 결정). 채널이 하나뿐인 배우는 스튜디오 목록을 건너뛰고 바로 채팅방으로 가기 때문에
  * 로그아웃도 여기에 둠.
  */
@@ -78,11 +79,18 @@ export default function StudioProfileScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {actor && (
         <ScrollView contentContainerStyle={styles.content}>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.groupTitle}>
+            {t('studioProfile.sectionProfile')}
+          </ThemedText>
           <ThemedView style={[styles.section, styles.photoSection, { backgroundColor: theme.backgroundElement }]}>
             {/* 사진이 없으면 사람 모양 기본 이미지(예전엔 빈 남색 동그라미만 보였음, 2026-10-12 실기기 테스트) */}
             <Avatar uri={actor.chatProfileImageUrl} size={96} />
             <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
           </ThemedView>
+          <NicknameForm key={actor.id} actor={actor} />
+          <ThemedText type="smallBold" themeColor="textSecondary" style={[styles.groupTitle, styles.spaced]}>
+            {t('studioProfile.sectionRoom')}
+          </ThemedText>
           {/* 토피룸 배경 사진(2026-10-14) — 팬 토피룸 뒤에 깔림 */}
           <ThemedView style={[styles.section, { backgroundColor: theme.backgroundElement }]}>
             <ThemedText type="smallBold">{t('chatBackground.title')}</ThemedText>
@@ -92,7 +100,6 @@ export default function StudioProfileScreen() {
             <ChatBackgroundPreview uri={actor.chatBackgroundUrl} />
             <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatBackgroundUrl} target="background" />
           </ThemedView>
-          <NicknameForm key={actor.id} actor={actor} />
           {/* 커플방이면 방 하나에 한 벌 — 두 멤버 누구나 고칠 수 있음 */}
           <GreetingsForm key={`greetings-${actor.id}`} actorId={actor.id} couple={actor.kind === 'COUPLE'} />
           <ThemedText type="small" themeColor="textSecondary">
@@ -116,4 +123,5 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   multiline: { minHeight: 88, textAlignVertical: 'top' },
   spaced: { marginTop: Spacing.two },
+  groupTitle: { marginBottom: -Spacing.one, paddingHorizontal: Spacing.one },
 });

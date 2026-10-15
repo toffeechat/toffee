@@ -209,7 +209,7 @@
     "uploading": "Đang tải lên {{percent}}%",
     "cancelUpload": "Hủy tải lên",
     "uploadCancelled": "Đã hủy tải lên.",
-    "profileButton": "Hồ sơ của tôi",
+    "profileButton": "Cài đặt Toffee Room",
     "stopRecordingShort": "Dừng ghi âm",
     "cancelQuote": "Hủy trích dẫn",
     "emptyTitle": "Gửi tin nhắn đầu tiên",
@@ -289,7 +289,9 @@
     "failed": "Không đổi được ảnh. Vui lòng thử lại."
   },
   "studioProfile": {
-    "title": "Hồ sơ của tôi",
+    "title": "Cài đặt Toffee Room",
+    "sectionProfile": "Hồ sơ",
+    "sectionRoom": "Toffee Room",
     "headerButton": "Hồ sơ",
     "nickname": "Biệt danh",
     "nicknameHint": "Đây là tên fan nhìn thấy trong Toffee Room. Bạn có thể đổi bất cứ lúc nào.",
