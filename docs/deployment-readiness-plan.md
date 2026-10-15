@@ -31,7 +31,11 @@
     `notificationCount`, `PushService.sendToUsers(..., { withUnreadBadge: true })` — 인박스 unreadCount와 같은 기준을 쿼리 한 번으로).
   - 데모 초기화가 푸시 기기를 전부 지우는데 데모 계정은 로그인이 유지돼서 앱이 다시 등록하지 않았음(완전히 껐다 켜기 전까지) → 초기화 때 고정 ID 데모
     계정의 기기는 되살리고(`demo-seed.ts`), 앱도 화면으로 돌아올 때마다 다시 등록(`use-push-notifications.ts`, AppState).
-  - 그래도 안 오면 Railway 로그의 `FCM 발송 … 실패 (코드)`로 애플 키 문제인지 확인.
+  - **진짜 원인(같은 날 해결, 코드 아님)**: Railway 로그에 `messaging/third-party-auth-error` — 애플 푸시 키 'Toffee APNs'(7C42B4S59J)가
+    **Sandbox 전용**으로 만들어져 있어서 실기기(애드혹·프로덕션 APNs) 빌드로는 애플이 거절. 환경은 만든 뒤 못 바꾸고, "Sandbox & Production 팀 키는 팀당 2개"
+    제한에 젤리 키 2개가 차 있어서 안 쓰던 젤리 Expo 키(2V58S43CD7, 젤리는 FCM만 씀 — 젤리 Firebase가 2F5JM658F4만 쓰는 것 확인)를 지우고 새 키
+    **4G2N48VK87**(Sandbox & Production, Team Scoped)를 만들어 토피 Firebase 개발·프로덕션 칸에 업로드 → 실기기 알림 확인. 옛 키는 Revoke 대상.
+    **교훈**: APNs 키를 만들 때 Environment는 반드시 Sandbox & Production(나중에 못 바꿈).
 - **토피룸 목록 맨 위 "새 메시지가 도착했어요" 카드** 삭제(목록의 안 읽음 숫자와 겹침, 사용자 요청).
 - **환영 메시지**: "번역 보기" 추가(메시지 행이 아니라 `POST /actors/:id/messages/extras/welcome/translate`, 원문 × 언어로 서버 메모리에 기억),
   메시지가 적으면 위에서부터 보이게(뒤집힌 목록 `flexGrow` + `justifyContent: 'flex-end'`), 첫 메시지 전에도 입력칸은 보이고 보내기만 막음.
