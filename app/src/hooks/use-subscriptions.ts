@@ -23,7 +23,7 @@ export interface Subscription {
   unreadCount: number;
   /** 안 읽은 메시지 중 내 메시지를 인용한 아티스트 답장이 있음(2026-10-13) */
   unreadQuotedReply?: boolean;
-  /** 인박스 미리보기(서버가 최근 대화 순으로 정렬해서 줌) */
+  /** 인박스 미리보기 — 스타의 마지막 메시지(2026-10-16, 내 답장은 제외). 서버가 이 시각 최근 순으로 정렬해서 줌 */
   lastMessage: {
     senderType: 'ARTIST' | 'FAN';
     mediaType: 'TEXT' | 'PHOTO' | 'AUDIO' | 'VIDEO';

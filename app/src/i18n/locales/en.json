@@ -360,7 +360,6 @@
     "justSentVoice": "Just sent a voice message",
     "justSentVideo": "Just sent a video",
     "justSentMessage": "Sent you a new message",
-    "you": "You: {{text}}",
     "noMessagesYet": "Their first message is on the way",
     "muted": "Muted",
     "unread": "{{count}} unread",

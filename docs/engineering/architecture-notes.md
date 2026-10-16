@@ -1637,3 +1637,11 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 
 - `listForFan`이 `replyTo.nickname`을 null로(팬 앱 응답에 다른 팬 닉네임이 안 실림). `listBroadcasts`·`listReplies`(아티스트·소속사)는 그대로.
 - 앱 `QuoteBlock artistName` — 있으면 제목 `quote.artistReply`("{{name}}의 답장"), `mine`이면 제목 없이 배지만. 스튜디오 `quote.publicNotice`에 `{{name}}`.
+
+## 2026-10-16 — 인박스 미리보기·둘러보기 카드 소속사
+
+- `SubscriptionsService.listMine`: `lastMessage`를 `senderType: ARTIST`만으로(예전엔 `OR [ARTIST, fanUserId=me]`). 정렬도 이 값(없으면 `startedAt`)이라
+  내 답장으로는 방 순서가 안 바뀜. 앱 `previewText`의 `inbox.you` 분기·문구 삭제.
+- `actors.service` `LIST_SELECT.coupleMembers.member`에 `agency: { select: { name } }` — 앱 `agencyLabelOf(actor)`가 1인은 `actor.agency.name`,
+  CP는 멤버 소속사 이름 중복 제거 후 `' · '`로. CP `Actor.agencyId`는 계속 null(소속사별 목록 필터는 그대로).
+- `formatInboxTime`: 요일 분기 삭제(오늘 시각 / 어제 / `month numeric, day numeric`).

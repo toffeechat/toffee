@@ -35,7 +35,18 @@ const LIST_SELECT = {
   kind: true,
   coupleMembers: {
     select: {
-      member: { select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, retiredAt: true } },
+      // 멤버 소속사 이름 — CP방은 소속사가 따로 없어서 카드에 멤버 소속사를 보여 줌(2026-10-16)
+      member: {
+        select: {
+          id: true,
+          legalName: true,
+          chatDisplayName: true,
+          officialProfileImageUrl: true,
+          chatProfileImageUrl: true,
+          retiredAt: true,
+          agency: { select: { name: true } },
+        },
+      },
     },
   },
 } as const;

@@ -27,8 +27,8 @@ const MEDIA_TEXT: Partial<Record<string, string>> = { PHOTO: 'inbox.sentPhoto', 
 function previewText(sub: Subscription, t: TFunction): string {
   const last = sub.lastMessage;
   if (!last) return t('inbox.noMessagesYet');
-  const text = last.body ?? (MEDIA_TEXT[last.mediaType] ? t(MEDIA_TEXT[last.mediaType]!) : '');
-  return last.senderType === 'FAN' ? t('inbox.you', { text }) : text;
+  // 서버가 스타의 마지막 메시지만 내려줌(2026-10-16) — 내 답장은 미리보기에 안 나옴
+  return last.body ?? (MEDIA_TEXT[last.mediaType] ? t(MEDIA_TEXT[last.mediaType]!) : '');
 }
 
 /**

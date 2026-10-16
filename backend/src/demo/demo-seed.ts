@@ -57,6 +57,8 @@ const DEMO_GREETINGS = {
 };
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+// 오늘 보낸 메시지(토피룸 목록에 "어제"·날짜 말고 시각이 보이는지 확인용, 2026-10-16) — 자정 직후에 초기화하면 어제가 될 수 있음
+const minutesAgo = (n: number) => new Date(Date.now() - n * 60 * 1000);
 
 // PrismaClient나 트랜잭션(tx) 둘 다 받음 — 운영자 화면 초기화는 트랜잭션으로 한 번에(중간에 실패하면 원래대로)
 export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> {
@@ -229,7 +231,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     data: { selfUser: { connect: { email: 'caramel-self@toffee.demo' } } },
   });
 
-  // 팬 2명 — fan1은 caramel만, fan2는 CP 전체 묶음(캐러멜·마카롱·CP방) + 누가 개인 구독. 가입 절차(생년월일)까지 마친 성인 팬으로 —
+  // 팬 2명 — fan1은 캐러멜 + CP방(묶음 "Caramel + Caramel & Macaron", 2026-10-16 사용자 요청: 배우 하나 + CP 하나), fan2는 CP 전체 묶음(캐러멜·마카롱·CP방) + 누가 개인 구독. 가입 절차(생년월일)까지 마친 성인 팬으로 —
   // 생년월일이 없으면 로그인하자마자 온보딩 화면만 나오고, 서버도 구독을 막음(2026-09-28)
   const ADULT = { birthDate: new Date('2000-03-03') };
   const fan1 = await prisma.user.create({
@@ -243,7 +245,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   // 묶음 상품 — CP(캐러멜·마카롱·CP방)마다 3종(2026-10-15 사용자 결정): 개인방 + CP방 2종(따로 ฿168 → ฿139)과 전체(따로 ฿267 → ฿199).
   // 많이 묶을수록 더 싸게 해서 "전체"로 유도. 예전 "캐러멜 + 누가"(CP 없는 A+B)는 헷갈려서 뺌
-  await prisma.bundle.create({
+  const caramelCpBundle = await prisma.bundle.create({
     data: { id: DEMO_IDS.caramelCpBundle, name: 'Caramel + Caramel & Macaron', priceCents: 13900, actors: { create: [{ actorId: caramel.id }, { actorId: DEMO_IDS.couple }] } },
   });
   await prisma.bundle.create({
@@ -258,8 +260,9 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     },
   });
 
-  // 구매(결제 단위)와 방 이용권(Subscription)을 같이 — fan1은 캐러멜 개인 구독, fan2는 CP 전체 묶음으로 세 방 + 누가 개인
-  await prisma.purchase.create({ data: { userId: fan1.id, actorId: caramel.id, priceCents: caramel.monthlyPriceCents, startedAt: daysAgo(5) } });
+  // 구매(결제 단위)와 방 이용권(Subscription)을 같이 — fan1은 캐러멜 + CP방 묶음으로 두 방, fan2는 CP 전체 묶음으로 세 방 + 누가 개인
+  await prisma.purchase.create({ data: { userId: fan1.id, bundleId: caramelCpBundle.id, priceCents: caramelCpBundle.priceCents, startedAt: daysAgo(5) } });
+  await prisma.subscription.create({ data: { userId: fan1.id, actorId: DEMO_IDS.couple, startedAt: daysAgo(5) } });
   await prisma.purchase.create({ data: { userId: fan2.id, bundleId: cpAllBundle.id, priceCents: cpAllBundle.priceCents, startedAt: daysAgo(20) } });
   await prisma.purchase.create({ data: { userId: fan2.id, actorId: nougat.id, priceCents: nougat.monthlyPriceCents, startedAt: daysAgo(20) } });
   for (const actorId of [DEMO_IDS.macaron, DEMO_IDS.couple]) {
@@ -339,33 +342,23 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       { actorId: nougat.id, senderType: MessageSenderType.ARTIST, body: '{{name}} ค่ะ พรุ่งนี้มีแฟนมีตติ้งที่กรุงเทพฯ ตื่นเต้นมากเลยค่ะ 🥹', createdAt: daysAgo(2) },
     ],
   });
-  // CP방 대화(2026-10-15 사용자 요청) — 두 아티스트가 서로의 메시지에 답장(상대 메시지 인용). fan2(CP 전체 묶음)로 보면 "Macaron의 메시지" 인용 말풍선
-  const cpOpening = await prisma.message.create({
-    data: { actorId: DEMO_IDS.couple, senderActorId: caramel.id, senderType: MessageSenderType.ARTIST, body: 'วันนี้ถ่ายซีนคู่กับมาการองสนุกมาก 💕 {{name}} รอดูนะ!', createdAt: daysAgo(3) },
+  // CP방 대화(2026-10-15 사용자 요청, 10-16 늘림) — 두 아티스트가 서로의 메시지에 답장(상대 메시지 인용)하며 주고받는 흐름:
+  // 촬영 후기 → 비하인드 사진·서로 놀리기 → 라이브 예고 → 오늘 라이브 직전. fan1(캐러멜 + CP 묶음)·fan2(CP 전체 묶음) 둘 다 볼 수 있음
+  const cpSay = (senderActorId: string, createdAt: Date, body: string, extra: Partial<Prisma.MessageUncheckedCreateInput> = {}) =>
+    prisma.message.create({ data: { actorId: DEMO_IDS.couple, senderActorId, senderType: MessageSenderType.ARTIST, body, createdAt, ...extra } });
+  const after = (date: Date, minutes: number) => new Date(date.getTime() + minutes * 60 * 1000);
+  const cpOpening = await cpSay(caramel.id, daysAgo(3), 'วันนี้ถ่ายซีนคู่กับมาการองสนุกมาก 💕 {{name}} รอดูนะ!');
+  await cpSay(DEMO_IDS.macaron, after(daysAgo(3), 4), 'เหนื่อยแต่หัวเราะทั้งวันเลย 555 ขอบคุณที่ดูแลกันนะ', { replyToMessageId: cpOpening.id });
+  const cpPhoto = await cpSay(caramel.id, daysAgo(2), 'เบื้องหลังวันนี้ 📸 มาการองแอบกินขนมระหว่างเทคด้วย', {
+    mediaType: MessageMediaType.PHOTO,
+    mediaUrl: demoImage('couple-caramel-macaron'),
   });
-  await prisma.message.create({
-    data: {
-      actorId: DEMO_IDS.couple,
-      senderActorId: DEMO_IDS.macaron,
-      senderType: MessageSenderType.ARTIST,
-      replyToMessageId: cpOpening.id,
-      body: 'เหนื่อยแต่หัวเราะทั้งวันเลย 555 ขอบคุณที่ดูแลกันนะ',
-      createdAt: new Date(daysAgo(3).getTime() + 4 * 60 * 1000),
-    },
-  });
-  const cpLive = await prisma.message.create({
-    data: { actorId: DEMO_IDS.couple, senderActorId: DEMO_IDS.macaron, senderType: MessageSenderType.ARTIST, body: '{{name}} พรุ่งนี้สองทุ่มเราจะไลฟ์ด้วยกันนะ! 📺', createdAt: daysAgo(1) },
-  });
-  await prisma.message.create({
-    data: {
-      actorId: DEMO_IDS.couple,
-      senderActorId: caramel.id,
-      senderType: MessageSenderType.ARTIST,
-      replyToMessageId: cpLive.id,
-      body: 'อย่าลืมตื่นนอนก่อนไลฟ์นะ มาการอง 😆',
-      createdAt: new Date(daysAgo(1).getTime() + 2 * 60 * 1000),
-    },
-  });
+  const cpTease = await cpSay(DEMO_IDS.macaron, after(daysAgo(2), 5), 'รูปนี้หน้าเราตลกมาก ลบได้ไหม 😂', { replyToMessageId: cpPhoto.id });
+  await cpSay(caramel.id, after(daysAgo(2), 7), 'ไม่ลบ! น่ารักออก {{name}} ว่าไหม? 💕', { replyToMessageId: cpTease.id });
+  const cpLive = await cpSay(DEMO_IDS.macaron, daysAgo(1), '{{name}} พรุ่งนี้สองทุ่มเราจะไลฟ์ด้วยกันนะ! 📺');
+  await cpSay(caramel.id, after(daysAgo(1), 2), 'อย่าลืมตื่นนอนก่อนไลฟ์นะ มาการอง 😆', { replyToMessageId: cpLive.id });
+  const cpToday = await cpSay(DEMO_IDS.macaron, minutesAgo(40), 'คืนนี้สองทุ่มเจอกันนะ {{name}}! เตรียมคำถามมาเยอะ ๆ เลย 💜');
+  await cpSay(caramel.id, minutesAgo(35), 'ตื่นแล้วนะ ไม่สายแน่นอน 555 รอทุกคนอยู่ 🥰', { replyToMessageId: cpToday.id });
 
   // 반대 방향 — 아티스트(한국어 화면)가 답장 목록에서 태국어 팬 답장의 "번역 보기"를 눌러 볼 수 있게
   const thaiBroadcast = await prisma.message.create({

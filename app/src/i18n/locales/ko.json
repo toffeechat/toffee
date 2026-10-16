@@ -360,7 +360,6 @@
     "justSentVoice": "방금 음성 메시지를 보냈어요",
     "justSentVideo": "방금 동영상을 보냈어요",
     "justSentMessage": "새 메시지가 도착했어요",
-    "you": "나: {{text}}",
     "noMessagesYet": "곧 첫 메시지가 도착할 거예요",
     "muted": "알림 꺼짐",
     "unread": "안 읽은 메시지 {{count}}개",

@@ -360,7 +360,6 @@
     "justSentVoice": "刚刚发送了语音消息",
     "justSentVideo": "刚刚发送了视频",
     "justSentMessage": "给你发来了新消息",
-    "you": "我：{{text}}",
     "noMessagesYet": "第一条消息即将到来",
     "muted": "已静音",
     "unread": "{{count}} 条未读",

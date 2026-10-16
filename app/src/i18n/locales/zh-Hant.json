@@ -360,7 +360,6 @@
     "justSentVoice": "剛剛傳送了語音訊息",
     "justSentVideo": "剛剛傳送了影片",
     "justSentMessage": "傳來了新訊息",
-    "you": "我：{{text}}",
     "noMessagesYet": "第一則訊息即將到來",
     "muted": "已靜音",
     "unread": "{{count}} 則未讀",
