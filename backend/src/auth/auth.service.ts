@@ -472,6 +472,8 @@ export class AuthService {
       profileImageUrl: await this.media.resolveImageUrl(profileImageUrl),
       hasBirthDate: !!birthDate,
       nicknameChangeAvailableAt: nextNicknameChangeAt(user),
+      // 아티스트·소속사 화면의 팬 답장도 자동 번역할지(2026-10-19, 기본 꺼짐 — 답장 수만큼 비용이 쌓여서 "번역 보기"를 눌렀을 때만)
+      autoTranslateFanReplies: isOn(this.configService.get<string>('TRANSLATION_AUTO_FAN_REPLIES')),
     };
   }
 
@@ -588,4 +590,9 @@ function decodeJwtAudience(token: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** 환경변수 켜짐 여부 — true/1/on만 켜짐, 비었거나 그 밖이면 꺼짐 */
+export function isOn(value: string | undefined): boolean {
+  return ['true', '1', 'on'].includes(value?.trim().toLowerCase() ?? '');
 }

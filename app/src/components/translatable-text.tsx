@@ -15,7 +15,7 @@ import { Spacing } from '@/constants/theme';
 /**
  * 말풍선 글 + 번역(2026-09-29) — 글이 지금 앱 언어와 다른 글자로 쓰였으면 아래에 "번역 보기". 누르면 번역이 원문 아래에 붙고, 다시 누르면
  * 접힘(원문은 항상 보임 — 번역이 틀릴 수 있어서). 팬 화면의 스타 메시지, 스타 화면의 팬 답장에 씀.
- * 자동 번역(2026-10-16, 설정 > 언어, 기본 켜짐)이면 처음부터 펼쳐짐. 자동으로 펼친 번역이 실패하면 오류 대신 "번역 보기" 버튼만(엔진이 꺼져
+ * 자동 번역(2026-10-16, 설정 > 언어, 기본 켜짐)이면 처음부터 펼쳐짐 — 단 팬 답장(fanReply)은 서버 설정이 켜져 있을 때만(2026-10-19, 기본 꺼짐). 자동으로 펼친 번역이 실패하면 오류 대신 "번역 보기" 버튼만(엔진이 꺼져
  * 있을 때 모든 말풍선에 오류가 뜨지 않게) — 눌러서 직접 펼쳤을 때만 오류를 보여 줌.
  */
 export function TranslatableText(props: {
@@ -34,11 +34,13 @@ export function TranslatableText(props: {
   /** 바깥에서 쥔 open이 자동 번역으로 펼친 것인지(직접 누른 게 아님) */
   autoOpened?: boolean;
   alsoTranslatable?: boolean;
+  /** 아티스트·소속사 화면의 팬 답장 — 자동 번역은 서버 설정 TRANSLATION_AUTO_FAN_REPLIES를 따름(기본 꺼짐, "번역 보기"를 눌렀을 때만) */
+  fanReply?: boolean;
 }) {
   const { actorId, messageId, text, display, welcome } = props;
   const theme = useTheme();
   const { t, i18n } = useTranslation();
-  const auto = useAutoTranslate();
+  const auto = useAutoTranslate(props.fanReply ? 'fanReply' : 'artistMessage');
   // null = 아직 누르지 않음(자동 번역 설정을 따름)
   const [openState, setOpenState] = useState<boolean | null>(null);
   const open = props.open ?? openState ?? auto;

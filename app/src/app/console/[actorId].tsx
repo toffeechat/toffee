@@ -272,7 +272,7 @@ function ReplyBubble({ reply, actorId, menuOpen, onMenuChange }: { reply: FanRep
                 {t('retract.placeholder')}
               </ThemedText>
             ) : (
-              <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} />
+              <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} fanReply />
             )}
           </Pressable>
           <SideTime at={reply.createdAt} />
