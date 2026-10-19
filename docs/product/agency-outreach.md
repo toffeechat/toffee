@@ -242,7 +242,7 @@
 | 질문 | 답 (한국어) | 답 (영어, 메일용) | 메모 |
 |---|---|---|---|
 | 회사(법인)예요? | 아직 아닙니다. 정식 출시 전에 한국에 법인을 세우고, 모든 계약은 법인 이름으로 합니다. 준비 기간엔 서로 돈이 오가지 않습니다. | Not yet. We will incorporate in Korea before the public launch, and every contract will be signed by the company. During preparation there is no payment between us. | 사실대로. "회사 있어야 계약"이라고 하면 법인 설립을 앞당기는 신호(`launch-roadmap.md` 분기점) |
-| 언제 출시해요? | 스토어 심사를 거쳐 2027년 [시기]가 목표입니다. 파일럿은 아티스트 준비가 되면 시작합니다. | We are targeting [season] 2027, after store review. The pilot starts when your artists are ready. | 날짜 약속 금지 |
+| 언제 출시해요? | 2027년 2월 정식 오픈이 목표입니다. 시작 날짜는 아티스트 준비 상황에 맞춰 함께 정합니다. | We are targeting [season] 2027, after store review. The pilot starts when your artists are ready. | 날짜 약속 금지 |
 | 콘텐츠 권리는 누구 거예요? | 아티스트와 소속사가 모든 권리를 가집니다. 토피는 앱 안에서 구독자에게 보여 줄 권한만 받습니다. | Your artist and agency keep all rights. Toffee only needs a licence to show it to subscribers in the app. | 계약서 단계에서 변호사 확인 |
 | 유출은 어떻게 막아요? | 돈을 낸 성인만 앱 안에서 볼 수 있고, 밖으로 공유하는 건 약관으로 금지하며, 어기면 계정을 정지합니다. | Content is only visible inside the app to paying adults, sharing outside is forbidden by our terms, and we can ban accounts. | 화면 캡처 자체를 완전히 막을 수는 없다는 점은 솔직하게 |
 | 정산은 언제, 어떻게? | 아티스트별 월 정산서를 드립니다. 스토어가 판매 후 1~2개월 뒤 저희에게 입금하면, 소속사 몫을 바트로 송금합니다. | Monthly statement per artist. Stores pay us about 1 to 2 months after the sale, then we transfer your share in THB. | 송금·원천징수 실무는 법인 설립 때 확정 |
