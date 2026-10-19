@@ -33,3 +33,9 @@ export class UpdateNotificationSettingsDto {
   @IsBoolean()
   notifyIdleAlerts?: boolean;
 }
+
+// 메시지 자동 번역 켜기/끄기(2026-10-16)
+export class UpdateTranslationSettingsDto {
+  @IsBoolean()
+  autoTranslate!: boolean;
+}

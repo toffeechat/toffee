@@ -1645,3 +1645,18 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - `actors.service` `LIST_SELECT.coupleMembers.member`에 `agency: { select: { name } }` — 앱 `agencyLabelOf(actor)`가 1인은 `actor.agency.name`,
   CP는 멤버 소속사 이름 중복 제거 후 `' · '`로. CP `Actor.agencyId`는 계속 null(소속사별 목록 필터는 그대로).
 - `formatInboxTime`: 요일 분기 삭제(오늘 시각 / 어제 / `month numeric, day numeric`).
+
+## 2026-10-19 — 자동 번역·묶음 번역
+
+- `User.autoTranslate Boolean @default(true)`(마이그레이션 `20261016000000_user_auto_translate`), `GET /auth/me`에 포함, `PATCH /auth/me/translation-settings { autoTranslate }`.
+- `POST /actors/:actorId/messages/extras/translate { messageIds (1~30), targetLanguage }` → `{ language, translations: [{ messageId, text }] }`.
+  `TranslationService.translateMany`: 권한(팬 = 구독 시작 이후 스타 메시지·내 답장·보이는 인용, 안 보이는 건 조용히 제외 / 그 외 `ensureCanViewActor`),
+  `MessageTranslation` 일괄 조회 → 없는 것만 ARTIST·FAN 그룹으로 `provider.translateMany` → `createMany skipDuplicates`. 엔진 예외는 경고 로그 후 그 그룹 생략.
+  스로틀 60/분.
+- `TranslationProvider.translateMany(items, target) → (string|null)[]`. Claude: `BATCH_TRANSLATION_SYSTEM_PROMPT`(기본 프롬프트 + 독립 번역 지시),
+  `<message id="n" speaker="...">`(XML 이스케이프), `output_config.format: { type: 'json_schema', schema }` → `{ translations: [{ id, text }] }`.
+  모델은 화자별(`modelFor`): artist → `TRANSLATION_MODEL`(opus-5-5), fan → `TRANSLATION_REPLY_MODEL`(기본 haiku-5-5). 서버 대체(`fallbacks: 'default'`)는
+  opus/sonnet/fable만(Haiku는 미지원이라 안 보냄). 한 개짜리 `translate`도 같은 모델 선택.
+- 앱: `utils/translation-batch.ts` `createTranslationBatcher(send)` — (방, 언어)별 40ms 대기 또는 30개 차면 전송, 빠진 id는 `TranslationMissingError`.
+  `useMessageTranslation`의 queryFn이 이걸 씀(쿼리 키는 그대로라 기존 캐시·인용 블록 그대로). `useAutoTranslate()`(내 정보 받기 전엔 false).
+  `TranslatableText`: 열림 상태 `null` = 설정 따름, 자동으로 연 게 실패하면 접힌 것처럼(`autoOpened` prop — 채팅 화면은 인용 블록과 상태를 공유해서 바깥에서 넘김).

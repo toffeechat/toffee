@@ -18,6 +18,32 @@ import {
 
 const NAME_PLACEHOLDER = '{{name}}';
 const DEFAULT_MODEL = 'claude-opus-5-5';
+// 팬 답장 번역 모델(2026-10-16 사용자 결정 — 짧고 수가 많아서 싼 모델). 바꾸려면 TRANSLATION_REPLY_MODEL
+const DEFAULT_REPLY_MODEL = 'claude-haiku-5-5';
+/** 묶음 번역 한 번에 받는 메시지 수 — 화면에 보이는 말풍선 정도 */
+export const TRANSLATE_BATCH_MAX = 30;
+
+const MESSAGE_SELECT = {
+  id: true,
+  body: true,
+  senderType: true,
+  fanUserId: true,
+  createdAt: true,
+  // CP방은 보낸 멤버의 성별, 아니면 방(아티스트) 성별
+  senderActor: { select: { gender: true } },
+  actor: { select: { gender: true } },
+} as const;
+
+type TranslatableMessage = {
+  senderType: MessageSenderType;
+  senderActor: { gender: 'FEMALE' | 'MALE' | null } | null;
+  actor: { gender: 'FEMALE' | 'MALE' | null } | null;
+};
+
+const speakerOf = (message: TranslatableMessage): TranslationSpeaker =>
+  message.senderType === MessageSenderType.ARTIST
+    ? { role: 'artist', gender: message.senderActor?.gender ?? message.actor?.gender ?? null }
+    : { role: 'fan' };
 const WELCOME_CACHE_SIZE = 500;
 
 /**
@@ -47,9 +73,10 @@ export class TranslationService {
     const choice = config.get<string>('TRANSLATION_PROVIDER');
     const apiKey = config.get<string>('ANTHROPIC_API_KEY');
     const model = config.get<string>('TRANSLATION_MODEL') || DEFAULT_MODEL;
+    const replyModel = config.get<string>('TRANSLATION_REPLY_MODEL') || DEFAULT_REPLY_MODEL;
     if (choice === 'off') return null;
     if (choice === 'fake') return new FakeTranslationProvider();
-    if (choice === 'claude' || (!choice && apiKey)) return apiKey ? new ClaudeTranslationProvider(apiKey, model) : null;
+    if (choice === 'claude' || (!choice && apiKey)) return apiKey ? new ClaudeTranslationProvider(apiKey, model, replyModel) : null;
     return config.get<string>('NODE_ENV') === 'production' ? null : new FakeTranslationProvider();
   }
 
@@ -59,19 +86,7 @@ export class TranslationService {
 
   async translateMessage(requesterId: string, actorId: string, messageId: string, target: SupportedLocale) {
     if (!this.provider) throw new ServiceUnavailableException(appError('TRANSLATION_UNAVAILABLE'));
-    const message = await this.prisma.message.findFirst({
-      where: { id: messageId, actorId, deletedAt: null },
-      select: {
-        id: true,
-        body: true,
-        senderType: true,
-        fanUserId: true,
-        createdAt: true,
-        // CP방은 보낸 멤버의 성별, 아니면 방(아티스트) 성별
-        senderActor: { select: { gender: true } },
-        actor: { select: { gender: true } },
-      },
-    });
+    const message = await this.prisma.message.findFirst({ where: { id: messageId, actorId, deletedAt: null }, select: MESSAGE_SELECT });
     if (!message?.body) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
 
     const requester = await this.prisma.user.findUniqueOrThrow({
@@ -89,16 +104,88 @@ export class TranslationService {
       await ensureCanViewActor(this.prisma, requesterId, actorId);
     }
 
-    const speaker: TranslationSpeaker =
-      message.senderType === MessageSenderType.ARTIST
-        ? { role: 'artist', gender: message.senderActor?.gender ?? message.actor?.gender ?? null }
-        : { role: 'fan' };
-    let text = await this.cachedOrTranslate(message.id, message.body, target, speaker);
+    let text = await this.cachedOrTranslate(message.id, message.body, target, speakerOf(message));
     // 팬에게 보여 줄 스타 메시지는 {{name}} 자리에 그 팬 이름(채팅방 원문과 같게)
     if (message.senderType === MessageSenderType.ARTIST && requester.role === Role.USER) {
       text = text.replaceAll(NAME_PLACEHOLDER, requester.nickname ?? requester.displayName ?? '');
     }
     return { messageId: message.id, language: target, text };
+  }
+
+  /**
+   * 묶음 번역(2026-10-16 자동 번역) — 앱이 화면에 함께 그려진 말풍선들을 모아 한 번에. 권한은 한 개짜리와 같고(팬은 자기 채팅방에 보이는 것만,
+   * 안 보이는 건 조용히 빠짐), 저장된 번역은 그대로 쓰고 나머지만 아티스트 메시지끼리·팬 답장끼리 묶어 엔진에 한 번씩. 엔진이 실패하거나
+   * 일부를 빠뜨리면 그 메시지만 결과에서 빠짐(앱은 그 말풍선에 "번역 보기" 버튼을 남김)
+   */
+  async translateMany(requesterId: string, actorId: string, messageIds: string[], target: SupportedLocale) {
+    const provider = this.provider;
+    if (!provider) throw new ServiceUnavailableException(appError('TRANSLATION_UNAVAILABLE'));
+    const ids = [...new Set(messageIds)].slice(0, TRANSLATE_BATCH_MAX);
+    const requester = await this.prisma.user.findUniqueOrThrow({
+      where: { id: requesterId },
+      select: { role: true, nickname: true, displayName: true },
+    });
+    let rows = await this.prisma.message.findMany({ where: { id: { in: ids }, actorId, deletedAt: null }, select: MESSAGE_SELECT });
+    if (requester.role === Role.USER) {
+      const subscription = await ensureActiveSubscription(this.prisma, requesterId, actorId);
+      const visible = await Promise.all(
+        rows.map(
+          async (message) =>
+            (message.createdAt >= subscription.startedAt && (message.senderType === MessageSenderType.ARTIST || message.fanUserId === requesterId)) ||
+            (await this.isVisibleQuote(message.id, actorId, subscription.startedAt)),
+        ),
+      );
+      rows = rows.filter((_, index) => visible[index]);
+    } else {
+      await ensureCanViewActor(this.prisma, requesterId, actorId);
+    }
+    const messages = rows.filter((message): message is typeof message & { body: string } => !!message.body);
+
+    const texts = new Map<string, string>();
+    if (provider.cacheable && messages.length > 0) {
+      const cached = await this.prisma.messageTranslation.findMany({
+        where: { messageId: { in: messages.map((message) => message.id) }, languageCode: target },
+        select: { messageId: true, translatedText: true },
+      });
+      for (const row of cached) texts.set(row.messageId, row.translatedText);
+    }
+    const todo = messages.filter((message) => !texts.has(message.id));
+    const groups = [todo.filter((message) => message.senderType === MessageSenderType.ARTIST), todo.filter((message) => message.senderType !== MessageSenderType.ARTIST)];
+    await Promise.all(
+      groups
+        .filter((group) => group.length > 0)
+        .map(async (group) => {
+          let results: (string | null)[];
+          try {
+            results = await provider.translateMany(
+              group.map((message) => ({ text: message.body, speaker: speakerOf(message) })),
+              target,
+            );
+          } catch (error) {
+            this.logger.warn(`묶음 번역 실패(${provider.name}, ${group.length}개): ${error instanceof TranslationRefusedError ? `거절 ${error.message}` : String(error)}`);
+            return;
+          }
+          const fresh = group.flatMap((message, index) => (results[index] ? [{ messageId: message.id, languageCode: target, translatedText: results[index] }] : []));
+          for (const row of fresh) texts.set(row.messageId, row.translatedText);
+          // 두 사람이 동시에 같은 메시지를 번역했으면 먼저 저장된 것만 남김
+          if (provider.cacheable && fresh.length > 0) await this.prisma.messageTranslation.createMany({ data: fresh, skipDuplicates: true });
+        }),
+    );
+
+    const fanName = requester.nickname ?? requester.displayName ?? '';
+    return {
+      language: target,
+      translations: messages
+        .filter((message) => texts.has(message.id))
+        .map((message) => {
+          const text = texts.get(message.id)!;
+          // 팬에게 보여 줄 스타 메시지는 {{name}} 자리에 그 팬 이름(한 개짜리와 같게)
+          return {
+            messageId: message.id,
+            text: message.senderType === MessageSenderType.ARTIST && requester.role === Role.USER ? text.replaceAll(NAME_PLACEHOLDER, fanName) : text,
+          };
+        }),
+    };
   }
 
   /**

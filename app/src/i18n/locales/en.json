@@ -602,7 +602,9 @@
   "translate": {
     "show": "See translation",
     "hide": "Hide translation",
-    "failed": "Couldn't translate"
+    "failed": "Couldn't translate",
+    "autoTitle": "Translate messages automatically",
+    "autoHint": "Messages in other languages show a translation under the original without tapping. When off, tap \"See translation\" on a message."
   },
   "idleRefund": {
     "title": "You can request a refund",
