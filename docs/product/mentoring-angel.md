@@ -55,7 +55,7 @@ Kong Seul Gi · support@toffeechat.app · 2026년 10월
 >
 > 감사합니다.
 > Kong Seul Gi 드림
-> support@toffeechat.app · toffeechat.app
+> support@toffeechat.app
 
 ## 4. 보내기 전
 
