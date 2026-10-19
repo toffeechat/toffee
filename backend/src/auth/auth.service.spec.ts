@@ -243,3 +243,40 @@ describe('팬 프로필 상태메시지(2026-10-12)', () => {
     await expect(setupProfile(true).service.updateProfile('u1', { statusMessage: '나쁜말' })).rejects.toThrow();
   });
 });
+
+describe('팬 답장 자동 번역 설정값(2026-10-19)', () => {
+  const getMe = (value?: string) => {
+    const prisma = {
+      user: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: 'u1',
+          role: 'ACTOR',
+          nicknameChangedAt: null,
+          createdAt: new Date('2026-10-01'),
+          birthDate: null,
+          authIdentities: [],
+          agency: null,
+          profileImageUrl: null,
+          autoTranslate: true,
+        }),
+      },
+    };
+    const media = { resolveImageUrl: vi.fn().mockResolvedValue(null) };
+    const service = new AuthService(
+      { get: (key: string) => (key === 'TRANSLATION_AUTO_FAN_REPLIES' ? value : undefined) } as unknown as ConfigService,
+      {} as JwtService,
+      prisma as unknown as PrismaService,
+      {} as ModerationService,
+      media as unknown as MediaService,
+    );
+    return service.getMe('u1');
+  };
+
+  it('기본은 꺼짐(비었거나 모르는 값) — true/1/on일 때만 켜짐', async () => {
+    await expect(getMe()).resolves.toMatchObject({ autoTranslate: true, autoTranslateFanReplies: false });
+    await expect(getMe('')).resolves.toMatchObject({ autoTranslateFanReplies: false });
+    await expect(getMe('no')).resolves.toMatchObject({ autoTranslateFanReplies: false });
+    await expect(getMe(' TRUE ')).resolves.toMatchObject({ autoTranslateFanReplies: true });
+    await expect(getMe('1')).resolves.toMatchObject({ autoTranslateFanReplies: true });
+  });
+});

@@ -3,6 +3,7 @@ import { getLocales } from 'expo-localization';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { shouldAutoTranslate } from '@/utils/auto-translate';
 
 export type ParentalConsentStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'UNDERAGE';
 
@@ -90,6 +91,8 @@ export interface Me {
   notifyIdleAlerts?: boolean;
   /** 메시지 자동 번역(2026-10-16, 기본 켜짐) */
   autoTranslate?: boolean;
+  /** 아티스트·소속사 화면의 팬 답장도 자동 번역할지 — 서버 설정 TRANSLATION_AUTO_FAN_REPLIES(2026-10-19, 기본 꺼짐) */
+  autoTranslateFanReplies?: boolean;
   /** 소속사 직원이면 소속사 이름(콘솔 왼쪽 위 표시) */
   agencyName?: string | null;
 }
@@ -136,10 +139,13 @@ export function useUpdateProfile() {
   });
 }
 
-/** 메시지 자동 번역이 켜져 있는지 — 내 정보를 받기 전엔 꺼진 것으로(끈 사람에게 잠깐이라도 번역 요청이 가지 않게) */
-export function useAutoTranslate(): boolean {
+/**
+ * 메시지 자동 번역이 켜져 있는지 — 내 정보를 받기 전엔 꺼진 것으로(끈 사람에게 잠깐이라도 번역 요청이 가지 않게). 팬 답장(아티스트·소속사
+ * 화면)은 서버 설정까지 켜져 있어야(2026-10-19, 기본 꺼짐)
+ */
+export function useAutoTranslate(kind: 'artistMessage' | 'fanReply' = 'artistMessage'): boolean {
   const { data: me } = useMe();
-  return !!me && me.autoTranslate !== false;
+  return shouldAutoTranslate(me, kind);
 }
 
 export function useUpdateTranslationSettings() {
