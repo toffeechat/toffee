@@ -209,7 +209,7 @@ function ReplyBubble({
                 </ThemedText>
               ) : item.body ? (
                 // 태국·일본 팬 답장 등 다른 언어면 "번역 보기"
-                <TranslatableText actorId={actorId} messageId={item.id} text={item.body} />
+                <TranslatableText actorId={actorId} messageId={item.id} text={item.body} fanReply />
               ) : null}
             </ThemedView>
             <SideTime at={item.createdAt} />

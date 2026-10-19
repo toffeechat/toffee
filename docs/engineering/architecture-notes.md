@@ -1683,3 +1683,8 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 앱: `utils/translation-batch.ts` `createTranslationBatcher(send)` — (방, 언어)별 40ms 대기 또는 30개 차면 전송, 빠진 id는 `TranslationMissingError`.
   `useMessageTranslation`의 queryFn이 이걸 씀(쿼리 키는 그대로라 기존 캐시·인용 블록 그대로). `useAutoTranslate()`(내 정보 받기 전엔 false).
   `TranslatableText`: 열림 상태 `null` = 설정 따름, 자동으로 연 게 실패하면 접힌 것처럼(`autoOpened` prop — 채팅 화면은 인용 블록과 상태를 공유해서 바깥에서 넘김).
+- **2026-10-19 팬 답장 자동 번역 끔**: 환경변수 `TRANSLATION_AUTO_FAN_REPLIES`(true/1/on만 켜짐, 기본 꺼짐, `isOn` in `auth.service.ts`) →
+  `GET /auth/me`의 `autoTranslateFanReplies`. 앱 `utils/auto-translate.ts` — `shouldAutoTranslate(me, 'artistMessage' | 'fanReply')`(팬 답장은
+  `autoTranslate && autoTranslateFanReplies`), `showAutoTranslateSetting(me)`(ACTOR·AGENCY_STAFF는 서버 값이 켜졌을 때만 스위치 표시).
+  `useAutoTranslate(kind)`, `TranslatableText`의 `fanReply` prop(스튜디오 답장 화면·콘솔 아티스트 화면). 서버는 자동/수동 요청을 구분하지 않으므로
+  이 값은 앱 동작만 바꿈 — 스키마 변경 없음.

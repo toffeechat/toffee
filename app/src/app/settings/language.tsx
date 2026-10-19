@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/icon';
 import { ListRow } from '@/components/ui/list-row';
 import { useMe, useUpdateTranslationSettings } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
+import { showAutoTranslateSetting } from '@/utils/auto-translate';
 import { LANGUAGE_NATIVE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/i18n/languages';
 import { useLocalePreference } from '@/i18n/locale-preference-context';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -36,13 +37,16 @@ export default function LanguageScreen() {
   );
 }
 
-/** 메시지 자동 번역(2026-10-16, 기본 켜짐) — 모든 역할 공통(팬: 아티스트 메시지, 아티스트·소속사: 팬 답장) */
+/**
+ * 메시지 자동 번역(2026-10-16, 기본 켜짐) — 팬: 아티스트 메시지, 아티스트·소속사: 팬 답장. 팬 답장 자동 번역은 서버 설정으로 꺼 둬서
+ * (2026-10-19, 비용) 그동안 아티스트·소속사에겐 스위치를 숨김
+ */
 function AutoTranslateToggle() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { data: me } = useMe();
   const update = useUpdateTranslationSettings();
-  if (!me) return null;
+  if (!me || !showAutoTranslateSetting(me)) return null;
   return (
     <View style={[styles.toggle, { borderTopColor: theme.border }]}>
       <View style={styles.row}>
