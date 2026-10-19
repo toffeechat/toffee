@@ -360,7 +360,6 @@
     "justSentVoice": "ボイスメッセージが届きました",
     "justSentVideo": "動画が届きました",
     "justSentMessage": "新しいメッセージが届きました",
-    "you": "自分: {{text}}",
     "noMessagesYet": "まもなく最初のメッセージが届きます",
     "muted": "通知オフ",
     "unread": "未読 {{count}}件",
@@ -603,7 +602,9 @@
   "translate": {
     "show": "翻訳を見る",
     "hide": "翻訳を隠す",
-    "failed": "翻訳できませんでした"
+    "failed": "翻訳できませんでした",
+    "autoTitle": "メッセージを自動翻訳",
+    "autoHint": "ほかの言語のメッセージは、タップしなくても原文の下に翻訳を表示します。オフにすると、吹き出しの「翻訳を見る」で表示します。"
   },
   "idleRefund": {
     "title": "返金を申請できます",

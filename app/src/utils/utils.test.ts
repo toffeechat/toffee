@@ -6,6 +6,7 @@ import { showNameToken } from './name-token';
 import { STORE_PRODUCT_ID_PATTERN } from './store-product';
 import { orderedProviders } from '@/components/social-button-style';
 import { albumLayout, collapseRetracted, groupAlbumRows, rowHas } from './chat-album';
+import { formatInboxTime } from './relative-time';
 
 describe('번역 보기를 보여 줄지(글자 종류)', () => {
   it('글자 종류 판별', () => {
@@ -123,5 +124,15 @@ describe('연달아 회수된 아티스트 메시지 한 줄로(사진 묶음 �
       m('1', '2026-10-15T10:00:10Z', { retracted: true }),
     ];
     expect(collapseRetracted(rows, sameMinute).map((r) => r.id)).toEqual(['4', '3', '2', '1']);
+  });
+});
+
+describe('토피룸 목록 시간(2026-10-16 — 요일 없이)', () => {
+  const t = ((key: string) => key) as unknown as Parameters<typeof formatInboxTime>[2];
+  const now = new Date(2026, 9, 16, 15, 0);
+  it('오늘은 시각, 어제는 "어제", 그 전은 날짜', () => {
+    expect(formatInboxTime(new Date(2026, 9, 16, 9, 5).toISOString(), 'en-US', t, now)).toBe('9:05 AM');
+    expect(formatInboxTime(new Date(2026, 9, 15, 23, 0).toISOString(), 'en-US', t, now)).toBe('time.yesterday');
+    expect(formatInboxTime(new Date(2026, 9, 14, 12, 0).toISOString(), 'en-US', t, now)).toBe('10/14');
   });
 });

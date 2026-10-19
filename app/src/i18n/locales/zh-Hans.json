@@ -360,7 +360,6 @@
     "justSentVoice": "刚刚发送了语音消息",
     "justSentVideo": "刚刚发送了视频",
     "justSentMessage": "给你发来了新消息",
-    "you": "我：{{text}}",
     "noMessagesYet": "第一条消息即将到来",
     "muted": "已静音",
     "unread": "{{count}} 条未读",
@@ -603,7 +602,9 @@
   "translate": {
     "show": "查看翻译",
     "hide": "隐藏翻译",
-    "failed": "翻译失败"
+    "failed": "翻译失败",
+    "autoTitle": "自动翻译消息",
+    "autoHint": "其他语言的消息无需点击，会在原文下方显示翻译。关闭后，点击消息上的“查看翻译”即可查看。"
   },
   "idleRefund": {
     "title": "可以申请退款",

@@ -525,6 +525,78 @@ export function useResetDemo() {
   });
 }
 
+// 소속사별 데모 입장 코드(2026-10-19) — 코드 하나로 데모의 소속사·아티스트·팬 버튼을 다 씀, 들어오면 운영자에게 메일
+export type DemoRoleKey = 'agency' | 'artist' | 'fan' | 'other';
+
+export interface DemoCodeSummary {
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+  /** 30분 넘게 쉬었다가 새로 들어온 횟수(= 알림 메일 수) */
+  visitCount: number;
+  /** 역할별 횟수(로그인 + 새 접속) */
+  roleCounts: Partial<Record<DemoRoleKey, number>>;
+}
+
+export interface DemoCode extends DemoCodeSummary {
+  id: string;
+  agencyName: string;
+  code: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  note: string | null;
+  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+  createdAt: string;
+}
+
+export interface DemoAccessEvent {
+  id: string;
+  role: DemoRoleKey;
+  kind: 'LOGIN' | 'VISIT';
+  newVisit: boolean;
+  platform: string | null;
+  deviceModel: string | null;
+  osVersion: string | null;
+  appVersion: string | null;
+  ip: string | null;
+  createdAt: string;
+}
+
+export function useDemoCodes() {
+  return useQuery({
+    queryKey: ['admin', 'demo-codes'],
+    queryFn: () => apiClient.get<{ codes: DemoCode[]; common: DemoCodeSummary | null }>('/admin/demo-codes'),
+    // 소속사가 들어왔는지 보는 화면이라 다시 열 때마다 새로
+    refetchOnMount: 'always',
+  });
+}
+
+export function useCreateDemoCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { agencyName: string; code?: string; expiresAt: string; note?: string }) =>
+      apiClient.post<DemoCode>('/admin/demo-codes', input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'demo-codes'] }),
+  });
+}
+
+export function useUpdateDemoCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: { id: string; agencyName?: string; expiresAt?: string; note?: string | null; revoked?: boolean }) =>
+      apiClient.patch<DemoCode>(`/admin/demo-codes/${id}`, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'demo-codes'] }),
+  });
+}
+
+/** id 자리에 'common'이면 공용 코드(내부) 기록 */
+export function useDemoCodeEvents(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'demo-codes', id, 'events'],
+    queryFn: () => apiClient.get<DemoAccessEvent[]>(`/admin/demo-codes/${id}/events`),
+    enabled,
+  });
+}
+
 // 공지사항(2026-10-12) — 목록은 팬 화면과 같은 GET /notices
 export interface NoticeInput {
   title: string;

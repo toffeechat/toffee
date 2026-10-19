@@ -360,7 +360,6 @@
     "justSentVoice": "剛剛傳送了語音訊息",
     "justSentVideo": "剛剛傳送了影片",
     "justSentMessage": "傳來了新訊息",
-    "you": "我：{{text}}",
     "noMessagesYet": "第一則訊息即將到來",
     "muted": "已靜音",
     "unread": "{{count}} 則未讀",
@@ -603,7 +602,9 @@
   "translate": {
     "show": "查看翻譯",
     "hide": "隱藏翻譯",
-    "failed": "翻譯失敗"
+    "failed": "翻譯失敗",
+    "autoTitle": "自動翻譯訊息",
+    "autoHint": "其他語言的訊息不用點選，就會在原文下方顯示翻譯。關閉後，點選訊息上的「查看翻譯」即可查看。"
   },
   "idleRefund": {
     "title": "可以申請退款",

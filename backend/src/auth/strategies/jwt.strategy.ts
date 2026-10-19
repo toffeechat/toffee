@@ -8,10 +8,13 @@ import { UserStatus } from '../../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.js';
 import { appError } from '../../common/i18n/app-error.js';
 import { AccessLogService } from '../../access-log/access-log.service.js';
+import { DemoAccessService } from '../../demo/demo-access.service.js';
 import { clientInfoFromRequest } from '../../access-log/client-info.js';
 
 interface JwtPayload {
   sub: string;
+  // 데모 입장 코드로 로그인했으면 그 코드 id(공용 코드는 'common') — 2026-10-19
+  dac?: string;
 }
 
 @Injectable()
@@ -20,6 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly accessLog: AccessLogService,
+    private readonly demoAccess: DemoAccessService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -47,7 +51,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
     // 마지막 접속(통계·운영자 회원 관리) + 접속 기록 — 한 시간에 한 번만, 응답은 기다리지 않음
-    this.accessLog.touchVisit(user.id, user.lastActiveAt, clientInfoFromRequest(req));
+    const client = clientInfoFromRequest(req);
+    // 소속사별 데모 입장 코드가 만료·중지됐으면 로그인 중이어도 내보냄(2026-10-19 사용자 결정) + 소속사별 접속 기록
+    if (typeof payload.dac === 'string') {
+      await this.demoAccess.assertActive(payload.dac);
+      this.demoAccess.touch(payload.dac, user.role, 'VISIT', client);
+    }
+    this.accessLog.touchVisit(user.id, user.lastActiveAt, client);
     return { id: user.id, role: user.role };
   }
 }

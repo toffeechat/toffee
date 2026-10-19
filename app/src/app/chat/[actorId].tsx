@@ -42,7 +42,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/use-theme';
 import { fontFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { confirm } from '@/lib/confirm';
-import { useAcceptReplyRules, useOnboardingStatus } from '@/hooks/use-onboarding';
+import { useAcceptReplyRules, useAutoTranslate, useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
 import { collapseRetracted, groupAlbumRows, rowHas } from '@/utils/chat-album';
 
@@ -651,7 +651,10 @@ function MessageRow({
   const hasMenu = !message.retracted && (canReport || canRetract || !!message.body);
   // 아티스트가 팬 답장을 인용한 메시지(2026-10-15 사용자 요청): 인용은 아티스트 말풍선 위에 따로 선 말풍선으로, "번역 보기" 하나로 둘 다 번역
   const quote = !message.retracted && !message.album ? message.replyTo : null;
-  const [translateOpen, setTranslateOpen] = useState(false);
+  // null = 아직 누르지 않음 — 자동 번역 설정(2026-10-16)을 따름
+  const autoTranslate = useAutoTranslate();
+  const [translateChoice, setTranslateOpen] = useState<boolean | null>(null);
+  const translateOpen = translateChoice ?? autoTranslate;
   const quoteTranslatable = !!quote && !quote.hidden && !!quote.body && needsTranslation(quote.body, i18n.language);
 
   const bubble = (
@@ -690,7 +693,7 @@ function MessageRow({
           />
           {message.body ? (
             <View style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-              <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} />
+              <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} autoOpened={translateChoice === null} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} />
             </View>
           ) : null}
         </View>
@@ -713,7 +716,7 @@ function MessageRow({
               {message.extra === 'welcome' ? t('chat.welcomeLabel') : t('chat.birthdayLabel')}
             </ThemedText>
           ) : null}
-          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome /> : message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} /> : <ThemedText>{message.body}</ThemedText> : null}
+          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome /> : message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} autoOpened={translateChoice === null} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} /> : <ThemedText>{message.body}</ThemedText> : null}
         </View>
       )}
     </Pressable>

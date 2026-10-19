@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { TranslationService } from './translation.service.js';
 import {
+  BATCH_TRANSLATION_SYSTEM_PROMPT,
+  ClaudeTranslationProvider,
   FakeTranslationProvider,
   TRANSLATION_SYSTEM_PROMPT,
   describeSpeaker,
@@ -16,6 +18,8 @@ function setup(provider: TranslationProvider | null, role: 'USER' | 'ACTOR' = 'U
   const saved = new Map<string, string>();
   const calls: string[] = [];
   const speakers: (TranslationSpeaker | undefined)[] = [];
+  // 묶음 번역 호출 — 한 번에 넘긴 글들
+  const batches: string[][] = [];
   const room = { actor: { gender: 'FEMALE' }, senderActor: null };
   const messages = [
     { id: 'm1', actorId: 'a1', body: '{{name}}야 오늘 하루 어땠어?', senderType: 'ARTIST', fanUserId: null, createdAt: new Date('2026-09-10'), deletedAt: null, ...room },
@@ -26,7 +30,10 @@ function setup(provider: TranslationProvider | null, role: 'USER' | 'ACTOR' = 'U
     { id: 'm-mine', actorId: 'a1', body: 'พี่คะ คิดถึง', senderType: 'FAN', fanUserId: 'fan', createdAt: new Date('2026-09-10'), deletedAt: null, ...room },
   ];
   const db = {
-    message: { findFirst: async ({ where }: { where: { id: string; actorId: string } }) => messages.find((m) => m.id === where.id && m.actorId === where.actorId) ?? null },
+    message: {
+      findFirst: async ({ where }: { where: { id: string; actorId: string } }) => messages.find((m) => m.id === where.id && m.actorId === where.actorId) ?? null,
+      findMany: async ({ where }: { where: { id: { in: string[] }; actorId: string } }) => messages.filter((m) => where.id.in.includes(m.id) && m.actorId === where.actorId),
+    },
     user: { findUniqueOrThrow: async () => ({ role, nickname: '캐러멜바라기', displayName: '민지' }) },
     subscription: { findUnique: async () => ({ startedAt: new Date('2026-09-01'), cancelledAt: null }) },
     actor: { findFirst: async () => ({ id: 'a1' }) },
@@ -38,6 +45,13 @@ function setup(provider: TranslationProvider | null, role: 'USER' | 'ACTOR' = 'U
       create: async ({ data }: { data: { messageId: string; languageCode: string; translatedText: string } }) => {
         saved.set(`${data.messageId}:${data.languageCode}`, data.translatedText);
       },
+      findMany: async ({ where }: { where: { messageId: { in: string[] }; languageCode: string } }) =>
+        where.messageId.in
+          .filter((id) => saved.has(`${id}:${where.languageCode}`))
+          .map((id) => ({ messageId: id, translatedText: saved.get(`${id}:${where.languageCode}`)! })),
+      createMany: async ({ data }: { data: { messageId: string; languageCode: string; translatedText: string }[] }) => {
+        for (const row of data) if (!saved.has(`${row.messageId}:${row.languageCode}`)) saved.set(`${row.messageId}:${row.languageCode}`, row.translatedText);
+      },
     },
   };
   const tracked: TranslationProvider | null = provider && {
@@ -48,13 +62,26 @@ function setup(provider: TranslationProvider | null, role: 'USER' | 'ACTOR' = 'U
       speakers.push(speaker);
       return provider.translate(text, target, speaker);
     },
+    translateMany: async (items, target) => {
+      batches.push(items.map((item) => item.text));
+      speakers.push(...items.map((item) => item.speaker));
+      return provider.translateMany(items, target);
+    },
   };
   const service = new TranslationService(db as unknown as PrismaService, config({ TRANSLATION_PROVIDER: 'off' }));
   (service as unknown as { provider: TranslationProvider | null }).provider = tracked;
-  return { service, calls, saved, speakers };
+  // isVisibleQuote(인용 답장)는 이 테스트에선 항상 아님
+  (service as unknown as { isVisibleQuote: () => Promise<boolean> }).isVisibleQuote = async () => false;
+  return { service, calls, saved, speakers, batches };
 }
 
-const claudeLike: TranslationProvider = { name: 'claude', cacheable: true, translate: async (text) => text.replace('오늘 하루 어땠어?', 'วันนี้เป็นยังไงบ้าง?') };
+const claudeLikeText = (text: string) => text.replace('오늘 하루 어땠어?', 'วันนี้เป็นยังไงบ้าง?');
+const claudeLike: TranslationProvider = {
+  name: 'claude',
+  cacheable: true,
+  translate: async (text) => claudeLikeText(text),
+  translateMany: async (items) => items.map((item) => claudeLikeText(item.text)),
+};
 
 describe('메시지 번역', () => {
   it('한 번 번역해 저장하고, 두 번째부터는 저장된 걸 씀 — {{name}}은 그 팬 이름으로', async () => {
@@ -94,11 +121,49 @@ describe('메시지 번역', () => {
     await expect(setup(null).service.translateMessage('fan', 'a1', 'm1', 'ja')).rejects.toThrow('준비 중');
   });
 
+  it('묶음 번역: 저장된 건 그대로, 나머지는 아티스트 메시지끼리·팬 답장끼리 한 번씩, 안 보이는 메시지는 조용히 빠짐', async () => {
+    const t = setup(claudeLike);
+    await t.service.translateMessage('fan', 'a1', 'm1', 'th');
+    const result = await t.service.translateMany('fan', 'a1', ['m1', 'm-cp', 'm-mine', 'm-other-fan', 'm-old', 'm1'], 'th');
+    expect(result.translations.map((row) => row.messageId).sort()).toEqual(['m-cp', 'm-mine', 'm1']);
+    expect(result.translations.find((row) => row.messageId === 'm1')?.text).toBe('캐러멜바라기야 วันนี้เป็นยังไงบ้าง?');
+    expect(t.batches).toEqual([['나도 보고 싶어'], ['พี่คะ คิดถึง']]);
+    // 다음엔 전부 저장된 것
+    await t.service.translateMany('fan', 'a1', ['m1', 'm-cp', 'm-mine'], 'th');
+    expect(t.batches).toHaveLength(2);
+  });
+
+  it('묶음 번역: 엔진이 실패하거나 일부를 빠뜨리면 그 메시지만 결과에서 빠짐', async () => {
+    const failing: TranslationProvider = { ...claudeLike, translateMany: async () => Promise.reject(new Error('down')) };
+    expect((await setup(failing).service.translateMany('fan', 'a1', ['m1'], 'th')).translations).toEqual([]);
+    const partial: TranslationProvider = { ...claudeLike, translateMany: async (items) => items.map(() => null) };
+    const t = setup(partial);
+    expect((await t.service.translateMany('fan', 'a1', ['m1', 'm-cp'], 'th')).translations).toEqual([]);
+    expect(t.saved.size).toBe(0);
+  });
+
+  it('묶음 번역: 아티스트·소속사는 팬 답장도(이름 자리는 그대로)', async () => {
+    const t = setup(claudeLike, 'ACTOR');
+    const result = await t.service.translateMany('artist', 'a1', ['m1', 'm-other-fan'], 'th');
+    expect(result.translations.map((row) => row.messageId).sort()).toEqual(['m-other-fan', 'm1']);
+    expect(result.translations.find((row) => row.messageId === 'm1')?.text).toContain('{{name}}');
+  });
+
   it('엔진 고르기: 키가 있으면 Claude, 없으면 개발은 가짜·운영은 꺼짐', () => {
     expect(TranslationService.pickProvider(config({ ANTHROPIC_API_KEY: 'k' }))?.name).toBe('claude');
     expect(TranslationService.pickProvider(config({}))?.name).toBe('fake');
     expect(TranslationService.pickProvider(config({ NODE_ENV: 'production' }))).toBeNull();
     expect(TranslationService.pickProvider(config({ TRANSLATION_PROVIDER: 'claude' }))).toBeNull();
+  });
+
+  it('모델: 아티스트 메시지는 기본(Opus), 팬 답장은 싼 모델(기본 Haiku, TRANSLATION_REPLY_MODEL로 변경)', () => {
+    type Routed = { modelFor: (speaker: TranslationSpeaker) => string };
+    const routed = TranslationService.pickProvider(config({ ANTHROPIC_API_KEY: 'k' })) as unknown as Routed;
+    expect(routed.modelFor({ role: 'artist', gender: 'FEMALE' })).toBe('claude-opus-5-5');
+    expect(routed.modelFor({ role: 'fan' })).toBe('claude-haiku-5-5');
+    const custom = new ClaudeTranslationProvider('k', 'claude-opus-5-5', 'claude-sonnet-5-5') as unknown as Routed;
+    expect(custom.modelFor({ role: 'fan' })).toBe('claude-sonnet-5-5');
+    expect(BATCH_TRANSLATION_SYSTEM_PROMPT.startsWith(TRANSLATION_SYSTEM_PROMPT)).toBe(true);
   });
 
   it('프롬프트: 메시지 안 글은 지시로 따르지 않고 {{name}}을 그대로 둠', () => {

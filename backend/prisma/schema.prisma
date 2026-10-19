@@ -132,6 +132,9 @@ model User {
   // 팬의 아티스트별 끄기는 Subscription.notificationsMuted, 생일은 위 birthdayGreetingsEnabled
   notifyArtistMessages     Boolean               @default(true)
   notifyIdleAlerts         Boolean               @default(true)
+  // 메시지 자동 번역(2026-10-16) — 켜면 앱 언어와 다른 글자로 쓴 말풍선을 누르지 않아도 원문 아래에 번역. 기본 켜짐(번역은 메시지×언어마다
+  // 한 번만 해서 저장하므로 팬 수와 무관한 비용). 설정 > 언어에서 끔
+  autoTranslate            Boolean               @default(true)
   // 가입할 때 기기의 지역 설정(ISO 국가 코드, 예: TH·KR) — 미성년자 기준 나이를 국가별로 적용하고(minor-age.ts)
   // 통계(국가별 가입자)에 씀. 가입 기기(ios/android/web)도 통계용. 약관 동의 때 앱이 보냄.
   countryCode              String?
@@ -205,6 +208,53 @@ model AccessLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// 소속사별 데모 입장 코드(2026-10-19) — 운영자가 소속사 이름·코드·만료일을 등록하고, 코드 하나로 웹 데모의 소속사·아티스트·팬
+// 버튼을 다 씀(데모 계정은 모든 소속사가 같이 씀 — 코드는 "누가 들어왔는지"만 구분). 데모 초기화(demo-seed)로 지우지 않고, 코드는
+// 지우지 않고 중지만(접속 기록이 남아야 해서). User와 연결하지 않음.
+model DemoAccessCode {
+  id          String    @id @default(uuid())
+  agencyName  String
+  // 소문자로 저장 — 입력은 대소문자 구분 없이
+  code        String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  note        String?
+  // 목록용 요약 — 기록을 매번 세지 않게. lastSeenAt은 쓰는 동안 5분에 한 번 갱신
+  firstSeenAt DateTime?
+  lastSeenAt  DateTime?
+  // 30분 넘게 활동이 없다가 새로 들어온 횟수(= 접속 알림 메일 수)
+  visitCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  events DemoAccessEvent[]
+}
+
+// 데모 접속 기록(2026-10-19) — LOGIN은 로그인할 때마다, VISIT는 로그인 유지 중 코드·역할마다 한 시간에 한 줄 + 새로 들어올 때.
+// codeId가 null이면 공용 코드(DEV_LOGIN_CODE, 내부 테스트용). 3개월 지나면 매일 지움(접속 기록과 같은 기간).
+model DemoAccessEvent {
+  id          String   @id @default(uuid())
+  codeId      String?
+  // agency / artist / fan / other
+  role        String
+  // LOGIN / VISIT
+  kind        String
+  // 30분 넘게 비었다가 새로 들어온 접속 — 알림 메일을 보낸 줄
+  newVisit    Boolean  @default(false)
+  platform    String?
+  deviceModel String?
+  osVersion   String?
+  appVersion  String?
+  userAgent   String?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  code DemoAccessCode? @relation(fields: [codeId], references: [id], onDelete: Cascade)
+
+  @@index([codeId, createdAt])
   @@index([createdAt])
 }
 

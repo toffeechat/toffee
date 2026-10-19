@@ -80,7 +80,7 @@ export class SubscriptionsService {
   ) {}
 
   /**
-   * 내 구독 = 인박스 목록(B3 시안) — 채팅방마다 마지막 메시지 미리보기, 안 읽은 스타 메시지 수, 최근 대화 순 정렬.
+   * 내 구독 = 인박스 목록(B3 시안) — 채팅방마다 스타의 마지막 메시지 미리보기, 안 읽은 스타 메시지 수, 스타의 마지막 메시지가 최근인 순(없으면 구독 시작) 정렬.
    * 안 읽음 = 마지막으로 채팅방을 본 시각(lastReadAt, 없으면 구독 시작) 이후의 스타 메시지.
    * coveredBy: 이 방을 열어 주는 구매들(개인 구독/묶음) — 구독 관리 화면에서 "묶음으로 이용 중" 표시·해지 안내용.
    */
@@ -104,8 +104,10 @@ export class SubscriptionsService {
         const visible = { actorId: subscription.actorId, deletedAt: null, createdAt: { gte: subscription.startedAt } };
         const readFrom = subscription.lastReadAt && subscription.lastReadAt > subscription.startedAt ? subscription.lastReadAt : subscription.startedAt;
         const [last, unreadCount, chatProfileImageUrl, unreadQuote] = await Promise.all([
+          // 미리보기·정렬은 스타의 마지막 메시지 기준(2026-10-16 사용자 결정) — 내 답장은 나만 보는 거라 목록에서 정보 가치가 낮고,
+          // 내가 답장할 때마다 그 방이 맨 위로 올라가 새 메시지 온 방이 묻히지 않게
           this.prisma.message.findFirst({
-            where: { ...visible, OR: [{ senderType: MessageSenderType.ARTIST }, { fanUserId: userId }] },
+            where: { ...visible, senderType: MessageSenderType.ARTIST },
             orderBy: { createdAt: 'desc' },
             select: { senderType: true, mediaType: true, body: true, createdAt: true },
           }),

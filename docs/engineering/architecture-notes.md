@@ -1608,6 +1608,29 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 운영자 API: `GET /admin/users?sort=recent`(lastActiveAt desc nulls last), 목록에 `lastActiveAt` + 마지막 기기(`accessLogs take 1`),
   `GET /admin/users/:id/access-logs`(최신 200줄). ADMIN만.
 
+## 소속사별 데모 입장 코드 `DemoAccessCode` (2026-10-19)
+
+- 표: `DemoAccessCode`(agencyName, `code` 소문자 unique, expiresAt, revokedAt, note, firstSeenAt/lastSeenAt/visitCount 요약) +
+  `DemoAccessEvent`(codeId null = 공용 코드, role `agency|artist|fan|other`, kind `LOGIN|VISIT`, newVisit, 기기 정보). User와 FK 없음 —
+  `demo-seed.ts`의 deleteMany 목록에 넣지 말 것(초기화해도 보존이 요구사항).
+- 로그인: `auth.controller` `dev-login` → `DemoAccessService.findLoginCode(code)`(등록 코드면 id, 만료·중지면 `DEMO_CODE_EXPIRED` 401) →
+  `AuthService.devLogin(..., registeredCodeId)` — 운영자 경로(`assertAdminLoginCode`)는 그대로, 등록 코드가 아니면 `DEV_LOGIN_CODE` 확인 후
+  `demoCode='common'`. `issueAccessToken(user, demoCode)`가 JWT에 `dac`를 넣음. 운영자 로그인은 `dac` 없음.
+- 요청마다: `JwtStrategy.validate`에서 `dac`가 있으면 `assertActive(dac)`(코드별 1분 캐시, 운영자 수정 때 `statusCache.delete`) → 만료·중지면 401
+  (앱 `onUnauthorized`가 이유를 보여 주고 로그아웃). 그다음 `touch(dac, role, 'VISIT')` — 코드·역할별 5분에 한 번만 처리(메모리).
+- 새 접속 판단(`markSeen`): `updateMany({ where: { id, lastSeenAt: null | < now-30분 }, data: { lastSeenAt, visitCount+1 } })` count 1이면 새 접속
+  (동시 요청 경합에도 한 번), 아니면 lastSeenAt만 갱신. 공용 코드는 DB 줄이 없어서 메모리 `commonLastSeen`. 기록 줄: LOGIN·새 접속·코드×역할 한 시간에
+  한 줄. 새 접속이면 `EmailService.send(DEMO_ALERT_EMAIL, …)`(비어 있으면 로그만, 공용 코드는 안 보냄). 전부 fire-and-forget — 실패해도 요청은 그대로.
+- 운영자 API(ADMIN): `GET /admin/demo-codes`(lastSeenAt desc nulls last, 역할별 횟수 = LOGIN + newVisit groupBy, `common` 요약),
+  `POST`(code 비우면 `generateDemoCode()` — 0/1/i/l/o 뺀 4-4자, `^[a-z0-9-]{4,32}$`, `DEV_LOGIN_CODE`·`DEV_LOGIN_ADMIN_CODE`와 같으면 409),
+  `PATCH /:id`(agencyName·expiresAt·note·revoked), `GET /:id/events`(`common` 가능, 최신 200줄). 삭제 API 없음.
+- 정리: `purgeOld()` 매일 04:45(태국), `ACCESS_LOG_RETENTION_DAYS`(90일).
+- 자동 초기화: `DemoService.dailyReset()` `@Cron('0 4 * * *', Asia/Bangkok)` — `isEnabled()` + `DEMO_DAILY_RESET=true`, `recentlyActive(30분)`면 skip,
+  아니면 `reset()`과 같은 트랜잭션 seed. 데모 계정은 고정 ID라 토큰 유지.
+- 앱: `app/src/app/admin/demo-codes.tsx`(운영자 홈의 데모 섹션에서만 진입 — `ADMIN_MENU`엔 없음), 훅 `useDemoCodes` 등 `use-admin.ts`.
+  만료일 입력은 한국 날짜 → 그날 23:59:59 +09:00. 링크 주소는 웹이면 `window.location.origin`, 앱이면 `https://demo.toffeechat.app`.
+- 환경변수: `DEMO_ALERT_EMAIL`(받는 주소, env-check 경고), `DEMO_DAILY_RESET`, 메일은 기존 `RESEND_API_KEY`·`EMAIL_FROM_ADDRESS`.
+
 ## 소속사 통계 기간 선택·하루 기록 (2026-10-14)
 
 - **기간**: `ActorStatsQueryDto`에 `from`·`to`(YYYY-MM-DD, `@Matches`) — `resolveRange(query)`(agency-stats.service)가 `{from, to, days}`로 바꾸고 검사
@@ -1637,3 +1660,26 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 
 - `listForFan`이 `replyTo.nickname`을 null로(팬 앱 응답에 다른 팬 닉네임이 안 실림). `listBroadcasts`·`listReplies`(아티스트·소속사)는 그대로.
 - 앱 `QuoteBlock artistName` — 있으면 제목 `quote.artistReply`("{{name}}의 답장"), `mine`이면 제목 없이 배지만. 스튜디오 `quote.publicNotice`에 `{{name}}`.
+
+## 2026-10-16 — 인박스 미리보기·둘러보기 카드 소속사
+
+- `SubscriptionsService.listMine`: `lastMessage`를 `senderType: ARTIST`만으로(예전엔 `OR [ARTIST, fanUserId=me]`). 정렬도 이 값(없으면 `startedAt`)이라
+  내 답장으로는 방 순서가 안 바뀜. 앱 `previewText`의 `inbox.you` 분기·문구 삭제.
+- `actors.service` `LIST_SELECT.coupleMembers.member`에 `agency: { select: { name } }` — 앱 `agencyLabelOf(actor)`가 1인은 `actor.agency.name`,
+  CP는 멤버 소속사 이름 중복 제거 후 `' · '`로. CP `Actor.agencyId`는 계속 null(소속사별 목록 필터는 그대로).
+- `formatInboxTime`: 요일 분기 삭제(오늘 시각 / 어제 / `month numeric, day numeric`).
+
+## 2026-10-19 — 자동 번역·묶음 번역
+
+- `User.autoTranslate Boolean @default(true)`(마이그레이션 `20261016000000_user_auto_translate`), `GET /auth/me`에 포함, `PATCH /auth/me/translation-settings { autoTranslate }`.
+- `POST /actors/:actorId/messages/extras/translate { messageIds (1~30), targetLanguage }` → `{ language, translations: [{ messageId, text }] }`.
+  `TranslationService.translateMany`: 권한(팬 = 구독 시작 이후 스타 메시지·내 답장·보이는 인용, 안 보이는 건 조용히 제외 / 그 외 `ensureCanViewActor`),
+  `MessageTranslation` 일괄 조회 → 없는 것만 ARTIST·FAN 그룹으로 `provider.translateMany` → `createMany skipDuplicates`. 엔진 예외는 경고 로그 후 그 그룹 생략.
+  스로틀 60/분.
+- `TranslationProvider.translateMany(items, target) → (string|null)[]`. Claude: `BATCH_TRANSLATION_SYSTEM_PROMPT`(기본 프롬프트 + 독립 번역 지시),
+  `<message id="n" speaker="...">`(XML 이스케이프), `output_config.format: { type: 'json_schema', schema }` → `{ translations: [{ id, text }] }`.
+  모델은 화자별(`modelFor`): artist → `TRANSLATION_MODEL`(opus-5-5), fan → `TRANSLATION_REPLY_MODEL`(기본 haiku-5-5). 서버 대체(`fallbacks: 'default'`)는
+  opus/sonnet/fable만(Haiku는 미지원이라 안 보냄). 한 개짜리 `translate`도 같은 모델 선택.
+- 앱: `utils/translation-batch.ts` `createTranslationBatcher(send)` — (방, 언어)별 40ms 대기 또는 30개 차면 전송, 빠진 id는 `TranslationMissingError`.
+  `useMessageTranslation`의 queryFn이 이걸 씀(쿼리 키는 그대로라 기존 캐시·인용 블록 그대로). `useAutoTranslate()`(내 정보 받기 전엔 false).
+  `TranslatableText`: 열림 상태 `null` = 설정 따름, 자동으로 연 게 실패하면 접힌 것처럼(`autoOpened` prop — 채팅 화면은 인용 블록과 상태를 공유해서 바깥에서 넘김).
