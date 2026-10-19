@@ -38,6 +38,10 @@
   거절, 소속사 코드로 운영자 로그인 불가. 웹 화면 등록·목록·기록 확인(Playwright). 테스트 추가(서버 입장 코드·자동 초기화·dev-login).
 - **남은 일(👤)**: 메일 발송 서비스 Resend 가입·도메인 인증 → Railway `RESEND_API_KEY`·`EMAIL_FROM_ADDRESS`·`DEMO_ALERT_EMAIL`, 자동 초기화를 쓰려면
   `DEMO_DAILY_RESET=true`, 서버·웹 데모 다시 배포. 그 전엔 메일 대신 서버 로그(기록·목록은 배포하면 바로 쌓임).
+- **(이어서) 설정·배포 완료**: 사용자가 Resend 가입(토피 Gmail 구글 로그인 — 도메인 메일로 로그인하면 도메인이 꼬일 때 복구 메일도
+  못 받아서), 도메인 `toffeechat.app`(Tokyo) Cloudflare 자동 설정으로 인증(`send`·`rsend` CNAME, `resend._domainkey` TXT — 기존
+  support@ 등 메일 전달과 안 겹침), 발송 전용 키 → Railway 변수 4개. PR #63 main 반영 후 데모 서버에서 테스트 코드 링크로 들어가 첫 접속
+  메일 도착 확인. 남은 확인: 운영자 목록 횟수·사용 중지 로그아웃(실기기 테스트 체크리스트에 추가해 둘 만함).
 
 ## 2026-10-19 — 메시지 자동 번역 + 말풍선 묶음 번역 + 팬 답장은 싼 모델
 
