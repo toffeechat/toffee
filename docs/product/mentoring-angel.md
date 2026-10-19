@@ -12,7 +12,7 @@
 ## 1. 사업 요약 1장
 
 **토피(Toffee) — 태국 아티스트와 해외 팬을 잇는 유료 1:1 채팅 구독 앱**
-Kong Seul Gi · support@toffeechat.app · 2026년 10월
+Kong Seul Gi · support@toffeechat.app · toffeechat.app · 2026년 10월
 
 | | |
 |---|---|
@@ -55,7 +55,7 @@ Kong Seul Gi · support@toffeechat.app · 2026년 10월
 >
 > 감사합니다.
 > Kong Seul Gi 드림
-> support@toffeechat.app
+> support@toffeechat.app · toffeechat.app
 
 ## 4. 보내기 전
 
