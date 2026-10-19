@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toffee — Closer to what matters</title>
+<meta name="description" content="Toffee is a subscription chat app connecting Thai artists with fans around the world.">
+<meta property="og:title" content="Toffee — Closer to what matters">
+<meta property="og:description" content="A subscription chat app connecting Thai artists with fans around the world.">
+<meta property="og:image" content="https://toffeechat.app/assets/og.jpg">
+<meta property="og:url" content="https://toffeechat.app/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FBFBFD">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap">
+<style>
+  /* 브랜드 색·글꼴은 docs/product/brand-guide.md 기준 */
+  :root {
+    --charcoal: #0F1115;
+    --ink: #3A3F4B;
+    --muted: #5A6070;
+    --paper: #FBFBFD;
+    --mist: #F4F6FB;
+    --periwinkle: #DCE1FF;
+    --lavender: #7C8CFF;
+    --lavender-deep: #4F5BD5;
+    --line: #E3E6F0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: Pretendard, 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--charcoal);
+    background: var(--paper);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  html[lang="th"] body { font-family: 'Noto Sans Thai', Pretendard, -apple-system, sans-serif; }
+  a { color: inherit; }
+  img { display: block; max-width: 100%; }
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  header { position: sticky; top: 0; z-index: 10; background: rgba(251, 251, 253, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid transparent; }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  header .logo img { height: 30px; width: auto; }
+  .langs { display: flex; gap: 4px; background: var(--mist); padding: 4px; border-radius: 999px; }
+  .langs button { border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .langs button[aria-pressed="true"] { background: #fff; color: var(--charcoal); box-shadow: 0 1px 3px rgba(15, 17, 21, 0.12); }
+
+  .hero { background: linear-gradient(180deg, var(--paper) 0%, var(--paper) 35%, var(--periwinkle) 100%); padding: 72px 0 0; overflow: hidden; }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: end; }
+  .hero-copy { padding-bottom: 96px; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--lavender-deep); background: #fff; border: 1px solid var(--periwinkle); padding: 6px 14px; border-radius: 999px; }
+  .badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lavender); }
+  h1 { font-family: Pretendard, sans-serif; font-size: clamp(40px, 6vw, 68px); line-height: 1.08; letter-spacing: -0.02em; margin: 24px 0 20px; }
+  .lead { font-size: clamp(18px, 2.2vw, 21px); color: var(--ink); max-width: 30em; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; font-size: 16px; padding: 14px 24px; border-radius: 14px; }
+  .btn-dark { background: var(--charcoal); color: #fff; }
+  .btn-light { background: #fff; color: var(--charcoal); border: 1px solid var(--line); }
+  .phones { display: flex; justify-content: center; gap: 16px; align-items: flex-end; }
+  .phone { width: 220px; border-radius: 34px; border: 6px solid var(--charcoal); overflow: hidden; background: #fff; box-shadow: 0 24px 60px rgba(15, 17, 21, 0.18); }
+  .phone img { width: 100%; height: auto; }
+  .phone.small { width: 180px; margin-bottom: 40px; }
+
+  section { padding: 96px 0; }
+  .eyebrow { font-size: 14px; font-weight: 700; color: var(--lavender-deep); letter-spacing: 0.02em; }
+  h2 { font-family: Pretendard, sans-serif; font-size: clamp(28px, 4vw, 40px); line-height: 1.25; letter-spacing: -0.01em; margin: 12px 0 0; max-width: 22em; }
+  html[lang="th"] h2 { font-family: 'Noto Sans Thai', Pretendard, sans-serif; letter-spacing: 0; line-height: 1.3; }
+  /* 슬로건은 모든 언어에서 영어 그대로(브랜드 원칙) — 태국어 화면에서도 Pretendard */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .card { background: var(--mist); border-radius: 20px; padding: 28px; }
+  .card .num { font-family: Pretendard, sans-serif; font-weight: 700; font-size: 28px; color: var(--lavender); }
+  .card h3 { font-size: 20px; margin: 8px 0 8px; }
+  .card p { color: var(--ink); }
+
+  .agency { background: var(--charcoal); color: #F4F6FB; }
+  .agency .eyebrow { color: #9AA6FF; }
+  .agency .points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .agency .point { border: 1px solid #2E3448; background: #1C2030; border-radius: 20px; padding: 28px; }
+  .agency .point h3 { font-size: 20px; margin-bottom: 8px; }
+  .agency .point p { color: #C9CEDC; }
+
+  .contact .box { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; background: var(--mist); border-radius: 24px; padding: 40px; margin-top: 40px; }
+  .contact dl { display: grid; grid-template-columns: auto 1fr; gap: 12px 24px; font-size: 18px; }
+  .contact dt { color: var(--muted); }
+  .contact dd { font-weight: 600; }
+  .qr { text-align: center; font-size: 14px; color: var(--muted); }
+  .qr img { width: 150px; height: 150px; background: #fff; border-radius: 16px; padding: 10px; margin: 0 auto 8px; }
+
+  footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+  footer nav { display: flex; gap: 20px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  @media (max-width: 860px) {
+    .hero { padding-top: 40px; }
+    .hero .wrap { grid-template-columns: 1fr; gap: 40px; }
+    .hero-copy { padding-bottom: 0; }
+    .phone { width: 170px; border-radius: 26px; border-width: 5px; }
+    .phone.small { width: 140px; margin-bottom: 28px; }
+    .phone.hide-sm { display: none; }
+    .cards, .agency .points { grid-template-columns: 1fr; }
+    section { padding: 64px 0; }
+    .contact .box { grid-template-columns: 1fr; padding: 28px; }
+    .contact dl { grid-template-columns: 1fr; gap: 2px; font-size: 16px; }
+    .contact dd { margin-bottom: 12px; overflow-wrap: anywhere; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="Toffee"><img src="/assets/wordmark.png" alt="Toffee" width="96" height="30"></a>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-lang="th">ไทย</button>
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="ko">한국어</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="badge" data-i18n="badge"></span>
+        <h1>Closer to what matters</h1>
+        <p class="lead" data-i18n="lead"></p>
+        <div class="cta">
+          <a class="btn btn-dark" href="#contact" data-i18n="ctaAgency"></a>
+          <a class="btn btn-light" href="#features" data-i18n="ctaMore"></a>
+        </div>
+      </div>
+      <div class="phones" aria-hidden="true">
+        <div class="phone small hide-sm"><img src="/assets/screen-discover.jpg" alt="" width="780" height="1688"></div>
+        <div class="phone"><img src="/assets/screen-chat.jpg" alt="" width="780" height="1688"></div>
+        <div class="phone small"><img src="/assets/screen-profile.jpg" alt="" width="780" height="1688"></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="featEyebrow"></p>
+      <h2 data-i18n="featTitle"></h2>
+      <div class="cards">
+        <div class="card"><p class="num">01</p><h3 data-i18n="f1t"></h3><p data-i18n="f1p"></p></div>
+        <div class="card"><p class="num">02</p><h3 data-i18n="f2t"></h3><p data-i18n="f2p"></p></div>
+        <div class="card"><p class="num">03</p><h3 data-i18n="f3t"></h3><p data-i18n="f3p"></p></div>
+      </div>
+      <p class="note" data-i18n="sampleNote"></p>
+    </div>
+  </section>
+
+  <section class="agency">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="agEyebrow"></p>
+      <h2 data-i18n="agTitle"></h2>
+      <div class="points">
+        <div class="point"><h3 data-i18n="a1t"></h3><p data-i18n="a1p"></p></div>
+        <div class="point"><h3 data-i18n="a2t"></h3><p data-i18n="a2p"></p></div>
+        <div class="point"><h3 data-i18n="a3t"></h3><p data-i18n="a3p"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="contact">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="ctEyebrow"></p>
+      <h2 data-i18n="ctTitle"></h2>
+      <div class="box">
+        <dl>
+          <dt data-i18n="email"></dt><dd><a href="mailto:support@toffeechat.app">support@toffeechat.app</a></dd>
+          <dt>LINE</dt><dd><a href="https://lin.ee/Sc0jE4J" rel="noopener">@614whagc</a></dd>
+        </dl>
+        <div class="qr"><img src="/assets/line-qr.png" alt="LINE QR" width="540" height="540"><span data-i18n="qr"></span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Toffee</span>
+    <nav>
+      <a data-legal="privacy" href="https://api-demo.toffeechat.app/legal/privacy" data-i18n="privacy"></a>
+      <a data-legal="terms" href="https://api-demo.toffeechat.app/legal/terms" data-i18n="terms"></a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // 문구는 docs/product/agency-outreach.md 한국어 기준본과 같은 내용. 태국어는 원어민 검수 전 초안.
+  var T = {
+    th: {
+      badge: 'เปิดให้บริการปี 2027',
+      lead: 'แอปแชทแบบสมัครสมาชิก ที่เชื่อมศิลปินไทยกับแฟนคลับทั่วโลก รับข้อความ รูปภาพ เสียง และวิดีโอจากศิลปินในห้องแชทส่วนตัว',
+      ctaAgency: 'สำหรับต้นสังกัดและศิลปิน',
+      ctaMore: 'ดูว่า Toffee ทำอะไรได้บ้าง',
+      featEyebrow: 'Toffee คืออะไร',
+      featTitle: 'เหมือนได้คุยกับศิลปินแบบตัวต่อตัว',
+      f1t: 'ห้องแชทส่วนตัว',
+      f1p: 'ศิลปินส่งข้อความ รูปภาพ เสียง และวิดีโอสั้น แฟนคลับแต่ละคนรับในห้องแชทของตัวเอง และตอบกลับได้',
+      f2t: 'แปลภาษาอัตโนมัติ',
+      f2p: 'แฟนคลับต่างประเทศอ่านข้อความภาษาไทยได้ในภาษาของตัวเอง และศิลปินก็อ่านข้อความตอบกลับจากทั่วโลกได้',
+      f3t: 'หน้าจอสำหรับต้นสังกัด',
+      f3p: 'ดูข้อความ สถิติ และรายงานรายได้รายเดือนของศิลปินแต่ละคนได้ทั้งบนมือถือและคอมพิวเตอร์',
+      sampleNote: 'ภาพหน้าจอจากแอปจริง ข้อมูลเป็นตัวอย่าง ภาพบุคคลสร้างด้วย AI',
+      agEyebrow: 'สำหรับต้นสังกัด',
+      agTitle: 'กำลังมองหาต้นสังกัดที่จะร่วมทดลองใช้งานกับเรา',
+      a1t: 'ไม่มีค่าใช้จ่าย ไม่ผูกขาด',
+      a1p: 'ไม่มีค่าสมัครหรือค่าบริการรายเดือน ศิลปินยังทำกิจกรรมบนแพลตฟอร์มอื่นได้ตามปกติ',
+      a2t: 'ควบคุมได้ทั้งหมด',
+      a2p: 'ต้นสังกัดดูข้อความทุกข้อความได้ และเรียกคืนข้อความที่มีปัญหาได้ทันที',
+      a3t: 'เราดูแลทุกอย่าง',
+      a3p: 'แอป การชำระเงิน การแปลภาษา และการดูแลแฟนคลับ ทีม Toffee ดูแลให้ทั้งหมด',
+      ctEyebrow: 'ติดต่อเรา',
+      ctTitle: 'ต้นสังกัดหรือศิลปินที่สนใจ ติดต่อเราได้เลย',
+      email: 'อีเมล',
+      qr: 'สแกนเพื่อเพิ่มเพื่อนใน LINE',
+      privacy: 'นโยบายความเป็นส่วนตัว',
+      terms: 'ข้อกำหนดการใช้งาน'
+    },
+    en: {
+      badge: 'Launching in 2027',
+      lead: 'A subscription chat app connecting Thai artists with fans around the world. Fans receive messages, photos, voice notes and videos from their artist in a private chat room.',
+      ctaAgency: 'For agencies & artists',
+      ctaMore: 'See what Toffee does',
+      featEyebrow: 'What is Toffee',
+      featTitle: 'It feels like a one-on-one chat with your artist',
+      f1t: 'Private chat rooms',
+      f1p: 'Artists send messages, photos, voice notes and short videos. Every fan receives them in their own chat room and can reply.',
+      f2t: 'Automatic translation',
+      f2p: 'Fans abroad read Thai messages in their own language, and artists can read replies from fans around the world.',
+      f3t: 'Agency console',
+      f3p: 'Agencies see messages, statistics and monthly revenue reports for each artist, on mobile and desktop.',
+      sampleNote: 'Screens from the real app. Data is sample data; portraits are AI-generated.',
+      agEyebrow: 'For agencies',
+      agTitle: 'We are looking for agencies to join our pilot',
+      a1t: 'No cost, no exclusivity',
+      a1p: 'No sign-up or monthly fees. Your artists stay free to work on other platforms.',
+      a2t: 'You stay in control',
+      a2p: 'See every message your artists send and retract anything that should not be there, right away.',
+      a3t: 'We handle the rest',
+      a3p: 'The app, payments, translation and fan support are all run by the Toffee team.',
+      ctEyebrow: 'Contact',
+      ctTitle: 'Agencies and artists, we would love to hear from you',
+      email: 'Email',
+      qr: 'Scan to add us on LINE',
+      privacy: 'Privacy Policy',
+      terms: 'Terms of Service'
+    },
+    ko: {
+      badge: '2027년 출시 예정',
+      lead: '태국 아티스트와 전 세계 팬을 잇는 구독형 채팅 앱입니다. 팬은 아티스트가 보낸 메시지·사진·음성·영상을 1:1 채팅방에서 받습니다.',
+      ctaAgency: '소속사·아티스트 문의',
+      ctaMore: '토피 알아보기',
+      featEyebrow: '토피 소개',
+      featTitle: '아티스트와 1:1로 대화하는 듯한 경험',
+      f1t: '나만의 채팅방',
+      f1p: '아티스트가 글·사진·음성·짧은 영상을 보내면 팬은 각자의 채팅방에서 받고 답장할 수 있습니다.',
+      f2t: '자동 번역',
+      f2p: '해외 팬은 태국어 메시지를 자기 언어로 읽고, 아티스트는 전 세계 팬의 답장을 읽을 수 있습니다.',
+      f3t: '소속사 전용 화면',
+      f3p: '아티스트별 메시지·통계·월간 수익 보고서를 휴대폰과 PC에서 확인합니다.',
+      sampleNote: '실제 앱 화면이며, 데이터는 예시이고 인물 사진은 AI로 만든 가상 인물입니다.',
+      agEyebrow: '소속사 파트너',
+      agTitle: '시범 운영을 함께할 소속사를 찾고 있습니다',
+      a1t: '비용·독점 없음',
+      a1p: '가입비나 월 이용료가 없고, 아티스트의 다른 플랫폼 활동도 자유롭습니다.',
+      a2t: '관리 권한은 소속사에',
+      a2p: '아티스트가 보낸 모든 메시지를 확인하고, 문제가 있으면 바로 회수할 수 있습니다.',
+      a3t: '운영은 토피가',
+      a3p: '앱·결제·번역·팬 응대는 토피 팀이 모두 맡습니다.',
+      ctEyebrow: '문의',
+      ctTitle: '관심 있는 소속사·아티스트라면 편하게 연락 주세요',
+      email: '이메일',
+      qr: 'LINE으로 친구 추가',
+      privacy: '개인정보처리방침',
+      terms: '이용약관'
+    }
+  };
+
+  function pick() {
+    var q = new URLSearchParams(location.search).get('lang');
+    if (q && T[q]) return q;
+    try { var saved = localStorage.getItem('toffee_lang'); if (saved && T[saved]) return saved; } catch (e) {}
+    var langs = navigator.languages || [navigator.language || 'th'];
+    for (var i = 0; i < langs.length; i++) {
+      var l = String(langs[i]).slice(0, 2).toLowerCase();
+      if (T[l]) return l;
+    }
+    return 'en';
+  }
+
+  function apply(lang) {
+    var t = T[lang];
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t[el.getAttribute('data-i18n')]; });
+    document.querySelectorAll('[data-legal]').forEach(function (el) {
+      el.href = 'https://api-demo.toffeechat.app/legal/' + el.getAttribute('data-legal') + '?lang=' + lang;
+    });
+    document.querySelectorAll('.langs button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === lang)); });
+  }
+
+  document.querySelectorAll('.langs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var lang = b.getAttribute('data-lang');
+      try { localStorage.setItem('toffee_lang', lang); } catch (e) {}
+      apply(lang);
+    });
+  });
+  apply(pick());
+</script>
+</body>
+</html>

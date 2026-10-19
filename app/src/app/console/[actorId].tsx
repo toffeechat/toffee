@@ -426,6 +426,7 @@ function StatsSection({ actorId, onOpenReplies }: { actorId: string; onOpenRepli
 
 export default function ConsoleActorScreen() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const navigation = useNavigation();
   const { actorId } = useLocalSearchParams<{ actorId: string }>();
   const { data: actor } = useActor(actorId);
@@ -449,15 +450,18 @@ export default function ConsoleActorScreen() {
       {/* 탭마다 무슨 화면인지 한 줄(2026-10-13 사용자 요청) */}
       <ScreenIntro text={t(`console.tabHint.${section}`)} style={styles.intro} />
       {actor && section === 'monitor' && (
-        <ThemedView style={styles.actorPreview}>
+        // 아래 대화 목록과 경계선으로 나눔(2026-10-19 — 경계가 없어 스크롤로 잘린 메시지가 사진 버튼 밑에 깔린 것처럼 보였음)
+        <ThemedView style={[styles.actorPreview, { borderBottomColor: theme.backgroundSelected }]}>
           <Avatar uri={actor.chatProfileImageUrl} size={24} />
           <ThemedView style={styles.actorPreviewBody}>
             <ThemedText type="small" themeColor="textSecondary">
               {t('console.monitoring', { name: actor.legalName })}
             </ThemedText>
-            <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
-            {/* 토피룸 배경 사진(2026-10-14) — 소속사도 바꾸기·기본으로 */}
-            <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatBackgroundUrl} target="background" />
+            <View style={styles.photoEditors}>
+              <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
+              {/* 토피룸 배경 사진(2026-10-14) — 소속사도 바꾸기·기본으로 */}
+              <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatBackgroundUrl} target="background" />
+            </View>
           </ThemedView>
         </ThemedView>
       )}
@@ -506,7 +510,15 @@ const styles = StyleSheet.create({
   segments: { flexDirection: 'row', margin: Spacing.four, borderRadius: 10, padding: 4, gap: 4 },
   segment: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 8 },
   segmentTextActive: { color: '#fff' },
-  actorPreview: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.four, marginBottom: Spacing.two },
+  actorPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.two,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  photoEditors: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   section: { paddingHorizontal: Spacing.four, gap: Spacing.three },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.four },
   loading: { marginTop: Spacing.six },
