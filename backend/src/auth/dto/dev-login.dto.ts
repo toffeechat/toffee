@@ -14,7 +14,7 @@ export class DevLoginDto {
   @IsIn(['USER', 'AGENCY_STAFF', 'ADMIN', 'ACTOR'])
   role?: 'USER' | 'AGENCY_STAFF' | 'ADMIN' | 'ACTOR';
 
-  // 데모 입장 코드(2026-10-01) — 서버에 DEV_LOGIN_CODE가 있으면 같은 값이어야 로그인됨
+  // 데모 입장 코드(2026-10-01) — 서버에 DEV_LOGIN_CODE가 있으면 같은 값이어야 로그인됨. 2026-10-19부터 운영자 화면에 등록한 소속사별 코드도 됨
   @IsOptional()
   @IsString()
   code?: string;

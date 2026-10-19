@@ -175,7 +175,19 @@ describe('데모 입장 코드(2026-10-01, 운영자 코드 분리 2026-10-14)',
     await expect(service.devLogin('fan1@toffee.demo', undefined, undefined, 'wrong')).rejects.toThrow();
     await expect(service.devLogin('fan1@toffee.demo')).rejects.toThrow();
     expect(prisma.user.upsert).not.toHaveBeenCalled();
-    await expect(service.devLogin('fan1@toffee.demo', undefined, undefined, ' candy-demo-42 ')).resolves.toEqual({ id: 'u1', role: 'USER' });
+    await expect(service.devLogin('fan1@toffee.demo', undefined, undefined, ' candy-demo-42 ')).resolves.toEqual({ id: 'u1', role: 'USER', demoCode: 'common' });
+  });
+
+  it('소속사별 등록 코드(컨트롤러가 찾은 id)면 공용 코드 대신 그 코드로 — 운영자 계정은 등록 코드로도 안 됨', async () => {
+    const { service } = withCode('candy-demo-42', 'boss-77');
+    await expect(service.devLogin('staff@toffee.demo', undefined, undefined, 'gmm-7k3p', 'code-1')).resolves.toEqual({
+      id: 'u1',
+      role: 'USER',
+      demoCode: 'code-1',
+    });
+    const admin = withCode('candy-demo-42', 'boss-77', 'ADMIN');
+    await expect(admin.service.devLogin('admin@toffee.demo', undefined, undefined, 'gmm-7k3p', 'code-1')).rejects.toThrow();
+    expect(admin.prisma.user.upsert).not.toHaveBeenCalled();
   });
 
   it('운영자 계정·운영자 역할 요청은 운영자 코드로만 — 일반 입장 코드로는 안 됨', async () => {

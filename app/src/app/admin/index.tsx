@@ -25,7 +25,7 @@ export default function AdminHomeScreen() {
   const onResetDemo = async () => {
     const ok = await confirm(
       '데모 초기화',
-      '데모 데이터(아티스트·팬·메시지·구독·신고 등)를 모두 지우고 처음 상태로 되돌려요. 직접 만든 계정은 지워지고, 데모 계정(fan1@toffee.demo 등)은 그대로 로그인돼 있어요. 소속사에 데모를 보여 주는 중에는 누르지 마세요.',
+      '데모 데이터(아티스트·팬·메시지·구독·신고 등)를 모두 지우고 처음 상태로 되돌려요. 직접 만든 계정은 지워지고, 데모 계정(fan1@toffee.demo 등)은 그대로 로그인돼 있어요. 소속사에 데모를 보여 주는 중에는 누르지 마세요. 입장 코드·접속 기록은 지워지지 않아요.',
       '초기화',
       '취소',
     );
@@ -79,6 +79,16 @@ export default function AdminHomeScreen() {
 
       {demo?.enabled ? (
         <ThemedView style={styles.list}>
+          {/* 소속사별 입장 코드·접속 기록(2026-10-19) — 데모 서버에서만 의미가 있어서 메뉴 목록이 아니라 여기 */}
+          <Pressable
+            onPress={() => router.push('/admin/demo-codes')}
+            accessibilityRole="button"
+            style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold">데모 입장 코드</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              소속사별 코드·만료일·링크, 누가 언제 들어왔는지(들어오면 메일)
+            </ThemedText>
+          </Pressable>
           <Pressable
             onPress={onResetDemo}
             disabled={resetDemo.isPending}

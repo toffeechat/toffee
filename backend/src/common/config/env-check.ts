@@ -33,6 +33,9 @@ export function checkEnv(env: Env): EnvCheckResult {
   if (env.ENABLE_DEV_LOGIN === 'true' && has(env, 'DEV_LOGIN_CODE') && !has(env, 'DEV_LOGIN_ADMIN_CODE')) {
     warnings.push('운영자 입장 코드(DEV_LOGIN_ADMIN_CODE)가 비어 있음 — 테스트 로그인으로 운영자 계정에 들어갈 수 없음(필요하면 입장 코드와 다른 값으로 넣을 것)');
   }
+  if (env.ENABLE_DEV_LOGIN === 'true' && !has(env, 'DEMO_ALERT_EMAIL')) {
+    warnings.push('데모 접속 알림 받을 주소(DEMO_ALERT_EMAIL)가 비어 있음 — 소속사가 입장 코드로 들어와도 메일을 안 보냄(운영자 화면 기록엔 남음)');
+  }
 
   const groups: [string, string[]][] = [
     ['파일 저장소(사진·음성·영상 업로드)', ['STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY']],

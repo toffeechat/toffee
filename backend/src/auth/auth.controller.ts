@@ -23,6 +23,7 @@ import { Public } from '../common/decorators/public.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DevOnlyGuard } from '../common/guards/dev-only.guard.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { DemoAccessService } from '../demo/demo-access.service.js';
 import { AccessLogService } from '../access-log/access-log.service.js';
 import { Client, type ClientInfo } from '../access-log/client-info.js';
 
@@ -33,12 +34,15 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly accessLog: AccessLogService,
+    private readonly demoAccess: DemoAccessService,
   ) {}
 
   // 로그인 성공 → 접속 기록(운영자 회원 관리, 2026-10-14) 남기고 토큰 발급
-  private async signIn(user: AuthenticatedUser, method: AuthProvider | 'DEV', client: ClientInfo) {
+  private async signIn(user: AuthenticatedUser, method: AuthProvider | 'DEV', client: ClientInfo, demoCode?: string) {
     await this.accessLog.recordLogin(user.id, method, client);
-    return this.authService.issueAccessToken(user);
+    // 데모 입장 코드로 들어왔으면 소속사별 접속 기록·알림(2026-10-19)
+    if (demoCode) this.demoAccess.touch(demoCode, user.role, 'LOGIN', client);
+    return this.authService.issueAccessToken(user, demoCode);
   }
 
   @Public()
@@ -127,8 +131,10 @@ export class AuthController {
   @UseGuards(DevOnlyGuard)
   @Post('dev-login')
   async devLogin(@Body() dto: DevLoginDto, @Client() client: ClientInfo) {
-    const user = await this.authService.devLogin(dto.email, dto.name, dto.role as Role | undefined, dto.code);
-    return this.signIn(user, 'DEV', client);
+    // 소속사별로 등록한 입장 코드인지 먼저(만료·중지면 여기서 거절), 아니면 공용·운영자 코드 확인은 devLogin이
+    const registeredCodeId = await this.demoAccess.findLoginCode(dto.code);
+    const { demoCode, ...user } = await this.authService.devLogin(dto.email, dto.name, dto.role as Role | undefined, dto.code, registeredCodeId);
+    return this.signIn(user, 'DEV', client, demoCode);
   }
 
   @Get('me')
