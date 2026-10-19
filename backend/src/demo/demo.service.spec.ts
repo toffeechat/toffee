@@ -3,10 +3,16 @@ import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 import { DemoService } from './demo.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import type { DemoAccessService } from './demo-access.service.js';
 
-const make = (env: Record<string, string>) => {
+const make = (env: Record<string, string>, recentlyActive = false) => {
   const prisma = { $transaction: vi.fn() };
-  const service = new DemoService({ get: (key: string) => env[key] } as unknown as ConfigService, prisma as unknown as PrismaService);
+  const demoAccess = { recentlyActive: vi.fn().mockResolvedValue(recentlyActive) };
+  const service = new DemoService(
+    { get: (key: string) => env[key] } as unknown as ConfigService,
+    prisma as unknown as PrismaService,
+    demoAccess as unknown as DemoAccessService,
+  );
   return { service, prisma };
 };
 
@@ -26,5 +32,26 @@ describe('운영자 화면 데모 초기화', () => {
     expect(service.isEnabled()).toBe(true);
     await service.reset();
     expect(prisma.$transaction).toHaveBeenCalledOnce();
+  });
+});
+
+describe('데모 매일 새벽 자동 초기화', () => {
+  const demo = { NODE_ENV: 'development', DEMO_SEED: 'true' };
+
+  it('DEMO_DAILY_RESET=true인 데모 서버에서만', async () => {
+    for (const env of [demo, { ...demo, NODE_ENV: 'production', DEMO_DAILY_RESET: 'true' }]) {
+      const { service, prisma } = make(env);
+      expect(await service.dailyReset()).toBe('off');
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    }
+    const { service, prisma } = make({ ...demo, DEMO_DAILY_RESET: 'true' });
+    expect(await service.dailyReset()).toBe('reset');
+    expect(prisma.$transaction).toHaveBeenCalledOnce();
+  });
+
+  it('최근 30분 안에 쓰던 사람이 있으면 그날은 건너뜀', async () => {
+    const { service, prisma } = make({ ...demo, DEMO_DAILY_RESET: 'true' }, true);
+    expect(await service.dailyReset()).toBe('skipped');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });

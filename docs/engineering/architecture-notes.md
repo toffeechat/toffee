@@ -1608,6 +1608,29 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 운영자 API: `GET /admin/users?sort=recent`(lastActiveAt desc nulls last), 목록에 `lastActiveAt` + 마지막 기기(`accessLogs take 1`),
   `GET /admin/users/:id/access-logs`(최신 200줄). ADMIN만.
 
+## 소속사별 데모 입장 코드 `DemoAccessCode` (2026-10-19)
+
+- 표: `DemoAccessCode`(agencyName, `code` 소문자 unique, expiresAt, revokedAt, note, firstSeenAt/lastSeenAt/visitCount 요약) +
+  `DemoAccessEvent`(codeId null = 공용 코드, role `agency|artist|fan|other`, kind `LOGIN|VISIT`, newVisit, 기기 정보). User와 FK 없음 —
+  `demo-seed.ts`의 deleteMany 목록에 넣지 말 것(초기화해도 보존이 요구사항).
+- 로그인: `auth.controller` `dev-login` → `DemoAccessService.findLoginCode(code)`(등록 코드면 id, 만료·중지면 `DEMO_CODE_EXPIRED` 401) →
+  `AuthService.devLogin(..., registeredCodeId)` — 운영자 경로(`assertAdminLoginCode`)는 그대로, 등록 코드가 아니면 `DEV_LOGIN_CODE` 확인 후
+  `demoCode='common'`. `issueAccessToken(user, demoCode)`가 JWT에 `dac`를 넣음. 운영자 로그인은 `dac` 없음.
+- 요청마다: `JwtStrategy.validate`에서 `dac`가 있으면 `assertActive(dac)`(코드별 1분 캐시, 운영자 수정 때 `statusCache.delete`) → 만료·중지면 401
+  (앱 `onUnauthorized`가 이유를 보여 주고 로그아웃). 그다음 `touch(dac, role, 'VISIT')` — 코드·역할별 5분에 한 번만 처리(메모리).
+- 새 접속 판단(`markSeen`): `updateMany({ where: { id, lastSeenAt: null | < now-30분 }, data: { lastSeenAt, visitCount+1 } })` count 1이면 새 접속
+  (동시 요청 경합에도 한 번), 아니면 lastSeenAt만 갱신. 공용 코드는 DB 줄이 없어서 메모리 `commonLastSeen`. 기록 줄: LOGIN·새 접속·코드×역할 한 시간에
+  한 줄. 새 접속이면 `EmailService.send(DEMO_ALERT_EMAIL, …)`(비어 있으면 로그만, 공용 코드는 안 보냄). 전부 fire-and-forget — 실패해도 요청은 그대로.
+- 운영자 API(ADMIN): `GET /admin/demo-codes`(lastSeenAt desc nulls last, 역할별 횟수 = LOGIN + newVisit groupBy, `common` 요약),
+  `POST`(code 비우면 `generateDemoCode()` — 0/1/i/l/o 뺀 4-4자, `^[a-z0-9-]{4,32}$`, `DEV_LOGIN_CODE`·`DEV_LOGIN_ADMIN_CODE`와 같으면 409),
+  `PATCH /:id`(agencyName·expiresAt·note·revoked), `GET /:id/events`(`common` 가능, 최신 200줄). 삭제 API 없음.
+- 정리: `purgeOld()` 매일 04:45(태국), `ACCESS_LOG_RETENTION_DAYS`(90일).
+- 자동 초기화: `DemoService.dailyReset()` `@Cron('0 4 * * *', Asia/Bangkok)` — `isEnabled()` + `DEMO_DAILY_RESET=true`, `recentlyActive(30분)`면 skip,
+  아니면 `reset()`과 같은 트랜잭션 seed. 데모 계정은 고정 ID라 토큰 유지.
+- 앱: `app/src/app/admin/demo-codes.tsx`(운영자 홈의 데모 섹션에서만 진입 — `ADMIN_MENU`엔 없음), 훅 `useDemoCodes` 등 `use-admin.ts`.
+  만료일 입력은 한국 날짜 → 그날 23:59:59 +09:00. 링크 주소는 웹이면 `window.location.origin`, 앱이면 `https://demo.toffeechat.app`.
+- 환경변수: `DEMO_ALERT_EMAIL`(받는 주소, env-check 경고), `DEMO_DAILY_RESET`, 메일은 기존 `RESEND_API_KEY`·`EMAIL_FROM_ADDRESS`.
+
 ## 소속사 통계 기간 선택·하루 기록 (2026-10-14)
 
 - **기간**: `ActorStatsQueryDto`에 `from`·`to`(YYYY-MM-DD, `@Matches`) — `resolveRange(query)`(agency-stats.service)가 `{from, to, days}`로 바꾸고 검사

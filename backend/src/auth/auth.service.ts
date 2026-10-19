@@ -9,6 +9,7 @@ import { AuthProvider, Role, SubscriptionEventType, UserStatus } from '../genera
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { ModerationService } from '../moderation/moderation.service.js';
 import { nextNicknameChangeAt, normalizeNickname } from '../common/nickname/nickname.js';
+import { COMMON_DEMO_CODE } from '../demo/demo-access.service.js';
 import { appError } from '../common/i18n/app-error.js';
 import { MediaService } from '../storage/media.service.js';
 import { userProfileImagePrefix } from '../storage/media-policy.js';
@@ -47,8 +48,9 @@ export class AuthService {
     this.googleClient = new OAuth2Client();
   }
 
-  async issueAccessToken(user: { id: string; role: Role }): Promise<{ accessToken: string }> {
-    const accessToken = await this.jwtService.signAsync({ sub: user.id, role: user.role });
+  // demoCode: 데모 입장 코드로 들어왔으면 그 코드 id(공용 코드면 'common') — 요청마다 만료·중지 확인과 접속 기록에 씀(2026-10-19)
+  async issueAccessToken(user: { id: string; role: Role }, demoCode?: string): Promise<{ accessToken: string }> {
+    const accessToken = await this.jwtService.signAsync({ sub: user.id, role: user.role, ...(demoCode ? { dac: demoCode } : {}) });
     return { accessToken };
   }
 
@@ -59,23 +61,35 @@ export class AuthService {
   // 운영자는 입장 코드를 따로(2026-10-14 사용자 결정): 외부 소속사에 데모 입장 코드를 나눠 주면 이메일만 admin@…으로 바꾸거나 role을 ADMIN으로
   // 보내 운영자 화면(데모 초기화·역할 변경)에 들어갈 수 있었음 → 운영자 계정이거나 운영자 역할을 요청하면 DEV_LOGIN_ADMIN_CODE를 맞혀야 함.
   // 입장 코드가 걸린 서버에서 운영자 코드가 비어 있으면 운영자 로그인은 아예 막힘(로컬 개발처럼 입장 코드가 없으면 예전처럼)
-  async devLogin(email: string, name?: string, role?: Role, code?: string): Promise<AuthenticatedUser> {
+  // 소속사별 입장 코드(2026-10-19): registeredCodeId는 컨트롤러가 DemoAccessService로 찾은 등록 코드 id — 있으면 공용 코드 대신 그걸로
+  // 들어온 것. 돌려주는 demoCode는 토큰에 담아 요청마다 만료·중지 확인·접속 기록(운영자는 없음)
+  async devLogin(
+    email: string,
+    name?: string,
+    role?: Role,
+    code?: string,
+    registeredCodeId?: string | null,
+  ): Promise<AuthenticatedUser & { demoCode?: string }> {
     const existing = await this.prisma.user.findUnique({ where: { email }, select: { role: true } });
     const wantsAdmin = role === Role.ADMIN || existing?.role === Role.ADMIN;
+    let demoCode: string | undefined;
     if (wantsAdmin) this.assertAdminLoginCode(code);
-    else this.assertDevLoginCode(code);
+    else if (registeredCodeId) demoCode = registeredCodeId;
+    else if (this.assertDevLoginCode(code)) demoCode = COMMON_DEMO_CODE;
     const user = await this.prisma.user.upsert({
       where: { email },
       update: role ? { role } : {},
       create: { email, displayName: name ?? this.generateFallbackName(), role: role ?? Role.USER },
     });
-    return { id: user.id, role: user.role };
+    return { id: user.id, role: user.role, ...(demoCode ? { demoCode } : {}) };
   }
 
-  private assertDevLoginCode(code: string | undefined) {
+  // 공용 코드가 걸린 서버면 맞혔을 때 true(접속 기록에 "공용 코드"로), 코드가 없는 서버(로컬 개발)면 false
+  private assertDevLoginCode(code: string | undefined): boolean {
     const expected = this.configService.get<string>('DEV_LOGIN_CODE')?.trim();
-    if (!expected) return;
+    if (!expected) return false;
     if (!sameCode(code, expected)) throw new UnauthorizedException(appError('DEV_LOGIN_CODE_INVALID'));
+    return true;
   }
 
   private assertAdminLoginCode(code: string | undefined) {

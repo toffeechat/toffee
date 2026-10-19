@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ModerationModule } from '../moderation/moderation.module.js';
 import { AccessLogModule } from '../access-log/access-log.module.js';
+import { DemoAccessModule } from '../demo/demo-access.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
@@ -12,6 +13,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
   imports: [
     ModerationModule,
     AccessLogModule,
+    DemoAccessModule,
     PassportModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
