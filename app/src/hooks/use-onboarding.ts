@@ -88,6 +88,8 @@ export interface Me {
   /** 역할별 알림 설정 — 소속사: 아티스트 새 메시지·스토리 / 아티스트·소속사: 장기 미발송 알림 */
   notifyArtistMessages?: boolean;
   notifyIdleAlerts?: boolean;
+  /** 메시지 자동 번역(2026-10-16, 기본 켜짐) */
+  autoTranslate?: boolean;
   /** 소속사 직원이면 소속사 이름(콘솔 왼쪽 위 표시) */
   agencyName?: string | null;
 }
@@ -130,6 +132,20 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (changes: { statusMessage?: string; profileImageKey?: string | null }) => apiClient.patch<Me>('/auth/me/profile', changes),
+    onSuccess: (me) => queryClient.setQueryData(['me'], me),
+  });
+}
+
+/** 메시지 자동 번역이 켜져 있는지 — 내 정보를 받기 전엔 꺼진 것으로(끈 사람에게 잠깐이라도 번역 요청이 가지 않게) */
+export function useAutoTranslate(): boolean {
+  const { data: me } = useMe();
+  return !!me && me.autoTranslate !== false;
+}
+
+export function useUpdateTranslationSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (autoTranslate: boolean) => apiClient.patch<Me>('/auth/me/translation-settings', { autoTranslate }),
     onSuccess: (me) => queryClient.setQueryData(['me'], me),
   });
 }

@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
+import { createTranslationBatcher } from '@/utils/translation-batch';
 
 export interface MessageQuote {
   id: string;
@@ -163,14 +164,22 @@ export function useChatSearch(actorId: string | undefined, query: string) {
   });
 }
 
+// 화면에 함께 그려진 말풍선들의 번역 요청을 모아 한 번에(2026-10-16 자동 번역)
+const loadTranslation = createTranslationBatcher((actorId, messageIds, language) =>
+  apiClient.post<{ translations: { messageId: string; text: string }[] }>(`/actors/${actorId}/messages/extras/translate`, {
+    messageIds,
+    targetLanguage: language,
+  }),
+);
+
 /**
- * 메시지 번역(2026-09-29) — "번역 보기"를 누른 메시지만 서버에 요청(서버가 메시지 × 언어마다 한 번 번역해 저장). 결과는 다시 받을 필요가
- * 없어서 앱 켜져 있는 동안 계속 씀.
+ * 메시지 번역(2026-09-29) — 펼친 말풍선만 서버에 요청(서버가 메시지 × 언어마다 한 번 번역해 저장). 결과는 다시 받을 필요가
+ * 없어서 앱 켜져 있는 동안 계속 씀. 2026-10-16부터 자동 번역이 켜져 있으면 처음부터 펼쳐져 있고, 요청은 묶어서 보냄
  */
 export function useMessageTranslation(actorId: string, messageId: string, language: string, enabled: boolean) {
   return useQuery({
     queryKey: ['translation', messageId, language],
-    queryFn: () => apiClient.post<{ text: string }>(`/actors/${actorId}/messages/${messageId}/translate`, { targetLanguage: language }),
+    queryFn: () => loadTranslation(actorId, messageId, language),
     enabled,
     staleTime: Infinity,
     gcTime: Infinity,

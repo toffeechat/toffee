@@ -8,7 +8,12 @@ import { KakaoLoginDto } from './dto/kakao-login.dto.js';
 import { LineLoginDto } from './dto/line-login.dto.js';
 import { WebCodeLoginDto } from './dto/web-code-login.dto.js';
 import { DevLoginDto } from './dto/dev-login.dto.js';
-import { CreateProfileImageUploadDto, UpdateNotificationSettingsDto, UpdateProfileDto } from './dto/update-profile.dto.js';
+import {
+  CreateProfileImageUploadDto,
+  UpdateNotificationSettingsDto,
+  UpdateProfileDto,
+  UpdateTranslationSettingsDto,
+} from './dto/update-profile.dto.js';
 import { UpdateBirthdayGreetingsDto } from './dto/update-birthday-greetings.dto.js';
 import { UpdateLocaleDto } from './dto/update-locale.dto.js';
 import { PushDeviceDto } from './dto/push-device.dto.js';
@@ -173,6 +178,12 @@ export class AuthController {
   @Patch('me/notification-settings')
   updateNotificationSettings(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateNotificationSettingsDto) {
     return this.authService.updateNotificationSettings(user.id, dto);
+  }
+
+  // 메시지 자동 번역(2026-10-16) — 설정 > 언어
+  @Patch('me/translation-settings')
+  updateTranslationSettings(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateTranslationSettingsDto) {
+    return this.authService.updateTranslationSettings(user.id, dto.autoTranslate);
   }
 
   @Delete('me')

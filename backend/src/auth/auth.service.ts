@@ -443,6 +443,7 @@ export class AuthService {
         statusMessage: true,
         notifyArtistMessages: true,
         notifyIdleAlerts: true,
+        autoTranslate: true,
         agency: { select: { name: true } },
         authIdentities: { select: { provider: true }, orderBy: { createdAt: 'asc' } },
       },
@@ -496,6 +497,12 @@ export class AuthService {
   // 역할별 알림 설정(2026-10-12)
   async updateNotificationSettings(userId: string, settings: { notifyArtistMessages?: boolean; notifyIdleAlerts?: boolean }) {
     await this.prisma.user.update({ where: { id: userId }, data: settings });
+    return this.getMe(userId);
+  }
+
+  // 메시지 자동 번역(2026-10-16) — 앱이 말풍선을 처음부터 번역해서 보여 줄지
+  async updateTranslationSettings(userId: string, autoTranslate: boolean) {
+    await this.prisma.user.update({ where: { id: userId }, data: { autoTranslate } });
     return this.getMe(userId);
   }
 

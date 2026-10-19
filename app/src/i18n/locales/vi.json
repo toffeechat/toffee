@@ -360,7 +360,6 @@
     "justSentVoice": "Vừa gửi tin nhắn thoại",
     "justSentVideo": "Vừa gửi video",
     "justSentMessage": "Đã gửi cho bạn tin nhắn mới",
-    "you": "Bạn: {{text}}",
     "noMessagesYet": "Tin nhắn đầu tiên đang trên đường đến",
     "muted": "Đã tắt thông báo",
     "unread": "{{count}} chưa đọc",
@@ -603,7 +602,9 @@
   "translate": {
     "show": "Xem bản dịch",
     "hide": "Ẩn bản dịch",
-    "failed": "Không dịch được"
+    "failed": "Không dịch được",
+    "autoTitle": "Tự động dịch tin nhắn",
+    "autoHint": "Tin nhắn bằng ngôn ngữ khác sẽ hiện bản dịch bên dưới bản gốc mà không cần chạm. Khi tắt, chạm \"Xem bản dịch\" trên tin nhắn để xem."
   },
   "idleRefund": {
     "title": "Bạn có thể yêu cầu hoàn tiền",

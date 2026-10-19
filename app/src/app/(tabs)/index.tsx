@@ -16,9 +16,8 @@ import { Icon } from '@/components/ui/icon';
 import { IconButton } from '@/components/ui/icon-button';
 import { SearchField } from '@/components/ui/search-field';
 import { SectionHeader } from '@/components/ui/section-header';
-import { useActors, useAgencies, useCoupleRooms, type Actor } from '@/hooks/use-actors';
+import { agencyLabelOf, useActors, useAgencies, useCoupleRooms, type Actor } from '@/hooks/use-actors';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
-import { formatPrice } from '@/utils/price';
 import { useTheme } from '@/hooks/use-theme';
 import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -243,11 +242,12 @@ export default function DiscoverScreen() {
   );
 }
 
-/** 사진 카드 — 아래쪽 어둡게 깔고 이름·소속사·가격, 오른쪽 아래 + (프로필로) */
+/** 사진 카드 — 아래쪽 어둡게 깔고 이름·소속사, 오른쪽 아래 + (프로필로) */
 function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; width: number; subscribed: boolean; onPress: () => void }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const photo = photoOf(actor);
+  const agencyLabel = agencyLabelOf(actor);
   return (
     <Pressable
       onPress={onPress}
@@ -280,12 +280,15 @@ function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; w
       )}
       <View style={styles.cardText}>
         <View style={styles.cardTextBody}>
-          <ThemedText type="headline" numberOfLines={1} style={styles.onPhoto}>
+          {/* 이름은 줄바꿈(2026-10-16 사용자 요청 — CP 이름 "Caramel & ..."이 잘리지 않게, CP는 두 이름이라 3줄까지), 아래 줄은 소속사만(가격은 프로필에서) */}
+          <ThemedText type="headline" numberOfLines={actor.kind === 'COUPLE' ? 3 : 2} style={styles.onPhoto}>
             {actor.legalName}
           </ThemedText>
-          <ThemedText type="caption" numberOfLines={1} style={styles.onPhotoSoft}>
-            {[actor.agency?.name, `${formatPrice(actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`].filter(Boolean).join(' · ')}
-          </ThemedText>
+          {agencyLabel ? (
+            <ThemedText type="caption" numberOfLines={1} style={styles.onPhotoSoft}>
+              {agencyLabel}
+            </ThemedText>
+          ) : null}
         </View>
         {!subscribed && (
           <View style={styles.plus}>

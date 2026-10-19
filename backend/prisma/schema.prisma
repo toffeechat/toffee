@@ -132,6 +132,9 @@ model User {
   // 팬의 아티스트별 끄기는 Subscription.notificationsMuted, 생일은 위 birthdayGreetingsEnabled
   notifyArtistMessages     Boolean               @default(true)
   notifyIdleAlerts         Boolean               @default(true)
+  // 메시지 자동 번역(2026-10-16) — 켜면 앱 언어와 다른 글자로 쓴 말풍선을 누르지 않아도 원문 아래에 번역. 기본 켜짐(번역은 메시지×언어마다
+  // 한 번만 해서 저장하므로 팬 수와 무관한 비용). 설정 > 언어에서 끔
+  autoTranslate            Boolean               @default(true)
   // 가입할 때 기기의 지역 설정(ISO 국가 코드, 예: TH·KR) — 미성년자 기준 나이를 국가별로 적용하고(minor-age.ts)
   // 통계(국가별 가입자)에 씀. 가입 기기(ios/android/web)도 통계용. 약관 동의 때 앱이 보냄.
   countryCode              String?

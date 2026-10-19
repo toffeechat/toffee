@@ -41,10 +41,19 @@ export interface CoupleMemberActor {
   officialProfileImageUrl: string | null;
   chatProfileImageUrl: string | null;
   retiredAt: string | null;
+  /** 멤버 소속사 — CP방 카드에 소속사를 보여 주는 용도(2026-10-16) */
+  agency?: { name: string } | null;
 }
 
 /** 커플방 멤버 배우들(1인 방이면 빈 배열) */
 export const membersOf = (actor: Pick<Actor, 'coupleMembers'>): CoupleMemberActor[] => actor.coupleMembers?.map(({ member }) => member) ?? [];
+
+/** 카드에 보일 소속사 이름 — 1인은 자기 소속사, CP방은 멤버 소속사(같으면 하나, 다르면 "A · B"). 무소속이면 null */
+export function agencyLabelOf(actor: Pick<Actor, 'agency' | 'coupleMembers'>): string | null {
+  if (actor.agency) return actor.agency.name;
+  const names = [...new Set(membersOf(actor).flatMap((member) => (member.agency ? [member.agency.name] : [])))];
+  return names.length > 0 ? names.join(' · ') : null;
+}
 
 // q는 서버에서 아티스트 공식 이름 + 소속사 이름 둘 다에 매칭됨. 서버는 인기순(trending)도 받지만 둘러보기에선 안 씀(2026-10-02 사용자 결정)
 export type ActorSort = 'new';
