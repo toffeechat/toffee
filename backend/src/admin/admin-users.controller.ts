@@ -7,6 +7,7 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { ChangeRoleDto } from './dto/change-role.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 @Roles(Role.ADMIN)
 @Controller('admin/users')
@@ -23,12 +24,19 @@ export class AdminUsersController {
     return this.adminUsersService.findOne(id);
   }
 
+  // 구독·결제·환불 내역(2026-10-20)
+  @Get(':id/billing')
+  billing(@Param('id') id: string) {
+    return this.adminUsersService.billing(id);
+  }
+
   // 접속 기록(2026-10-14)
   @Get(':id/access-logs')
   accessLogs(@Param('id') id: string) {
     return this.adminUsersService.accessLogs(id);
   }
 
+  @AdminOwnerOnly()
   @Patch(':id/role')
   changeRole(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string, @Body() dto: ChangeRoleDto) {
     return this.adminUsersService.changeRole(admin.id, id, dto.role);

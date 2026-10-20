@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { UserStatus } from '../../generated/prisma/enums.js';
+import { AdminLevel, Role, UserStatus } from '../../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.js';
 import { appError } from '../../common/i18n/app-error.js';
 import { AccessLogService } from '../../access-log/access-log.service.js';
@@ -15,6 +15,8 @@ interface JwtPayload {
   sub: string;
   // 데모 입장 코드로 로그인했으면 그 코드 id(공용 코드는 'common') — 2026-10-19
   dac?: string;
+  // 운영자 2단계 인증 코드를 확인한 시각(ms, 2026-10-20) — 운영자 API는 2단계 인증을 켠 계정이면 이게 최근이어야 함(RolesGuard)
+  mfaAt?: number;
 }
 
 @Injectable()
@@ -58,6 +60,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       this.demoAccess.touch(payload.dac, user.role, 'VISIT', client);
     }
     this.accessLog.touchVisit(user.id, user.lastActiveAt, client);
-    return { id: user.id, role: user.role };
+    return {
+      id: user.id,
+      role: user.role,
+      ...(user.role === Role.ADMIN ? { adminLevel: user.adminLevel ?? AdminLevel.OWNER, mfaEnabled: !!user.totpEnabledAt, mfaAt: payload.mfaAt } : {}),
+    };
   }
 }

@@ -15,6 +15,7 @@ import { PushService } from '../notifications/push.service.js';
 import { pushStrings } from '../notifications/push-messages.js';
 import { ReleaseService } from '../releases/release.service.js';
 import { ActorLinksService } from './actor-links.service.js';
+import { AdminAlertService } from '../notifications/admin-alert.service.js';
 
 const ADMIN_ACTOR_SELECT = {
   id: true,
@@ -31,12 +32,17 @@ const ADMIN_ACTOR_SELECT = {
   retiredAt: true,
   // 활동 종료 예정(2026-10-20)
   retireAt: true,
+  // 계약 끝나는 날(2026-10-20) — 지나도 자동 종료하지 않고 운영자 할 일·알림만
+  contractEndAt: true,
   releaseAt: true,
   createdAt: true,
   agency: { select: { id: true, name: true, logoUrl: true } },
   selfUser: { select: { id: true, displayName: true, email: true } },
   _count: { select: { subscriptions: { where: { cancelledAt: null } } } },
 } as const;
+
+/** 계약 종료 며칠 전부터 할 일·알림(애플 구독 최대 1달 + 여유) */
+export const CONTRACT_ALERT_DAYS = 31;
 
 type AdminActorRow = Prisma.ActorGetPayload<{ select: typeof ADMIN_ACTOR_SELECT }>;
 
@@ -55,6 +61,7 @@ export class AdminActorsService {
     private readonly push: PushService,
     private readonly releases: ReleaseService,
     private readonly links: ActorLinksService,
+    private readonly alerts: AdminAlertService,
   ) {}
 
   /**
@@ -92,6 +99,42 @@ export class AdminActorsService {
     return this.findOne(id);
   }
 
+  /** 계약 끝나는 날(2026-10-20) — null이면 지움. 날짜가 바뀌면 알림을 다시 보낼 수 있게 contractAlertedAt 초기화 */
+  async setContractEnd(adminId: string, id: string, contractEndAt: Date | null) {
+    await this.prisma.actor.findUniqueOrThrow({ where: { id }, select: { id: true } });
+    await this.prisma.actor.update({ where: { id }, data: { contractEndAt, contractAlertedAt: null } });
+    await this.audit.record(adminId, 'ACTOR_CONTRACT', 'ACTOR', id, { contractEndAt: contractEndAt?.toISOString() ?? null });
+    return this.findOne(id);
+  }
+
+  /** 계약 종료가 다가오는(기본 31일 이내) 활동 중 아티스트 — 운영자 홈 할 일 */
+  contractsEnding(now = new Date(), days = CONTRACT_ALERT_DAYS) {
+    return this.prisma.actor.findMany({
+      where: { retiredAt: null, contractEndAt: { not: null, lte: new Date(now.getTime() + days * 86_400_000) } },
+      select: { id: true, chatDisplayName: true, legalName: true, kind: true, contractEndAt: true, retireAt: true, agency: { select: { name: true } } },
+      orderBy: { contractEndAt: 'asc' },
+    });
+  }
+
+  /** 하루 한 번(ContractAlertScheduler) — 31일 안으로 들어온 계약을 운영자에게 한 번만 알림 */
+  async alertContractsEnding(now = new Date()) {
+    const rows = await this.contractsEnding(now);
+    let sent = 0;
+    for (const row of rows) {
+      const { count } = await this.prisma.actor.updateMany({ where: { id: row.id, contractAlertedAt: null }, data: { contractAlertedAt: now } });
+      if (count === 0) continue;
+      sent += 1;
+      const day = row.contractEndAt!.toLocaleDateString('ko-KR', { timeZone: 'Asia/Bangkok' });
+      void this.alerts.notify(
+        'CONTRACT',
+        `${row.chatDisplayName} 계약 ${day} 종료`,
+        row.retireAt ? '활동 종료 예정이 잡혀 있어요.' : '연장하지 않으면 활동 종료 예정을 잡아 주세요(애플 상품은 31일 전에 판매 중지).',
+        { actorId: row.id },
+      );
+    }
+    return sent;
+  }
+
   /** 예정 시각이 지난 아티스트를 실제로 종료(RetireScheduler가 1분마다) — retiredAt은 예정 시각으로(환불 기준 시각이 정확하게) */
   async retireDue(now = new Date()) {
     const due = await this.prisma.actor.findMany({ where: { retireAt: { lte: now }, retiredAt: null }, select: { id: true, retireAt: true, chatDisplayName: true } });
@@ -100,6 +143,7 @@ export class AdminActorsService {
       const { count } = await this.prisma.actor.updateMany({ where: { id: actor.id, retiredAt: null }, data: { retiredAt: actor.retireAt, retireAt: null } });
       if (count === 0) continue;
       await this.notifyRetired(actor.id, actor.chatDisplayName);
+      void this.alerts.notify('RETIRE', `${actor.chatDisplayName} 예정된 활동 종료 처리됨`, '구글 구독은 서버가 갱신을 끊어요. 애플 상품은 운영자 홈 "애플 판매 중지 할 일"을 확인해 주세요.', { actorId: actor.id });
     }
     return due.length;
   }

@@ -291,6 +291,8 @@ export interface AdminActor {
   retiredAt: string | null;
   /** 활동 종료 예정 시각(2026-10-20) — 있으면 새 구독이 막혀 있음 */
   retireAt: string | null;
+  /** 계약 끝나는 날(2026-10-20, 태국 날짜 0시) — 지나도 자동 종료 안 함 */
+  contractEndAt: string | null;
   createdAt: string;
   agency: { id: string; name: string; logoUrl: string | null } | null;
   selfUser: { id: string; displayName: string; email: string | null } | null;
@@ -343,6 +345,7 @@ function useActorMutation<TInput, TOutput = unknown>(request: (input: TInput) =>
       void queryClient.invalidateQueries({ queryKey: ['admin', 'agencies'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       void queryClient.invalidateQueries({ queryKey: ['actors'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'contracts-ending'] });
     },
   });
 }
@@ -383,6 +386,25 @@ export function useSetActorRetired(id: string) {
 /** 활동 종료 예정(2026-10-20) — ISO 또는 null(예정 취소). 정하는 즉시 새 구독이 막히고 그 시각에 자동 종료 */
 export function useSetActorRetireAt(id: string) {
   return useActorMutation((retireAt: string | null) => apiClient.patch<AdminActor>(`/admin/actors/${id}/retire-at`, { retireAt }));
+}
+
+export function useSetActorContractEnd(id: string) {
+  return useActorMutation((contractEndAt: string | null) => apiClient.patch<AdminActor>(`/admin/actors/${id}/contract`, { contractEndAt }));
+}
+
+/** 계약 종료 31일 이내(운영자 홈 할 일) */
+export interface ContractEndingRow {
+  id: string;
+  chatDisplayName: string;
+  legalName: string;
+  kind: 'SOLO' | 'COUPLE';
+  contractEndAt: string;
+  retireAt: string | null;
+  agency: { name: string } | null;
+}
+
+export function useContractsEnding() {
+  return useQuery({ queryKey: ['admin', 'contracts-ending'], queryFn: () => apiClient.get<ContractEndingRow[]>('/admin/contracts-ending') });
 }
 
 // ── 아티스트 일괄 등록·계정 연결 링크(2026-10-19) ──
@@ -734,6 +756,8 @@ export interface NoticeInput {
   title: string;
   body: string;
   pinned: boolean;
+  /** 모두에게 푸시(한 공지에 한 번, 2026-10-20) */
+  push?: boolean;
 }
 
 export function useSaveNotice() {
@@ -750,5 +774,183 @@ export function useDeleteNotice() {
   return useMutation({
     mutationFn: (id: string) => apiClient.delete(`/admin/notices/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices'] }),
+  });
+}
+
+// ── 활동 종료 때 애플 판매 중지 할 일(2026-10-20) — 구글은 서버가 자동 해지 ──
+
+export interface AppleStoreTodo {
+  actors: { id: string; legalName: string; storeProductId: string; retiredAt: string | null; retireAt: string | null }[];
+  bundles: { id: string; name: string; storeProductId: string }[];
+}
+
+export function useAppleStoreTodo() {
+  return useQuery({ queryKey: ['admin', 'store', 'apple-todo'], queryFn: () => apiClient.get<AppleStoreTodo>('/admin/store/apple-todo') });
+}
+
+export function useMarkSaleStopped() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kind, id }: { kind: 'actors' | 'bundles'; id: string }) => apiClient.patch(`/admin/store/${kind}/${id}/sale-stopped`, { stopped: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'store'] }),
+  });
+}
+
+// ── 회원 구독·결제·환불 내역(2026-10-20) ──
+
+export interface AdminUserBilling {
+  rooms: { actorId: string; startedAt: string; cancelledAt: string | null; actor: { legalName: string; chatDisplayName: string; kind: 'SOLO' | 'COUPLE' } }[];
+  purchases: {
+    id: string;
+    priceCents: number | null;
+    startedAt: string;
+    cancelledAt: string | null;
+    iapPlatform: 'IOS' | 'ANDROID' | null;
+    iapExpiresAt: string | null;
+    willRenew: boolean;
+    actor: { id: string; legalName: string } | null;
+    bundle: { id: string; name: string } | null;
+  }[];
+  charges: {
+    id: string;
+    productName: string;
+    amountCents: number;
+    chargedAt: string;
+    periodEnd: string;
+    source: 'SANDBOX' | 'APPLE' | 'GOOGLE';
+    refundedAt: string | null;
+    storeAmountMilli: number | null;
+    storeCurrency: string | null;
+  }[];
+  refunds: { id: string; reason: string; status: string; source: string; createdAt: string; charge: { productName: string; amountCents: number; refundedAt: string | null } }[];
+}
+
+export function useAdminUserBilling(id: string) {
+  return useQuery({ queryKey: ['admin', 'users', 'one', id, 'billing'], queryFn: () => apiClient.get<AdminUserBilling>(`/admin/users/${id}/billing`), enabled: !!id });
+}
+
+// ── 앱 설정(점검 모드·최소 버전, 2026-10-20) ──
+
+export interface AdminAppSettings {
+  maintenanceOn: boolean;
+  maintenanceMessage: string | null;
+  maintenanceUntil: string | null;
+  minVersionIos: string | null;
+  minVersionAndroid: string | null;
+  updatedAt: string;
+}
+
+export function useAdminAppSettings() {
+  return useQuery({ queryKey: ['admin', 'app-settings'], queryFn: () => apiClient.get<AdminAppSettings | null>('/admin/app-settings') });
+}
+
+export function useUpdateAppSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Partial<Omit<AdminAppSettings, 'updatedAt'>>) => apiClient.patch<AdminAppSettings>('/admin/app-settings', input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'app-settings'] });
+      void queryClient.invalidateQueries({ queryKey: ['app-config'] });
+    },
+  });
+}
+
+// ── 1:1 문의(2026-10-20) ──
+
+export type AdminInquiryStatus = 'OPEN' | 'ANSWERED' | 'CLOSED';
+export interface AdminInquiry {
+  id: string;
+  category: string;
+  title: string;
+  status: AdminInquiryStatus;
+  createdAt: string;
+  updatedAt: string;
+  user: { id: string; displayName: string; nickname: string | null; role: AdminUser['role']; email: string | null };
+  _count?: { messages: number };
+}
+export interface AdminInquiryDetail extends AdminInquiry {
+  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string; authorId: string }[];
+}
+
+export function useAdminInquiries(status?: AdminInquiryStatus) {
+  return useQuery({
+    queryKey: ['admin', 'inquiries', status ?? 'ALL'],
+    queryFn: () => apiClient.get<{ counts: Record<'ALL' | AdminInquiryStatus, number>; items: AdminInquiry[] }>(`/admin/inquiries${status ? `?status=${status}` : ''}`),
+    refetchInterval: 60_000,
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useAdminInquiry(id: string) {
+  return useQuery({ queryKey: ['admin', 'inquiries', 'one', id], queryFn: () => apiClient.get<AdminInquiryDetail>(`/admin/inquiries/${id}`), enabled: !!id });
+}
+
+export function useReplyInquiry(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => apiClient.post<AdminInquiryDetail>(`/admin/inquiries/${id}/messages`, { body }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'inquiries'] }),
+  });
+}
+
+export function useCloseInquiry(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.patch<AdminInquiryDetail>(`/admin/inquiries/${id}/close`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'inquiries'] }),
+  });
+}
+
+// ── 보안: 2단계 인증·운영자 권한 단계(2026-10-20) ──
+
+export type AdminLevel = 'OWNER' | 'SUPPORT';
+
+export interface AdminMfaStatus {
+  enabled: boolean;
+  enabledAt: string | null;
+  level: AdminLevel;
+}
+
+export interface AdminAccount {
+  id: string;
+  displayName: string;
+  nickname: string | null;
+  email: string | null;
+  status: string;
+  level: AdminLevel;
+  mfaEnabled: boolean;
+  createdAt: string;
+}
+
+export function useAdminMfaStatus() {
+  return useQuery({ queryKey: ['admin', 'mfa'], queryFn: () => apiClient.get<AdminMfaStatus>('/admin/mfa') });
+}
+
+export function useAdminMfaSetup() {
+  return useMutation({ mutationFn: () => apiClient.post<{ secret: string; otpauthUrl: string }>('/admin/mfa/setup') });
+}
+
+/** enable·verify·disable — 성공하면 새 로그인 토큰(코드를 확인한 시각이 담김)을 돌려줌 */
+export function useAdminMfaAction(action: 'enable' | 'verify' | 'disable') {
+  return useMutation({ mutationFn: (code: string) => apiClient.post<{ accessToken: string }>(`/admin/mfa/${action}`, { code }) });
+}
+
+export function useAdminAccounts(enabled: boolean) {
+  return useQuery({ queryKey: ['admin', 'admins'], queryFn: () => apiClient.get<AdminAccount[]>('/admin/admins'), enabled });
+}
+
+export function useSetAdminLevel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, level }: { id: string; level: AdminLevel }) => apiClient.patch<AdminAccount[]>(`/admin/admins/${id}/level`, { level }),
+    onSuccess: (rows) => queryClient.setQueryData(['admin', 'admins'], rows),
+  });
+}
+
+export function useResetAdminMfa() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete<AdminAccount[]>(`/admin/admins/${id}/mfa`),
+    onSuccess: (rows) => queryClient.setQueryData(['admin', 'admins'], rows),
   });
 }

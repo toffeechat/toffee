@@ -434,7 +434,10 @@
     "notificationsHint": "Activa o desactiva los avisos de mensajes nuevos para cada artista. Seguirás recibiendo los mensajes.",
     "noSubscriptions": "No hay suscripciones activas",
     "loginInfo": "Datos de inicio de sesión",
-    "noEmail": "No hay correo registrado"
+    "noEmail": "No hay correo registrado",
+    "exportData": "Descargar mis datos",
+    "exportDataHint": "Recibe en un archivo tus datos de cuenta, suscripciones, pagos, respuestas y consultas",
+    "exportDataFailed": "No se pudo crear el archivo. Inténtalo de nuevo más tarde."
   },
   "manage": {
     "active": "Activa",
@@ -903,5 +906,40 @@
     "invalidTitle": "Este enlace no se puede usar",
     "invalidBody": "Revisa la dirección o pide un enlace nuevo a tu contacto de la agencia.",
     "toLogin": "Ir a iniciar sesión"
+  },
+  "appGate": {
+    "maintenanceTitle": "Estamos en mantenimiento",
+    "maintenanceBody": "Estamos mejorando Toffee. Vuelve a intentarlo en un rato.",
+    "maintenanceUntil": "Previsto hasta {{date}}",
+    "retry": "Comprobar de nuevo",
+    "staffLogin": "Acceso del equipo",
+    "updateTitle": "Actualiza la app",
+    "updateBody": "Esta versión de Toffee ya no funciona. Actualiza a la última versión desde la tienda.",
+    "updateButton": "Actualizar"
+  },
+  "inquiry": {
+    "inbox": "Ayuda",
+    "new": "Nueva consulta",
+    "empty": "Aún no has enviado consultas.",
+    "category": "¿Sobre qué es?",
+    "titleLabel": "Asunto",
+    "bodyLabel": "Mensaje",
+    "bodyHint": "Cuéntanos en qué pantalla y qué pasó; así podremos ayudarte más rápido.",
+    "send": "Enviar",
+    "team": "Equipo de Toffee",
+    "me": "Yo",
+    "reply": "Hacer otra pregunta",
+    "closedHint": "Esta consulta está cerrada. Abre una nueva si necesitas más ayuda.",
+    "emailInstead": "Escríbenos: {{email}}",
+    "failed": "No se pudo enviar. Inténtalo de nuevo en un rato.",
+    "cat_ACCOUNT": "Cuenta",
+    "cat_PAYMENT": "Pago",
+    "cat_REFUND": "Reembolso",
+    "cat_ARTIST": "Artista y chat",
+    "cat_BUG": "Error",
+    "cat_OTHER": "Otro",
+    "st_OPEN": "Esperando respuesta",
+    "st_ANSWERED": "Respondida",
+    "st_CLOSED": "Cerrada"
   }
 }

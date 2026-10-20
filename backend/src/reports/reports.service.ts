@@ -8,6 +8,9 @@ import { appError } from '../common/i18n/app-error.js';
 
 import { AuditService } from '../audit/audit.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
+import { AdminAlertService } from '../notifications/admin-alert.service.js';
+const REPORT_CATEGORY_LABEL: Record<ReportCategory, string> = { SPAM: '스팸·광고', ABUSE: '욕설·괴롭힘', SEXUAL: '음란·성적', PRIVACY: '개인정보 노출', OTHER: '기타' };
+
 export interface AdminReportFilter {
   status?: ReportStatus;
   category?: ReportCategory;
@@ -23,6 +26,7 @@ export class ReportsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly realtime: RealtimeService,
+    private readonly alerts: AdminAlertService,
   ) {}
 
   /**
@@ -53,10 +57,22 @@ export class ReportsService {
     }
 
     try {
-      return await this.prisma.report.create({
+      const report = await this.prisma.report.create({
         data: { messageId, reportedById, category, reason: reason?.trim() || null },
         select: { id: true, category: true, status: true, createdAt: true },
       });
+      // 운영자 알림(2026-10-20) — 메시지마다 처리 대기 중 첫 신고일 때만(같은 메시지에 신고가 몰려도 한 번)
+      const pending = await this.prisma.report.count({ where: { messageId, status: ReportStatus.PENDING } });
+      if (pending === 1) {
+        const room = await this.prisma.actor.findUnique({ where: { id: message.actorId }, select: { chatDisplayName: true } });
+        void this.alerts.notify(
+          'REPORT',
+          `${room?.chatDisplayName ?? ''} 방 ${message.senderType === MessageSenderType.ARTIST ? '아티스트 메시지' : '팬 답장'} 신고`,
+          `사유: ${REPORT_CATEGORY_LABEL[category]}${reason?.trim() ? ` — ${reason.trim().slice(0, 200)}` : ''}`,
+          { reportId: report.id },
+        );
+      }
+      return report;
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') throw new ConflictException(appError('REPORT_DUPLICATE'));
       throw error;

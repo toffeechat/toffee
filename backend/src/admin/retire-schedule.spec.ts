@@ -21,7 +21,7 @@ describe('활동 종료 예정(2026-10-20)', () => {
       subscription: { findMany: vi.fn().mockResolvedValue([{ userId: 'fan' }]) },
     };
     const push = { sendToUsers: vi.fn().mockResolvedValue(undefined) };
-    const service = new AdminActorsService(prisma as never, {} as never, {} as never, {} as never, {} as never, push as never, {} as never, {} as never);
+    const service = new AdminActorsService(prisma as never, {} as never, {} as never, {} as never, {} as never, push as never, {} as never, {} as never, { notify: vi.fn() } as never);
     await service.retireDue(new Date('2026-10-20T00:01:00Z'));
     expect(prisma.actor.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { retireAt: { lte: new Date('2026-10-20T00:01:00Z') }, retiredAt: null } }));
     expect(prisma.actor.updateMany).toHaveBeenCalledWith({ where: { id: 'a1', retiredAt: null }, data: { retiredAt: due, retireAt: null } });

@@ -28,6 +28,7 @@ import {
   useIssueActorLinks,
   useLinkActorUser,
   useRevokeActorLink,
+  useSetActorContractEnd,
   useSetActorRetired,
   useSetActorRetireAt,
   useUpdateActor,
@@ -336,7 +337,7 @@ function RetireSection({ actor }: { actor: AdminActor }) {
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const busy = setRetired.isPending || setRetireAt.isPending;
   const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했어요.'), error: true });
-  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 가요. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요. 스토어 결제가 붙으면 스토어 상품 판매도 같이 멈춰야 갱신이 안 돼요.`;
+  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 가요. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요. 구글 구독은 서버가 갱신을 자동으로 끊고, 애플 구독은 운영자 홈 "애플 판매 중지 할 일"에서 상품 판매 중지가 필요해요(종료 31일 전까지 권장).`;
 
   const retireNow = async () => {
     const ok = await confirm('지금 바로 활동 종료', `${actor.legalName} 아티스트를 지금 둘러보기·검색에서 숨기고 새 구독을 막을까요?\n\n${effects}`, '활동 종료', '취소');
@@ -387,6 +388,59 @@ function RetireSection({ actor }: { actor: AdminActor }) {
           </AdminButtonRow>
         </>
       )}
+      <AdminMessage text={message?.text ?? null} error={message?.error} />
+    </AdminSection>
+  );
+}
+
+const bangkokDay = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
+
+/**
+ * 계약 끝나는 날(2026-10-20) — 저장만 하고 자동 종료는 하지 않음(연장 협의 중일 수 있어서). 31일 전부터 운영자 홈 할 일 + 알림(메일·푸시).
+ * [이 날짜로 종료 예정 잡기]는 그날 23:59(태국)로 활동 종료 예정을 잡음.
+ */
+function ContractSection({ actor }: { actor: AdminActor }) {
+  const setContract = useSetActorContractEnd(actor.id);
+  const setRetireAt = useSetActorRetireAt(actor.id);
+  const [day, setDay] = useState(actor.contractEndAt ? bangkokDay(actor.contractEndAt) : '');
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
+  const busy = setContract.isPending || setRetireAt.isPending;
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '저장하지 못했어요.'), error: true });
+  const saved = actor.contractEndAt ? bangkokDay(actor.contractEndAt) : '';
+  // 화면을 연 시각 기준(렌더마다 시계를 읽지 않게)
+  const [openedAt] = useState(() => Date.now());
+  const daysLeft = actor.contractEndAt ? Math.ceil((new Date(actor.contractEndAt).getTime() - openedAt) / 86_400_000) : null;
+
+  const save = (value: string) => {
+    setDay(value);
+    setContract.mutate(value ? `${value}T00:00:00+07:00` : null, {
+      onSuccess: () => setMessage({ text: value ? `계약 끝나는 날을 ${value}로 저장했어요.` : '계약 끝나는 날을 지웠어요.' }),
+      onError,
+    });
+  };
+  const scheduleRetire = async () => {
+    const ok = await confirm(
+      '계약 끝나는 날로 종료 예정',
+      `${actor.legalName} 아티스트를 ${saved} 23:59(태국)에 활동 종료할까요? 지금부터 새 구독·묶음 판매가 막히고 구독 팬에게 미리 알림이 가요.`,
+      '예정 저장',
+      '취소',
+    );
+    if (ok) setRetireAt.mutate(`${saved}T23:59:00+07:00`, { onSuccess: () => setMessage({ text: '활동 종료 예정을 잡았어요.' }), onError });
+  };
+
+  return (
+    <AdminSection title="계약" hint="계약 끝나는 날을 적어 두면 31일 전부터 운영자 홈 할 일과 알림으로 알려 줘요. 날짜가 지나도 자동으로 종료하지는 않아요.">
+      {daysLeft !== null && !actor.retiredAt ? (
+        <ThemedText type="smallBold" themeColor={daysLeft <= 31 ? 'danger' : 'textSecondary'}>
+          {daysLeft < 0 ? `계약이 ${-daysLeft}일 전에 끝났어요` : daysLeft === 0 ? '오늘 계약이 끝나요' : `계약 종료까지 ${daysLeft}일`}
+        </ThemedText>
+      ) : null}
+      <AdminDateField label="계약 끝나는 날(태국)" value={day} onChange={save} clearable />
+      {saved && !actor.retiredAt && !actor.retireAt && saved >= thaiToday() ? (
+        <AdminButtonRow>
+          <AdminButton secondary label="이 날짜로 종료 예정 잡기" disabled={busy} onPress={() => void scheduleRetire()} />
+        </AdminButtonRow>
+      ) : null}
       <AdminMessage text={message?.text ?? null} error={message?.error} />
     </AdminSection>
   );
@@ -454,6 +508,7 @@ export default function AdminActorDetailScreen() {
             </>
           )}
           <ActorRelease actor={actor} />
+          <ContractSection actor={actor} />
           <RetireSection actor={actor} />
         </ScrollView>
       )}

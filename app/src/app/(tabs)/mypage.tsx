@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, CircleHelp, CreditCard, FileText, Globe, KeyRound, LifeBuoy, LogOut, Megaphone, Moon, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { Bell, CircleHelp, CreditCard, Download, FileText, Globe, KeyRound, LifeBuoy, LogOut, Megaphone, Moon, ShieldCheck, Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -12,9 +12,8 @@ import { ListRow } from '@/components/ui/list-row';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
 import { confirm } from '@/lib/confirm';
+import { exportMyData } from '@/lib/export-my-data';
 import { ApiError } from '@/lib/api-client';
-import { SUPPORT_EMAIL } from '@/lib/env';
-import { openSupportMail } from '@/lib/support';
 import { openStoreSubscriptions } from '@/lib/store-links';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { useDeleteAccount, useMe } from '@/hooks/use-onboarding';
@@ -48,11 +47,6 @@ export default function ProfileScreen() {
 
   const availableAt = me?.nicknameChangeAvailableAt ? new Date(me.nicknameChangeAvailableAt) : null;
   const locked = !!availableAt && availableAt > new Date();
-
-  const openSupport = () => {
-    setNotice(null);
-    openSupportMail(me?.id).catch(() => setNotice(t('support.openFailed', { email: SUPPORT_EMAIL })));
-  };
 
   // 회원 탈퇴 — 되돌릴 수 없고, 스토어 구독은 앱이 끊을 수 없어서 스토어에서 먼저 해지하라고 안내(애플 가이드라인 5.1.1)
   const startDelete = async () => {
@@ -134,14 +128,21 @@ export default function ProfileScreen() {
         <Section label={t('profile.support')}>
           <ListRow icon={Megaphone} title={t('notices.title')} onPress={() => router.push('/notices')} />
           <ListRow icon={CircleHelp} title={t('faq.title')} onPress={() => router.push('/faq')} />
-          <ListRow
-            icon={LifeBuoy}
-            title={t('profile.help')}
-            subtitle={SUPPORT_EMAIL ? undefined : t('support.notReady')}
-            onPress={SUPPORT_EMAIL ? openSupport : undefined}
-          />
+          {/* 앱 안 1:1 문의(2026-10-20) — 메일 주소는 문의 목록 화면에 같이 */}
+          <ListRow icon={LifeBuoy} title={t('profile.help')} onPress={() => router.push('/support')} />
           <ListRow icon={FileText} title={t('profile.terms')} onPress={() => router.push('/terms')} />
           <ListRow icon={ShieldCheck} title={t('profile.privacy')} onPress={() => router.push('/privacy')} />
+          {/* 내 정보 받기(2026-10-20, PDPA 열람·이동권) */}
+          <ListRow
+            icon={Download}
+            title={t('profile.exportData')}
+            subtitle={t('profile.exportDataHint')}
+            showChevron={false}
+            onPress={() => {
+              setNotice(null);
+              exportMyData().catch(() => setNotice(t('profile.exportDataFailed')));
+            }}
+          />
         </Section>
 
         <Section>

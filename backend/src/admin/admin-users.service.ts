@@ -90,6 +90,47 @@ export class AdminUsersService {
     return user;
   }
 
+  /**
+   * 회원 한 명의 구독·결제·환불(2026-10-20 — "결제했는데 안 열려요" 같은 문의 대응). 방 이용권(Subscription), 구매(개인·묶음, 스토어·자동 갱신),
+   * 결제 건(최근 100건, 환불 여부), 환불 요청.
+   */
+  async billing(userId: string) {
+    const [rooms, purchases, charges, refunds] = await Promise.all([
+      this.prisma.subscription.findMany({
+        where: { userId },
+        orderBy: { startedAt: 'desc' },
+        select: { actorId: true, startedAt: true, cancelledAt: true, actor: { select: { legalName: true, chatDisplayName: true, kind: true } } },
+      }),
+      this.prisma.purchase.findMany({
+        where: { userId },
+        orderBy: { startedAt: 'desc' },
+        select: {
+          id: true,
+          priceCents: true,
+          startedAt: true,
+          cancelledAt: true,
+          iapPlatform: true,
+          iapExpiresAt: true,
+          willRenew: true,
+          actor: { select: { id: true, legalName: true } },
+          bundle: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.purchaseCharge.findMany({
+        where: { purchase: { userId } },
+        orderBy: { chargedAt: 'desc' },
+        take: 100,
+        select: { id: true, productName: true, amountCents: true, chargedAt: true, periodEnd: true, source: true, refundedAt: true, storeAmountMilli: true, storeCurrency: true },
+      }),
+      this.prisma.refundRequest.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, reason: true, status: true, source: true, createdAt: true, charge: { select: { productName: true, amountCents: true, refundedAt: true } } },
+      }),
+    ]);
+    return { rooms, purchases, charges, refunds };
+  }
+
   /** 회원 한 명의 접속 기록(최근 3개월, 최신순 최대 200줄) — 로그인·접속 시각, 기기, 앱 버전, IP */
   async accessLogs(userId: string) {
     return this.prisma.accessLog.findMany({

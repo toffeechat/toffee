@@ -5,6 +5,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 @Controller()
 export class BundlesController {
@@ -22,6 +23,8 @@ export class BundlesController {
   }
 }
 
+// 운영자 중 OWNER만(2026-10-20 권한 단계) — 고객 응대 운영자는 못 씀
+@AdminOwnerOnly()
 @Roles(Role.ADMIN)
 @Controller('admin/bundles')
 export class AdminBundlesController {

@@ -8,13 +8,16 @@ import {
   ChevronRight,
   Clock,
   Coins,
+  FileClock,
   Flag,
   Globe2,
   Hourglass,
   Languages,
+  LifeBuoy,
   LogIn,
   PackageX,
   Smartphone,
+  Store,
   TrendingUp,
   UserPlus,
   Users,
@@ -32,6 +35,9 @@ import { useWideLayout } from '@/components/wide-shell';
 import { useAuth } from '@/lib/auth-context';
 import {
   useAdminActors,
+  useAppleStoreTodo,
+  useContractsEnding,
+  useAdminInquiries,
   useAdminAgencies,
   useAdminStatsBreakdown,
   useAdminStatsOverview,
@@ -44,12 +50,13 @@ import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
 import { ApiError } from '@/lib/api-client';
-import { ADMIN_MENU } from '@/constants/admin-menu';
+import { adminMenuFor } from '@/constants/admin-menu';
 import { Radius, Spacing } from '@/constants/theme';
 import { RANK_METRICS, type RankMetric } from '@/utils/dashboard-rank';
 import { IDLE_WARN_DAYS, idleDays } from '@/utils/idle-days';
 import { isUpcoming } from '@/utils/release';
 import { countryLabel, languageLabel, shortDay } from '@/utils/stat-labels';
+import { useMe } from '@/hooks/use-onboarding';
 
 const KINDS: RoomKindFilter[] = ['ALL', 'SOLO', 'COUPLE'];
 const PROVIDER_NAMES: Record<string, string> = { GOOGLE: '구글', APPLE: '애플', NAVER: '네이버', KAKAO: '카카오', LINE: '라인', unknown: '알 수 없음' };
@@ -66,6 +73,7 @@ export default function AdminHomeScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { logout } = useAuth();
+  const { data: me } = useMe();
   const wide = useWideLayout();
   const [width, setWidth] = useState(0);
   const [selection, setSelection] = useState<StatsSelection>({ days: 30 });
@@ -78,6 +86,9 @@ export default function AdminHomeScreen() {
   const { data: dashboard, isLoading, isFetching, refetch: refetchDashboard } = useAgencyDashboard(selection, kind, agencyId || null);
   const { data: agencies } = useAdminAgencies();
   const { data: actors } = useAdminActors('');
+  const { data: appleTodo } = useAppleStoreTodo();
+  const { data: openInquiries } = useAdminInquiries('OPEN');
+  const { data: contracts } = useContractsEnding();
   const { refreshing, onRefresh } = useManualRefresh(() => Promise.all([refetchSummary(), refetchOverview(), refetchDashboard()]));
 
   // 데모 서버에서만 보이는 "데모 초기화"(2026-10-01) — 데모 계정은 고정 ID라 초기화해도 로그인이 유지됨
@@ -94,7 +105,7 @@ export default function AdminHomeScreen() {
   };
 
   // PC 넓은 화면에선 왼쪽 메뉴가 같은 목록이라 여기선 숨김
-  const menu = wide ? [] : ADMIN_MENU.filter((item) => !item.webOnly || Platform.OS === 'web');
+  const menu = wide ? [] : adminMenuFor(me?.adminLevel).filter((item) => !item.webOnly || Platform.OS === 'web');
   const rankCell = cellStyle(width, width >= 1100 ? 3 : width >= 640 ? 2 : 1);
   const halfCell = cellStyle(width, width >= 900 ? 2 : 1);
   const fourCell = cellStyle(width, width >= 900 ? 4 : 2);
@@ -109,6 +120,7 @@ export default function AdminHomeScreen() {
     (row) => !row.retiredAt && row.subscriberCount > 0 && (idleDays(row.lastBroadcastAt) ?? IDLE_WARN_DAYS) >= IDLE_WARN_DAYS,
   ).length;
   const todos: { key: string; icon: LucideIcon; count: number; label: string; danger?: boolean; onPress: () => void }[] = [
+    { key: 'inquiries', icon: LifeBuoy, count: openInquiries?.counts.OPEN ?? 0, label: '답을 기다리는 1:1 문의', danger: true, onPress: () => router.push('/admin/inquiries') },
     { key: 'reports', icon: Flag, count: summary?.reports.pending ?? 0, label: '대기 중인 신고', danger: true, onPress: () => router.push('/admin/reports') },
     {
       key: 'idle',
@@ -124,6 +136,27 @@ export default function AdminHomeScreen() {
       count: live.filter((actor) => !actor.storeProductId).length,
       label: '스토어 상품 ID 없는 방(실결제 불가)',
       onPress: () => router.push('/admin/actors'),
+    },
+    {
+      key: 'apple',
+      icon: Store,
+      count: (appleTodo?.actors.length ?? 0) + (appleTodo?.bundles.length ?? 0),
+      label: '애플 상품 판매 중지 필요(활동 종료 방)',
+      danger: true,
+      onPress: () => router.push('/admin/store-todo'),
+    },
+    {
+      key: 'contract',
+      icon: FileClock,
+      // 종료 예정을 아직 안 잡은 것만(잡았으면 처리한 셈)
+      count: (contracts ?? []).filter((row) => !row.retireAt).length,
+      label: `계약 31일 안에 끝남 — ${(contracts ?? []).filter((row) => !row.retireAt).slice(0, 3).map((row) => row.chatDisplayName).join(', ')}`,
+      danger: true,
+      onPress: () => {
+        const open = (contracts ?? []).filter((row) => !row.retireAt);
+        if (open.length === 1) router.push({ pathname: '/admin/actors/[id]', params: { id: open[0].id } });
+        else router.push('/admin/actors');
+      },
     },
     { key: 'release', icon: Clock, count: live.filter((actor) => isUpcoming(actor.releaseAt)).length, label: '공개 예정', onPress: () => router.push('/admin/actors') },
   ].filter((todo) => todo.count > 0);

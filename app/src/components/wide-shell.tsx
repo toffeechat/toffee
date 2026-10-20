@@ -4,7 +4,7 @@ import { usePathname, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
-import { ADMIN_MENU } from '@/constants/admin-menu';
+import { adminMenuFor } from '@/constants/admin-menu';
 import { useAuth } from '@/lib/auth-context';
 import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
@@ -41,7 +41,7 @@ export function WideShell({ children }: { children: ReactNode }) {
   // 운영자가 소속사 모니터링 화면(/console/…)을 열어도 운영자 메뉴 유지(2026-10-20 — 운영자 홈 순위·토피룸 모니터링에서 들어감)
   const isAdmin = pathname.startsWith('/admin') || role === 'ADMIN';
   const items: { href: string; label: string }[] = isAdmin
-    ? [{ href: '/admin', label: '홈' }, ...ADMIN_MENU.map((item) => ({ href: item.href, label: item.label }))]
+    ? [{ href: '/admin', label: '홈' }, ...adminMenuFor(me?.adminLevel).map((item) => ({ href: item.href, label: item.label }))]
     : // 소속사 — 앱 하단 탭과 같은 순서(대시보드가 첫 화면, 2026-10-13) + PC 전용 정산
       [
         { href: '/console', label: t('consoleNav.dashboard') },

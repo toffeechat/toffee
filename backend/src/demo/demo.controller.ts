@@ -3,7 +3,10 @@ import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import { DemoService } from './demo.service.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
+// 운영자 중 OWNER만(2026-10-20 권한 단계) — 고객 응대 운영자는 못 씀
+@AdminOwnerOnly()
 @Roles(Role.ADMIN)
 @Controller('admin/demo')
 export class DemoController {

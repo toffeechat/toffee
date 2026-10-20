@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { MessageSenderType, Role, UserStatus } from '../generated/prisma/enums.js';
+import { MessageSenderType } from '../generated/prisma/enums.js';
+import { AdminAlertService } from './admin-alert.service.js';
 import { PushService } from './push.service.js';
 import { pushStrings } from './push-messages.js';
 import { DEFAULT_IDLE_RULE, idleStage, refundWarningLeft, type IdleReminderRule } from './idle-reminder.js';
@@ -24,6 +25,7 @@ export class IdleReminderService {
     private readonly prisma: PrismaService,
     private readonly push: PushService,
     private readonly config: ConfigService,
+    private readonly alerts: AdminAlertService,
   ) {}
 
   private get rule(): IdleReminderRule {
@@ -106,18 +108,14 @@ export class IdleReminderService {
       const left = refundWarningLeft(stage, rule);
       if (left !== null) {
         // 환불 기준 경고 — 배우·소속사·운영자 모두(운영자가 소속사에 직접 연락할 수 있게)
-        const admins = await this.prisma.user.findMany({ where: { role: Role.ADMIN, status: UserStatus.ACTIVE }, select: { id: true } });
         const warn = (locale: string | null | undefined) => {
           const t = pushStrings(locale);
           return { title: t.idleRefundTitle(room.chatDisplayName, left), body: t.idleRefundBody(days, fans) };
         };
         await this.push.sendToUsers(selfUserIds, (recipient) => warn(recipient.locale), data);
         await this.push.notifyActorStaff(room.id, (recipient) => warn(recipient.locale), data);
-        await this.push.sendToUsers(
-          admins.map((admin) => admin.id),
-          (recipient) => warn(recipient.locale),
-          data,
-        );
+        // 운영자는 운영자 알림으로(푸시 + 메일, 2026-10-20)
+        await this.alerts.notify('IDLE', pushStrings('ko').idleRefundTitle(room.chatDisplayName, left), pushStrings('ko').idleRefundBody(days, fans), data);
         sent += 1;
         continue;
       }

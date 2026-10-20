@@ -1,41 +1,19 @@
-import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useMe } from '@/hooks/use-onboarding';
-import { SUPPORT_EMAIL } from '@/lib/env';
-import { openSupportMail } from '@/lib/support';
 
-/** "문의하기" — 메일 앱을 열어 고객센터로. 문의 주소가 아직 없으면 준비 중 안내만 */
+/** "문의하기" — 앱 안 1:1 문의(2026-10-20, 예전엔 메일 앱) */
 export function SupportLink() {
   const { t } = useTranslation();
-  const { data: me } = useMe();
-  const [failed, setFailed] = useState(false);
-
-  const open = () => {
-    setFailed(false);
-    openSupportMail(me?.id).catch(() => setFailed(true));
-  };
-
+  const router = useRouter();
   return (
     <ThemedView style={styles.container}>
-      <Pressable accessibilityRole="button" onPress={open} disabled={!SUPPORT_EMAIL}>
-        <ThemedText type="small" themeColor={SUPPORT_EMAIL ? 'text' : 'textSecondary'}>
-          {t('support.contact')}
-        </ThemedText>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/support')}>
+        <ThemedText type="small">{t('support.contact')}</ThemedText>
       </Pressable>
-      {!SUPPORT_EMAIL && (
-        <ThemedText type="small" themeColor="textSecondary">
-          {t('support.notReady')}
-        </ThemedText>
-      )}
-      {failed && (
-        <ThemedText type="small" themeColor="danger">
-          {t('support.openFailed', { email: SUPPORT_EMAIL })}
-        </ThemedText>
-      )}
     </ThemedView>
   );
 }

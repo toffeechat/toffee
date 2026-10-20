@@ -434,7 +434,10 @@
     "notificationsHint": "Ative ou desative os avisos de novas mensagens para cada artista. Você continuará recebendo as mensagens.",
     "noSubscriptions": "Nenhuma assinatura ativa",
     "loginInfo": "Dados de login",
-    "noEmail": "Nenhum e-mail cadastrado"
+    "noEmail": "Nenhum e-mail cadastrado",
+    "exportData": "Baixar meus dados",
+    "exportDataHint": "Receba em um arquivo seus dados de conta, assinaturas, pagamentos, respostas e solicitações",
+    "exportDataFailed": "Não foi possível criar o arquivo. Tente novamente mais tarde."
   },
   "manage": {
     "active": "Ativa",
@@ -903,5 +906,40 @@
     "invalidTitle": "Este link não pode ser usado",
     "invalidBody": "Confira o endereço ou peça um link novo ao seu contato na agência.",
     "toLogin": "Ir para o login"
+  },
+  "appGate": {
+    "maintenanceTitle": "Estamos em manutenção",
+    "maintenanceBody": "Estamos melhorando o Toffee. Volte daqui a pouco.",
+    "maintenanceUntil": "Previsto até {{date}}",
+    "retry": "Verificar de novo",
+    "staffLogin": "Login da equipe",
+    "updateTitle": "Atualize o app",
+    "updateBody": "Esta versão do Toffee não funciona mais. Atualize para a versão mais recente na loja.",
+    "updateButton": "Atualizar"
+  },
+  "inquiry": {
+    "inbox": "Ajuda",
+    "new": "Nova solicitação",
+    "empty": "Você ainda não enviou solicitações.",
+    "category": "Sobre o que é?",
+    "titleLabel": "Assunto",
+    "bodyLabel": "Mensagem",
+    "bodyHint": "Conte em qual tela e o que aconteceu — assim ajudamos mais rápido.",
+    "send": "Enviar",
+    "team": "Equipe Toffee",
+    "me": "Eu",
+    "reply": "Fazer outra pergunta",
+    "closedHint": "Esta solicitação foi encerrada. Abra uma nova se precisar de mais ajuda.",
+    "emailInstead": "Fale com a gente: {{email}}",
+    "failed": "Não foi possível enviar. Tente novamente em instantes.",
+    "cat_ACCOUNT": "Conta",
+    "cat_PAYMENT": "Pagamento",
+    "cat_REFUND": "Reembolso",
+    "cat_ARTIST": "Artista e chat",
+    "cat_BUG": "Erro",
+    "cat_OTHER": "Outro",
+    "st_OPEN": "Aguardando resposta",
+    "st_ANSWERED": "Respondida",
+    "st_CLOSED": "Encerrada"
   }
 }

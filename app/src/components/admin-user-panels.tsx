@@ -6,6 +6,7 @@ import { AdminButton, AdminButtonRow, AdminChip, AdminMessage, AdminSection } fr
 import {
   useAdminAgencies,
   useAdminUserAccessLogs,
+  useAdminUserBilling,
   useAssignStaffAgency,
   useBanUser,
   useChangeUserRole,
@@ -288,3 +289,52 @@ const styles = StyleSheet.create({
   current: { borderWidth: 1, borderRadius: 10, padding: Spacing.two, gap: 4 },
   note: { borderWidth: 1, borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 14 },
 });
+
+const PLATFORM: Record<string, string> = { IOS: '애플', ANDROID: '구글', SANDBOX: '테스트', APPLE: '애플', GOOGLE: '구글' };
+const REFUND_REASON: Record<string, string> = { STAR_IDLE: '아티스트 미발송', ACTOR_RETIRED: '활동 종료' };
+const day = (iso: string) => new Date(iso).toLocaleDateString('ko-KR');
+
+/** 구독·결제·환불 내역(2026-10-20) — "결제했는데 안 열려요"·환불 문의 대응. 금액은 정산 기준(태국 정가 ฿), 스토어 실제 청구액은 따로 */
+export function BillingSection({ userId }: { userId: string }) {
+  const { data, isLoading } = useAdminUserBilling(userId);
+  if (isLoading || !data) return <AdminSection title="구독·결제">{isLoading ? <ActivityIndicator style={styles.loading} /> : null}</AdminSection>;
+  const active = data.rooms.filter((room) => !room.cancelledAt);
+  return (
+    <AdminSection title="구독·결제·환불" hint="방 이용권 → 구매(개인·묶음) → 결제 건 → 환불 요청 순서. 금액은 정산 기준(바트 정가)이에요.">
+      <ThemedText type="smallBold">지금 열린 방 {active.length}개</ThemedText>
+      {active.length ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {active.map((room) => `${room.actor.chatDisplayName}${room.actor.kind === 'COUPLE' ? '[CP]' : ''}(${day(room.startedAt)}~)`).join(', ')}
+        </ThemedText>
+      ) : null}
+      <ThemedText type="smallBold">구매 {data.purchases.length}건</ThemedText>
+      {data.purchases.map((purchase) => (
+        <ThemedText key={purchase.id} type="small" themeColor={purchase.cancelledAt ? 'textTertiary' : 'text'}>
+          {purchase.bundle ? `묶음 ${purchase.bundle.name}` : (purchase.actor?.legalName ?? '-')} · {purchase.iapPlatform ? PLATFORM[purchase.iapPlatform] : '테스트'}
+          {purchase.priceCents !== null ? ` · ฿${(purchase.priceCents / 100).toLocaleString('ko-KR')}/월` : ''} · {day(purchase.startedAt)} 시작
+          {purchase.cancelledAt
+            ? ` · ${day(purchase.cancelledAt)} 끝남`
+            : purchase.iapExpiresAt
+              ? ` · ${day(purchase.iapExpiresAt)}까지${purchase.willRenew ? '(자동 갱신)' : '(갱신 안 함)'}`
+              : ''}
+        </ThemedText>
+      ))}
+      <ThemedText type="smallBold">결제 {data.charges.length}건</ThemedText>
+      {data.charges.slice(0, 30).map((charge) => (
+        <ThemedText key={charge.id} type="small" themeColor={charge.refundedAt ? 'danger' : 'textSecondary'}>
+          {day(charge.chargedAt)} · {charge.productName} · ฿{(charge.amountCents / 100).toLocaleString('ko-KR')} · {PLATFORM[charge.source] ?? charge.source}
+          {charge.storeAmountMilli !== null && charge.storeCurrency ? ` (스토어 ${(charge.storeAmountMilli / 1000).toLocaleString('ko-KR')} ${charge.storeCurrency})` : ''} · ~
+          {day(charge.periodEnd)}
+          {charge.refundedAt ? ` · ${day(charge.refundedAt)} 환불됨` : ''}
+        </ThemedText>
+      ))}
+      <ThemedText type="smallBold">환불 요청 {data.refunds.length}건</ThemedText>
+      {data.refunds.map((refund) => (
+        <ThemedText key={refund.id} type="small" themeColor="textSecondary">
+          {day(refund.createdAt)} · {REFUND_REASON[refund.reason] ?? refund.reason} · {refund.charge.productName} ฿{(refund.charge.amountCents / 100).toLocaleString('ko-KR')} ·{' '}
+          {refund.status === 'REFUNDED' ? '환불 완료' : refund.charge.refundedAt ? '애플 환불 완료' : '애플 안내함'}
+        </ThemedText>
+      ))}
+    </AdminSection>
+  );
+}

@@ -18,4 +18,15 @@ export class RetireScheduler {
       this.logger.error('활동 종료 예정 처리 실패', error as Error);
     }
   }
+
+  // 계약 종료 31일 전 알림(2026-10-20) — 하루 한 번, 태국 오전 10시
+  @Cron('0 3 * * *')
+  async contracts() {
+    try {
+      const count = await this.actors.alertContractsEnding();
+      if (count > 0) this.logger.log(`계약 종료 임박 알림 ${count}건`);
+    } catch (error) {
+      this.logger.error('계약 종료 알림 실패', error as Error);
+    }
+  }
 }

@@ -7,6 +7,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 // 배우 본인(또는 ADMIN)만 — 메시지·스토리 발송 권한과 동일(소속사는 발송 권한 없음)
 @Controller('actors/:actorId/uploads')
@@ -17,6 +18,7 @@ export class UploadsController {
   ) {}
 
   @Roles(Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
   @Post()
   async create(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string, @Body() dto: CreateUploadDto) {
     await ensureIsActorSelf(this.prisma, user.id, actorId);

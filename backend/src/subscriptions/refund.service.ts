@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ChargeSource, MessageSenderType, RefundRequestStatus } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
+import { AdminAlertService } from '../notifications/admin-alert.service.js';
 import { IapVerificationService } from './iap-verification.service.js';
 import { ChargeLedgerService } from '../settlements/charge-ledger.service.js';
 
@@ -62,6 +63,8 @@ export class RefundService {
     private readonly config: ConfigService,
     private readonly iap: IapVerificationService,
     private readonly ledger: ChargeLedgerService,
+    // 운영자 알림(2026-10-20) — 단위 테스트에선 없을 수 있음
+    private readonly alerts?: AdminAlertService,
   ) {}
 
   private days(key: string, fallback: number): number {
@@ -147,6 +150,12 @@ export class RefundService {
     const candidate = (await this.candidates(userId, now)).find((item) => item.chargeId === chargeId);
     if (!candidate) throw new BadRequestException(appError('REFUND_NOT_ELIGIBLE'));
     const reason = candidate.reason;
+    void this.alerts?.notify(
+      'REFUND',
+      `${candidate.productName} 환불 요청`,
+      `사유: ${reason === 'STAR_IDLE' ? '아티스트 미발송' : '활동 종료'} · ฿${(candidate.amountCents / 100).toLocaleString('ko-KR')} · ${candidate.source === ChargeSource.APPLE ? '애플(환불 페이지 안내)' : '바로 환불'}`,
+      { chargeId },
+    );
     if (candidate.source === ChargeSource.APPLE) {
       await this.prisma.refundRequest.upsert({
         where: { chargeId_reason: { chargeId, reason } },

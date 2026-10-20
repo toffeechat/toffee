@@ -158,6 +158,27 @@ export class IapVerificationService {
   }
 
   /**
+   * 구글 구독 자동 갱신 해지(2026-10-20, 아티스트 활동 종료) — subscriptionsv2.cancel. 이미 낸 기간(만료 시각)까지는 이용하고 다음 결제만 안 됨.
+   * 설정(GOOGLE_PLAY_*)이 없으면 false(개발·데모). 실패하면 예외 — 부르는 쪽이 다음에 다시 시도.
+   */
+  async cancelGoogleSubscription(purchaseToken: string): Promise<boolean> {
+    const packageName = this.configService.get<string>('GOOGLE_PLAY_PACKAGE_NAME');
+    const serviceAccountJson = this.configService.get<string>('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
+    if (!packageName || !serviceAccountJson) return false;
+    const auth = new GoogleAuth({ credentials: JSON.parse(serviceAccountJson) as Record<string, string>, scopes: ['https://www.googleapis.com/auth/androidpublisher'] });
+    const accessToken = (await (await auth.getClient()).getAccessToken()).token;
+    if (!accessToken) throw new Error('google auth failed');
+    const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}:cancel`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cancellationContext: { cancellationType: 'DEVELOPER_REQUESTED_STOP_PAYMENTS' } }),
+    });
+    if (!res.ok) throw new Error(`google cancel ${res.status}`);
+    return true;
+  }
+
+  /**
    * 구글 실시간 개발자 알림(RTDN)은 Pub/Sub "푸시"로 옴 — 요청의 Authorization: Bearer <OIDC 토큰>이 우리가 지정한 서비스 계정이
    * 서명한 것인지 확인(아무나 가짜 "갱신됨" 알림을 보내지 못하게). 설정이 없으면 이 경로를 닫아 둠(404).
    */

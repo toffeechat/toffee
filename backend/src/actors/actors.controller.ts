@@ -11,6 +11,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 @Controller('actors')
 export class ActorsController {
@@ -68,6 +69,7 @@ export class ActorsController {
 
   // 배우 닉네임(채팅방에 보이는 이름) — 배우 본인만(소속사는 발송 권한과 마찬가지로 대신 못 바꿈)
   @Roles(Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
   @Patch(':id/nickname')
   updateNickname(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateActorNicknameDto) {
     return this.actorsService.updateNickname(user.id, id, dto.nickname);
@@ -75,12 +77,14 @@ export class ActorsController {
 
   // 대화방 사진 — 배우 본인·같은 소속사 직원·운영자(공식 사진·이름은 운영자 화면에서만, 2026-09-28 사용자 결정)
   @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
   @Post(':id/chat-profile-image/upload')
   createChatProfileUpload(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: CreateChatProfileUploadDto) {
     return this.actorsService.createChatProfileUpload(user.id, id, dto.contentType, dto.sizeBytes);
   }
 
   @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
   @Patch(':id/chat-profile-image')
   setChatProfileImage(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetChatProfileImageDto) {
     return this.actorsService.setChatProfileImage(user.id, id, dto.key);
@@ -88,6 +92,7 @@ export class ActorsController {
 
   // 토피룸 배경 사진(2026-10-14) — 대화방 사진과 같은 권한, 업로드는 chat-profile-image/upload를 같이 씀
   @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
   @Patch(':id/chat-background')
   setChatBackground(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetChatProfileImageDto) {
     return this.actorsService.setChatBackground(user.id, id, dto.key);

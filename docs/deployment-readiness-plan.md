@@ -22,6 +22,30 @@
 
 ---
 
+## 2026-10-20 (이어서) — 운영 기능 9개: 스토어 갱신 멈춤·결제 내역·운영자 알림·점검 모드·공지 푸시·1:1 문의·계약일·권한/2단계 인증·내 정보 받기
+
+사용자 질문 "활동이 종료돼도 스토어 정기결제는 자동으로 안 멈춘다는데 자동으로 멈춰야 하지 않나, 운영적으로 필요한데 없는 것은?" → 9개를 정리해 아이디어
+보관함에 적었고, "다 필요해보인다 작업하자"로 1차에 넣어 같은 날 개발.
+
+- **스토어 갱신 멈춤**: 구글은 `IapVerificationService.cancelGoogleSubscription`(`subscriptionsv2.tokens:cancel`, DEVELOPER_REQUESTED_STOP_PAYMENTS) +
+  `StoreRenewalService` 매시간 — 종료된 방은 바로, 종료 예정이면 그 전에 끝나는 결제는 두고(`shouldStopNow`). 애플은 팬 구독을 끊는 API가 없어서
+  `GET admin/store/apple-todo` 할 일 + `storeSaleStoppedAt` 표시. 판매 중지가 기존 구독 갱신을 실제로 멈추는지 보고가 엇갈려 출시 전 샌드박스 확인으로 남김.
+- **운영자 알림**: `AdminAlertService.notify(kind, …)` — 모든 운영자 푸시 + `ADMIN_ALERT_EMAIL` 메일(실패는 삼킴). 신고·환불·장기 미발송·문의·계약·예정 종료.
+- **점검 모드·최소 버전**: `AppSetting` 한 줄 + `GET /app-config`(공개), `MaintenanceGuard`(RolesGuard 뒤, 운영자·/auth·/iap/·/health 예외, 503 `MAINTENANCE`),
+  앱 `AppGate`.
+- **공지 푸시**: `PushService.sendToEveryone`(기기를 1,000개씩), 공지당 한 번(`Notice.pushedAt` 선점), 제목은 언어별 번역.
+- **1:1 문의**: `SupportInquiry`/`SupportMessage`, 사용자·운영자 API, 답하면 `inquiry-reply` 푸시.
+- **계약 끝나는 날**: `Actor.contractEndAt` — 자동 종료는 안 하고(잠정) 31일 전 할 일 + 하루 한 번 알림(`contractAlertedAt`로 한 번만).
+- **권한 단계·2단계 인증**: `User.adminLevel`(null = OWNER) + `@AdminOwnerOnly()`(RolesGuard가 SUPPORT를 403), TOTP(node:crypto, RFC 6238 테스트 벡터) —
+  토큰을 새로 고칠 수단이 없어서(30일 액세스 토큰만) 코드를 확인하면 `mfaAt`이 담긴 토큰을 다시 발급하고 RolesGuard가 12시간 안인지 봄.
+  401 `ADMIN_MFA_REQUIRED`는 로그아웃이 아니라 `AdminMfaGate` 코드 화면.
+- **내 정보 받기**: `GET /auth/me/export`, `GET /admin/users/:id/export`(작업 기록 `USER_EXPORT`), `PrivacyExportService`.
+- 마이그레이션 `20261020180000_ops_store_stop_app_settings_inquiries_admin_mfa`(로컬 적용, 드리프트 없음). 로컬 서버로 2단계 인증 켜기 → 옛 토큰 401 →
+  다시 로그인 401 → 코드 확인 후 200, 마지막 전체 권한 내리기 거절, 고객 응대 운영자가 소속사·정산 403, 계약 할 일, 내보내기 200을 확인. 웹 화면(보안·운영자,
+  코드 화면 → 홈, 계약 칸) 확인.
+- 남은 일: 애플 판매 중지 샌드박스 확인, 구글 서비스 계정 구독 관리 권한, 운영 서버 `ADMIN_ALERT_EMAIL`·`EXPO_PUBLIC_IOS_APP_STORE_ID`(`ops-infra-backlog.md`),
+  TOTP 비밀키 암호화·같은 코드 재사용 막기는 운영자가 늘면.
+
 ## 2026-10-20 (이어서) — 운영자 화면 2차 정리: 금칙어·신고·회원·아티스트·날짜 입력·공지 번역
 
 사용자 피드백 묶음(먼저 답·결정을 받고 한 번에 수정). 결정 4개는 모두 추천안: 종료 예정을 넣는 즉시 새 구독 막기 / 회원은 표 + 눌러서 상세 /

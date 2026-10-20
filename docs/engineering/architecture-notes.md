@@ -1762,3 +1762,27 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 날짜 입력: `components/admin-date-field.tsx`(`AdminDateField` — monthGrid 재사용, 값은 "YYYY-MM-DD"/"YYYY-MM-DD HH:mm" 글자). `AdminChip.count`로 탭 개수.
 - 마이그레이션 `20261020120000_banned_word_default_retire_at_notice_translation`.
 
+## 운영 기능: 스토어 갱신 멈춤·알림·점검·문의·권한/2단계 인증·내보내기 (2026-10-20)
+
+- 스토어: `subscriptions/store-renewal.service.ts`(`@Cron` 매시간, `shouldStopNow(room, expiresAt, now)`), `IapVerificationService.cancelGoogleSubscription`
+  (`GOOGLE_PLAY_*` 없으면 false). 애플은 `admin-store.controller.ts`(`GET admin/store/apple-todo`, `PATCH …/sale-stopped` → `Actor/Bundle.storeSaleStoppedAt`).
+- 알림: `notifications/admin-alert.service.ts`(NotificationsModule `@Global`) — `ADMIN_ALERT_EMAIL`(쉼표), `ADMIN_ALERT_KINDS`(REPORT,REFUND,IDLE,INQUIRY,CONTRACT,RETIRE).
+  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`.
+- 점검·최소 버전: `app-settings/`(global, 15초 캐시) — `AppSetting(id 'app')`, `GET /app-config`(@Public), `GET/PATCH admin/app-settings`(OWNER).
+  `MaintenanceGuard`는 APP_GUARD 순서상 RolesGuard 다음(req.user가 있어야 운영자 예외). 앱 `components/app-gate.tsx`, api-client `onMaintenance`.
+- 공지 푸시: `PushService.sendToEveryone(compose, data)` — `reachableUser`/`deliver`로 나눔, 기기를 id 커서로 1,000개씩. `Notice.pushedAt`을 updateMany로 선점.
+- 1:1 문의: `support/`(`SupportInquiry` OPEN/ANSWERED/CLOSED, `SupportMessage.fromAdmin`). 사용자 `/support/inquiries…`, 운영자 `/admin/inquiries…`.
+- 계약: `Actor.contractEndAt/contractAlertedAt`, `PATCH admin/actors/:id/contract`(날짜가 바뀌면 alertedAt 초기화), `GET admin/contracts-ending`(31일, `CONTRACT_ALERT_DAYS`),
+  `RetireScheduler.contracts`(`0 3 * * *` UTC = 태국 10시).
+- 권한·2단계 인증: `User.adminLevel`(null = OWNER), `totpSecret/totpPendingSecret/totpEnabledAt`. `common/utils/totp.ts`(RFC 6238, ±1 스텝).
+  JwtStrategy가 운영자면 `adminLevel`·`mfaEnabled`·토큰의 `mfaAt`을 req.user에. `RolesGuard`: @Roles가 붙은 라우트에서 운영자가 2단계 인증을 켰고
+  `mfaAt`이 없거나 `ADMIN_MFA_HOURS`(12)가 지났으면 401 `ADMIN_MFA_REQUIRED`(`@SkipAdminMfa` 제외), SUPPORT가 `@AdminOwnerOnly()`면 403 `ADMIN_OWNER_ONLY`.
+  `@AdminOwnerOnly`: admin-agencies·actor-links(admin)·bundles(admin)·demo·demo-codes·admin-store·settlements(클래스), admin-actors 쓰기, users role, app-settings,
+  messages greetings/broadcast·stories 올리기·uploads·actors 닉네임/사진/배경(운영자가 아티스트로 쓸 때). `admin/admin-security.*`: `GET admin/mfa`, `POST admin/mfa/setup|enable|verify|disable`
+  (enable/verify는 `mfaAt` 담긴 새 토큰), OWNER: `GET admin/admins`, `PATCH admin/admins/:id/level`(마지막 OWNER 보호 `ADMIN_LAST_OWNER`), `DELETE admin/admins/:id/mfa`.
+  앱: api-client `onMfaRequired`(로그아웃 안 함) → `components/admin-mfa-gate.tsx` → `login(newToken)` + invalidateQueries. `adminMenuFor(level)`로 메뉴 숨김.
+  한계: 같은 코드 30초 안 재사용 가능, 비밀키 평문 저장 — 운영자가 늘면 보완.
+- 내보내기: `privacy/`(`PrivacyExportService.build`), `GET /auth/me/export`(3/분), `GET /admin/users/:id/export`(audit `USER_EXPORT`). 앱 `lib/export-my-data.ts`
+  (웹 Blob 내려받기, 네이티브 expo-file-system + expo-sharing).
+- 마이그레이션 `20261020180000_ops_store_stop_app_settings_inquiries_admin_mfa`.
+

@@ -7,6 +7,10 @@ export interface PushData {
   /** 묶음 공개 알림(2026-10-19) */
   bundleId?: string;
   messageId?: string;
+  /** 공지 푸시·운영자 알림 종류·문의 답변(2026-10-20) */
+  noticeId?: string;
+  kind?: string;
+  inquiryId?: string;
   title?: string;
   body?: string;
   /** 보낸 사람 사진(서버가 대화 알림용으로 넣음, 2026-10-13) — 앱 사용 중 배너에도(2026-10-14) */

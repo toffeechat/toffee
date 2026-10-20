@@ -434,7 +434,10 @@
     "notificationsHint": "Bật hoặc tắt thông báo tin nhắn mới cho từng nghệ sĩ. Bạn vẫn nhận được tin nhắn.",
     "noSubscriptions": "Không có gói đăng ký đang hoạt động",
     "loginInfo": "Thông tin đăng nhập",
-    "noEmail": "Không có email"
+    "noEmail": "Không có email",
+    "exportData": "Tải dữ liệu của tôi",
+    "exportDataHint": "Nhận hồ sơ tài khoản, gói đăng ký, thanh toán, trả lời và yêu cầu hỗ trợ dưới dạng tệp",
+    "exportDataFailed": "Không thể tạo tệp. Vui lòng thử lại sau."
   },
   "manage": {
     "active": "Đang hoạt động",
@@ -903,5 +906,40 @@
     "invalidTitle": "Không thể dùng liên kết này",
     "invalidBody": "Hãy kiểm tra địa chỉ hoặc xin liên kết mới từ người phụ trách của công ty quản lý.",
     "toLogin": "Đến trang đăng nhập"
+  },
+  "appGate": {
+    "maintenanceTitle": "Đang bảo trì",
+    "maintenanceBody": "Chúng tôi đang nâng cấp Toffee. Vui lòng quay lại sau ít phút.",
+    "maintenanceUntil": "Dự kiến đến {{date}}",
+    "retry": "Kiểm tra lại",
+    "staffLogin": "Đăng nhập nhân viên",
+    "updateTitle": "Vui lòng cập nhật ứng dụng",
+    "updateBody": "Phiên bản này không còn dùng được Toffee. Vui lòng cập nhật lên phiên bản mới nhất trên cửa hàng.",
+    "updateButton": "Cập nhật"
+  },
+  "inquiry": {
+    "inbox": "Hỗ trợ",
+    "new": "Gửi yêu cầu mới",
+    "empty": "Bạn chưa gửi yêu cầu nào.",
+    "category": "Bạn cần hỗ trợ về gì?",
+    "titleLabel": "Tiêu đề",
+    "bodyLabel": "Nội dung",
+    "bodyHint": "Hãy cho biết bạn gặp chuyện gì ở màn hình nào để chúng tôi hỗ trợ nhanh hơn.",
+    "send": "Gửi",
+    "team": "Đội ngũ Toffee",
+    "me": "Tôi",
+    "reply": "Hỏi thêm",
+    "closedHint": "Yêu cầu này đã đóng. Nếu cần thêm hỗ trợ, hãy gửi yêu cầu mới.",
+    "emailInstead": "Gửi email cho chúng tôi: {{email}}",
+    "failed": "Không gửi được. Vui lòng thử lại sau.",
+    "cat_ACCOUNT": "Tài khoản",
+    "cat_PAYMENT": "Thanh toán",
+    "cat_REFUND": "Hoàn tiền",
+    "cat_ARTIST": "Nghệ sĩ & trò chuyện",
+    "cat_BUG": "Lỗi",
+    "cat_OTHER": "Khác",
+    "st_OPEN": "Đang chờ trả lời",
+    "st_ANSWERED": "Đã trả lời",
+    "st_CLOSED": "Đã đóng"
   }
 }

@@ -434,7 +434,10 @@
     "notificationsHint": "可以依藝人開關新訊息通知，關閉後仍會收到訊息。",
     "noSubscriptions": "沒有正在訂閱的藝人",
     "loginInfo": "登入資訊",
-    "noEmail": "無電子郵件資訊"
+    "noEmail": "無電子郵件資訊",
+    "exportData": "下載我的資料",
+    "exportDataHint": "以檔案形式取得帳號、訂閱、付款、回覆和詢問紀錄",
+    "exportDataFailed": "無法產生檔案，請稍後再試。"
   },
   "manage": {
     "active": "訂閱中",
@@ -903,5 +906,40 @@
     "invalidTitle": "此連結無法使用",
     "invalidBody": "請確認連結網址，或向經紀公司負責人索取新連結。",
     "toLogin": "前往登入"
+  },
+  "appGate": {
+    "maintenanceTitle": "服務維護中",
+    "maintenanceBody": "我們正在維護以改進 Toffee，請稍後再來。",
+    "maintenanceUntil": "預計持續到 {{date}}",
+    "retry": "重新檢查",
+    "staffLogin": "管理員登入",
+    "updateTitle": "請更新 App",
+    "updateBody": "目前版本已無法使用 Toffee，請到商店更新到最新版本。",
+    "updateButton": "更新"
+  },
+  "inquiry": {
+    "inbox": "線上諮詢",
+    "new": "新增諮詢",
+    "empty": "你還沒有提交過諮詢。",
+    "category": "諮詢類型",
+    "titleLabel": "標題",
+    "bodyLabel": "內容",
+    "bodyHint": "請告訴我們在哪個頁面發生了什麼，這樣能更快幫到你。",
+    "send": "傳送",
+    "team": "Toffee 營運團隊",
+    "me": "我",
+    "reply": "繼續提問",
+    "closedHint": "此諮詢已結束。如需更多協助，請重新提交。",
+    "emailInstead": "Email 諮詢：{{email}}",
+    "failed": "傳送失敗，請稍後再試。",
+    "cat_ACCOUNT": "帳號",
+    "cat_PAYMENT": "付款",
+    "cat_REFUND": "退款",
+    "cat_ARTIST": "藝人·聊天",
+    "cat_BUG": "故障",
+    "cat_OTHER": "其他",
+    "st_OPEN": "等待回覆",
+    "st_ANSWERED": "已回覆",
+    "st_CLOSED": "已結束"
   }
 }

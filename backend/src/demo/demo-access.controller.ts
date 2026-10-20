@@ -3,8 +3,11 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import { DemoAccessService } from './demo-access.service.js';
 import { CreateDemoCodeDto, UpdateDemoCodeDto } from './dto/demo-code.dto.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 // 운영자 화면 "데모 입장 코드"(2026-10-19) — 코드는 지우지 않고 중지만(접속 기록 보존)
+// 운영자 중 OWNER만(2026-10-20 권한 단계) — 고객 응대 운영자는 못 씀
+@AdminOwnerOnly()
 @Roles(Role.ADMIN)
 @Controller('admin/demo-codes')
 export class DemoAccessController {

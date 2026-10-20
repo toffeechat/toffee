@@ -13,10 +13,13 @@ import { AdminStatsService } from './admin-stats.service.js';
 import { ActorImportService } from './actor-import.service.js';
 import { ActorLinksService } from './actor-links.service.js';
 import { ActorLinksController, AdminActorLinksController } from './actor-links.controller.js';
+import { AdminSecurityController } from './admin-security.controller.js';
+import { AdminSecurityService } from './admin-security.service.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
-  imports: [ActorsModule, NotificationsModule],
-  controllers: [AdminUsersController, AdminAgenciesController, AdminActorsController, AdminStatsController, AdminActorLinksController, ActorLinksController],
-  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService, RetireScheduler],
+  imports: [ActorsModule, NotificationsModule, AuthModule],
+  controllers: [AdminUsersController, AdminAgenciesController, AdminActorsController, AdminStatsController, AdminActorLinksController, ActorLinksController, AdminSecurityController],
+  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService, RetireScheduler, AdminSecurityService],
 })
 export class AdminModule {}

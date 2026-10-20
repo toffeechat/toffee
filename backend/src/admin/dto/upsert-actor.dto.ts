@@ -128,3 +128,9 @@ export class SetRetireAtDto {
   @IsDateString()
   retireAt!: string | null;
 }
+
+export class SetContractEndDto {
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  contractEndAt!: string | null;
+}

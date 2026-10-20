@@ -434,7 +434,10 @@
     "notificationsHint": "アーティストごとに新着通知をオン・オフできます。通知をオフにしてもメッセージは届きます。",
     "noSubscriptions": "購読中のアーティストはいません",
     "loginInfo": "ログイン情報",
-    "noEmail": "メール情報なし"
+    "noEmail": "メール情報なし",
+    "exportData": "自分のデータをダウンロード",
+    "exportDataHint": "アカウント・購読・決済・返信・お問い合わせの記録をファイルで受け取ります",
+    "exportDataFailed": "ファイルを作成できませんでした。しばらくしてからもう一度お試しください。"
   },
   "manage": {
     "active": "購読中",
@@ -903,5 +906,40 @@
     "invalidTitle": "使用できないリンクです",
     "invalidBody": "アドレスを確認するか、事務所の担当者に新しいリンクを依頼してください。",
     "toLogin": "ログイン画面へ"
+  },
+  "appGate": {
+    "maintenanceTitle": "メンテナンス中です",
+    "maintenanceBody": "Toffeeをより良くするためにメンテナンスしています。しばらくしてから再度開いてください。",
+    "maintenanceUntil": "{{date}}まで予定",
+    "retry": "もう一度確認",
+    "staffLogin": "運営者ログイン",
+    "updateTitle": "アプリをアップデートしてください",
+    "updateBody": "このバージョンではToffeeを利用できません。ストアから最新バージョンにアップデートしてください。",
+    "updateButton": "アップデート"
+  },
+  "inquiry": {
+    "inbox": "お問い合わせ",
+    "new": "新しく問い合わせる",
+    "empty": "まだお問い合わせはありません。",
+    "category": "どんな内容ですか？",
+    "titleLabel": "件名",
+    "bodyLabel": "内容",
+    "bodyHint": "どの画面で何が起きたかを詳しく書いていただくと、早く対応できます。",
+    "send": "送信",
+    "team": "Toffee運営チーム",
+    "me": "自分",
+    "reply": "追加で質問する",
+    "closedHint": "このお問い合わせは終了しました。ほかにご不明点があれば新しくお問い合わせください。",
+    "emailInstead": "メールでのお問い合わせ: {{email}}",
+    "failed": "送信できませんでした。しばらくしてから再度お試しください。",
+    "cat_ACCOUNT": "アカウント",
+    "cat_PAYMENT": "お支払い",
+    "cat_REFUND": "返金",
+    "cat_ARTIST": "アーティスト・トーク",
+    "cat_BUG": "不具合",
+    "cat_OTHER": "その他",
+    "st_OPEN": "返信待ち",
+    "st_ANSWERED": "返信済み",
+    "st_CLOSED": "終了"
   }
 }
