@@ -854,5 +854,45 @@
     "version": "Phiên bản {{version}}",
     "embedded": "gốc",
     "update": "cập nhật {{date}}"
+  },
+  "release": {
+    "comingSoon": "Sắp ra mắt",
+    "opensAt": "Mở vào {{date}}",
+    "notifyMe": "Nhắc tôi",
+    "notifying": "Đã đặt nhắc",
+    "notifyHint": "Chúng tôi sẽ báo bạn ngay khi mở.",
+    "notifyOn": "Đã đặt nhắc. Chúng tôi sẽ báo ngay khi mở. Nhấn lần nữa để hủy.",
+    "notifyOff": "Đã hủy nhắc.",
+    "notifyFailed": "Không thể đặt nhắc.",
+    "studioNotice": "Chưa mở cho đến {{date}}. Tin nhắn gửi bây giờ sẽ không hiển thị với fan đăng ký sau khi mở. Hãy chuẩn bị trước tin nhắn chào mừng, tin nhắn sinh nhật và hồ sơ.",
+    "consoleLine": "Mở vào {{date}} · Đăng ký nhắc: {{count}} người"
+  },
+  "longMessage": {
+    "seeAll": "Xem tất cả",
+    "title": "Toàn bộ tin nhắn",
+    "gone": "Vui lòng mở lại tin nhắn.",
+    "back": "Quay lại"
+  },
+  "actorLink": {
+    "eyebrow": "Liên kết tài khoản nghệ sĩ",
+    "intro": "Liên kết này dùng để kết nối tài khoản của bạn với nghệ sĩ {{name}}.",
+    "how": "Đăng nhập bằng tài khoản bạn thường dùng (Google, Apple, LINE...) rồi liên kết. Từ lần sau, đăng nhập bằng tài khoản đó để gửi tin nhắn cho fan. Không cần tạo ID hay mật khẩu riêng.",
+    "loginAndLink": "Đăng nhập và liên kết",
+    "confirm": "Liên kết tài khoản này với {{name}}?",
+    "confirmHint": "Tài khoản đang đăng nhập sẽ trở thành tài khoản nghệ sĩ và không thể đăng ký với tư cách fan. Nếu đây là tài khoản fan của bạn, hãy đăng nhập bằng tài khoản khác.",
+    "link": "Liên kết",
+    "otherAccount": "Dùng tài khoản khác",
+    "failed": "Không thể liên kết. Vui lòng thử lại sau.",
+    "expiresAt": "Có hiệu lực đến {{date}}.",
+    "doneTitle": "Đã liên kết!",
+    "doneBody": "Giờ bạn có thể gửi tin nhắn cho fan với tư cách {{name}}.",
+    "start": "Bắt đầu",
+    "usedTitle": "Liên kết này đã được dùng",
+    "usedBody": "Vui lòng đăng nhập bằng tài khoản đã liên kết. Nếu cần liên kết tài khoản khác, hãy xin liên kết mới từ người phụ trách của công ty quản lý.",
+    "expiredTitle": "Liên kết này đã hết hạn",
+    "expiredBody": "Vui lòng xin liên kết mới từ người phụ trách của công ty quản lý.",
+    "invalidTitle": "Không thể dùng liên kết này",
+    "invalidBody": "Hãy kiểm tra địa chỉ hoặc xin liên kết mới từ người phụ trách của công ty quản lý.",
+    "toLogin": "Đến trang đăng nhập"
   }
 }

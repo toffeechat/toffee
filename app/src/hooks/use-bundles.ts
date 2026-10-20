@@ -25,6 +25,8 @@ export interface Bundle {
   /** 스토어 구독 상품 ID — 없으면 아직 스토어 결제 불가(샌드박스 구독만) */
   storeProductId?: string | null;
   actors: BundleActor[];
+  /** 실제로 열리는 시각(2026-10-19) — 묶음과 든 방의 공개 시각 중 가장 늦은 것, 미래면 "곧 공개"(없으면 바로) */
+  opensAt?: string | null;
 }
 
 export interface MyBundle {

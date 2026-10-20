@@ -32,6 +32,7 @@ import { BundlesModule } from './bundles/bundles.module.js';
 import { LegalModule } from './legal/legal.module.js';
 import { DemoModule } from './demo/demo.module.js';
 import { NoticesModule } from './notices/notices.module.js';
+import { ReleasesModule } from './releases/releases.module.js';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { NoticesModule } from './notices/notices.module.js';
     SettlementsModule,
     TranslationModule,
     BundlesModule,
+    ReleasesModule,
     LegalModule,
     DemoModule,
     NoticesModule,

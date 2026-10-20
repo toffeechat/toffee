@@ -854,5 +854,45 @@
     "version": "版本 {{version}}",
     "embedded": "初始",
     "update": "更新於 {{date}}"
+  },
+  "release": {
+    "comingSoon": "即將開放",
+    "opensAt": "{{date}} 開放",
+    "notifyMe": "提醒我",
+    "notifying": "已設定提醒",
+    "notifyHint": "開放後會第一時間通知你。",
+    "notifyOn": "已設定提醒，開放時會立即通知你。再次點擊可取消。",
+    "notifyOff": "已取消提醒。",
+    "notifyFailed": "無法設定提醒。",
+    "studioNotice": "{{date}} 開放前。現在傳送的訊息，開放後訂閱的粉絲將看不到。請提前準備好歡迎訊息、生日訊息和個人資料。",
+    "consoleLine": "{{date}} 開放 · 提醒預約 {{count}} 人"
+  },
+  "longMessage": {
+    "seeAll": "查看全文",
+    "title": "全文",
+    "gone": "請重新開啟訊息。",
+    "back": "返回"
+  },
+  "actorLink": {
+    "eyebrow": "連結藝人帳號",
+    "intro": "這是將你的帳號連結到藝人 {{name}} 的連結。",
+    "how": "用平時使用的帳號（Google、Apple、LINE 等）登入並連結後，之後用該帳號登入即可傳訊息給粉絲。不需要另外建立帳號或密碼。",
+    "loginAndLink": "登入並連結",
+    "confirm": "要將此帳號連結為 {{name}} 嗎？",
+    "confirmHint": "目前登入的帳號將變為藝人帳號，無法再以粉絲身分訂閱。如果這是你的粉絲帳號，請用其他帳號登入。",
+    "link": "連結",
+    "otherAccount": "使用其他帳號登入",
+    "failed": "連結失敗，請稍後再試。",
+    "expiresAt": "有效期限至 {{date}}。",
+    "doneTitle": "連結成功！",
+    "doneBody": "現在可以以 {{name}} 的身分傳訊息給粉絲了。",
+    "start": "開始使用",
+    "usedTitle": "此連結已被使用",
+    "usedBody": "請用已連結的帳號登入。如需連結其他帳號，請向經紀公司負責人索取新連結。",
+    "expiredTitle": "此連結已過期",
+    "expiredBody": "請向經紀公司負責人索取新連結。",
+    "invalidTitle": "此連結無法使用",
+    "invalidBody": "請確認連結網址，或向經紀公司負責人索取新連結。",
+    "toLogin": "前往登入"
   }
 }

@@ -854,5 +854,45 @@
     "version": "Version {{version}}",
     "embedded": "built-in",
     "update": "updated {{date}}"
+  },
+  "release": {
+    "comingSoon": "Coming soon",
+    "opensAt": "Opens {{date}}",
+    "notifyMe": "Notify me",
+    "notifying": "You'll be notified",
+    "notifyHint": "We'll let you know as soon as it opens.",
+    "notifyOn": "Done! We'll notify you the moment it opens. Tap again to cancel.",
+    "notifyOff": "Notification canceled.",
+    "notifyFailed": "Couldn't set up the notification.",
+    "studioNotice": "Opens {{date}}. Messages you send now won't be visible to fans who subscribe after opening. Get your welcome and birthday messages and profile ready in advance.",
+    "consoleLine": "Opens {{date}} · Notify-me sign-ups: {{count}}"
+  },
+  "longMessage": {
+    "seeAll": "See all",
+    "title": "Full message",
+    "gone": "Please open the message again.",
+    "back": "Go back"
+  },
+  "actorLink": {
+    "eyebrow": "Link artist account",
+    "intro": "This link connects your account to the artist {{name}}.",
+    "how": "Sign in with the account you normally use (Google, Apple, LINE, etc.) and link it. From then on, sign in with that account to send messages to fans. No separate ID or password needed.",
+    "loginAndLink": "Sign in and link",
+    "confirm": "Link this account to {{name}}?",
+    "confirmHint": "The account you're signed in with will become an artist account and can't be used to subscribe as a fan. If this is your fan account, please sign in with a different one.",
+    "link": "Link account",
+    "otherAccount": "Use a different account",
+    "failed": "Couldn't link the account. Please try again shortly.",
+    "expiresAt": "Valid until {{date}}.",
+    "doneTitle": "You're linked!",
+    "doneBody": "You can now send messages to fans as {{name}}.",
+    "start": "Get started",
+    "usedTitle": "This link has already been used",
+    "usedBody": "Please sign in with the account you linked. If you need to link a different account, ask your agency contact for a new link.",
+    "expiredTitle": "This link has expired",
+    "expiredBody": "Please ask your agency contact for a new link.",
+    "invalidTitle": "This link can't be used",
+    "invalidBody": "Check the address or ask your agency contact for a new link.",
+    "toLogin": "Go to sign in"
   }
 }

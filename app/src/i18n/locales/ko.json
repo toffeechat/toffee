@@ -854,5 +854,45 @@
     "version": "버전 {{version}}",
     "embedded": "기본",
     "update": "업데이트 {{date}}"
+  },
+  "release": {
+    "comingSoon": "곧 공개",
+    "opensAt": "{{date}} 공개",
+    "notifyMe": "알림 받기",
+    "notifying": "알림 신청됨",
+    "notifyHint": "열리면 가장 먼저 알려 드릴게요.",
+    "notifyOn": "알림을 신청했어요. 열리면 바로 알려 드릴게요. 다시 누르면 취소돼요.",
+    "notifyOff": "알림 신청을 취소했어요.",
+    "notifyFailed": "알림을 신청하지 못했어요.",
+    "studioNotice": "{{date}} 공개 전이에요. 지금 보내는 메시지는 공개 후 구독한 팬에게 보이지 않아요. 환영·생일 메시지와 프로필을 미리 준비해 두세요.",
+    "consoleLine": "{{date}} 공개 예정 · 알림 신청 {{count}}명"
+  },
+  "longMessage": {
+    "seeAll": "전체보기",
+    "title": "전체 메시지",
+    "gone": "메시지를 다시 열어 주세요.",
+    "back": "돌아가기"
+  },
+  "actorLink": {
+    "eyebrow": "아티스트 계정 연결",
+    "intro": "{{name}} 아티스트 계정으로 연결하는 링크예요.",
+    "how": "평소 쓰는 계정(Google·Apple·LINE 등)으로 로그인한 뒤 연결하면, 다음부터 그 계정으로 로그인해 팬에게 메시지를 보낼 수 있어요. 아이디·비밀번호를 따로 만들 필요는 없어요.",
+    "loginAndLink": "로그인하고 연결하기",
+    "confirm": "{{name}} 아티스트 계정으로 연결할까요?",
+    "confirmHint": "지금 로그인한 계정이 아티스트 계정으로 바뀌어요. 이 계정으로는 팬으로 구독할 수 없으니, 팬으로 쓰던 계정이라면 다른 계정으로 로그인해 주세요.",
+    "link": "연결하기",
+    "otherAccount": "다른 계정으로 로그인",
+    "failed": "연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
+    "expiresAt": "{{date}}까지 사용할 수 있어요.",
+    "doneTitle": "연결됐어요!",
+    "doneBody": "이제 {{name}}(으)로 팬에게 메시지를 보낼 수 있어요.",
+    "start": "시작하기",
+    "usedTitle": "이미 사용한 링크예요",
+    "usedBody": "연결한 계정으로 로그인해 주세요. 다른 계정으로 연결해야 한다면 소속사 담당자에게 새 링크를 요청해 주세요.",
+    "expiredTitle": "기간이 지난 링크예요",
+    "expiredBody": "소속사 담당자에게 새 링크를 요청해 주세요.",
+    "invalidTitle": "사용할 수 없는 링크예요",
+    "invalidBody": "주소가 맞는지 확인하거나 소속사 담당자에게 새 링크를 요청해 주세요.",
+    "toLogin": "로그인 화면으로"
   }
 }

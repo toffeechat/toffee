@@ -17,6 +17,8 @@ describe('부모 동의 문구', () => {
   it('자녀 언어: 앱 언어 → 가입 국가 → 영어', () => {
     expect(childLocale({ locale: 'ja', countryCode: 'TH' })).toBe('ja');
     expect(childLocale({ locale: null, countryCode: 'TH' })).toBe('th');
+    expect(childLocale({ locale: null, countryCode: 'MX' })).toBe('es');
+    expect(childLocale({ locale: null, countryCode: 'BR' })).toBe('pt-BR');
     expect(childLocale({ locale: null, countryCode: 'tw' })).toBe('zh-Hant');
     expect(childLocale({ locale: null, countryCode: 'VN' })).toBe('vi');
     expect(childLocale({ locale: null, countryCode: 'FR' })).toBe('en');

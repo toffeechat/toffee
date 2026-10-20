@@ -9,6 +9,7 @@ import { CountBadge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import type { MyActor } from '@/hooks/use-console';
 import { useTheme } from '@/hooks/use-theme';
+import { isUpcoming } from '@/utils/release';
 import { Spacing } from '@/constants/theme';
 import { showNameToken } from '@/utils/name-token';
 import { formatInboxTime } from '@/utils/relative-time';
@@ -48,6 +49,11 @@ export function RoomListRow({ actor, unread = 0, extra, onPress }: { actor: MyAc
             {actor.kind === 'COUPLE' ? (
               <ThemedText type="captionBold" style={[styles.tag, { color: theme.tint, borderColor: theme.tint }]}>
                 {t('couple.roomLabel')}
+              </ThemedText>
+            ) : null}
+            {isUpcoming(actor.releaseAt) ? (
+              <ThemedText type="captionBold" style={[styles.tag, { color: theme.tint, borderColor: theme.tint }]}>
+                {t('release.comingSoon')}
               </ThemedText>
             ) : null}
           </View>

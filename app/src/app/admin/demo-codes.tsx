@@ -37,6 +37,8 @@ const LINK_LANGS: { value: string; label: string }[] = [
   { value: 'zh-Hans', label: '중국어 간체' },
   { value: 'zh-Hant', label: '중국어 번체' },
   { value: 'vi', label: '베트남어' },
+  { value: 'es', label: '스페인어' },
+  { value: 'pt-BR', label: '포르투갈어(브라질)' },
 ];
 const PLATFORM_LABELS: Record<string, string> = { ios: 'iOS 앱', android: '안드로이드 앱', web: '웹' };
 // 웹 데모 주소 — 운영자가 웹에서 보면 지금 주소, 앱이면 데모 웹 주소

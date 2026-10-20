@@ -2,12 +2,34 @@
  * 글이 어떤 글자로 쓰였는지 대충 보고(한글·태국 문자·일본 가나·한자·라틴) 지금 앱 언어와 다르면 "번역 보기"를 보여 줌(2026-09-29).
  * 베트남어(2026-10-02)는 라틴 문자라 영어와 구분이 안 돼서, 베트남어에만 있는 글자(ă·đ·ơ·ư, 성조가 붙은 글자)가 있으면 따로 봄 —
  * 성조 없이 쓴 베트남어는 영어와 같은 것으로 취급(번역 보기가 안 뜸).
+ * 스페인어·포르투갈어(2026-10-20)도 라틴 문자라, 앱 언어가 es/pt-BR이면 라틴 글을 그 언어다운 글자(ñ·¿·ã·ç…)나
+ * 자주 쓰는 낱말(gracias·você…)로 한 번 더 봄 — 표시가 없으면(대부분 영어) 번역 보기를 띄움.
  * 서버 번역 호출 없이 판단하려고 — 정확한 언어 판별이 아니라 "다른 글자인가"만 봄. 이모지·숫자만 있는 글은 번역할 게 없어서 null.
  */
 export type Script = 'hangul' | 'thai' | 'japanese' | 'han' | 'latin' | 'vietnamese';
 
 // 베트남어에만 쓰는 글자: ă â đ ê ô ơ ư(대소문자) + 성조가 붙은 라틴 확장 추가 영역(U+1EA0–U+1EF9)
 const VIETNAMESE_ONLY = /[ăĂđĐơƠưƯ\u1EA0-\u1EF9]/;
+
+// 스페인어·포르투갈어다운 표시 — 글자 하나 또는 자주 쓰는 낱말. 짧은 글은 표시가 없을 수 있어 그땐 번역 보기를 띄움(번역해도 같으면 그대로 옴)
+const LATIN_LANGUAGE_MARKERS: Record<string, { letters: RegExp; words: Set<string> }> = {
+  es: {
+    letters: /[ñÑ¿¡]/,
+    words: new Set(['que', 'el', 'los', 'las', 'una', 'por', 'para', 'gracias', 'hola', 'muy', 'pero', 'estoy', 'está', 'también', 'mañana', 'hoy', 'quiero', 'buenas', 'eres', 'mucho']),
+  },
+  pt: {
+    letters: /[ãõçÃÕÇ]/,
+    words: new Set(['você', 'vocês', 'não', 'obrigado', 'obrigada', 'muito', 'uma', 'para', 'olá', 'oi', 'estou', 'está', 'também', 'amanhã', 'hoje', 'amo', 'boa', 'tudo', 'gente']),
+  },
+};
+
+function looksLike(text: string, markers: { letters: RegExp; words: Set<string> }): boolean {
+  if (markers.letters.test(text)) return true;
+  return text
+    .toLowerCase()
+    .split(/[^a-zà-ÿ]+/)
+    .some((word) => markers.words.has(word));
+}
 
 export function detectScript(text: string): Script | null {
   let hangul = 0;
@@ -36,12 +58,15 @@ export function detectScript(text: string): Script | null {
   return best === 'latin' && VIETNAMESE_ONLY.test(text) ? 'vietnamese' : best;
 }
 
-const SCRIPT_OF_LANGUAGE: Record<string, Script> = { ko: 'hangul', th: 'thai', ja: 'japanese', en: 'latin', 'zh-Hans': 'han', 'zh-Hant': 'han', vi: 'vietnamese' };
+const SCRIPT_OF_LANGUAGE: Record<string, Script> = { ko: 'hangul', th: 'thai', ja: 'japanese', en: 'latin', 'zh-Hans': 'han', 'zh-Hant': 'han', vi: 'vietnamese', es: 'latin', pt: 'latin' };
 
 /** 이 글을 지금 앱 언어로 번역해 볼 만한지 — 글자 종류가 다를 때만 */
 export function needsTranslation(text: string | null | undefined, language: string): boolean {
   if (!text) return false;
   const script = detectScript(text);
   const mine = SCRIPT_OF_LANGUAGE[language] ?? SCRIPT_OF_LANGUAGE[language.split('-')[0]];
-  return !!script && !!mine && script !== mine;
+  if (!script || !mine) return false;
+  const markers = LATIN_LANGUAGE_MARKERS[language.split('-')[0]];
+  if (markers && script === 'latin') return !looksLike(text, markers);
+  return script !== mine;
 }

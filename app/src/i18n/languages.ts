@@ -2,7 +2,8 @@ import { getLocales } from 'expo-localization';
 
 // 백엔드(backend/src/common/i18n/locales.ts)와 같은 목록을 유지할 것.
 // 베트남어는 2026-10-02 1차에 추가(태국 GL 팬미팅이 열리는 나라). 중국어는 대상이 해외 화교권이라 번체(대만·홍콩·마카오)와 간체(말레이시아·싱가포르)를 나눔.
-export const SUPPORTED_LANGUAGES = ['ko', 'th', 'en', 'ja', 'zh-Hans', 'zh-Hant', 'vi'] as const;
+// 스페인어(스페인·중남미 공통)·포르투갈어(브라질)는 2026-10-20 추가 — 포르투갈어 기기는 지역과 상관없이 pt-BR로.
+export const SUPPORTED_LANGUAGES = ['ko', 'th', 'en', 'ja', 'zh-Hans', 'zh-Hant', 'vi', 'es', 'pt-BR'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 // 지원하지 않는 기기 언어는 영어로 — 글로벌 팬 기본값
@@ -17,6 +18,8 @@ export const LANGUAGE_NATIVE_NAMES: Record<SupportedLanguage, string> = {
   'zh-Hans': '简体中文',
   'zh-Hant': '繁體中文',
   vi: 'Tiếng Việt',
+  es: 'Español',
+  'pt-BR': 'Português (Brasil)',
 };
 
 export function isSupportedLanguage(value: string): value is SupportedLanguage {
@@ -36,5 +39,6 @@ export function getDeviceLanguage(): SupportedLanguage {
     if (script === 'Hans') return 'zh-Hans';
     return TRADITIONAL_CHINESE_REGIONS.has(locale.regionCode ?? '') ? 'zh-Hant' : 'zh-Hans';
   }
+  if (code === 'pt') return 'pt-BR';
   return isSupportedLanguage(code) ? code : FALLBACK_LANGUAGE;
 }

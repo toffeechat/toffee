@@ -1,5 +1,6 @@
 // 앱(app/src/i18n)과 같은 목록을 유지할 것 — 중국어는 번체(대만·홍콩)/간체(말레이시아·싱가포르)를 분리.
-export const SUPPORTED_LOCALES = ['ko', 'th', 'en', 'ja', 'zh-Hans', 'zh-Hant', 'vi'] as const;
+// 스페인어(es, 스페인·중남미 공통)·포르투갈어(pt-BR, 브라질)는 2026-10-20 추가 — 포르투갈어는 지역과 상관없이 pt-BR로.
+export const SUPPORTED_LOCALES = ['ko', 'th', 'en', 'ja', 'zh-Hans', 'zh-Hant', 'vi', 'es', 'pt-BR'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
 
@@ -25,5 +26,6 @@ export function matchAcceptLanguage(header: string | string[] | undefined): Supp
   if (language === 'zh') {
     return rest.includes('hant') || rest.some((part) => TRADITIONAL_CHINESE_REGIONS.has(part)) ? 'zh-Hant' : 'zh-Hans';
   }
+  if (language === 'pt') return 'pt-BR';
   return (SUPPORTED_LOCALES as readonly string[]).includes(language) ? (language as SupportedLocale) : null;
 }

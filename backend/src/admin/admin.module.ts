@@ -9,10 +9,13 @@ import { ActorsModule } from '../actors/actors.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { AdminStatsController } from './admin-stats.controller.js';
 import { AdminStatsService } from './admin-stats.service.js';
+import { ActorImportService } from './actor-import.service.js';
+import { ActorLinksService } from './actor-links.service.js';
+import { ActorLinksController, AdminActorLinksController } from './actor-links.controller.js';
 
 @Module({
   imports: [ActorsModule, NotificationsModule],
-  controllers: [AdminUsersController, AdminAgenciesController, AdminActorsController, AdminStatsController],
-  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService],
+  controllers: [AdminUsersController, AdminAgenciesController, AdminActorsController, AdminStatsController, AdminActorLinksController, ActorLinksController],
+  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService],
 })
 export class AdminModule {}

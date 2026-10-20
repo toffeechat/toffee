@@ -36,6 +36,13 @@ describe('번역 보기를 보여 줄지(글자 종류)', () => {
     expect(needsTranslation('See you tomorrow!', 'vi')).toBe(true);
     expect(needsTranslation('Cảm ơn anh nhiều lắm!', 'vi')).toBe(false);
     expect(needsTranslation('오늘 촬영 끝', 'vi')).toBe(true);
+    // 스페인어·포르투갈어는 같은 라틴 문자인 영어와 낱말·글자로 구분
+    expect(needsTranslation('See you tomorrow!', 'es')).toBe(true);
+    expect(needsTranslation('¡Muchas gracias por todo!', 'es')).toBe(false);
+    expect(needsTranslation('See you tomorrow!', 'pt-BR')).toBe(true);
+    expect(needsTranslation('Muito obrigada, você é demais!', 'pt-BR')).toBe(false);
+    expect(needsTranslation('오늘 촬영 끝', 'pt-BR')).toBe(true);
+    expect(needsTranslation('💛', 'es')).toBe(false);
   });
 });
 

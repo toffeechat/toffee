@@ -33,8 +33,8 @@ function fakeDb(user: Record<string, unknown> = DONE_USER) {
   let seq = 0;
   const id = (p: string) => `${p}${++seq}`;
   const actors = new Map([
-    ['a1', { id: 'a1', monthlyPriceCents: 3000, retiredAt: null as Date | null }],
-    ['a2', { id: 'a2', monthlyPriceCents: 3000, retiredAt: null as Date | null }],
+    ['a1', { id: 'a1', monthlyPriceCents: 3000, retiredAt: null as Date | null, releaseAt: null as Date | null }],
+    ['a2', { id: 'a2', monthlyPriceCents: 3000, retiredAt: null as Date | null, releaseAt: null as Date | null }],
   ]);
   const bundles = new Map([['b1', { id: 'b1', name: 'A+B', priceCents: 5000, active: true, actorIds: ['a1', 'a2'] }]]);
   const purchases: Purchase[] = [];
@@ -131,6 +131,17 @@ describe('활동 종료한 아티스트', () => {
     db.actors.get('a1')!.retiredAt = new Date();
     await expect(db.service.subscribe('u', 'a1')).rejects.toThrow('활동을 종료한');
     await expect(db.service.subscribeBundle('u', 'b1')).rejects.toThrow('구독할 수 없는 묶음');
+  });
+});
+
+describe('공개 예정 아티스트(예약 오픈)', () => {
+  it('공개 시각 전엔 개인 구독도, 그 아티스트가 든 묶음도 불가 — 시각이 지나면 바로 구독', async () => {
+    const db = fakeDb();
+    db.actors.get('a1')!.releaseAt = new Date(Date.now() + 3_600_000);
+    await expect(db.service.subscribe('u', 'a1')).rejects.toThrow('공개돼요');
+    await expect(db.service.subscribeBundle('u', 'b1')).rejects.toThrow('공개돼요');
+    db.actors.get('a1')!.releaseAt = new Date(Date.now() - 1000);
+    await expect(db.service.subscribe('u', 'a1')).resolves.toMatchObject({ subscription: { actorId: 'a1' } });
   });
 });
 

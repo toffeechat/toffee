@@ -10,6 +10,7 @@ import { AdminAvatar, AdminButton, formatBaht } from '@/components/admin-ui';
 import { useAdminActors, type AdminActor } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
+import { formatBangkokDateTime, isUpcoming } from '@/utils/release';
 
 function ActorRow({ actor }: { actor: AdminActor }) {
   const theme = useTheme();
@@ -32,8 +33,20 @@ function ActorRow({ actor }: { actor: AdminActor }) {
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {formatBaht(actor.monthlyPriceCents)}/월 · 구독자 {actor.activeSubscriberCount}명
-          {actor.kind === 'COUPLE' ? '' : ` · ${actor.selfUser ? `본인 계정 ${actor.selfUser.displayName}` : '본인 계정 미연결'}`}
+          {actor.kind === 'COUPLE'
+            ? ''
+            : ` · ${actor.selfUser ? `본인 계정 ${actor.selfUser.displayName}` : actor.linkPendingUntil ? '연결 링크 보냄(아직 안 씀)' : '본인 계정 미연결'}`}
         </ThemedText>
+        {/* 예약 오픈(2026-10-19) — 공개 전이면 공개 시각(태국)과 알림 신청 수 */}
+        {isUpcoming(actor.releaseAt) ? (
+          <ThemedText type="small" style={{ color: theme.tint }}>
+            {formatBangkokDateTime(actor.releaseAt!)} 공개 예정(태국) · 알림 신청 {actor.releaseWatchCount}명
+          </ThemedText>
+        ) : actor.releaseWatchCount > 0 ? (
+          <ThemedText type="small" themeColor="textTertiary">
+            공개 전 알림 신청 {actor.releaseWatchCount}명
+          </ThemedText>
+        ) : null}
         {/* 장기 미발송(2026-09-29) — 구독자가 있는데 오래 안 보냈으면 빨간색 */}
         {actor.activeSubscriberCount > 0 && !actor.retiredAt ? (
           <ThemedText type="small" themeColor={(idleDays(actor.lastBroadcastAt) ?? IDLE_WARN_DAYS) >= IDLE_WARN_DAYS ? 'danger' : 'textTertiary'}>
@@ -66,6 +79,7 @@ export default function AdminActorsScreen() {
         />
         <AdminButton label="+ 아티스트 등록" onPress={() => router.push('/admin/actors/new')} />
         <AdminButton label="+ CP방 만들기" onPress={() => router.push('/admin/actors/new-couple')} />
+        <AdminButton label="+ 일괄 등록(엑셀·CSV)·사진 묶어 올리기" onPress={() => router.push('/admin/actors/import')} />
       </ThemedView>
 
       {isLoading ? (

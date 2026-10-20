@@ -2,6 +2,8 @@ import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common
 import { AdminActorsService } from './admin-actors.service.js';
 import { CreateActorDto, CreateCoupleDto, LinkActorUserDto, SetRetiredDto, UpdateActorDto, UpdateActorImagesDto } from './dto/upsert-actor.dto.js';
 import { AuditService } from '../audit/audit.service.js';
+import { ActorImportService } from './actor-import.service.js';
+import { ImportActorsDto } from './dto/import-actors.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { CreateProfileUploadDto } from './dto/create-profile-upload.dto.js';
@@ -16,6 +18,7 @@ export class AdminActorsController {
   constructor(
     private readonly adminActorsService: AdminActorsService,
     private readonly audit: AuditService,
+    private readonly actorImport: ActorImportService,
   ) {}
 
   @Get('actors')
@@ -26,6 +29,12 @@ export class AdminActorsController {
   @Get('actors/:id')
   findOne(@Param('id') id: string) {
     return this.adminActorsService.findOne(id);
+  }
+
+  // 아티스트 일괄 등록(2026-10-19) — dryRun이면 미리보기만. 'actors/import'는 'actors/:id'와 메서드가 달라 겹치지 않음
+  @Post('actors/import')
+  import(@CurrentUser() admin: AuthenticatedUser, @Body() dto: ImportActorsDto) {
+    return this.actorImport.run(admin.id, dto);
   }
 
   @Post('actors')

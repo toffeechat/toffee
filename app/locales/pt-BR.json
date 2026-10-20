@@ -1,0 +1,6 @@
+{
+  "NSCameraUsageDescription": "A Toffee usa a câmera quando você tira uma foto ou grava um vídeo para enviar aos seus fãs.",
+  "NSMicrophoneUsageDescription": "A Toffee usa o microfone para gravar mensagens de voz e o som dos vídeos que você envia aos seus fãs.",
+  "NSPhotoLibraryUsageDescription": "A Toffee abre sua fototeca quando você escolhe uma foto ou um vídeo para enviar aos seus fãs.",
+  "NSPhotoLibraryAddUsageDescription": "A Toffee salva na sua fototeca as fotos e os vídeos recebidos quando você toca em Salvar."
+}
