@@ -12,6 +12,8 @@ const NATIVE_NAMES: Record<SupportedLocale, string> = {
   'zh-Hans': '简体中文',
   'zh-Hant': '繁體中文',
   vi: 'Tiếng Việt',
+  es: 'Español',
+  'pt-BR': 'Português (Brasil)',
 };
 
 export const SUPPORT_TITLES: Record<SupportedLocale, { title: string; body: string; noEmail: string }> = {
@@ -22,6 +24,8 @@ export const SUPPORT_TITLES: Record<SupportedLocale, { title: string; body: stri
   'zh-Hans': { title: '客服中心', body: '请发送邮件至以下地址。使用应用中的“个人资料 → 联系我们”会自动附上会员编号，便于我们更快处理。', noEmail: '客服渠道正在准备中。' },
   'zh-Hant': { title: '客服中心', body: '請寄信至以下地址。使用 App 中的「個人資料 → 聯絡我們」會自動附上會員編號，方便我們更快處理。', noEmail: '客服管道正在準備中。' },
   vi: { title: 'Hỗ trợ', body: 'Vui lòng gửi email đến địa chỉ bên dưới. Dùng mục Hồ sơ → Liên hệ trong ứng dụng sẽ tự động đính kèm mã thành viên để chúng tôi hỗ trợ nhanh hơn.', noEmail: 'Kênh hỗ trợ đang được chuẩn bị.' },
+  es: { title: 'Soporte', body: 'Escríbenos a la dirección de correo de abajo. Si usas Perfil → Contáctanos en la app, se adjunta tu número de miembro y podremos ayudarte más rápido.', noEmail: 'Estamos preparando nuestro canal de soporte.' },
+  'pt-BR': { title: 'Suporte', body: 'Envie um e-mail para o endereço abaixo. Se você usar Perfil → Fale conosco no app, seu número de membro é anexado automaticamente e podemos ajudar mais rápido.', noEmail: 'Nosso canal de suporte está sendo preparado.' },
 };
 
 function shell(locale: SupportedLocale, title: string, body: string): string {

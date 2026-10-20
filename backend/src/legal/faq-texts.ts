@@ -3,7 +3,7 @@ import type { SupportedLocale } from '../common/i18n/locales.js';
 /**
  * 자주 묻는 질문(2026-10-12, 버블 비교 점검 → 1차) — 공개 웹페이지 GET /faq(고객센터 페이지에서 링크)와 앱 FAQ 화면
  * (GET /faq/items)이 같은 글을 씀. 결제·해지·환불부터(문의가 가장 많을 곳). 내용은 약관 초안·STATUS 잠정 정책과 맞출 것 —
- * 정책(환불 기준·답장 개수 등)을 바꾸면 여기도 같이. th·ja·zh·vi는 원어민 검수 전.
+ * 정책(환불 기준·답장 개수 등)을 바꾸면 여기도 같이. th·ja·zh·vi·es·pt-BR은 원어민 검수 전.
  */
 export interface FaqSection {
   title: string;
@@ -18,6 +18,8 @@ export const FAQ_TITLES: Record<SupportedLocale, string> = {
   'zh-Hans': '常见问题',
   'zh-Hant': '常見問題',
   vi: 'Câu hỏi thường gặp',
+  es: 'Preguntas frecuentes',
+  'pt-BR': 'Perguntas frequentes',
 };
 
 export const FAQ: Record<SupportedLocale, FaqSection[]> = {
@@ -416,6 +418,120 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         {
           q: 'Liên hệ hỗ trợ ở đâu?',
           a: 'Gửi email từ Hồ sơ > Trợ giúp. Mã thành viên và phiên bản ứng dụng sẽ được thêm tự động để chúng tôi hỗ trợ nhanh hơn.',
+        },
+      ],
+    },
+  ],
+  es: [
+    {
+      title: 'Pagos, cancelación y reembolsos',
+      items: [
+        {
+          q: '¿Cómo cancelo mi suscripción?',
+          a: 'Cancélala en la tienda con la que pagaste. iPhone: Ajustes > Apple ID (tu nombre) > Suscripciones > Toffee > Cancelar suscripción. Android: Play Store > Perfil > Pagos y suscripciones > Suscripciones > Toffee > Cancelar suscripción. También puedes ir desde Perfil > Gestionar suscripciones en Toffee. Cancela al menos 24 horas antes de que termine el periodo para evitar el siguiente cobro. Borrar la app o tu cuenta no cancela la suscripción.',
+        },
+        {
+          q: '¿Puedo pedir un reembolso?',
+          a: 'Puedes pedir el reembolso completo dentro de los 7 días posteriores a un pago (incluidas las renovaciones automáticas). Para pagos en App Store, usa la página de reembolsos de Apple (reportaproblem.apple.com); para pagos en Google Play, usa Google Play o el soporte de Toffee. También puedes pedir un reembolso en Gestionar suscripciones si el artista no envió ningún mensaje durante el periodo pagado, o si el artista terminó su actividad en los 14 días posteriores a tu pago.',
+        },
+        {
+          q: 'Si me vuelvo a suscribir, ¿puedo ver mi conversación anterior?',
+          a: 'No. Al volver a suscribirte solo verás los mensajes desde el inicio de la nueva suscripción. Guarda las fotos, audios o videos que quieras conservar antes de cancelar.',
+        },
+        {
+          q: 'Cambié de teléfono o reinstalé la app.',
+          a: 'Inicia sesión igual que antes (Google, Apple, Kakao, Naver o LINE) y tus suscripciones seguirán ahí. Si no aparecen, toca Perfil > Gestionar suscripciones > Restaurar compras con la sesión iniciada en la cuenta de la tienda con la que pagaste.',
+        },
+      ],
+    },
+    {
+      title: 'Mensajes',
+      items: [
+        {
+          q: '¿Con qué frecuencia envían mensajes los artistas?',
+          a: 'Los artistas escriben sus propios mensajes, así que llegan de forma irregular según su agenda. Toffee no garantiza un número de mensajes, pero si no hubo ninguno durante un periodo pagado puedes pedir un reembolso.',
+        },
+        {
+          q: '¿Cuántas respuestas puedo enviar?',
+          a: 'Hasta 3 respuestas de texto o emoji por cada mensaje del artista. Las que te quedan se muestran encima del cuadro de texto. Si el artista cita tu respuesta, otros suscriptores podrán ver lo que escribiste (pero no tu apodo).',
+        },
+        {
+          q: '¿Puedo guardar las fotos y videos que recibo?',
+          a: 'Sí, para uso personal. Publicarlos o compartirlos en redes sociales u otros sitios, incluidas capturas de pantalla, puede conllevar restricciones y responsabilidad legal.',
+        },
+        {
+          q: '¿Cómo recibo un mensaje de cumpleaños?',
+          a: 'Activa "Mensajes de cumpleaños" en Perfil. En la fecha de nacimiento que indicaste al registrarte, los artistas que hayan preparado un mensaje de cumpleaños te lo enviarán. Los artistas no pueden ver tu fecha de nacimiento.',
+        },
+      ],
+    },
+    {
+      title: 'Cuenta y ajustes',
+      items: [
+        {
+          q: 'No me llegan las notificaciones de mensajes nuevos.',
+          a: 'Comprueba que las notificaciones estén permitidas en Ajustes del dispositivo > Notificaciones > Toffee, y que estén activadas en el menú ⋯ de la esquina superior derecha del chat.',
+        },
+        {
+          q: '¿Cómo contacto con soporte?',
+          a: 'Envía un correo desde Perfil > Ayuda. Tu número de miembro y la versión de la app se añaden automáticamente para que podamos ayudarte más rápido.',
+        },
+      ],
+    },
+  ],
+  'pt-BR': [
+    {
+      title: 'Pagamento, cancelamento e reembolso',
+      items: [
+        {
+          q: 'Como cancelo minha assinatura?',
+          a: 'Cancele na loja em que você pagou. iPhone: Ajustes > Apple ID (seu nome) > Assinaturas > Toffee > Cancelar Assinatura. Android: Play Store > Perfil > Pagamentos e assinaturas > Assinaturas > Toffee > Cancelar assinatura. Você também pode ir por Perfil > Gerenciar assinaturas na Toffee. Cancele pelo menos 24 horas antes do fim do período para evitar a próxima cobrança. Apagar o app ou excluir a conta não cancela a assinatura.',
+        },
+        {
+          q: 'Posso pedir reembolso?',
+          a: 'Você pode pedir o reembolso total em até 7 dias após um pagamento (incluindo renovações automáticas). Para pagamentos na App Store, use a página de reembolso da Apple (reportaproblem.apple.com); para pagamentos no Google Play, use o Google Play ou o suporte da Toffee. Você também pode pedir reembolso em Gerenciar assinaturas se o artista não enviou nenhuma mensagem durante o período pago, ou se o artista encerrou as atividades em até 14 dias após o seu pagamento.',
+        },
+        {
+          q: 'Se eu assinar de novo, consigo ver a conversa antiga?',
+          a: 'Não. Ao assinar de novo, você só vê as mensagens a partir do início da nova assinatura. Salve as fotos, áudios ou vídeos que quiser guardar antes de cancelar.',
+        },
+        {
+          q: 'Troquei de celular ou reinstalei o app.',
+          a: 'Entre do mesmo jeito que antes (Google, Apple, Kakao, Naver ou LINE) e suas assinaturas continuarão lá. Se não aparecerem, toque em Perfil > Gerenciar assinaturas > Restaurar compras com a conta da loja em que você pagou conectada.',
+        },
+      ],
+    },
+    {
+      title: 'Mensagens',
+      items: [
+        {
+          q: 'Com que frequência os artistas mandam mensagens?',
+          a: 'Os próprios artistas escrevem as mensagens, então elas chegam de forma irregular, conforme a agenda deles. A Toffee não garante um número de mensagens, mas, se não houver nenhuma durante um período pago, você pode pedir reembolso.',
+        },
+        {
+          q: 'Quantas respostas posso enviar?',
+          a: 'Até 3 respostas em texto ou emoji para cada mensagem do artista. O número restante aparece acima da caixa de texto. Se o artista citar sua resposta, outros assinantes poderão ver o que você escreveu (mas não o seu apelido).',
+        },
+        {
+          q: 'Posso salvar as fotos e os vídeos que recebo?',
+          a: 'Sim, para uso pessoal. Postar ou compartilhar em redes sociais ou outros sites, incluindo capturas de tela, pode gerar restrições e responsabilidade legal.',
+        },
+        {
+          q: 'Como recebo uma mensagem de aniversário?',
+          a: 'Ative "Mensagens de aniversário" no Perfil. Na data de nascimento que você informou no cadastro, os artistas que prepararam uma mensagem de aniversário vão enviá-la para você. Os artistas não veem sua data de nascimento.',
+        },
+      ],
+    },
+    {
+      title: 'Conta e configurações',
+      items: [
+        {
+          q: 'Não estou recebendo notificações de novas mensagens.',
+          a: 'Verifique se as notificações estão permitidas em Ajustes do aparelho > Notificações > Toffee e se estão ativadas no menu ⋯ no canto superior direito do chat.',
+        },
+        {
+          q: 'Como entro em contato com o suporte?',
+          a: 'Envie um e-mail por Perfil > Ajuda. Seu número de membro e a versão do app são adicionados automaticamente para podermos ajudar mais rápido.',
         },
       ],
     },

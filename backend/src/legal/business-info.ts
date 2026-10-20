@@ -38,6 +38,8 @@ const LABELS: Record<SupportedLocale, Record<BusinessField, string> & { title: s
   'zh-Hans': { title: '经营者信息', name: '公司名称', representative: '代表人', address: '地址', phone: '电话', email: '邮箱', registrationNumber: '营业登记号', mailOrderNumber: '通信销售业申报号' },
   'zh-Hant': { title: '經營者資訊', name: '公司名稱', representative: '代表人', address: '地址', phone: '電話', email: '電子郵件', registrationNumber: '營業登記號', mailOrderNumber: '通信銷售業申報號' },
   vi: { title: 'Thông tin doanh nghiệp', name: 'Tên công ty', representative: 'Người đại diện', address: 'Địa chỉ', phone: 'Điện thoại', email: 'Email', registrationNumber: 'Số đăng ký kinh doanh', mailOrderNumber: 'Số đăng ký bán hàng từ xa' },
+  es: { title: 'Información de la empresa', name: 'Empresa', representative: 'Representante', address: 'Dirección', phone: 'Teléfono', email: 'Correo electrónico', registrationNumber: 'N.º de registro mercantil', mailOrderNumber: 'N.º de registro de venta a distancia' },
+  'pt-BR': { title: 'Informações da empresa', name: 'Empresa', representative: 'Representante', address: 'Endereço', phone: 'Telefone', email: 'E-mail', registrationNumber: 'N.º de registro da empresa', mailOrderNumber: 'N.º de registro de venda a distância' },
 };
 
 export function businessInfoHtml(info: BusinessInfo | null, locale: SupportedLocale): string {
