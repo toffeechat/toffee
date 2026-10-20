@@ -295,6 +295,40 @@
 
 ---
 
+## 연락할 곳 목록 (2026-10-20 초안)
+
+웹 검색으로 정리(회사 공식 사이트엔 직접 못 들어가서 **공식 연락처는 아직 확인 안 함** — 보내기 전에 각 회사 공식 FB·IG·홈페이지에서
+비즈니스 이메일 확인). 연락처 값은 이 문서에 적지 않고 연락 기록에만 회사 창구 이름으로.
+
+**1차 (먼저, 7곳)**
+
+| # | 곳 | 성격 | BL/GL · 대표 배우 |
+|---|---|---|---|
+| 1 | GMMTV | 제작 겸 소속사, 대형 | BL 최대 + GL(MilkLove, NamtanFilm, EmiBonnie 등). 모회사 One31 |
+| 2 | Channel 3 (BEC World) | 방송사 겸 소속사, 대형 | GL 강자 — LingOrm(Orm Kornnaphat 소속) |
+| 3 | Becky Entertainment | 베키 개인 회사 | GL, 2025-10 Idol Factory에서 독립 |
+| 4 | Solenn Entertainment | 프린 개인 회사 | GL, 2025-10 독립 |
+| 5 | FAYMAY Entertainment | FayMay(Fay Kunyaphat·May Yada) 직접 세운 회사 | GL, 2026-01 Idol Factory에서 독립 |
+| 6 | Fabel Entertainment | 파이(Faye Peraya) 개인 회사 겸 제작 | GL. FayeYoko(Blank) 뒤 지금은 **FayeAtom** — Atom(전 VIIS)이 2026-02 합류. 2025 Nine Star에서 독립 (2026-10-20 1차로 올림) |
+| 7 | Change2561 | 제작 겸 소속사(GMMTV 자매 회사, One31 방영) | **GL LookmheeSonya**(Affair 2024, Harmony Secret) + BL Pit Babe — GMMTV와 같은 때 연락 (2026-10-20 1차로 올림) |
+
+**2차**
+
+| 곳 | 성격 | 메모 |
+|---|---|---|
+| One31 | 방송사 | GMMTV 모회사, Change2561 작품 방영 — GMMTV 통해서도 가능 |
+| North Star Entertainment | GL 전문 제작사 | The Air, The Fire(2026) |
+| Domundi TV | BL 전문 제작 겸 소속사 | Cutie Pie, Bed Friend, The Next Prince |
+| Kongthup Production(Artist) | GL 제작 겸 소속(추정) | OrmFolk(Ormsin Supitcha·Folk Sutima) — Apple My Love, My Lady's Bodyguard. Orm 소속은 미확인 |
+| Idol Factory | GL 선구 제작사 | ⚠️ 2025-12 출연료 미지급 보도 — 조심 |
+| Studio Wabi Sabi · Mandee | BL 제작사 | Mandee는 Domundi 모회사로 알려짐 |
+| KOLAB Asia | 브랜드 에이전시 | 베키 아시아 광고 담당, 실무 창구 가능 |
+| (Be On Cloud) | BL 제작사 | 최근 활동 확인 필요 |
+| ~~Nine Star Studios~~ | GL 제작사(Blank) | 배우 처우 논란 — 추천 안 함 |
+
+- 개인 회사(베키·프린·FayMay·페이)는 배우 본인이 결정해서 대형사보다 답이 빠를 수 있다.
+- 이름 정리: "OrmFork" = **OrmFolk**(LingOrm의 Orm과 다른 사람), "파이" = **Faye Peraya**(Fabel, FayeAtom), "페이" = **Fay Kunyaphat**(FAYMAY, FayMay).
+
 ## 연락 기록
 
 보낸 곳·날짜·반응은 3단계 근거 자료(지원사업 사업계획서)가 되므로 전부 남긴다. 연락처·이메일 주소 같은 개인정보는 이 저장소에
