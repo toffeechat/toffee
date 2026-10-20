@@ -314,7 +314,7 @@
 
 | 곳 | 성격 | 메모 |
 |---|---|---|
-| Fabel Entertainment | 페이(Faye Peraya) 개인 회사 겸 제작 | GL(FayeYoko), 2025 독립 |
+| Fabel Entertainment | 파이(Faye Peraya) 개인 회사 겸 제작 | GL. FayeYoko(Blank) 뒤 지금은 **FayeAtom** — Atom(전 VIIS)이 2026-02 같은 회사로 합류. 2025 Nine Star에서 독립 |
 | One31 | 방송사 | GMMTV 모회사, Change2561 작품 방영 — GMMTV 통해서도 가능 |
 | North Star Entertainment | GL 전문 제작사 | The Air, The Fire(2026) |
 | Change2561 | BL 제작사 | Pit Babe |
@@ -327,7 +327,7 @@
 | ~~Nine Star Studios~~ | GL 제작사(Blank) | 배우 처우 논란 — 추천 안 함 |
 
 - 개인 회사(베키·프린·FayMay·페이)는 배우 본인이 결정해서 대형사보다 답이 빠를 수 있다.
-- 이름 정리: "OrmFork" = **OrmFolk**(LingOrm의 Orm과 다른 사람), "파이/페이" = **Fay Kunyaphat**(FAYMAY)와 **Faye Peraya**(Fabel).
+- 이름 정리: "OrmFork" = **OrmFolk**(LingOrm의 Orm과 다른 사람), "파이" = **Faye Peraya**(Fabel, FayeAtom), "페이" = **Fay Kunyaphat**(FAYMAY, FayMay).
 
 ## 연락 기록
 
