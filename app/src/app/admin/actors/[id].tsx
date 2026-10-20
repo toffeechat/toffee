@@ -21,6 +21,7 @@ import {
 import {
   useActorAgencyHistory,
   useAdminActor,
+  useAdminBundles,
   useAdminAgencies,
   useAdminUsers,
   useAssignActorAgency,
@@ -370,6 +371,7 @@ export default function AdminActorDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: actor, isLoading } = useAdminActor(id);
+  const { data: bundles } = useAdminBundles();
   const router = useRouter();
 
   return (
@@ -385,8 +387,9 @@ export default function AdminActorDetailScreen() {
           {/* 소속사와 같은 모니터링 화면(보낸 메시지·팬 답장·스토리·통계, 2026-10-20) */}
           <AdminButtonRow>
             <AdminButton label="토피룸 모니터링" onPress={() => router.push(`/console/${actor.id}`)} />
-            {actor.kind === 'COUPLE' ? (
-              <AdminButton secondary label="이 CP로 묶음 3개 만들기" onPress={() => router.push({ pathname: '/admin/bundles/cp-set', params: { roomId: actor.id } })} />
+            {/* 이 CP가 든 묶음(패키지)이 아직 없을 때만(2026-10-20) */}
+            {actor.kind === 'COUPLE' && bundles && !bundles.some((bundle) => bundle.actors.some((item) => item.id === actor.id)) ? (
+              <AdminButton secondary label="이 CP로 패키지(묶음 3개) 만들기" onPress={() => router.push({ pathname: '/admin/bundles/cp-set', params: { roomId: actor.id } })} />
             ) : null}
           </AdminButtonRow>
           <AdminSection title="프로필 사진" hint="공식 사진은 아티스트 찾기·아티스트 소개에, 대화방 사진은 채팅방에서 보여요. 공식 사진을 처음 올리면 비어 있는 대화방 사진에도 같이 들어가요(아티스트가 나중에 바꾸거나 기본 이미지로 돌릴 수 있음). 정사각으로 잘라서 올려요.">

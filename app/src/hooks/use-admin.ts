@@ -284,12 +284,6 @@ function useActorMutation<TInput, TOutput = unknown>(request: (input: TInput) =>
   });
 }
 
-export function useCreateActor() {
-  return useActorMutation((input: { legalName: string; chatDisplayName: string; monthlyPriceCents: number; agencyId?: string; gender?: ArtistGender | null }) =>
-    apiClient.post<AdminActor>('/admin/actors', input),
-  );
-}
-
 export function useUpdateActor(id: string) {
   return useActorMutation(
     (input: {
@@ -335,6 +329,8 @@ export interface ImportRow {
 export interface ImportPlan {
   rows: { index: number; legalName: string; chatDisplayName: string; gender: ArtistGender | null; partners: string[]; status: 'new' | 'exists' | 'error'; errors: string[] }[];
   couples: { legalName: string; memberNames: [string, string]; status: 'new' | 'exists' }[];
+  /** 직접 고른 CP방 중 만들 수 없는 것 */
+  coupleErrors: string[];
   errorCount: number;
 }
 
@@ -345,6 +341,8 @@ export interface ImportInput {
   releaseAt?: string | null;
   dryRun: boolean;
   rows: ImportRow[];
+  /** 화면에서 멤버를 고른 CP방 — rows의 번호 또는 이미 등록된 아티스트 id */
+  couples?: { members: ({ row: number } | { actorId: string })[] }[];
 }
 
 export interface ImportResult {
@@ -352,8 +350,16 @@ export interface ImportResult {
   created: { actors: { id: string; legalName: string }[]; couples: { id: string; legalName: string }[] } | null;
 }
 
+// 미리보기(dryRun)는 아무것도 안 바꿔서 캐시를 건드리지 않음
 export function useImportActors() {
-  return useActorMutation((input: ImportInput) => apiClient.post<ImportResult>('/admin/actors/import', input));
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ImportInput) => apiClient.post<ImportResult>('/admin/actors/import', input),
+    onSuccess: (_, input) => {
+      if (input.dryRun) return;
+      for (const queryKey of [['admin', 'actors'], ['admin', 'agencies'], ['actors']]) void queryClient.invalidateQueries({ queryKey });
+    },
+  });
 }
 
 export interface IssuedLinks {
@@ -540,12 +546,6 @@ export function useUpdateBundle(id: string) {
 }
 
 // ── 커플방(2026-09-29) ──
-export function useCreateCouple() {
-  return useActorMutation((input: { memberIds: string[]; legalName: string; chatDisplayName: string; monthlyPriceCents: number }) =>
-    apiClient.post<AdminActor>('/admin/couples', input),
-  );
-}
-
 
 /** 운영자 환불 요청 목록(2026-09-29) — 스타 미발송·활동 종료 */
 export interface AdminRefundEntry {

@@ -20,7 +20,7 @@ export const ADMIN_MENU: { href: AdminHref; label: string; description: string; 
   { href: '/admin/rooms', label: '토피룸 모니터링', description: '모든 방의 보낸 메시지·팬 답장·스토리, 공식 이름·소속사·구독자 수', icon: MessagesSquare },
   { href: '/admin/reports', label: '신고 처리', description: '신고된 메시지를 검토하고 승인/기각해요', icon: Flag },
   { href: '/admin/actors', label: '아티스트 관리', description: '아티스트·CP방 등록, 사진, 소속사 이적, 본인 계정 연결, 메시지 모니터링', icon: Star },
-  { href: '/admin/bundles', label: '묶음 상품', description: '여러 아티스트를 할인가로 묶어 파는 구독 상품, 스토어 상품 ID', icon: Package },
+  { href: '/admin/bundles', label: '묶음(패키지) 상품', description: '방 여러 개를 할인가로 묶어 파는 구독 상품 — CP로 3개 한 번에, 스토어 상품 ID', icon: Package },
   { href: '/admin/agencies', label: '소속사 관리', description: '소속사 등록, 이름·로고·정산 배분율', icon: Building2 },
   { href: '/admin/users', label: '회원 관리', description: '회원 정지·영구차단, 아티스트·소속사 직원 계정 지정', icon: UserCog },
   { href: '/admin/settlements', label: '정산', description: '월별 결제액·스토어 수수료·소속사 지급액, CSV(PC 웹 전용)', icon: Wallet, webOnly: true },

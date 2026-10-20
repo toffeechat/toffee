@@ -77,11 +77,9 @@ export default function AdminActorsScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
         />
-        {/* 등록 3가지를 한 줄로(2026-10-20) — 보통은 일괄 등록(엑셀에 CP 짝까지 적으면 CP방도 같이 생김), 한두 명은 직접 */}
+        {/* 아티스트·CP방(= 방) 등록은 화면 하나(2026-10-20 사용자 결정) — 한 명이든 엑셀 수백 줄이든. 패키지(묶음)는 묶음 상품 메뉴 */}
         <AdminButtonRow>
-          <AdminButton label="+ 일괄 등록(엑셀·CSV·사진)" onPress={() => router.push('/admin/actors/import')} />
-          <AdminButton secondary label="+ 한 명 등록" onPress={() => router.push('/admin/actors/new')} />
-          <AdminButton secondary label="+ CP방 만들기" onPress={() => router.push('/admin/actors/new-couple')} />
+          <AdminButton label="+ 아티스트·CP 등록" onPress={() => router.push('/admin/actors/import')} />
         </AdminButtonRow>
       </ThemedView>
 

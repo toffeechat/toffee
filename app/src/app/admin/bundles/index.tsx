@@ -18,14 +18,14 @@ export default function AdminBundlesScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* CP(A·B·AB)마다 A + AB / B + AB / 전체 — 보통은 이걸로(2026-10-15) */}
+        {/* 묶음 = 패키지 상품(방들을 할인가로 파는 것) — 방(아티스트·CP) 등록과 따로(2026-10-20 사용자 결정). 보통은 CP로 3개 한 번에 */}
         <AdminButtonRow>
-          <AdminButton label="CP로 묶음 3개 한 번에 만들기" onPress={() => router.push('/admin/bundles/cp-set')} />
+          <AdminButton label="CP로 패키지 3개 한 번에(A + CP · B + CP · 전체)" onPress={() => router.push('/admin/bundles/cp-set')} />
           <AdminButton secondary label="직접 고르기(아무 조합)" onPress={() => router.push('/admin/bundles/new')} />
         </AdminButtonRow>
         {isLoading ? <ActivityIndicator color={theme.tint} /> : null}
         {bundles?.length === 0 ? (
-          <AdminSection title="아직 묶음이 없어요" hint="보통은 CP마다 '아티스트 + CP방' 2개와 '전체' 1개를 만들어요(위 버튼). 개인방·CP방 어느 조합이든 직접 만들 수도 있어요." />
+          <AdminSection title="아직 묶음이 없어요" hint="보통은 CP마다 '아티스트 + CP방' 2개와 '전체' 1개를 만들어요(위 첫 번째 버튼). 개인방·CP방 어느 조합이든 직접 고를 수도 있어요." />
         ) : null}
         {bundles?.map((bundle) => (
           <Pressable

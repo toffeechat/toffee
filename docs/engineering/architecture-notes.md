@@ -1737,5 +1737,11 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - `WideShell`: ADMIN이면 `/console/*`에서도 운영자 메뉴(모니터링 → "토피룸 모니터링", 전체 순위 → 홈 활성). 목록·입력 화면은 `pageNarrow`
   (maxWidth 960), `fullWidthPage`(홈·정산·`/console/<id>`·`/console`)만 넓게. `AdminButton`은 `useWideLayout`이면 `alignSelf: flex-start`,
   `secondary`(테두리), `AdminButtonRow`.
-- `admin/bundles/cp-set`은 `?roomId=`로 CP 미리 선택(CP방 만들기 성공 시·CP방 상세에서 넘어옴).
+- 방 등록 화면 하나(`admin/actors/import.tsx`, 제목 "아티스트·CP 등록"): `EditRow`(새 아티스트, 키로 관리) + `CpEntry`(멤버 = `{kind:'row',key}` |
+  `{kind:'actor',id}`) → `POST /admin/actors/import`의 `rows` + `couples: [{members:[{row}|{actorId}, …]}]`(`ImportCoupleDto`). `planImport(…, explicitCouples)`가
+  엑셀 "CP 짝"(이름)과 같은 규칙으로 계획(같은 쌍 한 번, 기존 CP는 exists, 같은 사람 둘·없는 줄은 `coupleErrors` → `errorCount`). `rows`는 비어도 됨
+  (`couples`가 있으면). 엑셀은 파일 안 짝은 `CpEntry`로 옮기고, 못 찾은 이름만 `partners`로 보내 서버가 기존 아티스트에서 찾음.
+  패키지(묶음)는 등록과 따로 — 등록 결과의 새 CP마다 `admin/bundles/cp-set?roomId=`로. `new.tsx`·`new-couple.tsx`·앱 `useCreateActor`/`useCreateCouple` 삭제
+  (서버 `POST /admin/actors`·`/admin/couples`는 남김).
+- `admin/bundles/cp-set`(CP로 패키지 3개)은 묶음 상품 화면·등록 결과·패키지 없는 CP방 상세에서(`?roomId=`로 미리 선택).
 
