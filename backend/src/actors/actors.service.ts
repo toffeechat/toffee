@@ -83,6 +83,8 @@ export class ActorsService {
         // 닉네임(채팅방 이름)으로도 — 팬은 공식 이름보다 닉네임으로 기억하는 경우가 많음(2026-10-12 실기기: "캐러멜" 검색이 안 됐음)
         { chatDisplayName: { contains: escapeLike(query), mode: 'insensitive' } },
         { agency: { name: { contains: escapeLike(query), mode: 'insensitive' } } },
+        // CP방은 자기 소속사가 없어서 멤버 소속사로(2026-10-20 — 소속사 이름 검색에 CP방이 빠졌음, 둘러보기 카드도 멤버 소속사를 보여 줌)
+        { coupleMembers: { some: { member: { agency: { name: { contains: escapeLike(query), mode: 'insensitive' } } } } } },
       ];
     }
     const actors = await this.prisma.actor.findMany({

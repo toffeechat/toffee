@@ -74,17 +74,24 @@ export class AuditService {
     const actorIds = actions.filter((a) => a.targetType === 'ACTOR').map((a) => a.targetId);
     const bundleIds = actions.filter((a) => a.targetType === 'BUNDLE').map((a) => a.targetId);
     const agencyIds = actions.filter((a) => a.targetType === 'AGENCY').map((a) => a.targetId);
-    const [users, actors, bundles, agencies] = await Promise.all([
+    // 1:1 문의·공지는 제목으로(2026-10-20 — 예전엔 id가 그대로 보였음)
+    const inquiryIds = actions.filter((a) => a.targetType === 'INQUIRY').map((a) => a.targetId);
+    const noticeIds = actions.filter((a) => a.targetType === 'NOTICE').map((a) => a.targetId);
+    const [users, actors, bundles, agencies, inquiries, notices] = await Promise.all([
       this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, nickname: true, displayName: true, email: true } }),
       this.prisma.actor.findMany({ where: { id: { in: actorIds } }, select: { id: true, legalName: true } }),
       this.prisma.bundle.findMany({ where: { id: { in: bundleIds } }, select: { id: true, name: true } }),
       this.prisma.agency.findMany({ where: { id: { in: agencyIds } }, select: { id: true, name: true } }),
+      this.prisma.supportInquiry.findMany({ where: { id: { in: inquiryIds } }, select: { id: true, title: true } }),
+      this.prisma.notice.findMany({ where: { id: { in: noticeIds } }, select: { id: true, title: true } }),
     ]);
     const names = new Map<string, string>([
       ...users.map((u) => [u.id, u.nickname ?? u.displayName ?? u.email ?? u.id] as [string, string]),
       ...actors.map((a) => [a.id, a.legalName] as [string, string]),
       ...bundles.map((b) => [b.id, b.name] as [string, string]),
       ...agencies.map((a) => [a.id, a.name] as [string, string]),
+      ...inquiries.map((i) => [i.id, i.title] as [string, string]),
+      ...notices.map((n) => [n.id, n.title] as [string, string]),
     ]);
     return actions.map(({ admin, ...action }) => ({ ...action, adminName: admin.displayName, targetName: names.get(action.targetId) ?? null }));
   }

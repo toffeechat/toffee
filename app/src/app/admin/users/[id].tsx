@@ -62,7 +62,7 @@ function ExportSection({ userId, name }: { userId: string; name: string }) {
     if (!(await confirm('개인정보 파일 받기', `${name} 회원의 가입 정보·구독·결제·답장·문의·접속 기록을 파일로 받아요. 작업 기록에 남아요. 본인 요청이 확인된 경우에만 받으세요.`, '받기', '취소'))) return;
     setState({ busy: true });
     try {
-      await exportMyData(`/admin/users/${userId}/export`, `toffee-user-${userId.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`);
+      await exportMyData(`/admin/users/${userId}/export`, `toffee-user-${userId}-${new Date().toISOString().slice(0, 10)}.json`);
       setState({ text: '파일을 만들었어요.' });
     } catch {
       setState({ text: '파일을 만들지 못했어요.', error: true });

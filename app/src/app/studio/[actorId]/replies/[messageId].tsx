@@ -18,7 +18,7 @@ import { DayDivider, sameDay } from '@/components/day-divider';
 import type { FanReply } from '@/hooks/use-console';
 import { useMessageReplies, useStudioMessages } from '@/hooks/use-studio';
 import { useTheme } from '@/hooks/use-theme';
-import { Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { showNameToken } from '@/utils/name-token';
 
 // 맨 아래(최신)에서 이만큼 안쪽이면 "맨 아래를 보고 있음" — 새 답장이 오면 따라 내려감
@@ -237,7 +237,8 @@ function ReplyBubble({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  // PC 웹에서 토피룸 화면처럼 가운데 폭으로(2026-10-20 — 이 화면만 화면 전체 폭이었음)
+  container: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   original: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, gap: Spacing.one, borderBottomWidth: StyleSheet.hairlineWidth },
   originalLine: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 6, backgroundColor: 'transparent' },
   originalBubble: { borderRadius: Radius.lg + 2, paddingHorizontal: 14, paddingVertical: 10, gap: 6, flexShrink: 1, maxWidth: '80%' },

@@ -95,6 +95,23 @@ export default function MediaViewerScreen() {
     listRef.current?.scrollToIndex({ index: next, animated: true });
     setIndex(next);
   };
+  // 목록은 최신 → 오래된 순이라 index + 1 = 더 예전(왼쪽), index - 1 = 더 최신(오른쪽)
+  const hasOlder = index < items.length - 1;
+  const hasNewer = index > 0;
+
+  // PC 웹 키보드(2026-10-20): ← 이전 · → 다음 · Esc 닫기
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') go(index + 1);
+      else if (event.key === 'ArrowRight') go(index - 1);
+      else if (event.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // go는 렌더마다 새로 만들어지지만 index·items가 같으면 하는 일이 같음
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, items.length, close]);
 
   const save = async () => {
     if (!current?.mediaUrl) return;
@@ -189,11 +206,15 @@ export default function MediaViewerScreen() {
             )}
           />
         )}
-        {/* PC 웹은 스와이프가 불편해서 좌우 버튼(왼쪽 = 이전, 오른쪽 = 최신) */}
+        {/* PC 웹은 스와이프가 불편해서 좌우 버튼(왼쪽 = 이전, 오른쪽 = 최신) — 끝에선 그쪽 버튼을 숨김 */}
         {Platform.OS === 'web' && items.length > 1 ? (
           <>
-            <IconButton icon={ChevronLeft} label={t('media.previous')} color="#ffffff" onPress={() => go(index + 1)} style={[styles.arrow, styles.arrowLeft]} />
-            <IconButton icon={ChevronRight} label={t('media.next')} color="#ffffff" onPress={() => go(index - 1)} style={[styles.arrow, styles.arrowRight]} />
+            {hasOlder ? (
+              <IconButton icon={ChevronLeft} label={t('media.previous')} color="#ffffff" onPress={() => go(index + 1)} style={[styles.arrow, styles.arrowLeft]} />
+            ) : null}
+            {hasNewer ? (
+              <IconButton icon={ChevronRight} label={t('media.next')} color="#ffffff" onPress={() => go(index - 1)} style={[styles.arrow, styles.arrowRight]} />
+            ) : null}
           </>
         ) : null}
         {notice && <ThemedText style={styles.notice}>{notice}</ThemedText>}
