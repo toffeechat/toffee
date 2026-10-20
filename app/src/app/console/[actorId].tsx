@@ -23,6 +23,8 @@ import { AudiencePanels, KpiGrid, RangeCaption, ScreenIntro, TrendPanels, cellSt
 import { StatsRangeControl } from '@/components/stats-range-picker';
 import { useDeleteBroadcast, useStudioMessages, type StudioMessage } from '@/hooks/use-studio';
 import { MediaTile } from '@/components/media-tile';
+import { AlbumGrid } from '@/components/album-grid';
+import { collapseRetracted, groupAlbumRows, rowHas } from '@/utils/chat-album';
 import { QuoteBlock } from '@/components/quote-block';
 import { VoiceMessage } from '@/components/voice-message';
 import { TranslatableText } from '@/components/translatable-text';
@@ -36,6 +38,7 @@ import { Radius, Spacing } from '@/constants/theme';
 type Section = 'monitor' | 'replies' | 'stats';
 
 const MEDIA_TYPES = new Set(['PHOTO', 'AUDIO', 'VIDEO']);
+const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
 
 function mediaLabel(t: TFunction, mediaType: string) {
   return t(`console.media.${MEDIA_TYPES.has(mediaType) ? mediaType : 'TEXT'}`);
@@ -66,8 +69,9 @@ function SegmentedControl({ value, onChange }: { value: Section; onChange: (sect
 }
 
 
+type MonitorMessage = StudioMessage & { album?: StudioMessage[]; retracted?: boolean };
 type MonitorItem =
-  | { kind: 'message'; createdAt: string; message: StudioMessage }
+  | { kind: 'message'; createdAt: string; message: MonitorMessage }
   | { kind: 'story'; createdAt: string; story: ActorStory };
 
 /**
@@ -87,16 +91,32 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
 
   if (loadingBroadcasts || loadingStories) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
+  // 같은 분에 연달아 보낸 사진·영상은 팬·아티스트 화면처럼 격자 한 칸, 연달아 회수된 건 한 줄로(2026-10-20 — 예전엔 장마다 따로 + "아직 답장 없음")
+  const rows = collapseRetracted(
+    groupAlbumRows(
+      (broadcasts ?? []).map((message) => ({ ...message, retracted: !!message.deletedAt })),
+      sameMinute,
+    ),
+    sameMinute,
+  );
   // 최신이 맨 아래(뒤집힌 목록이라 최신순 그대로)
   const items: MonitorItem[] = [
-    ...(broadcasts ?? []).map((message): MonitorItem => ({ kind: 'message', createdAt: message.createdAt, message })),
+    ...rows.map((message): MonitorItem => ({ kind: 'message', createdAt: message.createdAt, message })),
     ...(stories ?? []).map((story): MonitorItem => ({ kind: 'story', createdAt: story.createdAt, story })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const removeMessage = async (messageId: string) => {
-    if (!(await confirm(t('retract.title'), t('retract.agencyBody'), t('retract.action'), t('common.cancel')))) return;
+  const removeMessages = async (messageIds: string[]) => {
+    const title = messageIds.length > 1 ? t('retract.albumTitle', { count: messageIds.length }) : t('retract.title');
+    if (!(await confirm(title, t('retract.agencyBody'), t('retract.action'), t('common.cancel')))) return;
     setFailed(null);
-    remove.mutate(messageId, { onError: (error) => setFailed(error instanceof ApiError ? error.message : t('common.requestFailed')) });
+    for (const messageId of messageIds) {
+      try {
+        await remove.mutateAsync(messageId);
+      } catch (error) {
+        setFailed(error instanceof ApiError ? error.message : t('common.requestFailed'));
+        return;
+      }
+    }
   };
 
   return (
@@ -131,10 +151,12 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
                   message={item.message}
                   avatarUri={item.message.sender?.chatProfileImageUrl ?? actor?.chatProfileImageUrl}
                   name={item.message.sender?.chatDisplayName ?? actor?.chatDisplayName ?? ''}
-                  onDelete={() => void removeMessage(item.message.id)}
+                  actorId={actorId}
+                  onDelete={(ids) => void removeMessages(ids)}
                   onOpenReplies={() => onOpenReplies(item.message.id)}
-                  menuOpen={menuFor === item.message.id}
-                  onMenuChange={(open) => setMenuFor(open ? item.message.id : null)}
+                  menuFor={menuFor}
+                  onOpenMenu={setMenuFor}
+                  onCloseMenu={() => setMenuFor(null)}
                 />
               )}
             </View>
@@ -150,19 +172,29 @@ function MonitorBubble({
   message,
   avatarUri,
   name,
+  actorId,
   onDelete,
   onOpenReplies,
-  menuOpen,
-  onMenuChange,
+  menuFor,
+  onOpenMenu,
+  onCloseMenu,
 }: {
-  message: StudioMessage;
+  message: MonitorMessage;
   avatarUri?: string | null;
   name: string;
-  onDelete: () => void;
+  actorId: string;
+  /** 회수할 메시지 id들 — 사진 격자면 묶음 전체(⋯) 또는 길게 누른 한 장 */
+  onDelete: (ids: string[]) => void;
   onOpenReplies: () => void;
-  menuOpen: boolean;
-  onMenuChange: (open: boolean) => void;
+  /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도), 묶음 전체면 `album-<첫 장 id>` — 아티스트 화면과 같음 */
+  menuFor: string | null;
+  onOpenMenu: (id: string) => void;
+  onCloseMenu: () => void;
 }) {
+  const albumKey = message.album ? `album-${message.album[0].id}` : null;
+  const menuOpen = !!menuFor && (menuFor === albumKey || rowHas(message, menuFor));
+  const retractIds = !message.album ? [message.id] : menuFor === albumKey ? message.album.map((item) => item.id) : menuFor ? [menuFor] : [];
+  const onMenuChange = (open: boolean) => (open ? onOpenMenu(albumKey ?? message.id) : onCloseMenu());
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
@@ -207,7 +239,12 @@ function MonitorBubble({
           onLongPress={removedBy ? undefined : () => onMenuChange(true)}
           delayLongPress={350}
           style={[styles.bubbleStack, removedBy && styles.removed]}>
-          {isMedia ? (
+          {message.album ? (
+            <View style={styles.bubbleLine}>
+              <AlbumGrid items={message.album} actorId={actorId} onLongPressItem={onOpenMenu} />
+              {side}
+            </View>
+          ) : isMedia ? (
             <View style={styles.bubbleLine}>
               <MediaTile
                 id={message.id}
@@ -232,7 +269,7 @@ function MonitorBubble({
             onClose={() => onMenuChange(false)}
             actions={[
               ...(bodyText ? [{ key: 'copy', label: t('chat.copy'), icon: Copy, onPress: () => (onMenuChange(false), copyText(bodyText)) }] : []),
-              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onMenuChange(false), onDelete()) },
+              { key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onMenuChange(false), onDelete(retractIds)) },
             ]}
           />
         ) : null}

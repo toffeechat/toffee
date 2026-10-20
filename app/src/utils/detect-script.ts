@@ -45,6 +45,11 @@ export function detectScript(text: string): Script | null {
     else if ((code >= 0x4e00 && code <= 0x9fff) || (code >= 0x3400 && code <= 0x4dbf)) han += 1;
     else if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a) || (code >= 0xc0 && code <= 0x24f)) latin += 1;
   }
+  // 한글 한 음절·한자 한 글자에는 라틴 글자 여러 개만큼의 내용이 들어 있어서 그만큼 무겁게 셈(2026-10-20) — 한국어 메시지에 영문 닉네임
+  // (예: "caramel_love 오늘 뭐 했어?")이 들어가면 글자 수로는 라틴이 많아 한국 팬에게 똑같은 한국어 "번역"이 붙었음
+  hangul *= 2.5;
+  han *= 3;
+  kana *= 2;
   // 일본어는 한자와 가나가 섞여 있음 — 가나가 조금이라도 있으면 일본어로
   if (kana > 0 && kana + han >= Math.max(hangul, thai, latin)) return 'japanese';
   const counts: [Script, number][] = [

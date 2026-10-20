@@ -41,6 +41,8 @@ export default function SubscriptionDetailScreen() {
   // 스토어 결제 구독이면 해지는 스토어에서(앱이 끊으면 결제는 계속되고 방만 닫힘 — 서버도 409로 막음)
   const storePlatform = (single ?? bundleCover)?.iapPlatform;
 
+  // 해지하면 목록으로 — 주소로 바로 열었거나 새로고침한 웹이면 돌아갈 곳이 없어 "구독 정보를 찾을 수 없어요"만 남았음(2026-10-20)
+  const leave = () => (router.canGoBack() ? router.back() : router.replace('/subscriptions'));
   const cancel = async () => {
     if (storePlatform) {
       const ok = await confirm(
@@ -59,7 +61,7 @@ export default function SubscriptionDetailScreen() {
         t('bundle.cancel'),
         t('common.cancel'),
       );
-      if (ok) cancelPurchase.mutate(bundleCover.purchaseId, { onSuccess: () => router.back() });
+      if (ok) cancelPurchase.mutate(bundleCover.purchaseId, { onSuccess: leave });
       return;
     }
     const ok = await confirm(
@@ -68,7 +70,7 @@ export default function SubscriptionDetailScreen() {
       t('mypage.unsubscribe'),
       t('common.cancel'),
     );
-    if (ok) unsubscribe.mutate(undefined, { onSuccess: () => router.back() });
+    if (ok) unsubscribe.mutate(undefined, { onSuccess: leave });
   };
 
   // 스토어에서 자동 갱신을 끈 방(2026-10-02) — "해지 예정" + 이용 종료일

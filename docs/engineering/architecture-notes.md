@@ -1796,3 +1796,18 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `constants/theme.ts`)은 그대로.
 - 새 글꼴·이미지를 패키지에서 가져올 땐 파일을 `assets/`로 복사해서 쓸 것. 확인: 빌드 후 `find dist/assets/node_modules -type f`
   (지금 남은 건 expo-router 기본 아이콘뿐 — 화면에 안 쓰임).
+
+## 실기기 체크리스트 PC 확인에서 나온 수정 (2026-10-20)
+
+- 팬 채팅 `useActorMessages(actorId, { enabled: subscriptionsFetched })` — `GET /actors/:id/messages`가 `lastReadAt`을 지금으로 바꾸므로
+  `/me/subscriptions`를 먼저 받아 "여기까지 읽었어요" 기준을 잡음. 로딩 표시는 `isPending`(대기 중인 disabled 쿼리도 로딩).
+- `utils/detect-script.ts` — 다수결 전에 hangul ×2.5, han ×3, kana ×2(영문 닉네임이 섞인 한국어가 latin으로 판정되던 것). 테스트 `utils.test.ts`.
+- 사진 묶음 메뉴 키: 묶음 전체는 `album-<첫 장 id>`(시간 옆 ⋯·묶음 바깥 길게 누르기), 격자 안 한 장은 그 메시지 id → 회수 대상
+  `retractIds`. 스튜디오(`studio/[actorId]/index.tsx`)와 소속사·운영자 모니터링(`console/[actorId].tsx` `MonitorBubble`)이 같은 규칙.
+  모니터링도 `groupAlbumRows` + `collapseRetracted` + `AlbumGrid`.
+- `MessagesService.replyQuota` 응답에 `blocked`(ActorFanBlock) — 차단이면 `remaining: 0`, 앱은 `chat.replyBlocked` 안내로 입력칸을 막음.
+  `REPLY_BLOCKED` 한국어 문구 "채널" → "토피룸".
+- `ChatBackground` 덮개 불투명도 다크 0.72 / 라이트 0.45.
+- 로컬에서 고친 웹을 데모 서버에 붙여 볼 땐 `EXPO_PUBLIC_API_URL=https://api-demo.toffeechat.app npx expo export -p web` 후 SPA로 서빙.
+  localhost 출처에선 구글 로그인 버튼 iframe이 `gis is not defined`를 던짐(구글 쪽, 허용 출처가 아니라서) — e2e 마지막 화면 오류 검사에 걸리니
+  e2e는 배포된 데모 주소로 돌리거나 이 오류를 무시할 것. R2 업로드도 localhost 출처는 CORS로 막힘.

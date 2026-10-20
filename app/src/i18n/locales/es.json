@@ -64,6 +64,7 @@
     "send": "Enviar",
     "waitingFirst": "¡Ya estás suscrito! Los mensajes de {{name}} llegarán aquí.",
     "replyAfterFirst": "Podrás responder cuando el artista envíe su primer mensaje.",
+    "replyBlocked": "No puedes enviar respuestas en este Toffee Room.",
     "sendFailed": "No se pudo enviar. Inténtalo de nuevo.",
     "notSubscribed": "Tu suscripción terminó, así que no puedes ver el chat con {{name}}.",
     "resubscribe": "Suscribirse de nuevo",

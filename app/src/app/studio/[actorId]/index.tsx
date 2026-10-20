@@ -91,17 +91,20 @@ function MyMessage({
   actorId: string;
   isLatest?: boolean;
   onOpenReplies: () => void;
-  /** 회수할 메시지 id들 — 사진 격자면 묶음 전체 */
+  /** 회수할 메시지 id들 — 사진 격자면 묶음 전체(⋯) 또는 길게 누른 한 장 */
   onRetract: (ids: string[]) => void;
   /** CP방에서 상대 아티스트 메시지에 답장(인용) */
   onQuote?: () => void;
   senderName?: string | null;
-  /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도) */
+  /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도), 묶음 전체면 `album-<첫 장 id>` */
   menuFor: string | null;
   onOpenMenu: (id: string) => void;
   onCloseMenu: () => void;
 }) {
-  const menuOpen = !!menuFor && rowHas(message, menuFor);
+  // 사진 묶음 전체 메뉴(시간 옆 ⋯·묶음 바깥 길게 누르기)와 격자 안 한 장(길게 누르기)을 구분(2026-10-20 — 한 장을 길게 눌러도 묶음 전체가 회수됐음)
+  const albumKey = message.album ? `album-${message.album[0].id}` : null;
+  const menuOpen = !!menuFor && (menuFor === albumKey || rowHas(message, menuFor));
+  const retractIds = !message.album ? [message.id] : menuFor === albumKey ? message.album.map((item) => item.id) : menuFor ? [menuFor] : [];
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const hiddenByAdmin = !!message.deletedAt && message.deletedByAdmin;
@@ -123,7 +126,7 @@ function MyMessage({
     <View style={styles.sideRow}>
       {/* 웹(PC)은 마우스로 길게 누르기가 어색해서 시간 옆 ⋯로도 */}
       {Platform.OS === 'web' && hasMenu ? (
-        <IconButton icon={MoreHorizontal} size={15} label={t('chat.messageActions')} color={theme.textTertiary} onPress={() => onOpenMenu(message.id)} style={styles.metaButton} />
+        <IconButton icon={MoreHorizontal} size={15} label={t('chat.messageActions')} color={theme.textTertiary} onPress={() => onOpenMenu(albumKey ?? message.id)} style={styles.metaButton} />
       ) : null}
       <View style={styles.sideTime}>
         {senderName ? (
@@ -164,7 +167,7 @@ function MyMessage({
           {side}
         </View>
       ) : (
-        <Pressable onLongPress={hasMenu ? () => onOpenMenu(message.id) : undefined} delayLongPress={350} accessibilityHint={hasMenu ? t('chat.messageActions') : undefined} style={[styles.column, removed && styles.hidden]}>
+        <Pressable onLongPress={hasMenu ? () => onOpenMenu(albumKey ?? message.id) : undefined} delayLongPress={350} accessibilityHint={hasMenu ? t('chat.messageActions') : undefined} style={[styles.column, removed && styles.hidden]}>
           {/* 인용한 팬 답장은 내 말풍선 위에 따로 선 말풍선으로(2026-10-15 사용자 요청 — 팬 화면과 같게) */}
           {message.replyTo && !message.album ? <QuoteBlock quote={message.replyTo} tone="dark" standalone /> : null}
           {message.album ? (
@@ -210,7 +213,7 @@ function MyMessage({
               // CP방 상대 아티스트 메시지엔 회수 대신 답장(2026-10-15 — 두 아티스트가 서로 답장, 팬 화면엔 인용 말풍선 두 개로)
               ...(onQuote && message.mine === false
                 ? [{ key: 'quote', label: t('quote.action'), icon: CornerUpLeft, accent: true, onPress: () => (onCloseMenu(), onQuote()) }]
-                : [{ key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(message.album ? message.album.map((item) => item.id) : [message.id])) }]),
+                : [{ key: 'retract', label: t('retract.action'), icon: Undo2, danger: true, onPress: () => (onCloseMenu(), onRetract(retractIds)) }]),
             ]}
           />
         </View>

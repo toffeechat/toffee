@@ -25,6 +25,11 @@ describe('번역 보기를 보여 줄지(글자 종류)', () => {
     expect(needsTranslation('今日もありがとう', 'zh-Hans')).toBe(true);
     // 한국어 글에 영어 단어가 조금 섞여도 한글이 많으면 번역 안 띄움
     expect(needsTranslation('오늘 drama 촬영 끝났어', 'ko')).toBe(false);
+    // 영문 닉네임이 들어간 한국어 메시지 — 글자 수로는 라틴이 많아도 한국어(2026-10-20)
+    expect(needsTranslation('[QA] 답장 테스트용 메시지 caramel_love', 'ko')).toBe(false);
+    expect(needsTranslation('caramel_love 오늘 뭐 했어?', 'ko')).toBe(false);
+    expect(needsTranslation('Hi 민지, how are you today?', 'en')).toBe(false);
+    expect(needsTranslation('สวัสดี caramel_love! วันนี้กินข้าวหรือยัง?', 'ko')).toBe(true);
     expect(needsTranslation('💛', 'en')).toBe(false);
     expect(needsTranslation(null, 'en')).toBe(false);
   });

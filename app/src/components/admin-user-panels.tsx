@@ -88,7 +88,8 @@ export function AccessHistory({ user }: { user: AdminUser }) {
     <AdminSection title="접속 기록" hint="최근 3개월 · 로그인할 때마다, 로그인 유지 중엔 한 시간에 한 번">
       <ThemedText type="small" themeColor={user.lastActiveAt ? 'text' : 'danger'}>
         {user.lastActiveAt ? `마지막 접속: ${timeAgo(user.lastActiveAt)}` : '접속 기록 없음'}
-        {last ? ` · ${deviceText(last)}` : ''}
+        {/* 기기 정보가 없는 접속(앱 밖에서 API로 로그인 등)이면 " · "만 남지 않게(2026-10-20) */}
+        {last && deviceText(last) ? ` · ${deviceText(last)}` : ''}
       </ThemedText>
       {isLoading ? (
         <ActivityIndicator style={styles.loading} />

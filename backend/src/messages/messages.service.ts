@@ -170,9 +170,14 @@ export class MessagesService {
   /** 팬 화면 입력창 위 "남은 답장 N개" */
   async replyQuota(userId: string, actorId: string) {
     const subscription = await ensureActiveSubscription(this.prisma, userId, actorId);
-    const { target, used } = await this.replyTarget(userId, actorId, subscription.startedAt);
+    const [{ target, used }, block] = await Promise.all([
+      this.replyTarget(userId, actorId, subscription.startedAt),
+      this.prisma.actorFanBlock.findUnique({ where: { actorId_fanUserId: { actorId, fanUserId: userId } }, select: { id: true } }),
+    ]);
     const limit = this.repliesPerMessage;
-    return { messageId: target?.id ?? null, limit, used, remaining: target ? Math.max(limit - used, 0) : 0 };
+    // 차단된 팬은 입력칸을 미리 막음(2026-10-20 — 예전엔 보내 봐야 REPLY_BLOCKED가 뜨고 그 아래 "남은 답장 3개"가 같이 보였음)
+    const blocked = !!block;
+    return { messageId: target?.id ?? null, limit, used, remaining: target && !blocked ? Math.max(limit - used, 0) : 0, blocked };
   }
 
   // 팬 본인의 대화방: 구독 시작일 이후의 방송 메시지 + 본인이 보낸 답장만. page.limit를 주면 최신 → 오래된 순으로

@@ -64,6 +64,7 @@
     "send": "보내기",
     "waitingFirst": "구독을 시작했어요! {{name}}님이 보내는 메시지가 여기에 도착해요.",
     "replyAfterFirst": "아티스트의 첫 메시지가 오면 답장할 수 있어요.",
+    "replyBlocked": "이 토피룸에서는 답장을 보낼 수 없어요.",
     "sendFailed": "보내지 못했어요. 다시 시도해 주세요.",
     "notSubscribed": "구독이 끝나서 {{name}}님과의 대화를 볼 수 없어요.",
     "resubscribe": "다시 구독하기",

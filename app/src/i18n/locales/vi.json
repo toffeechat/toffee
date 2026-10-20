@@ -64,6 +64,7 @@
     "send": "Gửi",
     "waitingFirst": "Bạn đã đăng ký! Tin nhắn từ {{name}} sẽ đến ở đây.",
     "replyAfterFirst": "Bạn có thể trả lời sau khi nghệ sĩ gửi tin nhắn đầu tiên.",
+    "replyBlocked": "Bạn không thể gửi câu trả lời trong Toffee Room này.",
     "sendFailed": "Không gửi được. Vui lòng thử lại.",
     "notSubscribed": "Gói đăng ký của bạn đã kết thúc nên bạn không thể xem cuộc trò chuyện với {{name}}.",
     "resubscribe": "Đăng ký lại",

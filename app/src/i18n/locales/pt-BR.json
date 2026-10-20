@@ -64,6 +64,7 @@
     "send": "Enviar",
     "waitingFirst": "Assinatura feita! As mensagens de {{name}} vão chegar aqui.",
     "replyAfterFirst": "Você poderá responder quando o artista enviar a primeira mensagem.",
+    "replyBlocked": "Você não pode enviar respostas neste Toffee Room.",
     "sendFailed": "Não foi possível enviar. Tente novamente.",
     "notSubscribed": "Sua assinatura terminou, então você não pode ver a conversa com {{name}}.",
     "resubscribe": "Assinar de novo",
