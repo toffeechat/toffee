@@ -1688,3 +1688,22 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `autoTranslate && autoTranslateFanReplies`), `showAutoTranslateSetting(me)`(ACTOR·AGENCY_STAFF는 서버 값이 켜졌을 때만 스위치 표시).
   `useAutoTranslate(kind)`, `TranslatableText`의 `fanReply` prop(스튜디오 답장 화면·콘솔 아티스트 화면). 서버는 자동/수동 요청을 구분하지 않으므로
   이 값은 앱 동작만 바꿈 — 스키마 변경 없음.
+
+## 2026-10-20 — 아티스트 일괄 등록·연결 링크, 예약 오픈, 긴 메시지
+
+- **일괄 등록**: `backend/src/admin/actor-import.ts`의 `planImport`(DB 없는 순수 함수 — 이름 비교 `nameKey`, CP 짝은 표 안 → 같은 소속사 기존 →
+  다른 곳에 하나뿐인 이름 순으로 찾음, 같은 쌍은 한 번만) → `ActorImportService.run`(dryRun이면 계획만, 아니면 `$transaction`으로 Actor +
+  `ActorAgencyHistory` + COUPLE Actor/CoupleMember, 오류 줄 있으면 `IMPORT_INVALID`). 앱은 `utils/xlsx.ts`(zip 중앙 목차 + `DecompressionStream('deflate-raw')`
+  + 정규식 XML, 공유 문자열·인라인 문자열)와 `utils/sheet-import.ts`(머리글 별칭 한·영·태, CSV 구분자 자동)로 읽어 줄만 보냄. 운영자 PC 웹 전용(`lib/web-files.ts`).
+  사진 묶음은 `photoNameKey`로 이름을 맞춰 기존 `/admin/uploads` → `PATCH /admin/actors/:id/images`.
+- **연결 링크**: `ActorLinkToken`(sha256 `tokenHash` unique, `expiresAt`·`usedAt`·`usedByUserId`·`revokedAt`). 원문은 발급 응답에만(base64url 24바이트).
+  `ActorLinksService.claim`은 트랜잭션 안에서 링크·아티스트·계정 검사 후 `updateMany(usedAt null)`로 선점 → `role=ACTOR`·`selfUserId`, 같은 계정 재시도는 성공.
+  `GET /actor-links/:token`은 `@Public` + throttle. 앱 `/link/[token]`은 AuthGate에서 로그인 전에도 허용, 로그인 전이면 `lib/actor-link.ts`가 토큰을 저장소에
+  두고(웹 소셜 로그인은 페이지를 다녀와서) 로그인 후 온보딩보다 먼저 돌려보냄. 연결 후 `refreshRole()`(auth-context). 링크 주소 = `EXPO_PUBLIC_WEB_URL` 또는 웹 origin.
+- **예약 오픈**: `common/release/release.ts`(`isReleased`, 묶음은 `bundleOpensAt` = 묶음·든 방 중 가장 늦은 시각). 열림은 시각 비교뿐(`SubscriptionsService.ensure*Available`이
+  `ACTOR_NOT_RELEASED`), 푸시는 `ReleaseService.notifyDue`(`@Cron` 매분, `releaseNotifiedAt` 조건부 updateMany 선점 → `ReleaseWatch` 팬에게 `actor-released`/`bundle-released`).
+  공개 시각을 바꾸면 `releaseNotifiedAt=null`. 목록 응답(`LIST_SELECT`)에 `releaseAt`, 묶음 응답에 `opensAt`, 운영자·`/actors/mine`에 `releaseWatchCount`.
+  `ReleasesModule`은 `@Global`(운영자·소속사 서비스가 수를 씀). 미발송 알림 기준 시각은 `max(마지막 메시지·생성, releaseAt)`.
+  앱: `utils/release.ts`(태국 시간 입력 ↔ ISO), `hooks/use-release.ts`(`useUpcoming`은 하루 안쪽이면 공개 시각에 다시 그림).
+- **긴 메시지**: `utils/long-message.ts`(`LONG_MESSAGE_CHARS=500`, `LONG_MESSAGE_LINES=15`, 코드 포인트 기준) → `components/message-text.tsx`가 자르고
+  "전체보기"를 누르면 `lib/full-message.ts`(메모리)에 넣고 `/message`. `TranslatableText`가 `MessageText`를 쓰고 `full`·`sender` props, 말풍선 안 번역도 같은 길이로 자름.
