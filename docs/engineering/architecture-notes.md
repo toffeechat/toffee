@@ -1786,3 +1786,28 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   (웹 Blob 내려받기, 네이티브 expo-file-system + expo-sharing).
 - 마이그레이션 `20261020180000_ops_store_stop_app_settings_inquiries_admin_mfa`.
 
+
+## PC 웹 글꼴·정적 파일은 node_modules 경로로 내보내지 않기 (2026-10-20)
+
+- `expo export -p web`은 npm 패키지 안의 asset을 `dist/assets/node_modules/<패키지>/…`로 내보내는데, Cloudflare Pages는
+  `node_modules` 폴더를 업로드하지 않음 → 그 주소는 SPA fallback `index.html`(200 `text/html`)이 내려옴.
+- 그래서 Noto Sans Thai는 `@expo-google-fonts/noto-sans-thai` 대신 `app/assets/fonts/NotoSansThai-{Regular,Medium,SemiBold,Bold}.ttf`
+  (+ `NotoSansThai-LICENSE.txt`, OFL)를 `_layout.tsx` `useFonts`에서 `require`. 폰트 패밀리 이름(`NotoSansThai_400Regular` 등,
+  `constants/theme.ts`)은 그대로.
+- 새 글꼴·이미지를 패키지에서 가져올 땐 파일을 `assets/`로 복사해서 쓸 것. 확인: 빌드 후 `find dist/assets/node_modules -type f`
+  (지금 남은 건 expo-router 기본 아이콘뿐 — 화면에 안 쓰임).
+
+## 실기기 체크리스트 PC 확인에서 나온 수정 (2026-10-20)
+
+- 팬 채팅 `useActorMessages(actorId, { enabled: subscriptionsFetched })` — `GET /actors/:id/messages`가 `lastReadAt`을 지금으로 바꾸므로
+  `/me/subscriptions`를 먼저 받아 "여기까지 읽었어요" 기준을 잡음. 로딩 표시는 `isPending`(대기 중인 disabled 쿼리도 로딩).
+- `utils/detect-script.ts` — 다수결 전에 hangul ×2.5, han ×3, kana ×2(영문 닉네임이 섞인 한국어가 latin으로 판정되던 것). 테스트 `utils.test.ts`.
+- 사진 묶음 회수는 묶음 전체(2026-10-15 결정) — 격자 안 어느 장을 길게 눌러도 그 줄의 메뉴, 회수 대상은 `album` 전체. 소속사·운영자 모니터링
+  (`console/[actorId].tsx` `MonitorBubble`)도 `groupAlbumRows` + `collapseRetracted` + `AlbumGrid`로 같은 규칙(예전엔 한 장씩 따로 보였음).
+- `MessagesService.replyQuota` 응답에 `blocked`(ActorFanBlock) — 차단이면 `remaining: 0`, 앱은 `chat.replyBlocked` 안내로 입력칸을 막음.
+  `REPLY_BLOCKED` 한국어 문구 "채널" → "토피룸".
+- `ChatBackground` 덮개 불투명도 다크 0.72 / 라이트 0.45.
+- `QuoteBlock`은 인용 글을 `showNameToken`으로 보여 줌 — 아티스트·소속사 화면에선 인용된 아티스트 메시지(CP방 서로 답장)의 `{{name}}`이 원문 그대로 오기 때문(팬 응답은 서버가 치환).
+- 로컬에서 고친 웹을 데모 서버에 붙여 볼 땐 `EXPO_PUBLIC_API_URL=https://api-demo.toffeechat.app npx expo export -p web` 후 SPA로 서빙.
+  localhost 출처에선 구글 로그인 버튼 iframe이 `gis is not defined`를 던짐(구글 쪽, 허용 출처가 아니라서) — e2e 마지막 화면 오류 검사에 걸리니
+  e2e는 배포된 데모 주소로 돌리거나 이 오류를 무시할 것. R2 업로드도 localhost 출처는 CORS로 막힘.

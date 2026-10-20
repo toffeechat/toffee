@@ -280,7 +280,13 @@ describe('MessagesService 답장 횟수 제한', () => {
 
   it('설정값으로 바꿀 수 있고, 남은 개수를 알려줌', async () => {
     const { service } = replySetup(4, { FAN_REPLIES_PER_MESSAGE: '5' });
-    await expect(service.replyQuota('fan', 'actor')).resolves.toEqual({ messageId: 'star-1', limit: 5, used: 4, remaining: 1 });
+    await expect(service.replyQuota('fan', 'actor')).resolves.toEqual({ messageId: 'star-1', limit: 5, used: 4, remaining: 1, blocked: false });
+  });
+
+  it('차단된 팬은 남은 답장 0개 + blocked(입력칸을 미리 막음)', async () => {
+    const { service, prisma } = replySetup(0);
+    vi.mocked(prisma.actorFanBlock.findUnique).mockResolvedValue({ id: 'block-1' } as never);
+    await expect(service.replyQuota('fan', 'actor')).resolves.toEqual({ messageId: 'star-1', limit: 3, used: 0, remaining: 0, blocked: true });
   });
 
   it('지워진 아티스트 메시지는 답장 대상에서 빠짐', async () => {

@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
+import { showNameToken } from '@/utils/name-token';
 import { useMessageTranslation, type MessageQuote } from '@/hooks/use-messages';
 import { useTheme } from '@/hooks/use-theme';
 import { needsTranslation } from '@/utils/detect-script';
@@ -69,7 +70,8 @@ export function QuoteBlock({
             </ThemedText>
           )}
           <ThemedText type="small" style={{ color, opacity: 0.85 }} numberOfLines={standalone ? 6 : 2}>
-            {quote.body ?? ''}
+            {/* 아티스트·소속사 화면에선 인용된 아티스트 메시지의 {{name}}이 원문 그대로 와서 "〈팬 닉네임〉"으로(2026-10-20, 팬 화면은 서버가 이미 바꿈) */}
+            {quote.body ? showNameToken(quote.body, t('studio.fanNickname')) : ''}
           </ThemedText>
           {canTranslate && translate?.open && translation.data ? (
             <View style={[styles.translation, { borderTopColor: theme.border }]}>

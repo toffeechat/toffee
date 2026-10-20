@@ -64,6 +64,7 @@
     "send": "傳送",
     "waitingFirst": "已開始訂閱！{{name}} 傳送的訊息會出現在這裡。",
     "replyAfterFirst": "藝人傳送第一則訊息後即可回覆。",
+    "replyBlocked": "你無法在此 Toffee Room 回覆。",
     "sendFailed": "傳送失敗，請重試。",
     "notSubscribed": "訂閱已結束，無法查看與 {{name}} 的聊天。",
     "resubscribe": "重新訂閱",

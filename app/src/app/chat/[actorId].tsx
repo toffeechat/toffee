@@ -88,10 +88,14 @@ export default function ChatRoomScreen() {
   const { actorId, focus } = useLocalSearchParams<{ actorId: string; focus?: string }>();
   const { data: actor } = useActor(actorId);
   const isCouple = actor?.kind === 'COUPLE';
-  const { data: subscriptions } = useMySubscriptions();
+  const { data: subscriptions, isFetched: subscriptionsFetched } = useMySubscriptions();
   const subscription = subscriptions?.find((s) => s.actorId === actorId);
   const setMuted = useSetNotificationsMuted(actorId);
-  const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useActorMessages(actorId);
+  // 대화를 불러오면 서버가 읽음 시각을 지금으로 바꾸므로, 구독 목록(들어오기 전 읽음 시각 → "여기까지 읽었어요")을 먼저 받은 뒤에 불러옴.
+  // 안 기다리면 새로고침·주소로 바로 열기·앱이 꺼진 상태에서 알림으로 들어올 때 이미 바뀐 시각을 받아 줄이 안 보였음(2026-10-20)
+  const { data, isPending, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useActorMessages(actorId, {
+    enabled: subscriptionsFetched,
+  });
   const notSubscribed = error instanceof ApiError && error.status === 403;
   // 들어오면 토피룸 목록의 이 방 안 읽음 숫자를 바로 0으로, 나가면 목록을 바로 새로(2026-10-15 실기기 — 서버는 대화를 불러올 때 읽음 처리하는데
   // 목록은 받아 둔 걸 보여 주다 30초마다 새로 받아서, 알림 눌러 보고 돌아와도 숫자가 한참 남아 있었음)
@@ -342,9 +346,11 @@ export default function ChatRoomScreen() {
   // 환영·생일 메시지는 화면에서 만든 것이라 답장 대상이 아님(2026-10-15 — 예전엔 환영 메시지도 세서 "답장 3개까지" 안내가 잘못 뜸)
   const canReply = messages.some((message) => message.senderType === 'ARTIST' && !message.extra);
   const { data: quota } = useReplyQuota(actorId, canReply);
+  const replyBlocked = !!quota?.blocked;
   const outOfReplies = !!quota && quota.remaining === 0;
 
-  const body = isLoading ? (
+  // isPending: 구독 목록을 기다리느라 아직 안 불러온 동안도 로딩으로
+  const body = isPending && !isError ? (
     <ActivityIndicator style={styles.loading} color={theme.tint} />
   ) : notSubscribed ? (
     // 403 = 구독이 없음(해지·만료) — 다시 구독하는 길을 보여줌
@@ -462,7 +468,7 @@ export default function ChatRoomScreen() {
     </View>
   );
 
-  const showComposer = !isLoading && !isError;
+  const showComposer = !isPending && !isError;
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       {/* 토피룸 배경 사진(2026-10-14) — 아티스트·소속사가 정함 */}
@@ -538,7 +544,7 @@ export default function ChatRoomScreen() {
           <View style={styles.composer}>
             {!canReply || outOfReplies ? (
               <ThemedText type="caption" themeColor="textSecondary" style={styles.quota}>
-                {canReply ? t('chat.noRepliesLeft', { limit: quota?.limit }) : t('chat.replyAfterFirst')}
+                {!canReply ? t('chat.replyAfterFirst') : replyBlocked ? t('chat.replyBlocked') : t('chat.noRepliesLeft', { limit: quota?.limit })}
               </ThemedText>
             ) : quota ? (
               <ThemedText type="caption" themeColor="textTertiary" style={styles.quota}>

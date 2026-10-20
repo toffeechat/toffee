@@ -236,11 +236,11 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   const ADULT = { birthDate: new Date('2000-03-03') };
   const fan1 = await prisma.user.create({
     data: {
-      ...AGREED, ...ADULT, id: DEMO_IDS.fan1, role: Role.USER, displayName: 'Minji', nickname: 'caramel_love', email: 'fan1@toffee.demo' },
+      ...AGREED, ...ADULT, id: DEMO_IDS.fan1, role: Role.USER, displayName: 'Minji', nickname: 'caramel_love', email: 'fan1@toffee.demo', countryCode: 'KR', locale: 'ko' },
   });
   const fan2 = await prisma.user.create({
     data: {
-      ...AGREED, ...ADULT, id: DEMO_IDS.fan2, role: Role.USER, displayName: 'Ploy', nickname: 'nougat_lover', email: 'fan2@toffee.demo' },
+      ...AGREED, ...ADULT, id: DEMO_IDS.fan2, role: Role.USER, displayName: 'Ploy', nickname: 'nougat_lover', email: 'fan2@toffee.demo', countryCode: 'TH', locale: 'th' },
   });
 
   // 묶음 상품 — CP(캐러멜·마카롱·CP방)마다 3종(2026-10-15 사용자 결정): 개인방 + CP방 2종(따로 ฿168 → ฿139)과 전체(따로 ฿267 → ฿199).
@@ -377,14 +377,15 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   // 해외 팬 답장 4개 더(2026-10-14) — 아티스트 "팬 답장" 화면이 비어 보이지 않게, 언어를 섞어서(태국어·영어·일본어)
   const moreFans = [
-    { id: DEMO_IDS.fan3, nickname: 'minnie', body: 'ร้านข้าวมันไก่โกอ่างเลยค่ะ! คิวยาวแต่คุ้ม', minutes: 2 },
-    { id: DEMO_IDS.fan4, nickname: 'plai', body: 'Send us photos when you go 📷', minutes: 3 },
-    { id: DEMO_IDS.fan5, nickname: 'sora', body: 'プラトゥーナムは暑いから水たくさん飲んでね ☀️', minutes: 5 },
-    { id: DEMO_IDS.fan6, nickname: 'namwan', body: 'อยากไปเจอจัง ขอให้เที่ยวสนุกนะ 💕', minutes: 7 },
+    { id: DEMO_IDS.fan3, nickname: 'minnie', body: 'ร้านข้าวมันไก่โกอ่างเลยค่ะ! คิวยาวแต่คุ้ม', minutes: 2, countryCode: 'TH', locale: 'th' },
+    { id: DEMO_IDS.fan4, nickname: 'plai', body: 'Send us photos when you go 📷', minutes: 3, countryCode: 'PH', locale: 'en' },
+    { id: DEMO_IDS.fan5, nickname: 'sora', body: 'プラトゥーナムは暑いから水たくさん飲んでね ☀️', minutes: 5, countryCode: 'JP', locale: 'ja' },
+    { id: DEMO_IDS.fan6, nickname: 'namwan', body: 'อยากไปเจอจัง ขอให้เที่ยวสนุกนะ 💕', minutes: 7, countryCode: 'TH', locale: 'th' },
   ];
+  // 나라·언어를 넣어 둠(2026-10-20) — 비어 있으면 소속사 대시보드 "팬 분포"에 "알 수 없음"·"기기 언어"로 묶여 보였음
   for (const [i, fan] of moreFans.entries()) {
     await prisma.user.create({
-      data: { ...AGREED, ...ADULT, id: fan.id, role: Role.USER, displayName: fan.nickname, nickname: fan.nickname, email: `fan${i + 3}@toffee.demo` },
+      data: { ...AGREED, ...ADULT, id: fan.id, role: Role.USER, displayName: fan.nickname, nickname: fan.nickname, email: `fan${i + 3}@toffee.demo`, countryCode: fan.countryCode, locale: fan.locale },
     });
     await prisma.purchase.create({ data: { userId: fan.id, actorId: caramel.id, priceCents: caramel.monthlyPriceCents, startedAt: daysAgo(8 + i) } });
     await prisma.subscription.create({ data: { userId: fan.id, actorId: caramel.id, startedAt: daysAgo(8 + i) } });

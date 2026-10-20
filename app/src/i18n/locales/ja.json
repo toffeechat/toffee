@@ -64,6 +64,7 @@
     "send": "送信",
     "waitingFirst": "購読を開始しました！{{name}}さんからのメッセージがここに届きます。",
     "replyAfterFirst": "アーティストから最初のメッセージが届くと返信できます。",
+    "replyBlocked": "このToffee Roomでは返信できません。",
     "sendFailed": "送信できませんでした。もう一度お試しください。",
     "notSubscribed": "購読が終了したため、{{name}}さんとのトークを見られません。",
     "resubscribe": "もう一度購読する",

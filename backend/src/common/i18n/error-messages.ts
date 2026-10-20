@@ -1031,7 +1031,7 @@ export const ERROR_MESSAGES = {
     'pt-BR': (p) => `Você pode enviar até ${p.limit} respostas a esta mensagem. Aguarde a próxima mensagem do artista.`,
   },
   REPLY_BLOCKED: {
-    ko: '이 채널에서는 답장을 보낼 수 없어요.',
+    ko: '이 토피룸에서는 답장을 보낼 수 없어요.',
     en: "You can't send replies in this channel.",
     th: 'คุณไม่สามารถส่งข้อความตอบกลับในช่องนี้ได้',
     ja: 'このチャンネルでは返信できません。',

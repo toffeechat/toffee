@@ -53,7 +53,7 @@ const MESSAGES_PAGE_SIZE = 50;
  * 새 메시지는 실시간 신호(lib/realtime)로 바로 반영, 연결이 끊겨 있을 때만 5초 폴링. 권한 없음(403, 구독 끝남)은
  * 재시도·폴링해도 안 바뀌어서 바로 멈춤.
  */
-export function useActorMessages(actorId: string) {
+export function useActorMessages(actorId: string, options: { enabled?: boolean } = {}) {
   const interval = useLiveInterval(5000);
   return useInfiniteQuery({
     queryKey: ['messages', actorId],
@@ -63,7 +63,7 @@ export function useActorMessages(actorId: string) {
       ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.length === MESSAGES_PAGE_SIZE ? lastPage[lastPage.length - 1].id : undefined),
-    enabled: !!actorId,
+    enabled: !!actorId && options.enabled !== false,
     refetchInterval: (query) => (query.state.error instanceof ApiError && query.state.error.status === 403 ? false : interval),
     retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 3,
   });
@@ -98,6 +98,8 @@ export interface ReplyQuota {
   limit: number;
   used: number;
   remaining: number;
+  /** 아티스트·소속사가 이 팬을 차단함(2026-10-20) — 입력칸을 막고 안내 */
+  blocked?: boolean;
 }
 
 export function useReplyQuota(actorId: string, enabled: boolean) {
