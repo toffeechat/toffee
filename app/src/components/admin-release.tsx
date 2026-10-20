@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
-import { AdminButton, AdminChip, AdminField, AdminMessage, AdminSection } from '@/components/admin-ui';
+import { AdminButton, AdminChip, AdminMessage, AdminSection } from '@/components/admin-ui';
+import { AdminDateField } from '@/components/admin-date-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ApiError } from '@/lib/api-client';
 import { Spacing } from '@/constants/theme';
 import { formatBangkokDateTime, isUpcoming, parseBangkokDateTime } from '@/utils/release';
+import { thaiToday } from '@/utils/stat-range';
 
 /**
  * 공개 시각(2026-10-19 예약 오픈) — 아티스트·CP방·묶음 공통. 태국 시간으로 "2026-11-01 20:00". 비우고 저장하거나 [바로 공개]면 지금 공개.
@@ -31,7 +33,7 @@ export function ReleaseSection({
 
   const save = async (value: string | null) => {
     const iso = value === null ? null : parseBangkokDateTime(value);
-    if (value !== null && !iso) return setMessage({ text: '"2026-11-01 20:00"처럼 날짜와 시각을 넣어 주세요(태국 시간).', error: true });
+    if (value !== null && !iso) return setMessage({ text: '날짜와 시각을 골라 주세요(태국 시간).', error: true });
     try {
       await onSave(iso);
       if (iso === null) setText('');
@@ -49,7 +51,7 @@ export function ReleaseSection({
         {upcoming ? `공개 예정: ${formatBangkokDateTime(releaseAt!)}(태국)` : releaseAt ? `공개됨(${formatBangkokDateTime(releaseAt)} 태국)` : '공개 중(예약 없음)'} · 알림 신청{' '}
         {watchCount}명
       </ThemedText>
-      <AdminField label="공개 시각(태국 시간, 예: 2026-11-01 20:00)" value={text} onChangeText={setText} placeholder="2026-11-01 20:00" autoCapitalize="none" />
+      <AdminDateField label="공개 시각(태국 시간)" value={text} onChange={setText} withTime min={thaiToday()} />
       <AdminMessage text={message?.text ?? null} error={message?.error} />
       <ThemedView style={styles.chips}>
         {upcoming ? <AdminChip label="예약 취소(바로 공개)" danger disabled={saving} onPress={() => void save(null)} /> : null}

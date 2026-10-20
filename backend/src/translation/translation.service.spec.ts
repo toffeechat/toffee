@@ -173,3 +173,41 @@ describe('메시지 번역', () => {
     expect(TRANSLATION_SYSTEM_PROMPT).toContain('never guess');
   });
 });
+
+describe('공지 번역(2026-10-20)', () => {
+  function noticeSetup() {
+    const notice = { title: '점검 안내', body: '오늘 밤 점검해요', updatedAt: new Date('2026-10-20T00:00:00Z') };
+    const store = new Map<string, { title: string; body: string; sourceUpdatedAt: Date }>();
+    const translated: string[] = [];
+    const prisma = {
+      notice: { findUnique: async () => notice },
+      noticeTranslation: {
+        findUnique: async ({ where }: { where: { noticeId_language: { language: string } } }) => store.get(where.noticeId_language.language) ?? null,
+        upsert: async ({ create }: { create: { language: string; title: string; body: string; sourceUpdatedAt: Date } }) => store.set(create.language, create),
+      },
+    } as unknown as PrismaService;
+    const provider: TranslationProvider = {
+      name: 'test',
+      cacheable: true,
+      translate: async (text: string, target: string) => {
+        translated.push(text);
+        return `[${target}] ${text}`;
+      },
+      translateBatch: async () => [],
+    } as unknown as TranslationProvider;
+    const service = new TranslationService(prisma, config({ TRANSLATION_PROVIDER: 'fake' }));
+    (service as unknown as { provider: TranslationProvider }).provider = provider;
+    return { service, notice, translated };
+  }
+
+  it('처음 한 번만 번역해 저장하고, 공지를 고치면 다시 번역', async () => {
+    const { service, notice, translated } = noticeSetup();
+    expect(await service.translateNotice('n1', 'th')).toEqual({ language: 'th', title: '[th] 점검 안내', body: '[th] 오늘 밤 점검해요' });
+    await service.translateNotice('n1', 'th');
+    expect(translated).toHaveLength(2);
+    notice.updatedAt = new Date('2026-10-21T00:00:00Z');
+    notice.body = '내일로 미뤄요';
+    expect((await service.translateNotice('n1', 'th')).body).toBe('[th] 내일로 미뤄요');
+    expect(translated).toHaveLength(4);
+  });
+});

@@ -454,6 +454,29 @@ export const ERROR_MESSAGES = {
     es: 'Este artista ya no está activo, así que no se aceptan nuevas suscripciones.',
     'pt-BR': 'Este artista não está mais ativo, então não é possível fazer novas assinaturas.',
   },
+  // 활동 종료 예정(2026-10-20) — 예정을 넣는 순간 새 구독을 막음(기존 팬은 그날까지 그대로)
+  ACTOR_RETIRING: {
+    ko: (p, l) => `${date('retireAt', true)(p, l)}에 활동을 마칠 예정이라 새 구독을 받지 않아요.`,
+    en: (p, l) => `This artist's activity ends on ${date('retireAt', true)(p, l)}, so new subscriptions aren't available.`,
+    th: (p, l) => `ศิลปินจะยุติกิจกรรมในวันที่ ${date('retireAt', true)(p, l)} จึงไม่รับสมัครสมาชิกใหม่`,
+    ja: (p, l) => `${date('retireAt', true)(p, l)}に活動終了予定のため、新規の購読は受け付けていません。`,
+    'zh-Hans': (p, l) => `该艺人将于${date('retireAt', true)(p, l)}结束活动，暂停新订阅。`,
+    'zh-Hant': (p, l) => `該藝人將於${date('retireAt', true)(p, l)}結束活動，暫停新訂閱。`,
+    vi: (p, l) => `Nghệ sĩ sẽ dừng hoạt động vào ${date('retireAt', true)(p, l)} nên không nhận đăng ký mới.`,
+    es: (p, l) => `La actividad de este artista termina el ${date('retireAt', true)(p, l)}, así que no se aceptan nuevas suscripciones.`,
+    'pt-BR': (p, l) => `As atividades deste artista terminam em ${date('retireAt', true)(p, l)}, então não é possível fazer novas assinaturas.`,
+  },
+  RETIRE_AT_INVALID: {
+    ko: '활동 종료 예정 시각은 지금보다 뒤여야 해요.',
+    en: 'The planned end time must be in the future.',
+    th: 'เวลาที่จะยุติกิจกรรมต้องเป็นเวลาในอนาคต',
+    ja: '活動終了予定の日時は現在より後にしてください。',
+    'zh-Hans': '计划结束时间必须晚于现在。',
+    'zh-Hant': '預定結束時間必須晚於現在。',
+    vi: 'Thời điểm dự kiến dừng hoạt động phải ở tương lai.',
+    es: 'La fecha prevista de fin debe ser futura.',
+    'pt-BR': 'A data prevista de término precisa ser no futuro.',
+  },
   // 공개 예정(2026-10-19) — 공개 시각 전엔 구독 불가(앱은 "곧 공개" + 알림 받기만 보여 줌)
   ACTOR_NOT_RELEASED: {
     ko: (p, l) => `${date('releaseAt', true)(p, l)}에 공개돼요. 알림 받기를 누르면 열릴 때 알려 드릴게요.`,

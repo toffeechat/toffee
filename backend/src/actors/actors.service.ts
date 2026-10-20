@@ -30,6 +30,8 @@ const LIST_SELECT = {
   // 둘러보기 성별 줄(커플방·지정 안 함은 null)
   gender: true,
   retiredAt: true,
+  // 활동 종료 예정(2026-10-20) — 있으면 팬 화면 "N월 N일 활동 종료 예정", 새 구독 불가
+  retireAt: true,
   // 공개 예정(2026-10-19) — 미래 시각이면 팬 화면은 "곧 공개" 카드 + 알림 받기(구독 불가)
   releaseAt: true,
   // 소속사는 팬에게도 공개(소속사별 목록/검색) — 무소속이면 null
@@ -47,6 +49,7 @@ const LIST_SELECT = {
           officialProfileImageUrl: true,
           chatProfileImageUrl: true,
           retiredAt: true,
+          retireAt: true,
           // id는 운영자 대시보드의 소속사 필터(CP방은 멤버 소속사로, 2026-10-20)
           agency: { select: { id: true, name: true } },
         },

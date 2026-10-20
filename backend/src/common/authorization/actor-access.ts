@@ -51,6 +51,14 @@ export async function ensureCanViewActor(prisma: PrismaService, userId: string, 
   if (!actor) throw new ForbiddenException(appError('ACTOR_STAFF_OR_SELF_ONLY'));
 }
 
+/**
+ * 활동 종료 예정 시각(2026-10-20) — 방이나 CP 멤버 중 가장 이른 예정(없으면 null). 예정이 있으면 새 구독·묶음 판매를 막음(사용자 결정: 예정을 넣는 즉시)
+ */
+export function roomRetireAt(room: { retireAt?: Date | null; coupleMembers?: { member: { retireAt?: Date | null } }[] }): Date | null {
+  const dates = [room.retireAt, ...(room.coupleMembers ?? []).map(({ member }) => member.retireAt)].filter((value): value is Date => !!value);
+  return dates.length ? new Date(Math.min(...dates.map((value) => value.getTime()))) : null;
+}
+
 /** 이 방(또는 커플방 멤버 배우)이 활동 종료했는지 — 신규 구독·묶음 판매를 막는 데 씀 */
 export function roomRetired(room: { retiredAt: Date | null; coupleMembers?: { member: { retiredAt: Date | null } }[] }): boolean {
   return !!room.retiredAt || (room.coupleMembers ?? []).some(({ member }) => !!member.retiredAt);

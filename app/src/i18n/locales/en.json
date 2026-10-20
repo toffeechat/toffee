@@ -393,7 +393,10 @@
     "subscribed": "Subscribed",
     "openChat": "Open messages",
     "notFound": "Artist not found",
-    "retired": "This artist is no longer active"
+    "retired": "This artist is no longer active",
+    "retiringOn": "Activity ends {{date}}",
+    "retiringNoNew": "Not accepting new subscriptions",
+    "retiringHint": "Subscribers keep getting messages until then and can still read past messages afterwards."
   },
   "subscribeFlow": {
     "subscribeTo": "Subscribe to",

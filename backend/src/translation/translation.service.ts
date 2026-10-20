@@ -233,6 +233,31 @@ export class TranslationService {
     return { language: target, text: text.replaceAll(NAME_PLACEHOLDER, requester.nickname ?? requester.displayName ?? '') };
   }
 
+  /**
+   * 공지 번역(2026-10-20 사용자 결정: 한국어로 쓰고 다른 언어 팬은 [번역 보기]) — 공지 × 언어마다 처음 누른 사람 때 번역해서 NoticeTranslation에 저장,
+   * 공지를 고치면(updatedAt이 바뀌면) 다시 번역. 공지는 로그인한 누구나 보는 글이라 권한 확인은 없음
+   */
+  async translateNotice(noticeId: string, target: SupportedLocale) {
+    if (!this.provider) throw new ServiceUnavailableException(appError('TRANSLATION_UNAVAILABLE'));
+    const notice = await this.prisma.notice.findUnique({ where: { id: noticeId }, select: { title: true, body: true, updatedAt: true } });
+    if (!notice) throw new NotFoundException(appError('NOT_FOUND'));
+    const cached = await this.prisma.noticeTranslation.findUnique({ where: { noticeId_language: { noticeId, language: target } } });
+    if (cached && cached.sourceUpdatedAt.getTime() === notice.updatedAt.getTime()) return { language: target, title: cached.title, body: cached.body };
+    let title: string;
+    let body: string;
+    try {
+      [title, body] = await Promise.all([this.provider.translate(notice.title, target), this.provider.translate(notice.body, target)]);
+    } catch (error) {
+      this.logger.warn(`공지 번역 실패(${this.provider.name}): ${String(error)}`);
+      throw new ServiceUnavailableException(appError('TRANSLATION_FAILED'));
+    }
+    if (this.provider.cacheable) {
+      const data = { title, body, sourceUpdatedAt: notice.updatedAt };
+      await this.prisma.noticeTranslation.upsert({ where: { noticeId_language: { noticeId, language: target } }, create: { noticeId, language: target, ...data }, update: data });
+    }
+    return { language: target, title, body };
+  }
+
   private async cachedOrTranslate(messageId: string, body: string, target: SupportedLocale, speaker: TranslationSpeaker): Promise<string> {
     const provider = this.provider!;
     if (provider.cacheable) {

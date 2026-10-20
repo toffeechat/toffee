@@ -393,7 +393,10 @@
     "subscribed": "구독 중",
     "openChat": "메시지 보기",
     "notFound": "아티스트를 찾을 수 없어요",
-    "retired": "활동을 종료한 아티스트예요"
+    "retired": "활동을 종료한 아티스트예요",
+    "retiringOn": "{{date}} 활동 종료 예정",
+    "retiringNoNew": "새 구독을 받지 않아요",
+    "retiringHint": "그날까지는 지금처럼 메시지를 받고, 지난 대화는 그 뒤에도 볼 수 있어요."
   },
   "subscribeFlow": {
     "subscribeTo": "구독할 아티스트",

@@ -1,4 +1,5 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Role } from '../../generated/prisma/enums.js';
 
 export class ListUsersQueryDto {
@@ -15,4 +16,11 @@ export class ListUsersQueryDto {
   @IsOptional()
   @IsIn(['recent'])
   sort?: 'recent';
+
+  // 몇 번째 쪽(1부터, 한 쪽 50명 — 2026-10-20)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
 }

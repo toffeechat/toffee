@@ -1745,3 +1745,20 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   (서버 `POST /admin/actors`·`/admin/couples`는 남김).
 - `admin/bundles/cp-set`(CP로 패키지 3개)은 묶음 상품 화면·등록 결과·패키지 없는 CP방 상세에서(`?roomId=`로 미리 선택).
 
+## 2026-10-20 — 운영자 화면 2차(금칙어·신고·회원·종료 예정·공지 번역)
+
+- 금칙어: `moderation/default-banned-words.ts`(`DEFAULT_BANNED_WORDS`, `WORD_BOUNDARY_LANGUAGES`, `matchesBannedWord` — 단어 경계 `(?<![\p{L}\p{M}\p{N}])…(?![…])`,
+  NFC·소문자). `ModerationService.findHits`를 전송 검사·테스트가 같이 씀. `POST /admin/banned-words/defaults`(createMany skipDuplicates, `isDefault`)·`/test`.
+  DTO 언어 `BANNED_WORD_LANGUAGES`(9개). 작업 기록 `BANNED_WORD_*`(targetType `BANNED_WORD`).
+- 신고: `ReportsService.findForAdmin`(최근 2,000건, 메시지 × 상태로 묶음, counts·byActor) ← `GET /reports/admin`(`AdminReportsQueryDto`, 날짜는 태국 날짜 양 끝 포함).
+  `findPending`·`/reports/pending` 삭제. 앱 `useAdminReports(filter)`.
+- 회원: `AdminUsersService.findAll(q, role, sort, page)` → `{ items, counts, total, page, pageSize }`(`USER_PAGE_SIZE` 50, counts는 검색어만 건 groupBy), `findOne`.
+  앱 `admin/users/index.tsx`(PC 표·폰 목록) + `admin/users/[id].tsx`, 조각은 `components/admin-user-panels.tsx`(RoleSection·SanctionSection·ProfileSection·AccessHistory).
+- 종료 예정: `Actor.retireAt`. `roomRetireAt()`(방·CP 멤버 중 가장 이른 것) → `ensureActorAvailable`·`ensureBundleAvailable`에서 `ACTOR_RETIRING`, `BundlesService.forActor`도 제외.
+  `AdminActorsService.setRetireAt`(`PATCH /admin/actors/:id/retire-at`, 미래만, 새 날짜면 `retiringFan*` 푸시)·`retireDue`(조건부 updateMany 선점, retiredAt = 예정 시각,
+  `notifyRetired`) ← `RetireScheduler`(@Cron 매분). 바로 종료·재개하면 retireAt은 지움. 공개 `LIST_SELECT`·멤버 select에 retireAt.
+- 공지 번역: `NoticeTranslation(noticeId, language)` + `sourceUpdatedAt` — `TranslationService.translateNotice`(제목·본문 따로 번역, 공지 updatedAt이 다르면 다시),
+  `POST /notices/:id/translate`(throttle 20/분, NoticesModule이 TranslationModule import). 앱 `ExpandableItem.footer` + `NoticeTranslation`.
+- 날짜 입력: `components/admin-date-field.tsx`(`AdminDateField` — monthGrid 재사용, 값은 "YYYY-MM-DD"/"YYYY-MM-DD HH:mm" 글자). `AdminChip.count`로 탭 개수.
+- 마이그레이션 `20261020120000_banned_word_default_retire_at_notice_translation`.
+

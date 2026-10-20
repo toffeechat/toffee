@@ -340,6 +340,9 @@ model Actor {
   // 열리는 건 시각 비교라 정각에 바로, 알림 받기 팬 푸시는 ReleaseService(1분마다)가 releaseNotifiedAt을 먼저 잡고 한 번만 보냄
   releaseAt               DateTime?
   releaseNotifiedAt       DateTime?
+  // 활동 종료 예정(2026-10-20 사용자 결정) — 넣는 순간 신규 구독을 막고(팬 화면 "N월 N일 활동 종료 예정"), 그 시각이 되면 RetireScheduler가
+  // retiredAt을 채움(그때 기존 종료와 같은 알림·환불 규칙). retiredAt이 있으면 의미 없음. 예정을 지우면 다시 구독 가능
+  retireAt                DateTime?
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
@@ -666,7 +669,10 @@ model Report {
 model BannedWord {
   id        String   @id @default(uuid())
   term      String
+  // 앱 언어 9개 중 하나 — 띄어쓰기 언어(en/es/pt-BR/vi)는 단어 단위로, 나머지는 포함되면 막음(matchesBannedWord). 막는 건 언어와 상관없이 모두에게
   language  String
+  // 운영자 화면 [기본 목록 넣기]로 들어온 단어(2026-10-20, default-banned-words.ts) — 화면에 "기본" 표시
+  isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@unique([term, language])
@@ -878,7 +884,24 @@ model Notice {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  translations NoticeTranslation[]
+
   @@index([pinned, createdAt])
+}
+
+// 공지 번역(2026-10-20 사용자 결정: 한국어로 쓰고, 다른 언어 팬은 [번역 보기]) — 처음 누른 사람 때 기계 번역해서 저장, 이후 재사용.
+// 공지를 고치면(updatedAt이 sourceUpdatedAt보다 늦으면) 다시 번역
+model NoticeTranslation {
+  noticeId        String
+  language        String
+  title           String
+  body            String
+  sourceUpdatedAt DateTime
+  createdAt       DateTime @default(now())
+
+  notice Notice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
+  @@id([noticeId, language])
 }
 
 // 방별 하루 기록(2026-10-13 사용자 결정, 소속사 통계 기간 선택) — 그날(태국 날짜) 끝 무렵의 구독 수·구독 팬 나라·언어. 매시간 오늘 줄을

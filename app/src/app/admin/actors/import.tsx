@@ -27,6 +27,8 @@ import { Spacing } from '@/constants/theme';
 import { parseBangkokDateTime } from '@/utils/release';
 import { parseCsv, photoNameKey, rowsFromTable, TEMPLATE_CSV, type ImportGender, type SheetRow } from '@/utils/sheet-import';
 import { readXlsx } from '@/utils/xlsx';
+import { AdminDateField } from '@/components/admin-date-field';
+import { thaiToday } from '@/utils/stat-range';
 
 const GENDER_LABEL = { FEMALE: '여성', MALE: '남성' } as const;
 const STATUS_LABEL = { new: '새로 등록', exists: '이미 등록돼 있음(새로 안 만듦)', error: '고쳐야 함' } as const;
@@ -160,7 +162,7 @@ export default function AdminImportActorsScreen() {
     const couplePriceCents = hasCouple ? parseBahtToCents(couplePrice) : (parseBahtToCents(couplePrice) ?? 0);
     if (couplePriceCents === null) return 'CP방 월 구독료를 숫자로 넣어 주세요(예: 199).';
     const releaseAt = release.trim() ? parseBangkokDateTime(release) : null;
-    if (release.trim() && !releaseAt) return '공개 시각은 "2026-11-01 20:00"처럼 넣어 주세요(태국 시간).';
+    if (release.trim() && !releaseAt) return '공개 시각을 다시 골라 주세요(태국 시간).';
     return {
       agencyId: agencyId ?? undefined,
       monthlyPriceCents,
@@ -305,7 +307,7 @@ export default function AdminImportActorsScreen() {
               </ThemedView>
             ) : null}
             <ThemedView style={styles.fieldCell}>
-              <AdminField label="공개 시각(태국 시간, 비우면 바로 공개)" value={release} onChangeText={setting(setRelease)} placeholder="2026-11-01 20:00" autoCapitalize="none" />
+              <AdminDateField label="공개 시각(태국 시간, 비우면 바로 공개)" value={release} onChange={setting(setRelease)} withTime min={thaiToday()} clearable />
             </ThemedView>
           </ThemedView>
         </AdminSection>

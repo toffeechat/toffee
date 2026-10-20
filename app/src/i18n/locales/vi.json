@@ -393,7 +393,10 @@
     "subscribed": "Đã đăng ký",
     "openChat": "Mở tin nhắn",
     "notFound": "Không tìm thấy nghệ sĩ",
-    "retired": "Nghệ sĩ này không còn hoạt động"
+    "retired": "Nghệ sĩ này không còn hoạt động",
+    "retiringOn": "Dừng hoạt động {{date}}",
+    "retiringNoNew": "Không nhận đăng ký mới",
+    "retiringHint": "Người đăng ký vẫn nhận tin nhắn đến ngày đó và vẫn xem được tin nhắn cũ sau đó."
   },
   "subscribeFlow": {
     "subscribeTo": "Đăng ký",

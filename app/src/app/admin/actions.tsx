@@ -33,6 +33,10 @@ const ACTION_LABELS: Record<string, string> = {
   ACTOR_LINK_ISSUE: '계정 연결 링크 만들기',
   ACTOR_LINK_REVOKE: '계정 연결 링크 취소',
   ACTOR_LINK_CLAIM: '아티스트가 링크로 계정 연결',
+  BANNED_WORD_CREATE: '금칙어 추가',
+  BANNED_WORD_DELETE: '금칙어 삭제',
+  BANNED_WORD_DEFAULTS: '금칙어 기본 목록 넣기',
+  ACTOR_RETIRE_SCHEDULE: '활동 종료 예정 변경',
 };
 
 function detailText(entry: AdminActionEntry): string {
@@ -40,6 +44,11 @@ function detailText(entry: AdminActionEntry): string {
   const parts: string[] = [];
   if (typeof d.category === 'string') parts.push(`사유 ${d.category}`);
   if (typeof d.title === 'string') parts.push(`"${d.title}"`);
+  // 금칙어(2026-10-20)
+  if (typeof d.term === 'string') parts.push(`"${d.term}"${typeof d.language === 'string' ? ` (${d.language})` : ''}`);
+  if (typeof d.added === 'number') parts.push(`${d.added}개 추가`);
+  // 활동 종료 예정(2026-10-20) — null이면 예정 취소
+  if (entry.action === 'ACTOR_RETIRE_SCHEDULE') parts.push(typeof d.retireAt === 'string' ? `${new Date(d.retireAt).toLocaleString('ko-KR', { timeZone: 'Asia/Bangkok' })}(태국) 종료 예정` : '예정 취소');
   if (typeof d.note === 'string' && d.note) parts.push(`메모 "${d.note}"`);
   if (typeof d.count === 'number') parts.push(`${d.count}명`);
   if (typeof d.releaseAt === 'string') parts.push(`공개 ${new Date(d.releaseAt).toLocaleString('ko-KR', { timeZone: 'Asia/Bangkok' })}(태국)`);

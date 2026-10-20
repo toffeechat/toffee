@@ -34,7 +34,12 @@ export type AdminActionType =
   | 'ACTOR_RELEASE'
   | 'ACTOR_LINK_ISSUE'
   | 'ACTOR_LINK_REVOKE'
-  | 'ACTOR_LINK_CLAIM';
+  | 'ACTOR_LINK_CLAIM'
+  // 금칙어 추가·삭제·기본 목록 넣기, 활동 종료 예정 정하기(2026-10-20)
+  | 'BANNED_WORD_CREATE'
+  | 'BANNED_WORD_DELETE'
+  | 'BANNED_WORD_DEFAULTS'
+  | 'ACTOR_RETIRE_SCHEDULE';
 
 /**
  * 운영자 작업 기록(AdminAction) — 제재·역할 변경·신고 처리·배우 활동 종료를 누가 언제 했는지. 유료 서비스 분쟁·문의 대응용.
@@ -44,7 +49,7 @@ export type AdminActionType =
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async record(adminId: string, action: AdminActionType, targetType: 'USER' | 'REPORT' | 'ACTOR' | 'BUNDLE' | 'AGENCY' | 'SETTLEMENT' | 'NOTICE', targetId: string, detail?: Prisma.InputJsonValue) {
+  async record(adminId: string, action: AdminActionType, targetType: 'USER' | 'REPORT' | 'ACTOR' | 'BUNDLE' | 'AGENCY' | 'SETTLEMENT' | 'NOTICE' | 'BANNED_WORD', targetId: string, detail?: Prisma.InputJsonValue) {
     await this.prisma.adminAction.create({ data: { adminId, action, targetType, targetId, detail } });
   }
 

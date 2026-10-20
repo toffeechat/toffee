@@ -4,6 +4,7 @@ import { AdminUsersService } from './admin-users.service.js';
 import { AdminAgenciesController } from './admin-agencies.controller.js';
 import { AdminAgenciesService } from './admin-agencies.service.js';
 import { AdminActorsController } from './admin-actors.controller.js';
+import { RetireScheduler } from './retire-scheduler.service.js';
 import { AdminActorsService } from './admin-actors.service.js';
 import { ActorsModule } from '../actors/actors.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
@@ -16,6 +17,6 @@ import { ActorLinksController, AdminActorLinksController } from './actor-links.c
 @Module({
   imports: [ActorsModule, NotificationsModule],
   controllers: [AdminUsersController, AdminAgenciesController, AdminActorsController, AdminStatsController, AdminActorLinksController, ActorLinksController],
-  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService],
+  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService, RetireScheduler],
 })
 export class AdminModule {}

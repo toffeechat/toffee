@@ -15,7 +15,12 @@ export class AdminUsersController {
 
   @Get()
   findAll(@Query() query: ListUsersQueryDto) {
-    return this.adminUsersService.findAll(query.q, query.role, query.sort);
+    return this.adminUsersService.findAll(query.q, query.role, query.sort, query.page);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.adminUsersService.findOne(id);
   }
 
   // 접속 기록(2026-10-14)

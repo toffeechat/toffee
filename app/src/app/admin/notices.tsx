@@ -47,7 +47,7 @@ function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () =>
         onChangeText={setBody}
         maxLength={10000}
         multiline
-        placeholder="본문(해외 팬도 볼 공지면 여러 언어로)"
+        placeholder="본문(한국어로 쓰면 돼요 — 다른 언어 팬은 [번역 보기]로 자기 언어로 봐요)"
         placeholderTextColor={theme.textSecondary}
         style={[inputStyle, styles.body]}
       />
@@ -118,7 +118,16 @@ export default function AdminNoticesScreen() {
         data={notices}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={<NoticeForm key={editing?.id ?? 'new'} editing={editing} onDone={() => setEditing(null)} />}
+        ListHeaderComponent={
+          <ThemedView style={styles.headerBox}>
+            <NoticeForm key={editing?.id ?? 'new'} editing={editing} onDone={() => setEditing(null)} />
+            {notices?.length ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                공지 {notices.length}개 · 고정 {notices.filter((notice) => notice.pinned).length}개
+              </ThemedText>
+            ) : null}
+          </ThemedView>
+        }
         ListEmptyComponent={
           isLoading ? (
             <ActivityIndicator style={styles.loading} color={theme.tint} />
@@ -135,6 +144,7 @@ export default function AdminNoticesScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerBox: { gap: Spacing.two, backgroundColor: 'transparent' },
   container: { flex: 1 },
   form: { borderRadius: 14, padding: Spacing.three, gap: Spacing.two, marginBottom: Spacing.two },
   input: { borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 16 },

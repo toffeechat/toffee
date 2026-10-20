@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { AdminActorsService } from './admin-actors.service.js';
-import { CreateActorDto, CreateCoupleDto, LinkActorUserDto, SetRetiredDto, UpdateActorDto, UpdateActorImagesDto } from './dto/upsert-actor.dto.js';
+import { CreateActorDto, CreateCoupleDto, LinkActorUserDto, SetRetireAtDto, SetRetiredDto, UpdateActorDto, UpdateActorImagesDto } from './dto/upsert-actor.dto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ActorImportService } from './actor-import.service.js';
 import { ImportActorsDto } from './dto/import-actors.dto.js';
@@ -61,6 +61,12 @@ export class AdminActorsController {
   @Patch('actors/:id/retire')
   setRetired(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetRetiredDto) {
     return this.adminActorsService.setRetired(admin.id, id, dto.retired);
+  }
+
+  // 활동 종료 예정(2026-10-20) — retireAt(ISO) 또는 null(예정 취소)
+  @Patch('actors/:id/retire-at')
+  setRetireAt(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetRetireAtDto) {
+    return this.adminActorsService.setRetireAt(admin.id, id, dto.retireAt ? new Date(dto.retireAt) : null);
   }
 
   // 운영자 작업 기록(최근 100건)

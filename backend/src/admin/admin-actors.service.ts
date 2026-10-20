@@ -27,8 +27,10 @@ const ADMIN_ACTOR_SELECT = {
   verified: true,
   gender: true,
   kind: true,
-  coupleMembers: { select: { member: { select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, retiredAt: true } } } },
+  coupleMembers: { select: { member: { select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, retiredAt: true, retireAt: true, agency: { select: { id: true, name: true } } } } } },
   retiredAt: true,
+  // 활동 종료 예정(2026-10-20)
+  retireAt: true,
   releaseAt: true,
   createdAt: true,
   agency: { select: { id: true, name: true, logoUrl: true } },
@@ -63,28 +65,68 @@ export class AdminActorsService {
   async setRetired(adminId: string, id: string, retired: boolean) {
     const actor = await this.ensureActor(id);
     const wasRetired = !!actor.retiredAt;
-    await this.prisma.actor.update({ where: { id }, data: { retiredAt: retired ? new Date() : null } });
+    // 바로 종료·재개하면 예정은 지움
+    await this.prisma.actor.update({ where: { id }, data: { retiredAt: retired ? new Date() : null, retireAt: null } });
     await this.audit.record(adminId, retired ? 'ACTOR_RETIRE' : 'ACTOR_RESTORE', 'ACTOR', id);
     if (retired && !wasRetired) await this.notifyRetired(id, actor.chatDisplayName);
     return this.findOne(id);
   }
 
-  private async notifyRetired(actorId: string, name: string) {
+  /**
+   * 활동 종료 예정(2026-10-20 사용자 결정) — 정하는 즉시 새 구독·묶음 판매가 막히고(subscriptions.service), 그 시각에 retireDue가 실제로 종료.
+   * 새로 정하거나 날짜를 바꾸면 구독 팬에게 "N월 N일에 활동을 마칠 예정" 알림. null이면 예정 취소(다시 구독 가능).
+   */
+  async setRetireAt(adminId: string, id: string, retireAt: Date | null) {
+    const actor = await this.ensureActor(id);
+    if (actor.retiredAt) throw new BadRequestException(appError('ACTOR_RETIRED'));
+    if (retireAt && retireAt.getTime() <= Date.now()) throw new BadRequestException(appError('RETIRE_AT_INVALID'));
+    const before = await this.prisma.actor.findUniqueOrThrow({ where: { id }, select: { retireAt: true } });
+    await this.prisma.actor.update({ where: { id }, data: { retireAt } });
+    await this.audit.record(adminId, 'ACTOR_RETIRE_SCHEDULE', 'ACTOR', id, { retireAt: retireAt?.toISOString() ?? null });
+    if (retireAt && before.retireAt?.getTime() !== retireAt.getTime()) {
+      await this.pushToRoomFans(id, (t, locale) => ({
+        title: t.retiringFanTitle(actor.chatDisplayName, retireAt.toLocaleDateString(locale, { month: 'long', day: 'numeric', timeZone: 'Asia/Bangkok' })),
+        body: t.retiringFanBody,
+      }));
+    }
+    return this.findOne(id);
+  }
+
+  /** 예정 시각이 지난 아티스트를 실제로 종료(RetireScheduler가 1분마다) — retiredAt은 예정 시각으로(환불 기준 시각이 정확하게) */
+  async retireDue(now = new Date()) {
+    const due = await this.prisma.actor.findMany({ where: { retireAt: { lte: now }, retiredAt: null }, select: { id: true, retireAt: true, chatDisplayName: true } });
+    for (const actor of due) {
+      // 동시에 두 번 돌아도 한 번만 알림이 가게 조건부로 선점
+      const { count } = await this.prisma.actor.updateMany({ where: { id: actor.id, retiredAt: null }, data: { retiredAt: actor.retireAt, retireAt: null } });
+      if (count === 0) continue;
+      await this.notifyRetired(actor.id, actor.chatDisplayName);
+    }
+    return due.length;
+  }
+
+  /** 이 아티스트 방(개인방 + 들어 있는 CP방)을 구독 중인 팬에게 한 번씩 */
+  private async pushToRoomFans(
+    actorId: string,
+    compose: (t: ReturnType<typeof pushStrings>, locale: string) => { title: string; body: string },
+    type: 'actor-retired' | 'actor-retiring' = 'actor-retiring',
+  ) {
     const couples = await this.prisma.coupleMember.findMany({ where: { memberId: actorId }, select: { coupleId: true } });
     const subs = await this.prisma.subscription.findMany({
       where: { actorId: { in: [actorId, ...couples.map((couple) => couple.coupleId)] }, cancelledAt: null },
       select: { userId: true },
     });
-    const days = Number(process.env.RETIRE_REFUND_DAYS) || 14;
     await this.push.sendToUsers(
       [...new Set(subs.map((sub) => sub.userId))],
-      (recipient) => {
-        const t = pushStrings(recipient.locale);
-        return { title: t.retiredFanTitle(name), body: t.retiredFanBody(days) };
-      },
-      { type: 'actor-retired', actorId },
+      (recipient) => compose(pushStrings(recipient.locale), recipient.locale ?? 'en'),
+      { type, actorId },
     );
   }
+
+  private async notifyRetired(actorId: string, name: string) {
+    const days = Number(process.env.RETIRE_REFUND_DAYS) || 14;
+    await this.pushToRoomFans(actorId, (t) => ({ title: t.retiredFanTitle(name), body: t.retiredFanBody(days) }), 'actor-retired');
+  }
+
 
   async findAll(query?: string) {
     const rows = await this.prisma.actor.findMany({

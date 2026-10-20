@@ -4,12 +4,16 @@ import type { ArtistGender, CoupleMemberActor } from './use-actors';
 import { apiClient } from '@/lib/api-client';
 import { selectionQuery, type StatsSelection } from './use-console';
 
-// 같은 메시지 신고는 서버가 한 줄로 묶고(reportCount), 여러 명이 신고한 것부터 내려줌
-export interface PendingReport {
+export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
+
+// 같은 메시지 신고는 서버가 한 줄로 묶고(reportCount), 대기 중은 여러 명이 신고한 것부터, 처리한 건 최근 처리 순
+export interface AdminReport {
   id: string;
   category: string;
   reason: string | null;
+  status: ReportStatus;
   createdAt: string;
+  resolvedAt: string | null;
   reportCount: number;
   categories: string[];
   message: {
@@ -18,16 +22,36 @@ export interface PendingReport {
     senderType: 'ARTIST' | 'FAN';
     body: string | null;
     mediaType: string;
-    fanUser: { id: string; nickname: string | null; displayName: string } | null;
-    actor: { chatDisplayName: string };
+    createdAt: string;
+    fanUser: { id: string; nickname: string | null; displayName: string; status: 'ACTIVE' | 'SUSPENDED' | 'BANNED' } | null;
+    actor: { chatDisplayName: string; legalName: string; kind: 'SOLO' | 'COUPLE'; agencyNames: string[] };
   };
   reportedBy: { id: string; displayName: string; nickname: string | null; role: string };
 }
 
-export function usePendingReports() {
+export interface AdminReportFilter {
+  status?: ReportStatus;
+  category?: string;
+  agencyId?: string;
+  actorId?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface AdminReportList {
+  /** 상태만 빼고 같은 필터의 줄 수(요약 카드) */
+  counts: Record<'ALL' | ReportStatus, number>;
+  byActor: { actorId: string; name: string; count: number }[];
+  items: AdminReport[];
+}
+
+/** 운영자 신고 화면(2026-10-20 개편) — 상태·사유·소속사·아티스트·기간(태국 날짜) */
+export function useAdminReports(filter: AdminReportFilter) {
+  const query = new URLSearchParams(Object.entries(filter).filter((entry): entry is [string, string] => !!entry[1])).toString();
   return useQuery({
-    queryKey: ['admin', 'reports', 'pending'],
-    queryFn: () => apiClient.get<PendingReport[]>('/reports/pending'),
+    queryKey: ['admin', 'reports', query],
+    queryFn: () => apiClient.get<AdminReportList>(`/reports/admin${query ? `?${query}` : ''}`),
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -35,7 +59,10 @@ export function useResolveReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiClient.patch(`/reports/${id}/resolve`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'stats', 'summary'] });
+    },
   });
 }
 
@@ -43,14 +70,22 @@ export function useDismissReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiClient.patch(`/reports/${id}/dismiss`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'stats', 'summary'] });
+    },
   });
 }
+
+/** 금칙어 언어 — 앱 언어 9개(2026-10-20, 예전엔 ko/th/en) */
+export type BannedWordLanguage = 'ko' | 'th' | 'en' | 'ja' | 'zh-Hans' | 'zh-Hant' | 'vi' | 'es' | 'pt-BR';
 
 export interface BannedWord {
   id: string;
   term: string;
-  language: 'ko' | 'th' | 'en';
+  language: BannedWordLanguage;
+  /** [기본 목록 넣기]로 들어온 단어 */
+  isDefault: boolean;
   createdAt: string;
 }
 
@@ -61,22 +96,30 @@ export function useBannedWords() {
   });
 }
 
-export function useCreateBannedWord() {
+function useBannedWordMutation<TInput, TOutput>(request: (input: TInput) => Promise<TOutput>) {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { term: string; language: 'ko' | 'th' | 'en' }) =>
-      apiClient.post<BannedWord>('/admin/banned-words', input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'banned-words'] }),
-  });
+  return useMutation({ mutationFn: request, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'banned-words'] }) });
+}
+
+export function useCreateBannedWord() {
+  return useBannedWordMutation((input: { term: string; language: BannedWordLanguage }) => apiClient.post<BannedWord>('/admin/banned-words', input));
 }
 
 export function useDeleteBannedWord() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => apiClient.delete(`/admin/banned-words/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'banned-words'] }),
-  });
+  return useBannedWordMutation((id: string) => apiClient.delete(`/admin/banned-words/${id}`));
 }
+
+/** 기본 목록 넣기(2026-10-20) — 언어를 빼면 9개 언어 전부, 이미 있는 건 건너뜀 */
+export function useAddDefaultBannedWords() {
+  return useBannedWordMutation((language: BannedWordLanguage | undefined) => apiClient.post<{ added: number }>('/admin/banned-words/defaults', { language }));
+}
+
+/** 테스트해 보기 — 이 글이 막히는지, 어떤 단어 때문인지(저장 안 함) */
+export function useTestBannedWords() {
+  return useMutation({ mutationFn: (text: string) => apiClient.post<{ hits: { id: string; term: string; language: BannedWordLanguage }[] }>('/admin/banned-words/test', { text }) });
+}
+
+// ── 회원 ──
 
 export type AdminUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED';
 
@@ -124,18 +167,36 @@ export interface AccessLog {
 
 export type AdminUserSort = 'recent';
 
-export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort) {
+export interface AdminUserPage {
+  items: AdminUser[];
+  /** 검색어만 건 역할별 인원(탭 옆 숫자) */
+  counts: Record<'ALL' | AdminUser['role'], number>;
+  /** 지금 역할 탭의 인원 */
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** 회원 목록(2026-10-20: 한 쪽 50명씩 + 역할별 인원수) */
+export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1) {
   return useQuery({
-    queryKey: ['admin', 'users', query, role ?? null, sort ?? null],
+    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page],
     queryFn: () => {
       const params = new URLSearchParams();
       if (query) params.set('q', query);
       if (role) params.set('role', role);
       if (sort) params.set('sort', sort);
+      if (page > 1) params.set('page', String(page));
       const qs = params.toString();
-      return apiClient.get<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`);
+      return apiClient.get<AdminUserPage>(`/admin/users${qs ? `?${qs}` : ''}`);
     },
+    placeholderData: (previous) => previous,
   });
+}
+
+/** 회원 한 명(회원 상세 화면, 신고에서 바로 제재) */
+export function useAdminUser(id: string) {
+  return useQuery({ queryKey: ['admin', 'users', 'one', id], queryFn: () => apiClient.get<AdminUser>(`/admin/users/${id}`), enabled: !!id });
 }
 
 export function useAdminUserAccessLogs(userId: string, enabled: boolean) {
@@ -228,6 +289,8 @@ export interface AdminActor {
   coupleMembers: { member: CoupleMemberActor }[];
   /** 활동 종료 시각(종료 안 했으면 null) */
   retiredAt: string | null;
+  /** 활동 종료 예정 시각(2026-10-20) — 있으면 새 구독이 막혀 있음 */
+  retireAt: string | null;
   createdAt: string;
   agency: { id: string; name: string; logoUrl: string | null } | null;
   selfUser: { id: string; displayName: string; email: string | null } | null;
@@ -315,6 +378,11 @@ export function useLinkActorUser(id: string) {
 
 export function useSetActorRetired(id: string) {
   return useActorMutation((retired: boolean) => apiClient.patch<AdminActor>(`/admin/actors/${id}/retire`, { retired }));
+}
+
+/** 활동 종료 예정(2026-10-20) — ISO 또는 null(예정 취소). 정하는 즉시 새 구독이 막히고 그 시각에 자동 종료 */
+export function useSetActorRetireAt(id: string) {
+  return useActorMutation((retireAt: string | null) => apiClient.patch<AdminActor>(`/admin/actors/${id}/retire-at`, { retireAt }));
 }
 
 // ── 아티스트 일괄 등록·계정 연결 링크(2026-10-19) ──

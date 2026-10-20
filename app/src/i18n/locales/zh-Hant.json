@@ -393,7 +393,10 @@
     "subscribed": "已訂閱",
     "openChat": "查看訊息",
     "notFound": "找不到該藝人",
-    "retired": "該藝人已停止活動"
+    "retired": "該藝人已停止活動",
+    "retiringOn": "{{date}}結束活動",
+    "retiringNoNew": "暫停新訂閱",
+    "retiringHint": "在那之前訂閱者仍會照常收到訊息，之後也能查看以往的訊息。"
   },
   "subscribeFlow": {
     "subscribeTo": "訂閱",

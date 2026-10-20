@@ -42,14 +42,17 @@ export function AdminField({ label, ...input }: { label: string } & TextInputPro
   );
 }
 
+/** 칩·탭 — count를 주면 "전체 (33)"처럼 개수를 붙임(2026-10-20 사용자 요청: 탭마다 기본으로 개수) */
 export function AdminChip({
   label,
+  count,
   selected,
   danger,
   disabled,
   onPress,
 }: {
   label: string;
+  count?: number;
   selected?: boolean;
   danger?: boolean;
   disabled?: boolean;
@@ -68,7 +71,7 @@ export function AdminChip({
         disabled && styles.disabled,
       ]}>
       <ThemedText type="small" style={selected ? styles.chipSelectedText : danger ? { color: theme.danger } : undefined}>
-        {label}
+        {count === undefined ? label : `${label} (${count.toLocaleString()})`}
       </ThemedText>
     </Pressable>
   );

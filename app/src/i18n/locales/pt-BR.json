@@ -393,7 +393,10 @@
     "subscribed": "Assinado",
     "openChat": "Abrir mensagens",
     "notFound": "Artista não encontrado",
-    "retired": "Este artista não está mais ativo"
+    "retired": "Este artista não está mais ativo",
+    "retiringOn": "Encerra as atividades em {{date}}",
+    "retiringNoNew": "Não aceita novas assinaturas",
+    "retiringHint": "Os assinantes continuam recebendo mensagens até lá e poderão ler as anteriores depois."
   },
   "subscribeFlow": {
     "subscribeTo": "Assinar",
