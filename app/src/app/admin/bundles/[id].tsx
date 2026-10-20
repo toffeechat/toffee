@@ -10,6 +10,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { Spacing } from '@/constants/theme';
+import { ReleaseSection } from '@/components/admin-release';
+import { formatBangkokDateTime, isUpcoming } from '@/utils/release';
 
 export default function AdminBundleScreen() {
   const theme = useTheme();
@@ -34,6 +36,19 @@ export default function AdminBundleScreen() {
             <AdminChip label={bundle.active ? '판매 중' : '판매 중지됨'} selected={bundle.active} disabled={update.isPending} onPress={() => void toggleActive()} />
           </ThemedView>
         </AdminSection>
+        {/* 예약 오픈(2026-10-19) — 묶음은 이 시각과 든 방들의 공개 시각 중 가장 늦을 때 열림 */}
+        <ReleaseSection
+          key={bundle.releaseAt ?? 'none'}
+          releaseAt={bundle.releaseAt}
+          watchCount={bundle.releaseWatchCount}
+          saving={update.isPending}
+          onSave={(releaseAt) => update.mutateAsync({ releaseAt })}
+          note={
+            isUpcoming(bundle.opensAt) && bundle.opensAt !== bundle.releaseAt
+              ? `든 아티스트 중 더 늦게 열리는 방이 있어 실제로는 ${formatBangkokDateTime(bundle.opensAt!)}(태국)에 열려요.`
+              : '든 아티스트 중 더 늦게 열리는 방이 있으면 그때 열려요.'
+          }
+        />
         <AdminBundleForm
           key={`${bundle.id}-${bundle.activePurchaseCount}`}
           initial={bundle}

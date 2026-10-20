@@ -2,7 +2,7 @@ import { WideShell } from '@/components/wide-shell';
 import { InAppBanner } from '@/components/in-app-banner';
 import { HeaderBack, homeFor } from '@/components/header-back';
 import { ToastHost } from '@/components/toast';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   NotoSansThai_400Regular,
   NotoSansThai_500Medium,
@@ -28,6 +28,7 @@ import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useOtaUpdate } from '@/hooks/use-ota-update';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { peekDemoLink } from '@/lib/demo-entry';
+import { getPendingActorLink, loadPendingActorLink } from '@/lib/actor-link';
 import { useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useRealtimeSync } from '@/lib/realtime';
 import { useConsoleWebAlerts } from '@/lib/console-alerts';
@@ -66,13 +67,26 @@ function AuthGate({ children }: { children: ReactNode }) {
   const { data: onboarding, isLoading: onboardingLoading } = useOnboardingStatus();
   const segments = useSegments();
   const router = useRouter();
+  // 아티스트 계정 연결 링크(2026-10-19) — 로그인 전에 열었던 링크를 기억해 둔 게 있는지(저장소에서 읽을 때까지 기다림)
+  const [linkChecked, setLinkChecked] = useState(false);
+  useEffect(() => {
+    void loadPendingActorLink().then(() => setLinkChecked(true));
+  }, []);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !linkChecked) return;
     // /oauth/<회사>: PC 웹 소셜 로그인에서 돌아오는 화면(로그인 전) — 로그인 화면처럼 취급
     const onLoginScreen = segments[0] === 'login' || segments[0] === 'oauth';
+    // 연결 링크 화면은 로그인 전에도(누구의 링크인지), 로그인 후엔 온보딩보다 먼저(아티스트는 팬 온보딩을 거치지 않게)
+    const onLinkScreen = segments[0] === 'link';
     if (!token) {
-      if (!onLoginScreen) router.replace('/login');
+      if (!onLoginScreen && !onLinkScreen) router.replace('/login');
+      return;
+    }
+    if (onLinkScreen) return;
+    const pendingLink = getPendingActorLink();
+    if (pendingLink) {
+      router.replace({ pathname: '/link/[token]', params: { token: pendingLink } });
       return;
     }
     if (onboardingLoading) return;
@@ -116,7 +130,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     if (onLoginScreen || onOnboardingScreen || (onFanTabs && home !== '/') || wrongArea) {
       router.replace(home);
     }
-  }, [token, role, isLoading, onboarding, onboardingLoading, segments, router]);
+  }, [token, role, isLoading, linkChecked, onboarding, onboardingLoading, segments, router]);
 
   return children;
 }
@@ -209,6 +223,10 @@ function RootLayout() {
               <Stack.Screen name="blocks/[actorId]" options={{ headerShown: true, title: t('block.manage') }} />
               <Stack.Screen name="media-viewer" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
               <Stack.Screen name="media-gallery/[actorId]" options={{ headerShown: true, title: t('gallery.title') }} />
+              {/* 긴 메시지 전체보기(2026-10-19) */}
+              <Stack.Screen name="message" options={{ headerShown: true, title: t('longMessage.title') }} />
+              {/* 아티스트 계정 연결 링크(2026-10-19) — 로그인 전에도 열림 */}
+              <Stack.Screen name="link/[token]" options={{ headerShown: false }} />
               {/* 아티스트 하단 탭(2026-10-14): 토피룸 / 설정 */}
               <Stack.Screen name="studio/(tabs)" options={{ headerShown: false, title: t('studio.screen') }} />
               <Stack.Screen name="studio/[actorId]/index" options={{ headerShown: true, title: '' }} />
@@ -230,6 +248,7 @@ function RootLayout() {
               <Stack.Screen name="admin/actors/index" options={{ headerShown: true, title: '아티스트 관리' }} />
               <Stack.Screen name="admin/actors/new" options={{ headerShown: true, title: '아티스트 등록' }} />
               <Stack.Screen name="admin/actors/new-couple" options={{ headerShown: true, title: 'CP방 만들기' }} />
+              <Stack.Screen name="admin/actors/import" options={{ headerShown: true, title: '아티스트 일괄 등록' }} />
               <Stack.Screen name="admin/actors/[id]" options={{ headerShown: true, title: '아티스트' }} />
               <Stack.Screen name="admin/bundles/index" options={{ headerShown: true, title: '묶음 상품' }} />
               <Stack.Screen name="admin/bundles/new" options={{ headerShown: true, title: '묶음 만들기' }} />

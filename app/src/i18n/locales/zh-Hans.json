@@ -854,5 +854,45 @@
     "version": "版本 {{version}}",
     "embedded": "初始",
     "update": "更新于 {{date}}"
+  },
+  "release": {
+    "comingSoon": "即将开放",
+    "opensAt": "{{date}} 开放",
+    "notifyMe": "提醒我",
+    "notifying": "已设置提醒",
+    "notifyHint": "开放后会第一时间通知你。",
+    "notifyOn": "已设置提醒，开放时会立即通知你。再次点击可取消。",
+    "notifyOff": "已取消提醒。",
+    "notifyFailed": "无法设置提醒。",
+    "studioNotice": "{{date}} 开放前。现在发送的消息，开放后订阅的粉丝将看不到。请提前准备好欢迎消息、生日消息和个人资料。",
+    "consoleLine": "{{date}} 开放 · 提醒预约 {{count}} 人"
+  },
+  "longMessage": {
+    "seeAll": "查看全文",
+    "title": "全文",
+    "gone": "请重新打开消息。",
+    "back": "返回"
+  },
+  "actorLink": {
+    "eyebrow": "关联艺人账号",
+    "intro": "这是将你的账号关联到艺人 {{name}} 的链接。",
+    "how": "用平时使用的账号（Google、Apple、LINE 等）登录并关联后，之后用该账号登录即可给粉丝发消息。无需另外创建账号或密码。",
+    "loginAndLink": "登录并关联",
+    "confirm": "要将此账号关联为 {{name}} 吗？",
+    "confirmHint": "当前登录的账号将变为艺人账号，无法再以粉丝身份订阅。如果这是你的粉丝账号，请用其他账号登录。",
+    "link": "关联",
+    "otherAccount": "使用其他账号登录",
+    "failed": "关联失败，请稍后再试。",
+    "expiresAt": "有效期至 {{date}}。",
+    "doneTitle": "关联成功！",
+    "doneBody": "现在可以以 {{name}} 的身份给粉丝发消息了。",
+    "start": "开始使用",
+    "usedTitle": "此链接已被使用",
+    "usedBody": "请用已关联的账号登录。如需关联其他账号，请向经纪公司负责人索取新链接。",
+    "expiredTitle": "此链接已过期",
+    "expiredBody": "请向经纪公司负责人索取新链接。",
+    "invalidTitle": "此链接无法使用",
+    "invalidBody": "请确认链接地址，或向经纪公司负责人索取新链接。",
+    "toLogin": "前往登录"
   }
 }

@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, ChevronLeft, SearchX } from 'lucide-react-native';
+import { ArrowRight, Bell, BellRing, ChevronLeft, SearchX } from 'lucide-react-native';
 
 import { BundleCard } from '@/components/bundle-card';
 import { CoupleCard } from '@/components/couple-card';
@@ -20,6 +21,9 @@ import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
+import { formatReleaseAt } from '@/utils/release';
+import { useReleaseWatch, useUpcoming } from '@/hooks/use-release';
+import { ApiError } from '@/lib/api-client';
 
 /**
  * 배우 프로필 — Hybrid 시안(docs/product/brand/exploration/hybrid-recommendation-profile.png)의 분위기 + DESIGN_GUIDE §5의
@@ -28,7 +32,7 @@ import { formatPrice } from '@/utils/price';
  */
 export default function ActorProfileScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
@@ -46,6 +50,10 @@ export default function ActorProfileScreen() {
   const coupleIds = new Set((couples ?? []).map((room) => room.id));
   const withCouple = offers.some((bundle) => bundle.actors.some((member) => coupleIds.has(member.id)));
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  // 공개 예정(2026-10-19) — 시각 전엔 구독 대신 "알림 받기", 화면을 켜 둔 채 시각이 지나면 저절로 구독 버튼으로
+  const upcoming = useUpcoming(actor?.releaseAt);
+  const release = useReleaseWatch({ kind: 'actors', id }, upcoming);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -114,10 +122,31 @@ export default function ActorProfileScreen() {
               </View>
             </View>
             <MembershipBenefits name={actor.legalName} />
+            {upcoming ? (
+              <View style={[styles.release, { backgroundColor: theme.tintSoft }]}>
+                <ThemedText type="captionBold" style={{ color: theme.tint }}>
+                  {t('release.comingSoon')}
+                </ThemedText>
+                <ThemedText type="headline">{t('release.opensAt', { date: formatReleaseAt(actor.releaseAt!, i18n.language) })}</ThemedText>
+              </View>
+            ) : null}
             {isSubscribed ? (
               <Button title={t('actorProfile.openChat')} iconRight={ArrowRight} onPress={() => router.push(`/chat/${id}`)} />
             ) : actor.retiredAt ? (
               <Button title={t('actorProfile.retired')} variant="secondary" disabled />
+            ) : upcoming ? (
+              <Button
+                title={release.watching ? t('release.notifying') : t('release.notifyMe')}
+                icon={release.watching ? BellRing : Bell}
+                variant={release.watching ? 'secondary' : 'primary'}
+                disabled={!release.canWatch || release.toggle.isPending}
+                onPress={() =>
+                  release.toggle.mutate(!release.watching, {
+                    onSuccess: (result) => setNotice(result.watching ? t('release.notifyOn') : t('release.notifyOff')),
+                    onError: (error) => setNotice(error instanceof ApiError ? error.message : t('release.notifyFailed')),
+                  })
+                }
+              />
             ) : (
               <Button
                 title={t('actorProfile.subscribeCta')}
@@ -126,7 +155,7 @@ export default function ActorProfileScreen() {
               />
             )}
             <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
-              {isSubscribed ? t('actorProfile.subscribed') : t('actorProfile.noFreeTier')}
+              {isSubscribed ? t('actorProfile.subscribed') : upcoming ? (notice ?? t('release.notifyHint')) : t('actorProfile.noFreeTier')}
             </ThemedText>
           </View>
 
@@ -184,6 +213,7 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Spacing.two, flexWrap: 'wrap' },
   price: { flexDirection: 'row', alignItems: 'baseline' },
   center: { textAlign: 'center', marginTop: -Spacing.two },
+  release: { borderRadius: Radius.lg, padding: Spacing.three, gap: 2, alignItems: 'center' },
   bundles: { marginTop: Spacing.five, gap: Spacing.two },
   members: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three, marginTop: Spacing.one },
   member: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

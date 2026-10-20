@@ -4,6 +4,8 @@
 export interface PushData {
   type?: string;
   actorId?: string;
+  /** 묶음 공개 알림(2026-10-19) */
+  bundleId?: string;
   messageId?: string;
   title?: string;
   body?: string;
