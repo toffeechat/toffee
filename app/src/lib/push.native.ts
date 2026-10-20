@@ -19,6 +19,8 @@ import { apiClient } from '@/lib/api-client';
 export interface PushData {
   type?: string;
   actorId?: string;
+  /** 묶음 공개 알림(2026-10-19) */
+  bundleId?: string;
   messageId?: string;
   title?: string;
   body?: string;
@@ -80,6 +82,7 @@ function toPushData(message: RemoteMessage | null): PushData | null {
   return {
     type: pick('type'),
     actorId: pick('actorId'),
+    bundleId: pick('bundleId'),
     messageId: pick('messageId'),
     senderImage: pick('senderImage'),
     senderName: pick('senderName'),

@@ -41,7 +41,10 @@ export function usePushNotifications(): void {
     if (!token || !role) return;
     // 역할마다 같은 배우의 다른 화면으로 — 팬은 채팅방, 소속사는 모니터링, 배우 본인은 스튜디오
     // 팬은 알림이 가리키는 메시지로 스크롤·강조(focus) — 인용 답장 알림이면 그 답장, 그 뒤에 새 메시지가 더 와도 찾아감
-    const open = ({ actorId, messageId }: PushData) => {
+    const open = ({ type, actorId, bundleId, messageId }: PushData) => {
+      // 예약 오픈 알림(2026-10-19) — 아직 구독 전이라 아티스트 프로필·묶음 구독 화면으로
+      if (type === 'bundle-released' && bundleId) return router.push({ pathname: '/subscribe/bundle/[bundleId]', params: { bundleId } });
+      if (type === 'actor-released' && actorId) return router.push({ pathname: '/actor/[id]', params: { id: actorId } });
       if (!actorId) return;
       if (role === 'AGENCY_STAFF') router.push(`/console/${actorId}`);
       else if (role === 'ACTOR') router.push(`/studio/${actorId}`);
@@ -49,6 +52,12 @@ export function usePushNotifications(): void {
     };
     // 앱을 보고 있을 때 온 알림: 해당 대화·인박스를 새로 불러오고 위쪽 배너로 알려줌(누르면 그 대화로)
     const refresh = (data: PushData) => {
+      if (data.type === 'actor-released' || data.type === 'bundle-released') {
+        void queryClient.invalidateQueries({ queryKey: ['actors'] });
+        void queryClient.invalidateQueries({ queryKey: ['bundles'] });
+        if (data.title || data.body) showInAppBanner({ title: data.title, body: data.body, actorId: data.actorId ?? '', onPress: () => open(data) });
+        return;
+      }
       if (!data.actorId) return;
       void queryClient.invalidateQueries({ queryKey: ['messages', data.actorId] });
       void queryClient.invalidateQueries({ queryKey: ['actor-broadcasts', data.actorId] });

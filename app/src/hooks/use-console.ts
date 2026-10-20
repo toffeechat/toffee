@@ -8,6 +8,8 @@ import type { ChatMessage } from './use-messages';
 export type MyActor = Actor & {
   lastBroadcastAt?: string | null;
   lastMessage?: { body: string | null; mediaType: string; createdAt: string } | null;
+  /** "곧 공개" 알림 신청 수(2026-10-19) — 소속사에 보여 줄 사전 수요 숫자 */
+  releaseWatchCount?: number;
 };
 
 export function useMyActors() {

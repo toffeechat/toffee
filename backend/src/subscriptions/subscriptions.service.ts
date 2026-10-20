@@ -9,6 +9,7 @@ import { appError } from '../common/i18n/app-error.js';
 import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
 import { allocateBundlePrice } from './allocate-price.js';
 import { roomRetired } from '../common/authorization/actor-access.js';
+import { bundleOpensAt, isReleased } from '../common/release/release.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { ChargeLedgerService, sourceOf } from '../settlements/charge-ledger.service.js';
 import type { StoreTransaction } from './iap-verification.service.js';
@@ -573,11 +574,13 @@ export class SubscriptionsService {
   private async ensureActorAvailable(actorId: string) {
     const actor = await this.prisma.actor.findUnique({
       where: { id: actorId },
-      select: { id: true, monthlyPriceCents: true, retiredAt: true, coupleMembers: { select: { member: { select: { retiredAt: true } } } } },
+      select: { id: true, monthlyPriceCents: true, retiredAt: true, releaseAt: true, coupleMembers: { select: { member: { select: { retiredAt: true } } } } },
     });
     if (!actor) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
     // 커플방은 멤버 배우 중 한 명이라도 활동 종료면 새 구독 중지(기존 팬은 유지)
     if (roomRetired(actor)) throw new BadRequestException(appError('ACTOR_RETIRED'));
+    // 공개 예정(2026-10-19) — 공개 시각 전엔 앱이 구독 버튼을 안 보여 주지만 API를 직접 불러도 막음
+    if (!isReleased(actor.releaseAt)) throw new BadRequestException(appError('ACTOR_NOT_RELEASED', { releaseAt: actor.releaseAt!.toISOString() }));
     return actor;
   }
 
@@ -589,9 +592,10 @@ export class SubscriptionsService {
         id: true,
         priceCents: true,
         active: true,
+        releaseAt: true,
         actors: {
           select: {
-            actor: { select: { id: true, monthlyPriceCents: true, retiredAt: true, coupleMembers: { select: { member: { select: { retiredAt: true } } } } } },
+            actor: { select: { id: true, monthlyPriceCents: true, retiredAt: true, releaseAt: true, coupleMembers: { select: { member: { select: { retiredAt: true } } } } } },
           },
         },
       },
@@ -600,6 +604,9 @@ export class SubscriptionsService {
     if (!bundle.active || bundle.actors.length < 2 || bundle.actors.some((item) => roomRetired(item.actor))) {
       throw new BadRequestException(appError('BUNDLE_UNAVAILABLE'));
     }
+    // 묶음 자체나 든 방 중 하나라도 공개 전이면 가장 늦은 공개 시각까지 못 삼
+    const opensAt = bundleOpensAt(bundle.releaseAt, bundle.actors.map((item) => item.actor.releaseAt));
+    if (!isReleased(opensAt)) throw new BadRequestException(appError('ACTOR_NOT_RELEASED', { releaseAt: opensAt!.toISOString() }));
     return bundle;
   }
 

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Languages } from 'lucide-react-native';
 
+import { MessageText } from '@/components/message-text';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { useMessageTranslation, useWelcomeTranslation } from '@/hooks/use-messages';
@@ -10,6 +11,7 @@ import { useAutoTranslate } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
 import { needsTranslation } from '@/utils/detect-script';
+import { clipLongMessage } from '@/utils/long-message';
 import { Spacing } from '@/constants/theme';
 
 /**
@@ -36,6 +38,10 @@ export function TranslatableText(props: {
   alsoTranslatable?: boolean;
   /** 아티스트·소속사 화면의 팬 답장 — 자동 번역은 서버 설정 TRANSLATION_AUTO_FAN_REPLIES를 따름(기본 꺼짐, "번역 보기"를 눌렀을 때만) */
   fanReply?: boolean;
+  /** 긴 메시지 전체보기 화면(2026-10-19) — 자르지 않고 길게 눌러 고를 수 있게 */
+  full?: boolean;
+  /** 전체보기 화면 위쪽에 보일 보낸 사람·시각 */
+  sender?: { name: string; avatar?: string | null; createdAt?: string };
 }) {
   const { actorId, messageId, text, display, welcome } = props;
   const theme = useTheme();
@@ -56,12 +62,19 @@ export function TranslatableText(props: {
 
   return (
     <View>
-      <ThemedText>{display ?? text}</ThemedText>
+      {/* 500자·15줄이 넘으면 앞부분 + "전체보기"(말풍선 안의 번역도 같은 길이로 자름) */}
+      <MessageText
+        message={{ text, actorId, messageId, welcome, fanReply: props.fanReply, senderName: props.sender?.name, senderAvatar: props.sender?.avatar, createdAt: props.sender?.createdAt }}
+        display={display}
+        full={props.full}
+      />
       {translatable ? (
         <>
           {shownOpen && translation.data ? (
             <View style={[styles.translation, { borderTopColor: theme.border }]}>
-              <ThemedText themeColor="textSecondary">{translation.data.text}</ThemedText>
+              <ThemedText themeColor="textSecondary" selectable={props.full}>
+                {props.full ? translation.data.text : clipLongMessage(translation.data.text).text}
+              </ThemedText>
             </View>
           ) : null}
           {shownOpen && translation.isError ? (

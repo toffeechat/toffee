@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, ChevronLeft, SearchX, Sparkle } from 'lucide-react-native';
+import { ArrowRight, Bell, BellRing, ChevronLeft, SearchX, Sparkle } from 'lucide-react-native';
 
 import { BundleAvatars } from '@/components/bundle-card';
 import { MembershipBenefits } from '@/components/membership-benefits';
@@ -23,6 +23,8 @@ import { useStorePurchase } from '@/hooks/use-store-purchase';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
+import { formatReleaseAt } from '@/utils/release';
+import { useReleaseWatch, useUpcoming } from '@/hooks/use-release';
 
 /**
  * 묶음 구독 확인 → 완료(2026-09-29) — 개인 구독 화면(P-2)과 같은 흐름. 사진 대신 배우들 사진을 겹쳐 보여주고, 개인
@@ -32,7 +34,7 @@ import { formatPrice } from '@/utils/price';
  */
 export default function SubscribeBundleScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { bundleId } = useLocalSearchParams<{ bundleId: string }>();
@@ -44,6 +46,10 @@ export default function SubscribeBundleScreen() {
   const storeBuy = useMutation({ mutationFn: store.buy, onSuccess: (result) => result && setDone(true) });
   const failure = storeBuy.error ?? subscribe.error;
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  // 공개 예정 묶음(2026-10-19) — 묶음·든 방 중 가장 늦은 공개 시각까지는 구독 대신 알림 받기
+  const upcoming = useUpcoming(bundle?.opensAt);
+  const release = useReleaseWatch({ kind: 'bundles', id: bundleId }, upcoming);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -142,12 +148,38 @@ export default function SubscribeBundleScreen() {
             {failure instanceof ApiError ? failure.message : t('subscribeFlow.failed')}
           </ThemedText>
         )}
-        <Button
-          title={t('subscribeFlow.cta', { price })}
-          variant="accent"
-          loading={subscribe.isPending || storeBuy.isPending}
-          onPress={() => (store.available ? storeBuy.mutate() : subscribe.mutate(undefined, { onSuccess: () => setDone(true) }))}
-        />
+        {upcoming ? (
+          <>
+            <View style={[styles.save, styles.releaseBox, { backgroundColor: theme.tintSoft }]}>
+              <ThemedText type="captionBold" style={{ color: theme.tint }}>
+                {t('release.comingSoon')}
+              </ThemedText>
+              <ThemedText type="headline">{t('release.opensAt', { date: formatReleaseAt(bundle.opensAt!, i18n.language) })}</ThemedText>
+            </View>
+            <Button
+              title={release.watching ? t('release.notifying') : t('release.notifyMe')}
+              icon={release.watching ? BellRing : Bell}
+              variant={release.watching ? 'secondary' : 'accent'}
+              disabled={!release.canWatch || release.toggle.isPending}
+              onPress={() =>
+                release.toggle.mutate(!release.watching, {
+                  onSuccess: (result) => setNotice(result.watching ? t('release.notifyOn') : t('release.notifyOff')),
+                  onError: (error) => setNotice(error instanceof ApiError ? error.message : t('release.notifyFailed')),
+                })
+              }
+            />
+            <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
+              {notice ?? t('release.notifyHint')}
+            </ThemedText>
+          </>
+        ) : (
+          <Button
+            title={t('subscribeFlow.cta', { price })}
+            variant="accent"
+            loading={subscribe.isPending || storeBuy.isPending}
+            onPress={() => (store.available ? storeBuy.mutate() : subscribe.mutate(undefined, { onSuccess: () => setDone(true) }))}
+          />
+        )}
         <PurchaseDisclosure bundle />
         {store.available ? null : (
           <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
@@ -167,6 +199,7 @@ const styles = StyleSheet.create({
   price: { flexDirection: 'row', alignItems: 'baseline', marginTop: Spacing.one },
   save: { borderRadius: Radius.pill, paddingHorizontal: 12, paddingVertical: 4, marginTop: Spacing.one },
   card: { borderRadius: Radius.xl, padding: Spacing.four, gap: Spacing.three },
+  releaseBox: { alignSelf: 'center', alignItems: 'center', borderRadius: Radius.lg, paddingHorizontal: Spacing.four, paddingVertical: Spacing.two },
   actorRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   center: { textAlign: 'center' },
   back: { position: 'absolute', left: Spacing.three },

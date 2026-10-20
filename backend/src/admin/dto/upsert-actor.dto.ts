@@ -1,4 +1,4 @@
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, Max, Min, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, Max, Min, ValidateIf } from 'class-validator';
 import { MAX_PRICE_CENTS, STORE_PRODUCT_ID_PATTERN } from '../../common/store/store-product.js';
 
 export class CreateActorDto {
@@ -88,6 +88,12 @@ export class UpdateActorDto {
   @IsString()
   @Matches(STORE_PRODUCT_ID_PATTERN)
   storeProductId?: string | null;
+
+  // 공개 시각(ISO, 2026-10-19 예약 오픈) — null이면 바로 공개, 빼면 그대로. 운영자 화면은 태국 시간으로 입력
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  releaseAt?: string | null;
 }
 
 // 프로필 이미지 교체 — 값은 POST /admin/uploads로 받은 objectKey, null이면 삭제, 필드를 빼면 그대로

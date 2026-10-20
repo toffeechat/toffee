@@ -10,14 +10,24 @@ import { useTheme } from '@/hooks/use-theme';
 import { useConsoleUnread } from '@/lib/console-alerts';
 import { Spacing } from '@/constants/theme';
 import { IDLE_WARN_DAYS, idleDays } from '@/utils/idle-days';
+import { formatReleaseAt, isUpcoming } from '@/utils/release';
 
 /** 소속사에게만 보이는 줄 — 마지막 메시지 N일 전(7일 넘으면 빨간색, 서버도 그때 소속사에 알림), 활동 종료 */
 function IdleLine({ actor }: { actor: MyActor }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const theme = useTheme();
   if (actor.retiredAt) {
     return (
       <ThemedText type="caption" themeColor="textTertiary">
         {t('dashboard.retired')}
+      </ThemedText>
+    );
+  }
+  // 공개 예정(2026-10-19) — 공개 시각과 알림 신청 수(사전 수요)
+  if (isUpcoming(actor.releaseAt)) {
+    return (
+      <ThemedText type="caption" style={{ color: theme.tint }}>
+        {t('release.consoleLine', { date: formatReleaseAt(actor.releaseAt!, i18n.language), count: actor.releaseWatchCount ?? 0 })}
       </ThemedText>
     );
   }

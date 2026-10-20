@@ -26,6 +26,7 @@ import { MediaTile } from '@/components/media-tile';
 import { QuoteBlock } from '@/components/quote-block';
 import { VoiceMessage } from '@/components/voice-message';
 import { TranslatableText } from '@/components/translatable-text';
+import { MessageText } from '@/components/message-text';
 import { IconButton } from '@/components/ui/icon-button';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
@@ -185,7 +186,7 @@ function MonitorBubble({
         {message.mediaType === 'AUDIO' ? (
           <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
         ) : null}
-        {bodyText ? <ThemedText>{bodyText}</ThemedText> : null}
+        {bodyText ? <MessageText message={{ text: bodyText, createdAt: message.createdAt }} /> : null}
       </View>
     ) : null;
   return (
@@ -272,7 +273,7 @@ function ReplyBubble({ reply, actorId, menuOpen, onMenuChange }: { reply: FanRep
                 {t('retract.placeholder')}
               </ThemedText>
             ) : (
-              <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} fanReply />
+              <TranslatableText actorId={actorId} messageId={reply.id} text={reply.body ?? ''} fanReply sender={{ name: fan?.nickname ?? '', createdAt: reply.createdAt }} />
             )}
           </Pressable>
           <SideTime at={reply.createdAt} />

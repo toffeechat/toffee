@@ -1,4 +1,4 @@
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { MAX_PRICE_CENTS, STORE_PRODUCT_ID_PATTERN } from '../../common/store/store-product.js';
 
 // 묶음 상품 등록/수정(운영자). 배우 ID는 참조라 @IsUUID 대신 @IsString — 존재 여부는 서비스에서 확인
@@ -24,6 +24,12 @@ export class CreateBundleDto {
   @IsString()
   @Matches(STORE_PRODUCT_ID_PATTERN)
   storeProductId?: string | null;
+
+  // 공개 시각(ISO, 2026-10-19) — 빼거나 null이면 바로 공개
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  releaseAt?: string | null;
 }
 
 export class UpdateBundleDto {
@@ -57,4 +63,10 @@ export class UpdateBundleDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  // 공개 시각(ISO, 2026-10-19) — null이면 바로 공개, 빼면 그대로
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  releaseAt?: string | null;
 }

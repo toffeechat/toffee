@@ -32,6 +32,7 @@ import { ScrollToBottomButton } from '@/components/scroll-to-bottom-button';
 import { QuoteBlock } from '@/components/quote-block';
 import { needsTranslation } from '@/utils/detect-script';
 import { TranslatableText } from '@/components/translatable-text';
+import { MessageText } from '@/components/message-text';
 import { VoiceMessage } from '@/components/voice-message';
 import { ApiError } from '@/lib/api-client';
 import { saveMedia } from '@/lib/save-media';
@@ -656,6 +657,9 @@ function MessageRow({
   const [translateChoice, setTranslateOpen] = useState<boolean | null>(null);
   const translateOpen = translateChoice ?? autoTranslate;
   const quoteTranslatable = !!quote && !quote.hidden && !!quote.body && needsTranslation(quote.body, i18n.language);
+  // 긴 메시지 전체보기 화면 위쪽(2026-10-19)
+  const sender = { name: actorName ?? '', avatar: avatarUri, createdAt: message.createdAt };
+  const senderMeta = { senderName: actorName, senderAvatar: avatarUri, createdAt: message.createdAt };
 
   const bubble = (
     <Pressable
@@ -693,7 +697,7 @@ function MessageRow({
           />
           {message.body ? (
             <View style={[styles.bubble, { backgroundColor: theme.backgroundElement }]}>
-              <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} autoOpened={translateChoice === null} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} />
+              <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} autoOpened={translateChoice === null} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} sender={sender} />
             </View>
           ) : null}
         </View>
@@ -716,7 +720,7 @@ function MessageRow({
               {message.extra === 'welcome' ? t('chat.welcomeLabel') : t('chat.birthdayLabel')}
             </ThemedText>
           ) : null}
-          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome /> : message.extra ? <ThemedText>{message.body}</ThemedText> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} autoOpened={translateChoice === null} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} /> : <ThemedText>{message.body}</ThemedText> : null}
+          {message.body ? message.extra === 'welcome' ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} welcome sender={sender} /> : message.extra ? <MessageText message={{ text: message.body, ...senderMeta }} /> : isArtist ? <TranslatableText actorId={actorId} messageId={message.id} text={message.body} open={translateOpen} autoOpened={translateChoice === null} onOpenChange={setTranslateOpen} alsoTranslatable={quoteTranslatable} sender={sender} /> : <MessageText message={{ text: message.body, createdAt: message.createdAt }} /> : null}
         </View>
       )}
     </Pressable>
