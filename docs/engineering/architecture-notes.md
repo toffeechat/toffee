@@ -1411,6 +1411,20 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - **2026-10-04**: RNFirebase 26은 기본이 SPM이라 `useFrameworks: 'static'`과 같이 쓰면 pod install이 막힘 → `@react-native-firebase/app`
   플러그인 옵션 `ios.disableSPM: true`(Podfile `$RNFirebaseDisableSPM = true`)로 CocoaPods 사용.
 
+## 스페인어·포르투갈어(브라질) 추가 (2026-10-20)
+
+- 코드 `es`, `pt-BR`. app `SUPPORTED_LANGUAGES`·backend `SUPPORTED_LOCALES` 둘 다 9개. 기기 언어 `pt`(pt-PT 포함)는 `getDeviceLanguage`에서,
+  Accept-Language `pt-*`는 `matchAcceptLanguage`에서 `pt-BR`로. `es-*`는 언어 코드만 보는 기존 로직 그대로 `es`.
+- 백엔드는 `Record<SupportedLocale, …>`라 tsc가 빠진 곳을 다 잡음: 오류 문구 113개 + 제재 사유·`INTL_LOCALE`(`es-ES`/`pt-BR`), 푸시, 보호자 동의
+  (`LOCALE_BY_COUNTRY` ES·MX·AR·CO·CL·PE → es, BR·PT → pt-BR), FAQ, 약관 제목·초안 안내, 고객센터·사업자 정보 페이지, 번역 대상 이름
+  (`Spanish`, `Brazilian Portuguese`). 번역 시스템 프롬프트의 웃음 표현 예시에 jajaja·kkkk/rsrs 추가(프롬프트 캐시는 한 번 새로 만들어짐).
+- 앱: `src/i18n/locales/{es,pt-BR}.json`(ko.json과 키·`{{…}}` 일치 확인), iOS 권한 `app/locales/{es,pt-BR}.json` + `app.config.ts` `locales`,
+  운영자 통계 언어 이름·데모 코드 링크 언어. 글꼴은 Latin-1 범위라 Pretendard 그대로.
+- `needsTranslation`(`utils/detect-script.ts`): 앱 언어가 es/pt면 라틴 글을 `LATIN_LANGUAGE_MARKERS`(글자 ñ¿¡ / ãõç + 자주 쓰는 낱말 Set)로 한 번 더
+  봄 — 표시가 없으면 true. Hermes 호환 때문에 정규식 lookbehind·`\p{L}` 대신 `split(/[^a-zà-ÿ]+/)` 후 Set 조회. 오판하면 같은 언어 번역이
+  요청되지만 서버는 "이미 대상 언어면 그대로" 돌려주고 메시지×언어당 한 번만 저장이라 비용 영향은 작음.
+- 데모 시드(`seedStatsCrowd`)는 안 건드림(난수 순서가 바뀌면 통계 데모 숫자가 다 달라짐).
+
 ## 결제 고지·첫 답장 동의·사업자 정보 (2026-10-12)
 
 - 결제 고지: `app/src/components/purchase-disclosure.tsx`(구독·묶음 구독 화면 공용). 스토어 이름은 `Platform.OS`로(웹은 "App Store·Google Play").
