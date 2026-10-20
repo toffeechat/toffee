@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
   AdminAvatar,
   AdminButton,
+  AdminButtonRow,
   AdminChip,
   AdminField,
   AdminMessage,
@@ -20,13 +21,16 @@ import {
 import {
   useActorAgencyHistory,
   useAdminActor,
+  useAdminBundles,
   useAdminAgencies,
   useAdminUsers,
   useAssignActorAgency,
   useIssueActorLinks,
   useLinkActorUser,
   useRevokeActorLink,
+  useSetActorContractEnd,
   useSetActorRetired,
+  useSetActorRetireAt,
   useUpdateActor,
   useUpdateActorImages,
   type AdminActor,
@@ -40,6 +44,9 @@ import { ReleaseSection } from '@/components/admin-release';
 import { uploadProfileImage } from '@/lib/upload-media';
 import { Spacing } from '@/constants/theme';
 import { STORE_PRODUCT_ID_PATTERN } from '@/utils/store-product';
+import { formatBangkokDateTime, parseBangkokDateTime } from '@/utils/release';
+import { thaiToday } from '@/utils/stat-range';
+import { AdminDateField } from '@/components/admin-date-field';
 
 function errorText(error: unknown, fallback: string) {
   return error instanceof ApiError ? error.message : fallback;
@@ -264,7 +271,8 @@ function LinkInvite({ actor }: { actor: AdminActor }) {
 function SelfAccountSection({ actor }: { actor: AdminActor }) {
   const theme = useTheme();
   const [query, setQuery] = useState('');
-  const { data: candidates } = useAdminUsers(query.trim(), 'ACTOR');
+  const { data: candidatePage } = useAdminUsers(query.trim(), 'ACTOR');
+  const candidates = candidatePage?.items;
   const link = useLinkActorUser(actor.id);
   const [message, setMessage] = useState<string | null>(null);
   const onError = (e: unknown) => setMessage(errorText(e, '연결하지 못했어요.'));
@@ -317,36 +325,123 @@ function SelfAccountSection({ actor }: { actor: AdminActor }) {
 }
 
 // 활동 종료(계약 종료·입대 등) — 둘러보기·검색에서 숨기고 신규 구독을 막음. 기존 구독 팬은 대화 유지 + 알림, 결제 후 14일 안이면 환불 요청 가능(잠정 정책). 작업 기록에 남음
+/**
+ * 활동 상태(2026-10-20: 종료 예정 추가) — ① 예정일을 정하면 그 순간 새 구독·묶음 판매가 막히고 팬 화면에 "N월 N일 활동 종료 예정", 구독 팬에게 미리 알림,
+ * 그 시각에 자동 종료(사용자 결정) ② [지금 바로 종료] ③ 종료된 뒤 [활동 재개].
+ * 종료되면: 둘러보기·검색에서 숨김, 새 구독 막힘, 기존 팬은 지난 대화를 계속 봄, 구독 팬에게 종료 알림, 결제 14일 안이면 환불 요청 가능, 든 CP방도 종료 취급.
+ */
 function RetireSection({ actor }: { actor: AdminActor }) {
   const setRetired = useSetActorRetired(actor.id);
+  const setRetireAt = useSetActorRetireAt(actor.id);
+  const [when, setWhen] = useState(actor.retireAt ? formatBangkokDateTime(actor.retireAt) : '');
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
-  const toggle = async () => {
-    const retiring = !actor.retiredAt;
+  const busy = setRetired.isPending || setRetireAt.isPending;
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했어요.'), error: true });
+  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 가요. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요. 구글 구독은 서버가 갱신을 자동으로 끊고, 애플 구독은 운영자 홈 "애플 판매 중지 할 일"에서 상품 판매 중지가 필요해요(종료 31일 전까지 권장).`;
+
+  const retireNow = async () => {
+    const ok = await confirm('지금 바로 활동 종료', `${actor.legalName} 아티스트를 지금 둘러보기·검색에서 숨기고 새 구독을 막을까요?\n\n${effects}`, '활동 종료', '취소');
+    if (ok) setRetired.mutate(true, { onSuccess: () => setMessage({ text: '활동을 종료했어요.' }), onError });
+  };
+  const restore = async () => {
+    if (await confirm('활동 재개', `${actor.legalName} 아티스트를 다시 둘러보기에 보이고 구독을 받을까요?`, '활동 재개', '취소')) {
+      setRetired.mutate(false, { onSuccess: () => setMessage({ text: '활동을 재개했어요.' }), onError });
+    }
+  };
+  const schedule = async () => {
+    const iso = parseBangkokDateTime(when);
+    if (!iso) return setMessage({ text: '종료 예정 날짜와 시각을 골라 주세요(태국 시간).', error: true });
     const ok = await confirm(
-      retiring ? '활동 종료' : '활동 재개',
-      retiring
-        ? `${actor.legalName} 아티스트를 둘러보기·검색에서 숨기고 신규 구독을 막을까요?\n\n지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 대화를 계속 볼 수 있어요. 구독 팬에게 활동 종료 알림이 가고, 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요. 입대도 활동 종료로 처리하고 전역하면 재개해 주세요. 스토어 결제가 붙으면 스토어 상품 판매도 같이 멈춰야 갱신이 안 돼요.`
-        : `${actor.legalName} 아티스트를 다시 둘러보기에 보이고 구독을 받을까요?`,
-      retiring ? '활동 종료' : '활동 재개',
+      '활동 종료 예정',
+      `${actor.legalName} 아티스트를 ${when}(태국)에 활동 종료할까요?\n\n지금부터 새 구독·묶음 판매가 막히고, 팬 화면에 종료 예정일이 보이고, 구독 팬에게 미리 알림이 가요. 그 시각이 되면 자동으로 종료돼요.\n\n${effects}`,
+      '예정 저장',
       '취소',
     );
-    if (!ok) return;
-    setRetired.mutate(retiring, {
-      onSuccess: () => setMessage({ text: retiring ? '활동을 종료했어요.' : '활동을 재개했어요.' }),
-      onError: (e) => setMessage({ text: errorText(e, '바꾸지 못했어요.'), error: true }),
+    if (ok) setRetireAt.mutate(iso, { onSuccess: () => setMessage({ text: `${when}(태국)에 종료돼요. 지금부터 새 구독은 막혀 있어요.` }), onError });
+  };
+  const cancelSchedule = async () => {
+    if (await confirm('종료 예정 취소', '종료 예정을 지우고 다시 새 구독을 받을까요?', '예정 취소', '취소')) {
+      setRetireAt.mutate(null, { onSuccess: () => { setWhen(''); setMessage({ text: '종료 예정을 취소했어요. 다시 구독을 받아요.' }); }, onError });
+    }
+  };
+
+  return (
+    <AdminSection title="활동 상태" hint="계약이 끝나거나 활동을 멈출 때(입대도 종료 → 전역하면 재개). 미리 날짜를 정해 두면 그날 자동으로 종료돼요.">
+      <ThemedText type="smallBold" themeColor={actor.retiredAt || actor.retireAt ? 'danger' : 'textSecondary'}>
+        {actor.retiredAt
+          ? `활동 종료됨 (${formatDate(actor.retiredAt)})`
+          : actor.retireAt
+            ? `${formatBangkokDateTime(actor.retireAt)}(태국) 활동 종료 예정 — 새 구독 막힘`
+            : '활동 중'}
+      </ThemedText>
+      {actor.retiredAt ? (
+        <AdminButtonRow>
+          <AdminButton label={busy ? '바꾸는 중…' : '활동 재개'} disabled={busy} onPress={() => void restore()} />
+        </AdminButtonRow>
+      ) : (
+        <>
+          <AdminDateField label="종료 예정(태국 시간)" value={when} onChange={setWhen} withTime min={thaiToday()} />
+          <AdminButtonRow>
+            <AdminButton label={busy ? '저장 중…' : actor.retireAt ? '예정 바꾸기' : '종료 예정 저장'} disabled={busy || !when} onPress={() => void schedule()} />
+            {actor.retireAt ? <AdminButton secondary label="예정 취소" disabled={busy} onPress={() => void cancelSchedule()} /> : null}
+            <AdminButton secondary label="지금 바로 종료" disabled={busy} onPress={() => void retireNow()} />
+          </AdminButtonRow>
+        </>
+      )}
+      <AdminMessage text={message?.text ?? null} error={message?.error} />
+    </AdminSection>
+  );
+}
+
+const bangkokDay = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
+
+/**
+ * 계약 끝나는 날(2026-10-20) — 저장만 하고 자동 종료는 하지 않음(연장 협의 중일 수 있어서). 31일 전부터 운영자 홈 할 일 + 알림(메일·푸시).
+ * [이 날짜로 종료 예정 잡기]는 그날 23:59(태국)로 활동 종료 예정을 잡음.
+ */
+function ContractSection({ actor }: { actor: AdminActor }) {
+  const setContract = useSetActorContractEnd(actor.id);
+  const setRetireAt = useSetActorRetireAt(actor.id);
+  const [day, setDay] = useState(actor.contractEndAt ? bangkokDay(actor.contractEndAt) : '');
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
+  const busy = setContract.isPending || setRetireAt.isPending;
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '저장하지 못했어요.'), error: true });
+  const saved = actor.contractEndAt ? bangkokDay(actor.contractEndAt) : '';
+  // 화면을 연 시각 기준(렌더마다 시계를 읽지 않게)
+  const [openedAt] = useState(() => Date.now());
+  const daysLeft = actor.contractEndAt ? Math.ceil((new Date(actor.contractEndAt).getTime() - openedAt) / 86_400_000) : null;
+
+  const save = (value: string) => {
+    setDay(value);
+    setContract.mutate(value ? `${value}T00:00:00+07:00` : null, {
+      onSuccess: () => setMessage({ text: value ? `계약 끝나는 날을 ${value}로 저장했어요.` : '계약 끝나는 날을 지웠어요.' }),
+      onError,
     });
   };
+  const scheduleRetire = async () => {
+    const ok = await confirm(
+      '계약 끝나는 날로 종료 예정',
+      `${actor.legalName} 아티스트를 ${saved} 23:59(태국)에 활동 종료할까요? 지금부터 새 구독·묶음 판매가 막히고 구독 팬에게 미리 알림이 가요.`,
+      '예정 저장',
+      '취소',
+    );
+    if (ok) setRetireAt.mutate(`${saved}T23:59:00+07:00`, { onSuccess: () => setMessage({ text: '활동 종료 예정을 잡았어요.' }), onError });
+  };
+
   return (
-    <AdminSection title="활동 상태" hint="계약이 끝나거나 활동을 멈출 때. 기존 구독 팬의 대화는 그대로 남아요.">
-      <ThemedText type="small" themeColor={actor.retiredAt ? 'danger' : 'textSecondary'}>
-        {actor.retiredAt ? `활동 종료됨 (${formatDate(actor.retiredAt)})` : '활동 중'}
-      </ThemedText>
+    <AdminSection title="계약" hint="계약 끝나는 날을 적어 두면 31일 전부터 운영자 홈 할 일과 알림으로 알려 줘요. 날짜가 지나도 자동으로 종료하지는 않아요.">
+      {daysLeft !== null && !actor.retiredAt ? (
+        <ThemedText type="smallBold" themeColor={daysLeft <= 31 ? 'danger' : 'textSecondary'}>
+          {daysLeft < 0 ? `계약이 ${-daysLeft}일 전에 끝났어요` : daysLeft === 0 ? '오늘 계약이 끝나요' : `계약 종료까지 ${daysLeft}일`}
+        </ThemedText>
+      ) : null}
+      <AdminDateField label="계약 끝나는 날(태국)" value={day} onChange={save} clearable />
+      {saved && !actor.retiredAt && !actor.retireAt && saved >= thaiToday() ? (
+        <AdminButtonRow>
+          <AdminButton secondary label="이 날짜로 종료 예정 잡기" disabled={busy} onPress={() => void scheduleRetire()} />
+        </AdminButtonRow>
+      ) : null}
       <AdminMessage text={message?.text ?? null} error={message?.error} />
-      <AdminButton
-        label={setRetired.isPending ? '바꾸는 중…' : actor.retiredAt ? '활동 재개' : '활동 종료'}
-        disabled={setRetired.isPending}
-        onPress={() => void toggle()}
-      />
     </AdminSection>
   );
 }
@@ -369,6 +464,8 @@ export default function AdminActorDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: actor, isLoading } = useAdminActor(id);
+  const { data: bundles } = useAdminBundles();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -380,6 +477,14 @@ export default function AdminActorDetailScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             {formatBaht(actor.monthlyPriceCents)}/월 · 구독자 {actor.activeSubscriberCount}명 · 등록 {formatDate(actor.createdAt)}
           </ThemedText>
+          {/* 소속사와 같은 모니터링 화면(보낸 메시지·팬 답장·스토리·통계, 2026-10-20) */}
+          <AdminButtonRow>
+            <AdminButton label="토피룸 모니터링" onPress={() => router.push(`/console/${actor.id}`)} />
+            {/* 이 CP가 든 묶음(패키지)이 아직 없을 때만(2026-10-20) */}
+            {actor.kind === 'COUPLE' && bundles && !bundles.some((bundle) => bundle.actors.some((item) => item.id === actor.id)) ? (
+              <AdminButton secondary label="이 CP로 패키지(묶음 3개) 만들기" onPress={() => router.push({ pathname: '/admin/bundles/cp-set', params: { roomId: actor.id } })} />
+            ) : null}
+          </AdminButtonRow>
           <AdminSection title="프로필 사진" hint="공식 사진은 아티스트 찾기·아티스트 소개에, 대화방 사진은 채팅방에서 보여요. 공식 사진을 처음 올리면 비어 있는 대화방 사진에도 같이 들어가요(아티스트가 나중에 바꾸거나 기본 이미지로 돌릴 수 있음). 정사각으로 잘라서 올려요.">
             <ThemedView style={styles.photos}>
               <PhotoSlot actor={actor} field="officialProfileImageKey" label="공식 사진" />
@@ -403,6 +508,7 @@ export default function AdminActorDetailScreen() {
             </>
           )}
           <ActorRelease actor={actor} />
+          <ContractSection actor={actor} />
           <RetireSection actor={actor} />
         </ScrollView>
       )}

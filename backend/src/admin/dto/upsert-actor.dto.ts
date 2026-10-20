@@ -121,3 +121,16 @@ export class SetRetiredDto {
   @IsBoolean()
   retired!: boolean;
 }
+
+// 활동 종료 예정(2026-10-20) — 미래 시각(ISO), null이면 예정 취소
+export class SetRetireAtDto {
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  retireAt!: string | null;
+}
+
+export class SetContractEndDto {
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  contractEndAt!: string | null;
+}

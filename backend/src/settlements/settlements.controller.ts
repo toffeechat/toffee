@@ -6,8 +6,11 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 /** 월 정산 — 운영자는 전체(소속사 골라 보기 가능), 소속사 직원은 자기 소속사만. 앱은 PC 웹에서만 이 화면을 보여 줌 */
+// 운영자 중 OWNER만(2026-10-20 권한 단계) — 고객 응대 운영자는 못 씀
+@AdminOwnerOnly()
 @Roles(Role.ADMIN, Role.AGENCY_STAFF)
 @Controller('settlements')
 export class SettlementsController {

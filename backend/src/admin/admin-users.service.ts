@@ -39,6 +39,8 @@ const LIST_SELECT = {
 } as const;
 
 const ACCESS_LOG_PAGE = 200;
+/** 회원 목록 한 쪽 인원 */
+export const USER_PAGE_SIZE = 50;
 
 @Injectable()
 export class AdminUsersService {
@@ -47,22 +49,86 @@ export class AdminUsersService {
     private readonly audit: AuditService,
   ) {}
 
-  findAll(query?: string, role?: Role, sort?: 'recent') {
-    const where: Prisma.UserWhereInput = {};
-    if (role) where.role = role;
-    if (query) {
-      where.OR = [
-        { displayName: { contains: escapeLike(query), mode: 'insensitive' } },
-        { nickname: { contains: escapeLike(query), mode: 'insensitive' } },
-        { email: { contains: escapeLike(query), mode: 'insensitive' } },
-      ];
+  /**
+   * 회원 목록(2026-10-20: 나눠 불러오기 + 역할별 인원수) — 한 번에 PAGE_SIZE명, page는 1부터. counts는 검색어만 건 역할별 인원(탭 옆 숫자),
+   * total은 지금 역할 탭의 인원(쪽 수 계산용).
+   */
+  async findAll(query?: string, role?: Role, sort?: 'recent', page = 1) {
+    const search: Prisma.UserWhereInput = query
+      ? {
+          OR: [
+            { displayName: { contains: escapeLike(query), mode: 'insensitive' } },
+            { nickname: { contains: escapeLike(query), mode: 'insensitive' } },
+            { email: { contains: escapeLike(query), mode: 'insensitive' } },
+          ],
+        }
+      : {};
+    const where: Prisma.UserWhereInput = { ...search, ...(role ? { role } : {}) };
+    const [items, byRole] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: LIST_SELECT,
+        // 최근 접속순이면 한 번도 접속 안 한 계정은 맨 뒤
+        orderBy: sort === 'recent' ? [{ lastActiveAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }] : { createdAt: 'desc' },
+        skip: (Math.max(1, page) - 1) * USER_PAGE_SIZE,
+        take: USER_PAGE_SIZE,
+      }),
+      this.prisma.user.groupBy({ by: ['role'], where: search, _count: { _all: true } }),
+    ]);
+    const counts: Record<Role | 'ALL', number> = { ALL: 0, USER: 0, ACTOR: 0, AGENCY_STAFF: 0, ADMIN: 0 };
+    for (const row of byRole) {
+      counts[row.role] = row._count._all;
+      counts.ALL += row._count._all;
     }
-    return this.prisma.user.findMany({
-      where,
-      select: LIST_SELECT,
-      // 최근 접속순이면 한 번도 접속 안 한 계정은 맨 뒤
-      orderBy: sort === 'recent' ? [{ lastActiveAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }] : { createdAt: 'desc' },
-    });
+    return { items, counts, total: role ? counts[role] : counts.ALL, page: Math.max(1, page), pageSize: USER_PAGE_SIZE };
+  }
+
+  /** 회원 한 명(2026-10-20, 회원 상세 화면·신고에서 바로 제재) */
+  async findOne(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: LIST_SELECT });
+    if (!user) throw new NotFoundException(appError('USER_NOT_FOUND'));
+    return user;
+  }
+
+  /**
+   * 회원 한 명의 구독·결제·환불(2026-10-20 — "결제했는데 안 열려요" 같은 문의 대응). 방 이용권(Subscription), 구매(개인·묶음, 스토어·자동 갱신),
+   * 결제 건(최근 100건, 환불 여부), 환불 요청.
+   */
+  async billing(userId: string) {
+    const [rooms, purchases, charges, refunds] = await Promise.all([
+      this.prisma.subscription.findMany({
+        where: { userId },
+        orderBy: { startedAt: 'desc' },
+        select: { actorId: true, startedAt: true, cancelledAt: true, actor: { select: { legalName: true, chatDisplayName: true, kind: true } } },
+      }),
+      this.prisma.purchase.findMany({
+        where: { userId },
+        orderBy: { startedAt: 'desc' },
+        select: {
+          id: true,
+          priceCents: true,
+          startedAt: true,
+          cancelledAt: true,
+          iapPlatform: true,
+          iapExpiresAt: true,
+          willRenew: true,
+          actor: { select: { id: true, legalName: true } },
+          bundle: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.purchaseCharge.findMany({
+        where: { purchase: { userId } },
+        orderBy: { chargedAt: 'desc' },
+        take: 100,
+        select: { id: true, productName: true, amountCents: true, chargedAt: true, periodEnd: true, source: true, refundedAt: true, storeAmountMilli: true, storeCurrency: true },
+      }),
+      this.prisma.refundRequest.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, reason: true, status: true, source: true, createdAt: true, charge: { select: { productName: true, amountCents: true, refundedAt: true } } },
+      }),
+    ]);
+    return { rooms, purchases, charges, refunds };
   }
 
   /** 회원 한 명의 접속 기록(최근 3개월, 최신순 최대 200줄) — 로그인·접속 시각, 기기, 앱 버전, IP */

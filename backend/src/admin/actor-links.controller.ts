@@ -7,8 +7,11 @@ import { Public } from '../common/decorators/public.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 // 운영자: 아티스트 계정 연결 링크 만들기(여러 명)·취소(2026-10-19). 1차는 운영자만(소속사 직원 발급은 2차)
+// 운영자 중 OWNER만(2026-10-20 권한 단계) — 고객 응대 운영자는 못 씀
+@AdminOwnerOnly()
 @Roles(Role.ADMIN)
 @Controller('admin/actors')
 export class AdminActorLinksController {

@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { MessageSenderType, ReportCategory, ReportStatus, Role } from '../generated/prisma/enums.js';
 import { ensureCanViewActor } from '../common/authorization/actor-access.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
@@ -7,12 +8,25 @@ import { appError } from '../common/i18n/app-error.js';
 
 import { AuditService } from '../audit/audit.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
+import { AdminAlertService } from '../notifications/admin-alert.service.js';
+const REPORT_CATEGORY_LABEL: Record<ReportCategory, string> = { SPAM: '스팸·광고', ABUSE: '욕설·괴롭힘', SEXUAL: '음란·성적', PRIVACY: '개인정보 노출', OTHER: '기타' };
+
+export interface AdminReportFilter {
+  status?: ReportStatus;
+  category?: ReportCategory;
+  agencyId?: string;
+  actorId?: string;
+  from?: Date;
+  to?: Date;
+}
+
 @Injectable()
 export class ReportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly realtime: RealtimeService,
+    private readonly alerts: AdminAlertService,
   ) {}
 
   /**
@@ -43,10 +57,22 @@ export class ReportsService {
     }
 
     try {
-      return await this.prisma.report.create({
+      const report = await this.prisma.report.create({
         data: { messageId, reportedById, category, reason: reason?.trim() || null },
         select: { id: true, category: true, status: true, createdAt: true },
       });
+      // 운영자 알림(2026-10-20) — 메시지마다 처리 대기 중 첫 신고일 때만(같은 메시지에 신고가 몰려도 한 번)
+      const pending = await this.prisma.report.count({ where: { messageId, status: ReportStatus.PENDING } });
+      if (pending === 1) {
+        const room = await this.prisma.actor.findUnique({ where: { id: message.actorId }, select: { chatDisplayName: true } });
+        void this.alerts.notify(
+          'REPORT',
+          `${room?.chatDisplayName ?? ''} 방 ${message.senderType === MessageSenderType.ARTIST ? '아티스트 메시지' : '팬 답장'} 신고`,
+          `사유: ${REPORT_CATEGORY_LABEL[category]}${reason?.trim() ? ` — ${reason.trim().slice(0, 200)}` : ''}`,
+          { reportId: report.id },
+        );
+      }
+      return report;
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') throw new ConflictException(appError('REPORT_DUPLICATE'));
       throw error;
@@ -54,12 +80,22 @@ export class ReportsService {
   }
 
   /**
-   * 운영자 대기열 — 신고 횟수로 자동 제재하지 않는 대신(잠정 정책), 여러 사람이 신고한 메시지를 위로 올림.
-   * 같은 메시지 신고가 여러 건이면 한 줄로 묶어서(가장 먼저 들어온 신고 기준) 보여줌.
+   * 운영자 신고 화면(2026-10-20 개편: 요약 카드·소속사/아티스트/사유/기간 필터·처리한 내역까지). 신고 횟수로 자동 제재하지 않는 대신(잠정 정책)
+   * 같은 메시지 신고는 한 줄로 묶고(가장 먼저 들어온 신고 기준) 여러 명이 신고한 것부터. counts는 상태만 빼고 같은 필터를 건 줄 수(카드 숫자),
+   * byActor는 지금 필터의 방별 줄 수(많은 순). 최근 2,000건까지만 봄(운영 초기 규모 — 커지면 서버에서 나눠 불러오기).
    */
-  async findPending() {
+  async findForAdmin(filter: AdminReportFilter = {}) {
+    const where: Prisma.ReportWhereInput = {
+      ...(filter.category ? { category: filter.category } : {}),
+      ...(filter.from || filter.to ? { createdAt: { ...(filter.from ? { gte: filter.from } : {}), ...(filter.to ? { lt: filter.to } : {}) } } : {}),
+      message: {
+        ...(filter.actorId ? { actorId: filter.actorId } : {}),
+        // CP방은 멤버 소속사 기준
+        ...(filter.agencyId ? { actor: { OR: [{ agencyId: filter.agencyId }, { coupleMembers: { some: { member: { agencyId: filter.agencyId } } } }] } } : {}),
+      },
+    };
     const reports = await this.prisma.report.findMany({
-      where: { status: ReportStatus.PENDING },
+      where,
       include: {
         message: {
           select: {
@@ -69,32 +105,68 @@ export class ReportsService {
             body: true,
             mediaType: true,
             createdAt: true,
-            fanUser: { select: { id: true, nickname: true, displayName: true } },
-            actor: { select: { chatDisplayName: true } },
+            fanUser: { select: { id: true, nickname: true, displayName: true, status: true } },
+            actor: {
+              select: {
+                chatDisplayName: true,
+                legalName: true,
+                kind: true,
+                agency: { select: { id: true, name: true } },
+                coupleMembers: { select: { member: { select: { agency: { select: { id: true, name: true } } } } } },
+              },
+            },
           },
         },
         reportedBy: { select: { id: true, displayName: true, nickname: true, role: true } },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
+      take: 2000,
     });
-    const byMessage = new Map<string, { first: (typeof reports)[number]; reportIds: string[]; categories: Set<ReportCategory> }>();
-    for (const report of reports) {
-      const group = byMessage.get(report.messageId);
+    type Row = (typeof reports)[number];
+    const groups = new Map<string, { first: Row; reportIds: string[]; categories: Set<ReportCategory> }>();
+    for (const report of [...reports].reverse()) {
+      // 같은 메시지라도 처리 전후 신고는 따로(승인 뒤 새로 들어온 신고는 다시 대기)
+      const key = `${report.messageId}|${report.status}`;
+      const group = groups.get(key);
       if (group) {
         group.reportIds.push(report.id);
         group.categories.add(report.category);
       } else {
-        byMessage.set(report.messageId, { first: report, reportIds: [report.id], categories: new Set([report.category]) });
+        groups.set(key, { first: report, reportIds: [report.id], categories: new Set([report.category]) });
       }
     }
-    return [...byMessage.values()]
-      .sort((a, b) => b.reportIds.length - a.reportIds.length || a.first.createdAt.getTime() - b.first.createdAt.getTime())
-      .map(({ first, reportIds, categories }) => ({
-        ...first,
-        reportCount: reportIds.length,
-        reportIds,
-        categories: [...categories],
-      }));
+    const all = [...groups.values()];
+    const counts = { ALL: all.length, PENDING: 0, RESOLVED: 0, DISMISSED: 0 };
+    for (const group of all) counts[group.first.status] += 1;
+    const shown = all.filter((group) => !filter.status || group.first.status === filter.status);
+    const byActor = new Map<string, { actorId: string; name: string; count: number }>();
+    for (const { first } of shown) {
+      const row = byActor.get(first.message.actorId) ?? { actorId: first.message.actorId, name: first.message.actor.chatDisplayName, count: 0 };
+      row.count += 1;
+      byActor.set(first.message.actorId, row);
+    }
+    return {
+      counts,
+      byActor: [...byActor.values()].sort((a, b) => b.count - a.count).slice(0, 10),
+      items: shown
+        // 대기 중은 여러 명이 신고한 것·오래된 것부터, 처리한 건 최근 처리 순
+        .sort((a, b) =>
+          a.first.status === ReportStatus.PENDING && b.first.status === ReportStatus.PENDING
+            ? b.reportIds.length - a.reportIds.length || a.first.createdAt.getTime() - b.first.createdAt.getTime()
+            : (b.first.resolvedAt ?? b.first.createdAt).getTime() - (a.first.resolvedAt ?? a.first.createdAt).getTime(),
+        )
+        .map(({ first, reportIds, categories }) => {
+          const { coupleMembers, agency, ...actor } = first.message.actor;
+          const agencies = agency ? [agency.name] : [...new Set(coupleMembers.flatMap(({ member }) => (member.agency ? [member.agency.name] : [])))];
+          return {
+            ...first,
+            message: { ...first.message, actor: { ...actor, agencyNames: agencies } },
+            reportCount: reportIds.length,
+            reportIds,
+            categories: [...categories],
+          };
+        }),
+    };
   }
 
   // 같은 메시지에 걸린 대기 중 신고를 한 번에 처리(목록이 메시지 단위로 묶여 있으므로).

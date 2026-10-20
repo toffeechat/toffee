@@ -43,7 +43,9 @@ function setup(rooms: Record<string, unknown>[], lastMessage: Record<string, Dat
       staff.push({ roomId, title: compose({ locale: 'ko', displayName: '' }).title });
     },
   };
-  const service = new IdleReminderService(db as unknown as PrismaService, push as unknown as PushService, { get: () => undefined } as unknown as ConfigService);
+  // 운영자는 운영자 알림(푸시 + 메일)으로(2026-10-20)
+  const alerts = { notify: async (_kind: string, title: string) => void sent.push({ to: ['admin-1'], title, body: '' }) };
+  const service = new IdleReminderService(db as unknown as PrismaService, push as unknown as PushService, { get: () => undefined } as unknown as ConfigService, alerts as never);
   return { service, sent, staff, rooms };
 }
 

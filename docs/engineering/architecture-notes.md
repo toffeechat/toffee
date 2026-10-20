@@ -1721,3 +1721,68 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   앱: `utils/release.ts`(태국 시간 입력 ↔ ISO), `hooks/use-release.ts`(`useUpcoming`은 하루 안쪽이면 공개 시각에 다시 그림).
 - **긴 메시지**: `utils/long-message.ts`(`LONG_MESSAGE_CHARS=500`, `LONG_MESSAGE_LINES=15`, 코드 포인트 기준) → `components/message-text.tsx`가 자르고
   "전체보기"를 누르면 `lib/full-message.ts`(메모리)에 넣고 `/message`. `TranslatableText`가 `MessageText`를 쓰고 `full`·`sender` props, 말풍선 안 번역도 같은 길이로 자름.
+
+## 2026-10-20 — 운영자 홈 대시보드·토피룸 모니터링
+
+- 운영자 홈(`app/src/app/admin/index.tsx`)은 소속사 대시보드 부품(`console-charts`·`console-stats`·`console-rank`)을 그대로 씀.
+  아티스트 활동 숫자는 `GET /actors/mine/dashboard`(ADMIN이면 `findMine`이 전체 방) + 새 `agencyId` 쿼리(`AgencyDashboardQueryDto`,
+  SOLO는 `actor.agency.id`, COUPLE은 `coupleMembers[].member.agency.id` — `LIST_SELECT` 멤버 agency에 id 추가). 앱 `useAgencyDashboard(selection, kind, agencyId)`
+  는 쿼리 문자열 전체를 queryKey로.
+- 서비스 전체 추이는 `GET /admin/stats/overview?days|from&to`(`AdminStatsService.overview`, `resolveRange`·`WEEKLY_AFTER_DAYS` 재사용,
+  `bucketOverviewWeekly`) — 일별 가입·신규 구독 금액 + totals/previous. `/admin/stats/daily`와 `breakdown.actors`는 삭제(쓰는 곳 없음).
+  `/admin/stats` 화면은 `Redirect`로 홈.
+- 토피룸 목록 `components/room-monitor-list.tsx`(`RoomMonitorList`, `admin` prop) — 소속사 `console/(tabs)/artists.tsx`와 운영자
+  `admin/rooms.tsx` 공용, 행은 기존 `RoomListRow` + extra(운영 정보 줄·미발송 줄). `GET /actors/mine` 응답에 `subscriberCount`(구독 groupBy) 추가.
+  검색·정렬·필터는 앱에서(방 수가 적음 — 수백 개가 되면 서버 쪽으로).
+- `WideShell`: ADMIN이면 `/console/*`에서도 운영자 메뉴(모니터링 → "토피룸 모니터링", 전체 순위 → 홈 활성). 목록·입력 화면은 `pageNarrow`
+  (maxWidth 960), `fullWidthPage`(홈·정산·`/console/<id>`·`/console`)만 넓게. `AdminButton`은 `useWideLayout`이면 `alignSelf: flex-start`,
+  `secondary`(테두리), `AdminButtonRow`.
+- 방 등록 화면 하나(`admin/actors/import.tsx`, 제목 "아티스트·CP 등록"): `EditRow`(새 아티스트, 키로 관리) + `CpEntry`(멤버 = `{kind:'row',key}` |
+  `{kind:'actor',id}`) → `POST /admin/actors/import`의 `rows` + `couples: [{members:[{row}|{actorId}, …]}]`(`ImportCoupleDto`). `planImport(…, explicitCouples)`가
+  엑셀 "CP 짝"(이름)과 같은 규칙으로 계획(같은 쌍 한 번, 기존 CP는 exists, 같은 사람 둘·없는 줄은 `coupleErrors` → `errorCount`). `rows`는 비어도 됨
+  (`couples`가 있으면). 엑셀은 파일 안 짝은 `CpEntry`로 옮기고, 못 찾은 이름만 `partners`로 보내 서버가 기존 아티스트에서 찾음.
+  패키지(묶음)는 등록과 따로 — 등록 결과의 새 CP마다 `admin/bundles/cp-set?roomId=`로. `new.tsx`·`new-couple.tsx`·앱 `useCreateActor`/`useCreateCouple` 삭제
+  (서버 `POST /admin/actors`·`/admin/couples`는 남김).
+- `admin/bundles/cp-set`(CP로 패키지 3개)은 묶음 상품 화면·등록 결과·패키지 없는 CP방 상세에서(`?roomId=`로 미리 선택).
+
+## 2026-10-20 — 운영자 화면 2차(금칙어·신고·회원·종료 예정·공지 번역)
+
+- 금칙어: `moderation/default-banned-words.ts`(`DEFAULT_BANNED_WORDS`, `WORD_BOUNDARY_LANGUAGES`, `matchesBannedWord` — 단어 경계 `(?<![\p{L}\p{M}\p{N}])…(?![…])`,
+  NFC·소문자). `ModerationService.findHits`를 전송 검사·테스트가 같이 씀. `POST /admin/banned-words/defaults`(createMany skipDuplicates, `isDefault`)·`/test`.
+  DTO 언어 `BANNED_WORD_LANGUAGES`(9개). 작업 기록 `BANNED_WORD_*`(targetType `BANNED_WORD`).
+- 신고: `ReportsService.findForAdmin`(최근 2,000건, 메시지 × 상태로 묶음, counts·byActor) ← `GET /reports/admin`(`AdminReportsQueryDto`, 날짜는 태국 날짜 양 끝 포함).
+  `findPending`·`/reports/pending` 삭제. 앱 `useAdminReports(filter)`.
+- 회원: `AdminUsersService.findAll(q, role, sort, page)` → `{ items, counts, total, page, pageSize }`(`USER_PAGE_SIZE` 50, counts는 검색어만 건 groupBy), `findOne`.
+  앱 `admin/users/index.tsx`(PC 표·폰 목록) + `admin/users/[id].tsx`, 조각은 `components/admin-user-panels.tsx`(RoleSection·SanctionSection·ProfileSection·AccessHistory).
+- 종료 예정: `Actor.retireAt`. `roomRetireAt()`(방·CP 멤버 중 가장 이른 것) → `ensureActorAvailable`·`ensureBundleAvailable`에서 `ACTOR_RETIRING`, `BundlesService.forActor`도 제외.
+  `AdminActorsService.setRetireAt`(`PATCH /admin/actors/:id/retire-at`, 미래만, 새 날짜면 `retiringFan*` 푸시)·`retireDue`(조건부 updateMany 선점, retiredAt = 예정 시각,
+  `notifyRetired`) ← `RetireScheduler`(@Cron 매분). 바로 종료·재개하면 retireAt은 지움. 공개 `LIST_SELECT`·멤버 select에 retireAt.
+- 공지 번역: `NoticeTranslation(noticeId, language)` + `sourceUpdatedAt` — `TranslationService.translateNotice`(제목·본문 따로 번역, 공지 updatedAt이 다르면 다시),
+  `POST /notices/:id/translate`(throttle 20/분, NoticesModule이 TranslationModule import). 앱 `ExpandableItem.footer` + `NoticeTranslation`.
+- 날짜 입력: `components/admin-date-field.tsx`(`AdminDateField` — monthGrid 재사용, 값은 "YYYY-MM-DD"/"YYYY-MM-DD HH:mm" 글자). `AdminChip.count`로 탭 개수.
+- 마이그레이션 `20261020120000_banned_word_default_retire_at_notice_translation`.
+
+## 운영 기능: 스토어 갱신 멈춤·알림·점검·문의·권한/2단계 인증·내보내기 (2026-10-20)
+
+- 스토어: `subscriptions/store-renewal.service.ts`(`@Cron` 매시간, `shouldStopNow(room, expiresAt, now)`), `IapVerificationService.cancelGoogleSubscription`
+  (`GOOGLE_PLAY_*` 없으면 false). 애플은 `admin-store.controller.ts`(`GET admin/store/apple-todo`, `PATCH …/sale-stopped` → `Actor/Bundle.storeSaleStoppedAt`).
+- 알림: `notifications/admin-alert.service.ts`(NotificationsModule `@Global`) — `ADMIN_ALERT_EMAIL`(쉼표), `ADMIN_ALERT_KINDS`(REPORT,REFUND,IDLE,INQUIRY,CONTRACT,RETIRE).
+  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`.
+- 점검·최소 버전: `app-settings/`(global, 15초 캐시) — `AppSetting(id 'app')`, `GET /app-config`(@Public), `GET/PATCH admin/app-settings`(OWNER).
+  `MaintenanceGuard`는 APP_GUARD 순서상 RolesGuard 다음(req.user가 있어야 운영자 예외). 앱 `components/app-gate.tsx`, api-client `onMaintenance`.
+- 공지 푸시: `PushService.sendToEveryone(compose, data)` — `reachableUser`/`deliver`로 나눔, 기기를 id 커서로 1,000개씩. `Notice.pushedAt`을 updateMany로 선점.
+- 1:1 문의: `support/`(`SupportInquiry` OPEN/ANSWERED/CLOSED, `SupportMessage.fromAdmin`). 사용자 `/support/inquiries…`, 운영자 `/admin/inquiries…`.
+- 계약: `Actor.contractEndAt/contractAlertedAt`, `PATCH admin/actors/:id/contract`(날짜가 바뀌면 alertedAt 초기화), `GET admin/contracts-ending`(31일, `CONTRACT_ALERT_DAYS`),
+  `RetireScheduler.contracts`(`0 3 * * *` UTC = 태국 10시).
+- 권한·2단계 인증: `User.adminLevel`(null = OWNER), `totpSecret/totpPendingSecret/totpEnabledAt`. `common/utils/totp.ts`(RFC 6238, ±1 스텝).
+  JwtStrategy가 운영자면 `adminLevel`·`mfaEnabled`·토큰의 `mfaAt`을 req.user에. `RolesGuard`: @Roles가 붙은 라우트에서 운영자가 2단계 인증을 켰고
+  `mfaAt`이 없거나 `ADMIN_MFA_HOURS`(12)가 지났으면 401 `ADMIN_MFA_REQUIRED`(`@SkipAdminMfa` 제외), SUPPORT가 `@AdminOwnerOnly()`면 403 `ADMIN_OWNER_ONLY`.
+  `@AdminOwnerOnly`: admin-agencies·actor-links(admin)·bundles(admin)·demo·demo-codes·admin-store·settlements(클래스), admin-actors 쓰기, users role, app-settings,
+  messages greetings/broadcast·stories 올리기·uploads·actors 닉네임/사진/배경(운영자가 아티스트로 쓸 때). `admin/admin-security.*`: `GET admin/mfa`, `POST admin/mfa/setup|enable|verify|disable`
+  (enable/verify는 `mfaAt` 담긴 새 토큰), OWNER: `GET admin/admins`, `PATCH admin/admins/:id/level`(마지막 OWNER 보호 `ADMIN_LAST_OWNER`), `DELETE admin/admins/:id/mfa`.
+  앱: api-client `onMfaRequired`(로그아웃 안 함) → `components/admin-mfa-gate.tsx` → `login(newToken)` + invalidateQueries. `adminMenuFor(level)`로 메뉴 숨김.
+  한계: 같은 코드 30초 안 재사용 가능, 비밀키 평문 저장 — 운영자가 늘면 보완.
+- 내보내기: `privacy/`(`PrivacyExportService.build`), `GET /auth/me/export`(3/분), `GET /admin/users/:id/export`(audit `USER_EXPORT`). 앱 `lib/export-my-data.ts`
+  (웹 Blob 내려받기, 네이티브 expo-file-system + expo-sharing).
+- 마이그레이션 `20261020180000_ops_store_stop_app_settings_inquiries_admin_mfa`.
+

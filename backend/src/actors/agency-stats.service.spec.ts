@@ -65,8 +65,18 @@ describe('소속사 대시보드 집계', () => {
     } as unknown as PrismaService;
     const actors = {
       findMine: vi.fn().mockResolvedValue([
-        { id: 'a1', kind: 'SOLO', chatDisplayName: 'A', legalName: 'A', chatProfileImageUrl: null, retiredAt: null, lastBroadcastAt: null },
-        { id: 'a2', kind: 'COUPLE', chatDisplayName: 'B', legalName: 'B', chatProfileImageUrl: null, retiredAt: null, lastBroadcastAt: null },
+        { id: 'a1', kind: 'SOLO', chatDisplayName: 'A', legalName: 'A', chatProfileImageUrl: null, retiredAt: null, lastBroadcastAt: null, agency: { id: 'g1' }, coupleMembers: [] },
+        {
+          id: 'a2',
+          kind: 'COUPLE',
+          chatDisplayName: 'B',
+          legalName: 'B',
+          chatProfileImageUrl: null,
+          retiredAt: null,
+          lastBroadcastAt: null,
+          agency: null,
+          coupleMembers: [{ member: { agency: { id: 'g2' } } }, { member: { agency: null } }],
+        },
       ]),
     } as unknown as ActorsService;
     return { service: new AgencyStatsService(prisma, actors), queryRawUnsafe };
@@ -104,6 +114,13 @@ describe('소속사 대시보드 집계', () => {
     const result = await service.dashboard('u1', resolveRange({ days: 7 }), 'COUPLE');
     expect(result.actors.map((row) => row.id)).toEqual(['a2']);
     expect(queryRawUnsafe.mock.calls[0][1]).toEqual(['a2']);
+  });
+
+  it('소속사 필터 — 개인방은 방 소속사, CP방은 멤버 소속사로', async () => {
+    const { service } = setup();
+    expect((await service.dashboard('u1', resolveRange({ days: 7 }), 'ALL', 'g1')).actors.map((row) => row.id)).toEqual(['a1']);
+    expect((await service.dashboard('u1', resolveRange({ days: 7 }), 'ALL', 'g2')).actors.map((row) => row.id)).toEqual(['a2']);
+    expect((await service.dashboard('u1', resolveRange({ days: 7 }), 'ALL', 'none')).actors).toEqual([]);
   });
 });
 

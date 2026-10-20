@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AuthProvider, Role, SubscriptionEventType, UserStatus } from '../generated/prisma/enums.js';
+import { AdminLevel, AuthProvider, Role, SubscriptionEventType, UserStatus } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { ModerationService } from '../moderation/moderation.service.js';
 import { nextNicknameChangeAt, normalizeNickname } from '../common/nickname/nickname.js';
@@ -49,8 +49,9 @@ export class AuthService {
   }
 
   // demoCode: 데모 입장 코드로 들어왔으면 그 코드 id(공용 코드면 'common') — 요청마다 만료·중지 확인과 접속 기록에 씀(2026-10-19)
-  async issueAccessToken(user: { id: string; role: Role }, demoCode?: string): Promise<{ accessToken: string }> {
-    const accessToken = await this.jwtService.signAsync({ sub: user.id, role: user.role, ...(demoCode ? { dac: demoCode } : {}) });
+  // mfaAt: 운영자가 2단계 인증 코드를 확인한 시각(ms, 2026-10-20) — 토큰에 담아 운영자 API가 확인
+  async issueAccessToken(user: { id: string; role: Role }, demoCode?: string, mfaAt?: number): Promise<{ accessToken: string }> {
+    const accessToken = await this.jwtService.signAsync({ sub: user.id, role: user.role, ...(demoCode ? { dac: demoCode } : {}), ...(mfaAt ? { mfaAt } : {}) });
     return { accessToken };
   }
 
@@ -460,12 +461,17 @@ export class AuthService {
         autoTranslate: true,
         agency: { select: { name: true } },
         authIdentities: { select: { provider: true }, orderBy: { createdAt: 'asc' } },
+        adminLevel: true,
+        totpEnabledAt: true,
       },
     });
     // 생년월일은 내려주지 않고 "있는지"만(생일 축하 켜기 화면 안내용)
-    const { nicknameChangedAt: _changedAt, createdAt: _createdAt, birthDate, authIdentities, agency, profileImageUrl, ...rest } = user;
+    const { nicknameChangedAt: _changedAt, createdAt: _createdAt, birthDate, authIdentities, agency, profileImageUrl, adminLevel, totpEnabledAt, ...rest } = user;
     return {
       ...rest,
+      // 운영자 권한 단계·2단계 인증(2026-10-20) — 운영자가 아니면 null/false
+      adminLevel: user.role === Role.ADMIN ? (adminLevel ?? AdminLevel.OWNER) : null,
+      mfaEnabled: user.role === Role.ADMIN && !!totpEnabledAt,
       // 처음 가입한 로그인 수단이 맨 앞, 나중에 같은 이메일로 합쳐진 수단이 뒤
       loginProviders: [...new Set(authIdentities.map((identity) => identity.provider))],
       agencyName: agency?.name ?? null,

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AdminButton, AdminChip, AdminField, AdminMessage, AdminSection } from '@/components/admin-ui';
+import { AdminDateField } from '@/components/admin-date-field';
 import {
   useCreateDemoCode,
   useDemoCodeEvents,
@@ -150,7 +151,7 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
 
   const saveExpiry = () => {
     const expiresAt = endOfDayKst(expiry.trim());
-    if (!expiresAt) return setMessage('날짜를 YYYY-MM-DD로 입력해 주세요.');
+    if (!expiresAt) return setMessage('만료일을 골라 주세요.');
     updateCode.mutate(
       { id: item.id, expiresAt },
       { onSuccess: () => (setEditingExpiry(false), setMessage(null)), onError: (e) => setMessage(errorText(e, '저장하지 못했어요.')) },
@@ -186,7 +187,7 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
       </ThemedView>
       {editingExpiry ? (
         <>
-          <AdminField label="만료일(한국 날짜, 그날 끝까지)" value={expiry} onChangeText={setExpiry} placeholder="YYYY-MM-DD" maxLength={10} />
+          <AdminDateField label="만료일(한국 날짜, 그날 끝까지)" value={expiry} onChange={setExpiry} />
           <ThemedView style={styles.chips}>
             <AdminChip label="+2주" onPress={() => setExpiry(dateAfter(14))} />
             <AdminChip label="+1개월" onPress={() => setExpiry(dateAfter(30))} />
@@ -251,7 +252,7 @@ export default function AdminDemoCodesScreen() {
   const create = () => {
     if (!agencyName.trim()) return setMessage('소속사 이름을 입력해 주세요.');
     const expiresAt = endOfDayKst(expiry.trim());
-    if (!expiresAt) return setMessage('만료일을 YYYY-MM-DD로 입력해 주세요.');
+    if (!expiresAt) return setMessage('만료일을 골라 주세요.');
     createCode.mutate(
       { agencyName: agencyName.trim(), expiresAt, ...(code.trim() ? { code: code.trim() } : {}), ...(note.trim() ? { note: note.trim() } : {}) },
       {
@@ -282,7 +283,7 @@ export default function AdminDemoCodesScreen() {
           autoCorrect={false}
           maxLength={32}
         />
-        <AdminField label="만료일(한국 날짜, 그날 끝까지)" value={expiry} onChangeText={setExpiry} placeholder="YYYY-MM-DD" maxLength={10} />
+        <AdminDateField label="만료일(한국 날짜, 그날 끝까지)" value={expiry} onChange={setExpiry} />
         <ThemedView style={styles.chips}>
           <AdminChip label="2주" onPress={() => setExpiry(dateAfter(14))} />
           <AdminChip label="1개월" onPress={() => setExpiry(dateAfter(30))} />

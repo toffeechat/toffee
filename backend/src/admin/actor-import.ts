@@ -42,6 +42,8 @@ export interface PlannedCouple {
 export interface ImportPlan {
   rows: PlannedRow[];
   couples: PlannedCouple[];
+  /** 직접 고른 CP방 중 만들 수 없는 것(줄이 없음·같은 사람 둘 등) */
+  coupleErrors: string[];
   errorCount: number;
 }
 
@@ -62,8 +64,15 @@ export function coupleName(a: string, b: string): string {
  * @param agencyId 이번에 등록할 소속사(무소속이면 null) — 같은 소속사에 같은 이름이 있으면 "이미 있음"
  * @param existing 지금 등록된 1인 아티스트 전부 — CP 짝을 표 밖에서 찾을 때(같은 소속사 먼저, 없으면 이름이 하나뿐인 경우만)
  * @param existingCouples 지금 있는 CP방의 멤버 id 쌍
+ * @param explicitCouples 화면에서 멤버를 직접 고른 CP방(2026-10-20) — 표의 줄 번호 또는 기존 아티스트 id 둘. 엑셀의 CP 짝(이름)과 같이 써도 같은 쌍은 한 번만
  */
-export function planImport(rows: ImportRowInput[], agencyId: string | null, existing: ExistingSolo[], existingCouples: [string, string][]): ImportPlan {
+export function planImport(
+  rows: ImportRowInput[],
+  agencyId: string | null,
+  existing: ExistingSolo[],
+  existingCouples: [string, string][],
+  explicitCouples: [CoupleMemberRef, CoupleMemberRef][] = [],
+): ImportPlan {
   const sameAgency = new Map<string, ExistingSolo>();
   const anywhere = new Map<string, ExistingSolo[]>();
   for (const solo of existing) {
@@ -142,8 +151,40 @@ export function planImport(rows: ImportRowInput[], agencyId: string | null, exis
       });
     }
   }
+  // 화면에서 직접 고른 CP방 — 줄 번호는 그 줄(이미 있음이면 기존 아티스트로), id는 등록된 1인 아티스트
+  const byId = new Map(existing.map((solo) => [solo.id, solo]));
+  const pickRef = (ref: CoupleMemberRef): { ref: CoupleMemberRef; id: string | null; name: string } | string => {
+    if ('row' in ref) {
+      const row = planned[ref.row];
+      if (!row) return `CP방 멤버로 고른 ${ref.row + 1}번째 줄이 없어요`;
+      if (row.status === 'exists') return { ref: { actorId: row.existingId! }, id: row.existingId!, name: row.legalName };
+      return { ref: { row: row.index }, id: null, name: row.legalName };
+    }
+    const solo = byId.get(ref.actorId);
+    return solo ? { ref: { actorId: solo.id }, id: solo.id, name: solo.legalName } : 'CP방 멤버로 고른 아티스트를 찾지 못했어요';
+  };
+  const explicitErrors: string[] = [];
+  for (const [first, second] of explicitCouples) {
+    const a = pickRef(first);
+    const b = pickRef(second);
+    if (typeof a === 'string' || typeof b === 'string') {
+      explicitErrors.push(typeof a === 'string' ? a : (b as string));
+      continue;
+    }
+    const refKey = (ref: CoupleMemberRef) => ('row' in ref ? `row:${ref.row}` : `id:${ref.actorId}`);
+    if (refKey(a.ref) === refKey(b.ref)) {
+      explicitErrors.push(`CP방 멤버 두 명이 같아요(${a.name})`);
+      continue;
+    }
+    const key = [refKey(a.ref), refKey(b.ref)].sort().join('|');
+    if (plannedKeys.has(key)) continue;
+    plannedKeys.add(key);
+    const exists = a.id && b.id ? coupleKeys.has([a.id, b.id].sort().join('|')) : false;
+    couples.push({ legalName: coupleName(a.name, b.name), members: [a.ref, b.ref], memberNames: [a.name, b.name], status: exists ? 'exists' : 'new' });
+  }
+
   // 오류가 난 줄을 짝으로 쓴 CP방은 뺌(그 줄을 고친 뒤 다시 올리면 만들어짐)
   const errorRows = new Set(planned.filter((row) => row.status === 'error').map((row) => row.index));
   const validCouples = couples.filter((couple) => couple.members.every((ref) => !('row' in ref) || !errorRows.has(ref.row)));
-  return { rows: planned, couples: validCouples, errorCount: errorRows.size };
+  return { rows: planned, couples: validCouples, coupleErrors: explicitErrors, errorCount: errorRows.size + explicitErrors.length };
 }

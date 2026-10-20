@@ -11,26 +11,30 @@ import { confirm } from '@/lib/confirm';
 import { Spacing } from '@/constants/theme';
 
 /**
- * 공지사항 관리(2026-10-12) — 쓴 글은 바로 앱 마이페이지 > 공지사항에 보임(푸시는 안 감). 고정하면 맨 위.
- * 언어별로 따로 쓰는 칸은 없어서, 해외 팬도 봐야 하는 공지는 본문에 한국어·영어·태국어를 같이 쓸 것.
+ * 공지사항 관리(2026-10-12) — 쓴 글은 바로 앱 마이페이지 > 공지사항에 보임. 고정하면 맨 위. 한국어로 쓰면 다른 언어 팬은 [번역 보기](2026-10-20).
+ * [모두에게 푸시]를 켜고 올리면 모든 계정에 알림(제목은 받는 사람 언어로 번역, 한 공지에 한 번 — 2026-10-20).
  */
 function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () => void }) {
   const theme = useTheme();
   const [title, setTitle] = useState(editing?.title ?? '');
   const [body, setBody] = useState(editing?.body ?? '');
   const [pinned, setPinned] = useState(editing?.pinned ?? false);
+  const [push, setPush] = useState(false);
+  const alreadyPushed = !!editing?.pushedAt;
   const save = useSaveNotice();
   const ready = !!title.trim() && !!body.trim();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!ready) return;
+    if (push && !(await confirm('공지 푸시', '모든 계정(팬·아티스트·소속사)에게 알림을 보내요. 한 공지에 한 번만 보낼 수 있어요.', '올리고 보내기', '취소', false))) return;
     save.mutate(
-      { id: editing?.id, title: title.trim(), body: body.trim(), pinned },
+      { id: editing?.id, title: title.trim(), body: body.trim(), pinned, push: push && !alreadyPushed },
       {
         onSuccess: () => {
           setTitle('');
           setBody('');
           setPinned(false);
+          setPush(false);
           onDone();
         },
       },
@@ -47,7 +51,7 @@ function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () =>
         onChangeText={setBody}
         maxLength={10000}
         multiline
-        placeholder="본문(해외 팬도 볼 공지면 여러 언어로)"
+        placeholder="본문(한국어로 쓰면 돼요 — 다른 언어 팬은 [번역 보기]로 자기 언어로 봐요)"
         placeholderTextColor={theme.textSecondary}
         style={[inputStyle, styles.body]}
       />
@@ -55,13 +59,17 @@ function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () =>
         <ThemedText type="small">맨 위에 고정</ThemedText>
         <Switch value={pinned} onValueChange={setPinned} trackColor={{ true: theme.tint, false: theme.border }} thumbColor="#ffffff" />
       </ThemedView>
+      <ThemedView style={styles.pinRow}>
+        <ThemedText type="small">{alreadyPushed ? '푸시 보냄(다시 못 보내요)' : '모두에게 푸시 보내기(점검·약관 변경 등)'}</ThemedText>
+        <Switch value={push} onValueChange={setPush} disabled={alreadyPushed} trackColor={{ true: theme.tint, false: theme.border }} thumbColor="#ffffff" />
+      </ThemedView>
       <ThemedView style={styles.actions}>
         {editing ? (
           <Pressable onPress={onDone} style={[styles.button, styles.secondary, { borderColor: theme.border }]}>
             <ThemedText type="smallBold">취소</ThemedText>
           </Pressable>
         ) : null}
-        <Pressable disabled={!ready || save.isPending} onPress={handleSave} style={[styles.button, { backgroundColor: theme.tint, opacity: ready ? 1 : 0.5 }]}>
+        <Pressable disabled={!ready || save.isPending} onPress={() => void handleSave()} style={[styles.button, { backgroundColor: theme.tint, opacity: ready ? 1 : 0.5 }]}>
           <ThemedText type="smallBold" style={styles.buttonText}>
             {editing ? '저장' : '올리기'}
           </ThemedText>
@@ -91,6 +99,7 @@ function NoticeRow({ notice, onEdit }: { notice: Notice; onEdit: () => void }) {
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {new Date(notice.createdAt).toLocaleString('ko-KR')}
+          {notice.pushedAt ? ` · 푸시 보냄 ${new Date(notice.pushedAt).toLocaleString('ko-KR')}` : ''}
         </ThemedText>
       </ThemedView>
       <Pressable onPress={onEdit} hitSlop={8}>
@@ -118,7 +127,16 @@ export default function AdminNoticesScreen() {
         data={notices}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={<NoticeForm key={editing?.id ?? 'new'} editing={editing} onDone={() => setEditing(null)} />}
+        ListHeaderComponent={
+          <ThemedView style={styles.headerBox}>
+            <NoticeForm key={editing?.id ?? 'new'} editing={editing} onDone={() => setEditing(null)} />
+            {notices?.length ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                공지 {notices.length}개 · 고정 {notices.filter((notice) => notice.pinned).length}개
+              </ThemedText>
+            ) : null}
+          </ThemedView>
+        }
         ListEmptyComponent={
           isLoading ? (
             <ActivityIndicator style={styles.loading} color={theme.tint} />
@@ -135,6 +153,7 @@ export default function AdminNoticesScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerBox: { gap: Spacing.two, backgroundColor: 'transparent' },
   container: { flex: 1 },
   form: { borderRadius: 14, padding: Spacing.three, gap: Spacing.two, marginBottom: Spacing.two },
   input: { borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 16 },

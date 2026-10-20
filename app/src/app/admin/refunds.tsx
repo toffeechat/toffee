@@ -31,8 +31,10 @@ function statusOf(entry: AdminRefundEntry): { label: string; done: boolean } {
 export default function AdminRefundsScreen() {
   const theme = useTheme();
   const [reason, setReason] = useState<AdminRefundEntry['reason'] | undefined>(undefined);
-  const { data, isLoading } = useAdminRefunds(reason);
-  const rows = data ?? [];
+  // 전부 받아서 화면에서 거름 — 탭 옆 개수(2026-10-20)
+  const { data, isLoading } = useAdminRefunds();
+  const rows = (data ?? []).filter((row) => !reason || row.reason === reason);
+  const countOf = (value: AdminRefundEntry['reason'] | undefined) => (data ?? []).filter((row) => !value || row.reason === value).length;
   const refundedCents = rows.filter((row) => statusOf(row).done).reduce((sum, row) => sum + row.amountCents, 0);
   const waiting = rows.filter((row) => !statusOf(row).done).length;
 
@@ -55,7 +57,7 @@ export default function AdminRefundsScreen() {
                   accessibilityState={{ selected }}
                   style={[styles.chip, { backgroundColor: selected ? theme.primary : theme.backgroundElement }]}>
                   <ThemedText type="smallMedium" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                    {filter.label}
+                    {data ? `${filter.label} (${countOf(filter.value)})` : filter.label}
                   </ThemedText>
                 </Pressable>
               );

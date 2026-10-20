@@ -26,6 +26,28 @@ export class ImportActorRowDto {
   partners?: string[];
 }
 
+// CP방 멤버 하나 — 이번 표의 줄 번호(row) 또는 이미 등록된 아티스트 id 중 하나
+export class ImportCoupleMemberDto {
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(299)
+  row?: number;
+
+  @IsOptional()
+  @IsString()
+  actorId?: string;
+}
+
+export class ImportCoupleDto {
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => ImportCoupleMemberDto)
+  members!: ImportCoupleMemberDto[];
+}
+
 export class ImportActorsDto {
   // 이번 표의 소속사(참조 ID라 @IsString) — 빼면 무소속
   @IsOptional()
@@ -53,10 +75,18 @@ export class ImportActorsDto {
   @IsBoolean()
   dryRun!: boolean;
 
+  // 새 아티스트 줄 — 이미 등록된 두 사람으로 CP방만 만들 땐 비어도 됨(그땐 couples가 있어야 함, 서비스가 확인)
   @IsArray()
-  @ArrayMinSize(1)
   @ArrayMaxSize(300)
   @ValidateNested({ each: true })
   @Type(() => ImportActorRowDto)
   rows!: ImportActorRowDto[];
+
+  // 화면에서 멤버를 직접 고른 CP방(2026-10-20) — 엑셀의 "CP 짝"(이름)과 같이 써도 됨
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(150)
+  @ValidateNested({ each: true })
+  @Type(() => ImportCoupleDto)
+  couples?: ImportCoupleDto[];
 }

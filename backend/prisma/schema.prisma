@@ -14,6 +14,19 @@ datasource db {
   extensions = [pg_trgm]
 }
 
+// 운영자 권한 단계(2026-10-20)
+enum AdminLevel {
+  OWNER
+  SUPPORT
+}
+
+// 1:1 문의 상태(2026-10-20) — OPEN = 답 기다림, ANSWERED = 운영자가 답함(문의한 사람이 다시 쓰면 OPEN), CLOSED = 끝남
+enum InquiryStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
 enum Role {
   USER
   AGENCY_STAFF
@@ -141,6 +154,14 @@ model User {
   signupPlatform           String?
   // 마지막 접속(한 시간 단위로만 갱신) — 일간·월간 이용자 수 통계용
   lastActiveAt             DateTime?
+  // 운영자 권한 단계(2026-10-20) — ADMIN만 의미: OWNER = 전부, SUPPORT = 고객 응대(신고·회원 제재·문의·모니터링·공지)만(정산·소속사
+  // 배분율·앱 설정·아티스트 등록/가격·운영자 관리 불가). null이면 OWNER(기존 운영자 그대로)
+  adminLevel               AdminLevel?
+  // 운영자 2단계 인증(TOTP, 2026-10-20) — 비밀 키(base32)는 켜기 전 확인까지 totpPendingSecret, 확인되면 totpSecret + totpEnabledAt.
+  // 켜져 있으면 운영자 API는 코드를 확인한 토큰(mfa)만 받음
+  totpSecret               String?
+  totpPendingSecret        String?
+  totpEnabledAt            DateTime?
   // 회원 탈퇴 시각 — 탈퇴하면 개인정보(이메일·이름·닉네임·생년월일 등)를 지우고 이 값만 남김. 결제·구독 기록은
   // 법정 보관 기간 동안 유지, 팬 답장은 "탈퇴한 팬"으로 표시(잠정, STATUS.md 출시 전 확정 정책).
   deletedAt                DateTime?
@@ -164,6 +185,7 @@ model User {
   storyViews         StoryView[]
   parentalConsent    ParentalConsent?
   adminActions       AdminAction[]       @relation("AdminActions")
+  supportInquiries   SupportInquiry[]
 
   // 운영자 회원 검색(이름·닉네임·이메일 중간 글자) — 회원이 가장 많이 늘어나는 테이블이라 글자 조각 색인(pg_trgm, 2026-09-29)
   @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin, map: "User_displayName_trgm_idx")
@@ -340,6 +362,15 @@ model Actor {
   // 열리는 건 시각 비교라 정각에 바로, 알림 받기 팬 푸시는 ReleaseService(1분마다)가 releaseNotifiedAt을 먼저 잡고 한 번만 보냄
   releaseAt               DateTime?
   releaseNotifiedAt       DateTime?
+  // 활동 종료 예정(2026-10-20 사용자 결정) — 넣는 순간 신규 구독을 막고(팬 화면 "N월 N일 활동 종료 예정"), 그 시각이 되면 RetireScheduler가
+  // retiredAt을 채움(그때 기존 종료와 같은 알림·환불 규칙). retiredAt이 있으면 의미 없음. 예정을 지우면 다시 구독 가능
+  retireAt                DateTime?
+  // 애플 스토어 상품 판매 중지를 운영자가 했다고 표시한 시각(2026-10-20) — 애플은 개발자가 팬 구독을 끊는 API가 없어서 종료(예정) 방의 상품은
+  // 운영자가 App Store Connect에서 판매 중지 → 여기 표시. 구글은 서버가 구독마다 자동 해지(store-renewal.service)
+  storeSaleStoppedAt      DateTime?
+  // 계약 종료일(2026-10-20) — 넣어 두면 31일 전부터 운영자 할 일·알림(애플 판매 중지가 다음 갱신 전에 효력이 있게). 실제 종료는 운영자가 예정을 잡음
+  contractEndAt           DateTime?
+  contractAlertedAt       DateTime?
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
@@ -462,18 +493,20 @@ model Purchase {
 // 묶음 상품 — 여러 배우 개인방을 할인가로 한 번에(2026-09-29 사용자 결정). 스토어엔 상품 하나로 등록하고, 사면 포함된
 // 방 이용권을 모두 열어 줌. 커플(CP)방이 생기면 여기에 커플방도 넣을 수 있게 할 예정(2차).
 model Bundle {
-  id                String    @id @default(uuid())
-  name              String
-  priceCents        Int
+  id                 String    @id @default(uuid())
+  name               String
+  priceCents         Int
   // 스토어에 등록한 구독 상품 ID(애플·구글 공통, 소문자·숫자·_·.) — 등록 전엔 null(샌드박스 구독만)
-  storeProductId    String?   @unique
+  storeProductId     String?   @unique
   // 판매 중지(false)면 새로 살 수 없음 — 이미 산 팬은 유지
-  active            Boolean   @default(true)
+  active             Boolean   @default(true)
   // 공개 시각(2026-10-19) — Actor.releaseAt과 같은 규칙. 묶음 안 아티스트가 아직 공개 전이면 그 시각까지도 못 삼
-  releaseAt         DateTime?
-  releaseNotifiedAt DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  releaseAt          DateTime?
+  releaseNotifiedAt  DateTime?
+  // 애플 스토어 판매 중지 표시(2026-10-20, Actor.storeSaleStoppedAt과 같음) — 든 방이 종료(예정)일 때
+  storeSaleStoppedAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   actors         BundleActor[]
   purchases      Purchase[]
@@ -666,7 +699,10 @@ model Report {
 model BannedWord {
   id        String   @id @default(uuid())
   term      String
+  // 앱 언어 9개 중 하나 — 띄어쓰기 언어(en/es/pt-BR/vi)는 단어 단위로, 나머지는 포함되면 막음(matchesBannedWord). 막는 건 언어와 상관없이 모두에게
   language  String
+  // 운영자 화면 [기본 목록 넣기]로 들어온 단어(2026-10-20, default-banned-words.ts) — 화면에 "기본" 표시
+  isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@unique([term, language])
@@ -870,15 +906,34 @@ model BirthdayGreeting {
 // 공지사항(2026-10-12) — 운영자가 쓰고 팬·아티스트 모두 마이페이지 "공지사항"에서 봄(점검·약관 변경·아티스트 종료 등).
 // 언어별로 따로 쓰지 않음 — 필요하면 본문에 여러 언어를 같이 적음. 고정한 공지가 맨 위.
 model Notice {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   body        String
-  pinned      Boolean  @default(false)
+  pinned      Boolean   @default(false)
+  // 공지 푸시를 보낸 시각(2026-10-20) — 한 공지에 한 번만
+  pushedAt    DateTime?
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  translations NoticeTranslation[]
 
   @@index([pinned, createdAt])
+}
+
+// 공지 번역(2026-10-20 사용자 결정: 한국어로 쓰고, 다른 언어 팬은 [번역 보기]) — 처음 누른 사람 때 기계 번역해서 저장, 이후 재사용.
+// 공지를 고치면(updatedAt이 sourceUpdatedAt보다 늦으면) 다시 번역
+model NoticeTranslation {
+  noticeId        String
+  language        String
+  title           String
+  body            String
+  sourceUpdatedAt DateTime
+  createdAt       DateTime @default(now())
+
+  notice Notice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
+  @@id([noticeId, language])
 }
 
 // 방별 하루 기록(2026-10-13 사용자 결정, 소속사 통계 기간 선택) — 그날(태국 날짜) 끝 무렵의 구독 수·구독 팬 나라·언어. 매시간 오늘 줄을
@@ -897,4 +952,50 @@ model ActorDailyStat {
 
   @@unique([actorId, day])
   @@index([day])
+}
+
+// 앱 설정(2026-10-20) — 한 줄(id "app"). 점검 모드(켜면 운영자 말고는 앱이 점검 화면, 서버도 막음)·앱 최소 버전(그보다 낮으면 업데이트 화면)
+model AppSetting {
+  id                 String    @id @default("app")
+  maintenanceOn      Boolean   @default(false)
+  // 점검 안내(운영자가 한국어로 — 앱은 번역된 기본 문구 + 이 글)
+  maintenanceMessage String?
+  maintenanceUntil   DateTime?
+  // "1.2.0"처럼 — 비우면 검사 안 함
+  minVersionIos      String?
+  minVersionAndroid  String?
+  updatedById        String?
+  updatedAt          DateTime  @updatedAt
+}
+
+// 앱 안 1:1 문의(2026-10-20) — 팬·아티스트·소속사가 쓰고 운영자가 답함. 답하면 문의한 사람에게 푸시
+model SupportInquiry {
+  id        String        @id @default(uuid())
+  userId    String
+  // ACCOUNT·PAYMENT·REFUND·ARTIST·BUG·OTHER
+  category  String
+  title     String
+  status    InquiryStatus @default(OPEN)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages SupportMessage[]
+
+  @@index([status, updatedAt])
+  @@index([userId, updatedAt])
+}
+
+model SupportMessage {
+  id        String   @id @default(uuid())
+  inquiryId String
+  // 쓴 사람 — 운영자면 fromAdmin(이름은 "토피 운영팀"으로만 보임)
+  authorId  String
+  fromAdmin Boolean  @default(false)
+  body      String
+  createdAt DateTime @default(now())
+
+  inquiry SupportInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@index([inquiryId, createdAt])
 }

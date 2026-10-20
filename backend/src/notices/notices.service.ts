@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PushService } from '../notifications/push.service.js';
+import { pushStrings } from '../notifications/push-messages.js';
+import { TranslationService } from '../translation/translation.service.js';
+import { resolveLocale, SUPPORTED_LOCALES } from '../common/i18n/locales.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { UpsertNoticeDto } from './dto/upsert-notice.dto.js';
 
-const SELECT = { id: true, title: true, body: true, pinned: true, createdAt: true, updatedAt: true } as const;
+const SELECT = { id: true, title: true, body: true, pinned: true, pushedAt: true, createdAt: true, updatedAt: true } as const;
 const LIST_LIMIT = 100;
 
 /**
@@ -12,10 +16,39 @@ const LIST_LIMIT = 100;
  */
 @Injectable()
 export class NoticesService {
+  private readonly logger = new Logger(NoticesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly push: PushService,
+    private readonly translation: TranslationService,
   ) {}
+
+  /**
+   * 공지 푸시(2026-10-20 사용자 요청: 점검·약관 변경은 알림이 필요) — 모든 계정에게 한 번. 제목은 받는 사람 언어로(공지 번역과 같은 저장분을 씀,
+   * 번역이 안 되면 원문). pushedAt을 먼저 잡아서 두 번 눌러도 한 번만. 보내기는 기다리지 않음(사람이 많으면 오래 걸려서)
+   */
+  private async pushNotice(adminId: string, notice: { id: string; title: string }) {
+    const { count } = await this.prisma.notice.updateMany({ where: { id: notice.id, pushedAt: null }, data: { pushedAt: new Date() } });
+    if (count === 0) return;
+    await this.audit.record(adminId, 'NOTICE_PUSH', 'NOTICE', notice.id, { title: notice.title });
+    void (async () => {
+      const titles = new Map<string, string>([['ko', notice.title]]);
+      for (const locale of SUPPORTED_LOCALES) {
+        if (locale === 'ko' || !this.translation.enabled) continue;
+        const translated = await this.translation.translateNotice(notice.id, locale).catch(() => null);
+        if (translated) titles.set(locale, translated.title);
+      }
+      await this.push.sendToEveryone(
+        (recipient) => {
+          const locale = resolveLocale(recipient.locale);
+          return { title: pushStrings(locale).noticeTitle, body: titles.get(locale) ?? notice.title };
+        },
+        { type: 'notice', noticeId: notice.id },
+      );
+    })().catch((error) => this.logger.warn(`공지 푸시 실패: ${String(error)}`));
+  }
 
   list() {
     return this.prisma.notice.findMany({ select: SELECT, orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }], take: LIST_LIMIT });
@@ -27,6 +60,7 @@ export class NoticesService {
       select: SELECT,
     });
     await this.audit.record(adminId, 'NOTICE_CREATE', 'NOTICE', notice.id, { title: notice.title });
+    if (dto.push) await this.pushNotice(adminId, notice);
     return notice;
   }
 
@@ -38,6 +72,7 @@ export class NoticesService {
       select: SELECT,
     });
     await this.audit.record(adminId, 'NOTICE_UPDATE', 'NOTICE', id, { title: notice.title });
+    if (dto.push) await this.pushNotice(adminId, notice);
     return notice;
   }
 

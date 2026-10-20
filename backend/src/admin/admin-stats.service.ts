@@ -1,15 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MessageSenderType, ReportStatus, Role, SubscriptionEventType } from '../generated/prisma/enums.js';
-import { DAY_MS, STATS_TIME_ZONE, startOfTodayInZone } from '../common/utils/stats-time.js';
+import { DAY_MS, STATS_TIME_ZONE, startOfTodayInZone, zoneDayExpr, zoneDayStart, zoneDays } from '../common/utils/stats-time.js';
+import { WEEKLY_AFTER_DAYS, type StatsRange } from '../actors/agency-stats.service.js';
 
 // 팬 통계는 실제 팬 계정만(배우·소속사·운영자, 탈퇴 계정 제외)
 const FAN_WHERE = { role: Role.USER, deletedAt: null } as const;
 
 type DailyRow = { day: string; count: bigint; sum?: bigint | null };
+export type OverviewDay = { day: string; signups: number; newRevenueCents: number };
+
+/** 일별 점을 7일씩 묶음(기간 첫날부터) — 소속사 대시보드 bucketWeekly와 같은 규칙 */
+export function bucketOverviewWeekly(daily: OverviewDay[]): OverviewDay[] {
+  const weeks: OverviewDay[] = [];
+  daily.forEach((point, index) => {
+    if (index % 7 === 0) weeks.push({ ...point });
+    else {
+      const week = weeks[weeks.length - 1];
+      week.signups += point.signups;
+      week.newRevenueCents += point.newRevenueCents;
+    }
+  });
+  return weeks;
+}
 
 /**
- * 운영자 통계(2026-09-28, 2차 대시보드) — 앱은 summary 숫자만, 웹은 daily/breakdown 그래프까지.
+ * 운영자 통계(2026-09-28, 2차 대시보드 / 2026-10-20 운영자 홈과 합침) — 오늘 숫자(summary), 기간 추이(overview), 전체 팬 분포(breakdown).
  * 에러 추이는 Sentry 화면에서 봄(키 발급 후 연동, ops-infra-backlog).
  */
 @Injectable()
@@ -55,64 +71,56 @@ export class AdminStatsService {
     };
   }
 
-  /** 최근 N일(태국 날짜) 일별 추이 — 가입, 구독 시작·해지, 신규 구독 매출(적용 가격 합), 스타 메시지, 팬 답장 */
-  async daily(days: number) {
-    const from = new Date(startOfTodayInZone().getTime() - (days - 1) * DAY_MS);
-    const dayExpr = (column: string) => `to_char(("${column}" AT TIME ZONE 'UTC') AT TIME ZONE '${STATS_TIME_ZONE}', 'YYYY-MM-DD')`;
-    const [signups, started, cancelled, starMessages, fanReplies] = await Promise.all([
+  /**
+   * 플랫폼 전체 추이(2026-10-20, 운영자 홈 = 통계) — 고른 기간(최근 N일 또는 직접 고른 날짜, 최대 1년, 소속사 대시보드와 같은 resolveRange)의
+   * 일별 신규 가입·신규 구독 금액(그날 시작한 구독의 적용 가격 합) + 합계 + 바로 앞 같은 길이 기간 합계(증감 비교).
+   * 구독 시작·해지·메시지는 소속사 대시보드 API(/actors/mine/dashboard, 운영자는 전체 방)가 같은 기준으로 셈.
+   * 3개월보다 길면 7일씩 묶음(점의 day = 그 주 첫날).
+   */
+  async overview(range: StatsRange) {
+    const fromStart = zoneDayStart(range.from)!;
+    const previousFrom = new Date(fromStart.getTime() - range.days * DAY_MS);
+    const end = new Date(zoneDayStart(range.to)!.getTime() + DAY_MS);
+    const [signups, started] = await Promise.all([
       this.prisma.$queryRawUnsafe<DailyRow[]>(
-        `SELECT ${dayExpr('createdAt')} AS day, count(*) AS count FROM "User"
-         WHERE "createdAt" >= $1 AND role = 'USER' AND "deletedAt" IS NULL GROUP BY 1`,
-        from,
+        `SELECT ${zoneDayExpr('"createdAt"')} AS day, count(*) AS count FROM "User"
+         WHERE "createdAt" >= $1 AND "createdAt" < $2 AND role = 'USER' AND "deletedAt" IS NULL GROUP BY 1`,
+        previousFrom,
+        end,
       ),
       this.prisma.$queryRawUnsafe<DailyRow[]>(
-        `SELECT ${dayExpr('createdAt')} AS day, count(*) AS count, sum("priceCents") AS sum FROM "SubscriptionEvent"
-         WHERE "createdAt" >= $1 AND type = 'STARTED' GROUP BY 1`,
-        from,
-      ),
-      this.prisma.$queryRawUnsafe<DailyRow[]>(
-        `SELECT ${dayExpr('createdAt')} AS day, count(*) AS count FROM "SubscriptionEvent"
-         WHERE "createdAt" >= $1 AND type = 'CANCELLED' GROUP BY 1`,
-        from,
-      ),
-      this.prisma.$queryRawUnsafe<DailyRow[]>(
-        `SELECT ${dayExpr('createdAt')} AS day, count(*) AS count FROM "Message"
-         WHERE "createdAt" >= $1 AND "senderType" = 'ARTIST' GROUP BY 1`,
-        from,
-      ),
-      this.prisma.$queryRawUnsafe<DailyRow[]>(
-        `SELECT ${dayExpr('createdAt')} AS day, count(*) AS count FROM "Message"
-         WHERE "createdAt" >= $1 AND "senderType" = 'FAN' GROUP BY 1`,
-        from,
+        `SELECT ${zoneDayExpr('"createdAt"')} AS day, count(*) AS count, sum("priceCents") AS sum FROM "SubscriptionEvent"
+         WHERE "createdAt" >= $1 AND "createdAt" < $2 AND type = 'STARTED' GROUP BY 1`,
+        previousFrom,
+        end,
       ),
     ]);
-    const index = (rows: DailyRow[], pick: (row: DailyRow) => number) => new Map(rows.map((row) => [row.day, pick(row)]));
-    const maps = {
-      signups: index(signups, (r) => Number(r.count)),
-      subscriptionsStarted: index(started, (r) => Number(r.count)),
-      subscriptionsCancelled: index(cancelled, (r) => Number(r.count)),
-      newRevenueCents: index(started, (r) => Number(r.sum ?? 0)),
-      starMessages: index(starMessages, (r) => Number(r.count)),
-      fanReplies: index(fanReplies, (r) => Number(r.count)),
+    const daily = new Map<string, OverviewDay>(zoneDays(fromStart, range.days).map((day) => [day, { day, signups: 0, newRevenueCents: 0 }]));
+    const totals = { signups: 0, newRevenueCents: 0 };
+    const previous = { signups: 0, newRevenueCents: 0 };
+    const add = (day: string, key: keyof typeof totals, value: number) => {
+      const target = day < range.from ? previous : totals;
+      target[key] += value;
+      const point = daily.get(day);
+      if (point) point[key] += value;
     };
-    return Array.from({ length: days }, (_, i) => {
-      const day = new Intl.DateTimeFormat('en-CA', { timeZone: STATS_TIME_ZONE }).format(new Date(from.getTime() + i * DAY_MS + 12 * 60 * 60 * 1000));
-      return {
-        day,
-        signups: maps.signups.get(day) ?? 0,
-        subscriptionsStarted: maps.subscriptionsStarted.get(day) ?? 0,
-        subscriptionsCancelled: maps.subscriptionsCancelled.get(day) ?? 0,
-        newRevenueCents: maps.newRevenueCents.get(day) ?? 0,
-        starMessages: maps.starMessages.get(day) ?? 0,
-        fanReplies: maps.fanReplies.get(day) ?? 0,
-      };
-    });
+    for (const row of signups) add(row.day, 'signups', Number(row.count));
+    for (const row of started) add(row.day, 'newRevenueCents', Number(row.sum ?? 0));
+    const points = [...daily.values()];
+    const weekly = range.days > WEEKLY_AFTER_DAYS;
+    return {
+      ...range,
+      timeZone: STATS_TIME_ZONE,
+      bucket: weekly ? ('week' as const) : ('day' as const),
+      totals,
+      previous,
+      daily: weekly ? bucketOverviewWeekly(points) : points,
+    };
   }
 
-  /** 분포 — 국가·가입 기기·가입 경로(첫 소셜 로그인 종류)·언어, 배우별 구독 */
+  /** 전체 팬 분포 — 국가·가입 기기·가입 경로(첫 소셜 로그인 종류)·언어. 아티스트별 숫자는 대시보드 API(기간 선택)로 */
   async breakdown() {
-    const d30 = new Date(startOfTodayInZone().getTime() - 29 * DAY_MS);
-    const [byCountry, byPlatform, byLocale, byProvider, actors] = await Promise.all([
+    const [byCountry, byPlatform, byLocale, byProvider] = await Promise.all([
       this.prisma.user.groupBy({ by: ['countryCode'], where: FAN_WHERE, _count: { _all: true } }),
       this.prisma.user.groupBy({ by: ['signupPlatform'], where: FAN_WHERE, _count: { _all: true } }),
       this.prisma.user.groupBy({ by: ['locale'], where: FAN_WHERE, _count: { _all: true } }),
@@ -123,15 +131,6 @@ export class AdminStatsService {
            ORDER BY a."userId", a."createdAt"
          ) first GROUP BY 1`,
       ),
-      this.prisma.actor.findMany({
-        select: {
-          id: true,
-          legalName: true,
-          chatDisplayName: true,
-          _count: { select: { subscriptions: { where: { cancelledAt: null } } } },
-          subscriptionEvents: { where: { createdAt: { gte: d30 } }, select: { type: true, priceCents: true } },
-        },
-      }),
     ]);
     const sorted = (rows: { key: string | null; count: number }[]) =>
       rows.map((row) => ({ key: row.key ?? 'unknown', count: row.count })).sort((a, b) => b.count - a.count);
@@ -141,17 +140,6 @@ export class AdminStatsService {
       locales: sorted(byLocale.map((r) => ({ key: r.locale, count: r._count._all }))),
       // 소셜 로그인 없이 만든 계정(개발용 이메일 로그인)은 여기 안 잡힘
       providers: sorted(byProvider.map((r) => ({ key: r.provider, count: Number(r.count) }))),
-      actors: actors
-        .map((actor) => ({
-          id: actor.id,
-          name: actor.legalName,
-          nickname: actor.chatDisplayName,
-          activeSubscribers: actor._count.subscriptions,
-          started30d: actor.subscriptionEvents.filter((e) => e.type === SubscriptionEventType.STARTED).length,
-          cancelled30d: actor.subscriptionEvents.filter((e) => e.type === SubscriptionEventType.CANCELLED).length,
-          newRevenue30dCents: actor.subscriptionEvents.reduce((sum, e) => sum + (e.priceCents ?? 0), 0),
-        }))
-        .sort((a, b) => b.activeSubscribers - a.activeSubscribers),
     };
   }
 }

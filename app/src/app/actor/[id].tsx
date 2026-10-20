@@ -52,6 +52,8 @@ export default function ActorProfileScreen() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   // 공개 예정(2026-10-19) — 시각 전엔 구독 대신 "알림 받기", 화면을 켜 둔 채 시각이 지나면 저절로 구독 버튼으로
   const upcoming = useUpcoming(actor?.releaseAt);
+  // 활동 종료 예정(2026-10-20) — 방 자체 또는 CP 멤버 중 가장 이른 예정
+  const retireAt = actor ? ([actor.retireAt, ...membersOf(actor).map((member) => member.retireAt)].filter((value): value is string => !!value).sort()[0] ?? null) : null;
   const release = useReleaseWatch({ kind: 'actors', id }, upcoming);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -130,10 +132,21 @@ export default function ActorProfileScreen() {
                 <ThemedText type="headline">{t('release.opensAt', { date: formatReleaseAt(actor.releaseAt!, i18n.language) })}</ThemedText>
               </View>
             ) : null}
+            {/* 활동 종료 예정(2026-10-20) — 예정이 잡히면 새 구독을 막고 날짜를 보여 줌(CP방은 멤버 중 가장 이른 예정) */}
+            {retireAt && !actor.retiredAt ? (
+              <View style={[styles.release, { backgroundColor: `${theme.danger}14` }]}>
+                <ThemedText type="headline">{t('actorProfile.retiringOn', { date: formatReleaseAt(retireAt, i18n.language) })}</ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {t('actorProfile.retiringHint')}
+                </ThemedText>
+              </View>
+            ) : null}
             {isSubscribed ? (
               <Button title={t('actorProfile.openChat')} iconRight={ArrowRight} onPress={() => router.push(`/chat/${id}`)} />
             ) : actor.retiredAt ? (
               <Button title={t('actorProfile.retired')} variant="secondary" disabled />
+            ) : retireAt ? (
+              <Button title={t('actorProfile.retiringNoNew')} variant="secondary" disabled />
             ) : upcoming ? (
               <Button
                 title={release.watching ? t('release.notifying') : t('release.notifyMe')}
@@ -161,7 +174,7 @@ export default function ActorProfileScreen() {
 
           {/* 묶음으로 더 저렴하게 — 구독 버튼 바로 아래(2026-10-15 사용자 요청: 개인방·CP방·묶음 관계가 헷갈려서). 1인 아티스트는 "CP와 함께",
               CP방은 "아티스트 개인방과 함께". 이미 구독 중인 묶음은 빼고, 활동 종료한 배우면 안 보임(서버가 걸러 줌) */}
-          {offers.length > 0 && !actor.retiredAt ? (
+          {offers.length > 0 && !actor.retiredAt && !retireAt ? (
             <View style={styles.bundles}>
               <ThemedText type="headline">{t(isCouple ? 'bundle.withSoloTitle' : withCouple ? 'bundle.withCoupleTitle' : 'bundle.sectionTitle')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">

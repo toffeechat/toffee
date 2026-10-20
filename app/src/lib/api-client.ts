@@ -22,6 +22,16 @@ export function onUnauthorized(handler: ((message: string) => void) | null) {
   unauthorizedHandler = handler;
 }
 
+// 운영자 2단계 인증 필요(401 ADMIN_MFA_REQUIRED — 로그아웃이 아니라 코드 입력 화면)·점검 중(503 MAINTENANCE — 앱 설정을 다시 받아 점검 화면) 알림(2026-10-20)
+let mfaRequiredHandler: (() => void) | null = null;
+let maintenanceHandler: (() => void) | null = null;
+export function onMfaRequired(handler: (() => void) | null) {
+  mfaRequiredHandler = handler;
+}
+export function onMaintenance(handler: (() => void) | null) {
+  maintenanceHandler = handler;
+}
+
 // 접속 기록용 기기 정보(2026-10-14) — 운영자 회원 관리에서 "어떤 기기·앱 버전으로 들어왔는지" 확인.
 // 웹은 기기 이름이 없어서 서버가 브라우저 정보로 대신 채움. 헤더 값은 영문·숫자만 안전해서 그 밖의 글자는 지움
 function clientHeaders(): Record<string, string> {
@@ -53,7 +63,9 @@ async function request<T>(path: string, options: RequestInit = {}, as: 'json' | 
     const body = (await res.json().catch(() => ({}))) as { message?: string | string[]; code?: string };
     const message = Array.isArray(body.message) ? body.message.join(', ') : body.message;
     const error = new ApiError(res.status, message ?? i18n.t('common.requestFailed', { status: res.status }), body.code);
-    if (res.status === 401 && token) unauthorizedHandler?.(error.message);
+    if (res.status === 401 && body.code === 'ADMIN_MFA_REQUIRED') mfaRequiredHandler?.();
+    else if (res.status === 401 && token) unauthorizedHandler?.(error.message);
+    if (res.status === 503 && body.code === 'MAINTENANCE') maintenanceHandler?.();
     throw error;
   }
   // 본문 없는 성공 응답(204, 또는 void를 돌려주는 POST의 201)은 undefined — 예전엔 201 빈 본문을 JSON으로 읽다가

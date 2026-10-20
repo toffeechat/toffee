@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PersonFigure } from '@/components/ui/person-figure';
 import { useTheme } from '@/hooks/use-theme';
+import { useWideLayout } from '@/components/wide-shell';
 import { Spacing } from '@/constants/theme';
 
 // 운영자 화면 공용 조각 — 운영자 화면은 한국어 전용(다국어 대상 아님)
@@ -41,14 +42,17 @@ export function AdminField({ label, ...input }: { label: string } & TextInputPro
   );
 }
 
+/** 칩·탭 — count를 주면 "전체 (33)"처럼 개수를 붙임(2026-10-20 사용자 요청: 탭마다 기본으로 개수) */
 export function AdminChip({
   label,
+  count,
   selected,
   danger,
   disabled,
   onPress,
 }: {
   label: string;
+  count?: number;
   selected?: boolean;
   danger?: boolean;
   disabled?: boolean;
@@ -67,25 +71,40 @@ export function AdminChip({
         disabled && styles.disabled,
       ]}>
       <ThemedText type="small" style={selected ? styles.chipSelectedText : danger ? { color: theme.danger } : undefined}>
+        {count === undefined ? label : `${label} (${count.toLocaleString()})`}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
+/**
+ * 운영자 기본 버튼 — 폰에선 화면 폭 가득, PC 웹 넓은 화면에선 글자 길이만큼(2026-10-20 사용자 피드백: "웹에선 버튼이 화면 한 폭으로 타이트해서
+ * 안 예쁨"). secondary는 테두리만(한 화면에 버튼이 여럿일 때 주 버튼 하나만 색칠)
+ */
+export function AdminButton({ label, onPress, disabled, secondary }: { label: string; onPress: () => void; disabled?: boolean; secondary?: boolean }) {
+  const theme = useTheme();
+  const wide = useWideLayout();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ hovered }) => [
+        styles.button,
+        secondary ? { borderWidth: 1, borderColor: theme.tint, backgroundColor: hovered ? theme.tintSoft : 'transparent' } : { backgroundColor: theme.tint, opacity: hovered ? 0.9 : 1 },
+        wide && styles.buttonWide,
+        disabled && styles.disabled,
+      ]}>
+      <ThemedText type="smallBold" style={secondary ? { color: theme.tint } : styles.chipSelectedText}>
         {label}
       </ThemedText>
     </Pressable>
   );
 }
 
-export function AdminButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.button, { backgroundColor: theme.tint }, disabled && styles.disabled]}>
-      <ThemedText type="smallBold" style={styles.chipSelectedText}>
-        {label}
-      </ThemedText>
-    </Pressable>
-  );
+/** 버튼 여러 개를 한 줄로(좁으면 다음 줄로) — 목록 화면 위쪽 "등록" 버튼들 */
+export function AdminButtonRow({ children }: { children: ReactNode }) {
+  return <View style={styles.buttonRow}>{children}</View>;
 }
 
 export function AdminMessage({ text, error }: { text: string | null; error?: boolean }) {
@@ -151,6 +170,8 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: Spacing.two, paddingVertical: 6 },
   chipSelectedText: { color: '#fff' },
   button: { borderRadius: 10, paddingVertical: Spacing.two + 2, paddingHorizontal: Spacing.three, alignItems: 'center' },
+  buttonWide: { alignSelf: 'flex-start', minWidth: 160, paddingHorizontal: Spacing.four },
+  buttonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   disabled: { opacity: 0.5 },
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },
 });

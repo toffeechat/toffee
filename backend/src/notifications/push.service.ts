@@ -10,6 +10,8 @@ export interface PushRecipient {
   /** 받는 사람 이름 — 닉네임(없으면 로그인 이름). {{name}} 치환용 */
   displayName: string;
 }
+const DEVICE_SELECT = { token: true, userId: true, user: { select: { locale: true, displayName: true, nickname: true } } } as const;
+
 export type ComposePush = (recipient: PushRecipient) => { title: string; body: string };
 
 /** FCM이 "이 토큰은 더 이상 유효하지 않다"고 알려줄 때의 에러 코드 — 재시도해도 계속 실패하므로 저장된 토큰을 지워야 함 */
@@ -96,24 +98,51 @@ export class PushService implements OnModuleInit {
    * 실패는 로그만 남기고 호출한 쪽 흐름을 막지 않음(best-effort).
    */
   async sendToUsers(userIds: string[], compose: ComposePush, data?: Record<string, string>, options: SendOptions = {}): Promise<void> {
-    const { setting } = options;
     if (!this.app || userIds.length === 0) return;
-    // 정지·영구차단·탈퇴한 계정엔 보내지 않음(예전엔 구독만 보고 보내서 제재 중인 팬도 알림을 계속 받았음, 2026-09-28 점검).
-    // 정지는 기간이 지났으면 다시 받음(로그인 판단과 같은 기준)
-    const now = new Date();
     const devices = await this.prisma.pushDevice.findMany({
-      where: {
-        userId: { in: userIds },
-        user: {
-          deletedAt: null,
-          OR: [{ status: UserStatus.ACTIVE }, { status: UserStatus.SUSPENDED, suspendedUntil: { lte: now } }],
-          // 역할별 알림 설정에서 끈 종류면 빼기(2026-10-12)
-          ...(setting ? { [setting]: true } : {}),
-        },
-      },
-      select: { token: true, userId: true, user: { select: { locale: true, displayName: true, nickname: true } } },
+      where: { userId: { in: userIds }, user: this.reachableUser(options.setting) },
+      select: DEVICE_SELECT,
     });
-    if (devices.length === 0) return;
+    await this.deliver(devices, compose, data, options);
+  }
+
+  /**
+   * 모든 계정에게(2026-10-20 공지 푸시) — 기기를 1,000개씩 나눠 읽어서 보냄(계정 id 목록을 통째로 넘기지 않게)
+   */
+  async sendToEveryone(compose: ComposePush, data?: Record<string, string>): Promise<void> {
+    if (!this.app) return;
+    let cursor: string | undefined;
+    for (;;) {
+      const devices = await this.prisma.pushDevice.findMany({
+        where: { user: this.reachableUser() },
+        select: { id: true, ...DEVICE_SELECT },
+        orderBy: { id: 'asc' },
+        take: 1000,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (devices.length === 0) return;
+      await this.deliver(devices, compose, data);
+      cursor = devices[devices.length - 1].id;
+    }
+  }
+
+  // 정지·영구차단·탈퇴한 계정엔 보내지 않음(예전엔 구독만 보고 보내서 제재 중인 팬도 알림을 계속 받았음, 2026-09-28 점검).
+  // 정지는 기간이 지났으면 다시 받음(로그인 판단과 같은 기준). 역할별 알림 설정에서 끈 종류면 빼기(2026-10-12)
+  private reachableUser(setting?: PushSetting) {
+    return {
+      deletedAt: null,
+      OR: [{ status: UserStatus.ACTIVE }, { status: UserStatus.SUSPENDED, suspendedUntil: { lte: new Date() } }],
+      ...(setting ? { [setting]: true } : {}),
+    };
+  }
+
+  private async deliver(
+    devices: { token: string; userId: string; user: { locale: string | null; displayName: string; nickname: string | null } }[],
+    compose: ComposePush,
+    data?: Record<string, string>,
+    options: SendOptions = {},
+  ): Promise<void> {
+    if (!this.app || devices.length === 0) return;
 
     const badges = options.withUnreadBadge ? await this.unreadBadges([...new Set(devices.map((device) => device.userId))]) : null;
     const messaging = getMessaging(this.app);

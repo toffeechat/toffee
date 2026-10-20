@@ -6,6 +6,8 @@ import { CircleCheck, Send, Trash2 } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { TextField } from '@/components/ui/text-field';
+import { AdminDateField } from '@/components/admin-date-field';
+import { thaiToday } from '@/utils/stat-range';
 import { useSettlementPayouts, type SettlementPayout, type SettlementPayoutInput } from '@/hooks/use-settlements';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
@@ -117,13 +119,10 @@ export function PayoutBar({
               keyboardType="decimal-pad"
               containerStyle={styles.field}
             />
-            <TextField
-              label={t('settlement.payoutDate')}
-              value={paidOn}
-              onChangeText={setPaidOn}
-              placeholder="YYYY-MM-DD"
-              containerStyle={styles.field}
-            />
+            {/* 지급 기록은 운영자만 남겨서 운영자 날짜 입력(달력, 2026-10-20) */}
+            <View style={styles.field}>
+              <AdminDateField label={t('settlement.payoutDate')} value={paidOn} onChange={setPaidOn} max={thaiToday()} />
+            </View>
             <TextField
               label={t('settlement.payoutReference')}
               value={reference}

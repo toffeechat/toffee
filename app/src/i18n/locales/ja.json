@@ -143,7 +143,13 @@
       "monitor": "アーティストがファンに送ったメッセージを確認する画面です。問題のあるメッセージは長押しで代わりに取り消せます。",
       "replies": "ファンからの返信を確認する画面です。問題のある返信は通報したり、そのファンをブロックしたりできます。",
       "stats": "このアーティストの購読・メッセージ・返信の推移とファンの分布を確認する画面です。"
-    }
+    },
+    "monitorSearch": "ニックネーム・公式名・事務所で検索",
+    "sortRecent": "最新メッセージ順",
+    "subscribers": "購読者 {{count}}人",
+    "officialName": "公式名 {{name}}",
+    "noAgency": "事務所なし",
+    "searchEmpty": "検索結果がありません。"
   },
   "onboarding": {
     "birthDateTitle": "生年月日を入力してください",
@@ -387,7 +393,10 @@
     "subscribed": "購読中",
     "openChat": "メッセージを開く",
     "notFound": "アーティストが見つかりません",
-    "retired": "活動を終了したアーティストです"
+    "retired": "活動を終了したアーティストです",
+    "retiringOn": "{{date}}に活動終了予定",
+    "retiringNoNew": "新規の購読は受け付けていません",
+    "retiringHint": "その日まではこれまで通りメッセージが届き、過去のメッセージはその後も見られます。"
   },
   "subscribeFlow": {
     "subscribeTo": "購読するアーティスト",
@@ -425,7 +434,10 @@
     "notificationsHint": "アーティストごとに新着通知をオン・オフできます。通知をオフにしてもメッセージは届きます。",
     "noSubscriptions": "購読中のアーティストはいません",
     "loginInfo": "ログイン情報",
-    "noEmail": "メール情報なし"
+    "noEmail": "メール情報なし",
+    "exportData": "自分のデータをダウンロード",
+    "exportDataHint": "アカウント・購読・決済・返信・お問い合わせの記録をファイルで受け取ります",
+    "exportDataFailed": "ファイルを作成できませんでした。しばらくしてからもう一度お試しください。"
   },
   "manage": {
     "active": "購読中",
@@ -894,5 +906,40 @@
     "invalidTitle": "使用できないリンクです",
     "invalidBody": "アドレスを確認するか、事務所の担当者に新しいリンクを依頼してください。",
     "toLogin": "ログイン画面へ"
+  },
+  "appGate": {
+    "maintenanceTitle": "メンテナンス中です",
+    "maintenanceBody": "Toffeeをより良くするためにメンテナンスしています。しばらくしてから再度開いてください。",
+    "maintenanceUntil": "{{date}}まで予定",
+    "retry": "もう一度確認",
+    "staffLogin": "運営者ログイン",
+    "updateTitle": "アプリをアップデートしてください",
+    "updateBody": "このバージョンではToffeeを利用できません。ストアから最新バージョンにアップデートしてください。",
+    "updateButton": "アップデート"
+  },
+  "inquiry": {
+    "inbox": "お問い合わせ",
+    "new": "新しく問い合わせる",
+    "empty": "まだお問い合わせはありません。",
+    "category": "どんな内容ですか？",
+    "titleLabel": "件名",
+    "bodyLabel": "内容",
+    "bodyHint": "どの画面で何が起きたかを詳しく書いていただくと、早く対応できます。",
+    "send": "送信",
+    "team": "Toffee運営チーム",
+    "me": "自分",
+    "reply": "追加で質問する",
+    "closedHint": "このお問い合わせは終了しました。ほかにご不明点があれば新しくお問い合わせください。",
+    "emailInstead": "メールでのお問い合わせ: {{email}}",
+    "failed": "送信できませんでした。しばらくしてから再度お試しください。",
+    "cat_ACCOUNT": "アカウント",
+    "cat_PAYMENT": "お支払い",
+    "cat_REFUND": "返金",
+    "cat_ARTIST": "アーティスト・トーク",
+    "cat_BUG": "不具合",
+    "cat_OTHER": "その他",
+    "st_OPEN": "返信待ち",
+    "st_ANSWERED": "返信済み",
+    "st_CLOSED": "終了"
   }
 }

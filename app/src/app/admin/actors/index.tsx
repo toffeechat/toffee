@@ -1,12 +1,12 @@
 import { IDLE_WARN_DAYS, idleDays } from '@/utils/idle-days';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AdminAvatar, AdminButton, formatBaht } from '@/components/admin-ui';
+import { AdminAvatar, AdminButton, AdminButtonRow, AdminChip, formatBaht } from '@/components/admin-ui';
 import { useAdminActors, type AdminActor } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
@@ -37,6 +37,15 @@ function ActorRow({ actor }: { actor: AdminActor }) {
             ? ''
             : ` · ${actor.selfUser ? `본인 계정 ${actor.selfUser.displayName}` : actor.linkPendingUntil ? '연결 링크 보냄(아직 안 씀)' : '본인 계정 미연결'}`}
         </ThemedText>
+        {actor.retireAt && !actor.retiredAt ? (
+          <ThemedText type="small" themeColor="danger">
+            {formatBangkokDateTime(actor.retireAt)}(태국) 활동 종료 예정 · 새 구독 막힘
+          </ThemedText>
+        ) : actor.retiredAt ? (
+          <ThemedText type="small" themeColor="danger">
+            활동 종료
+          </ThemedText>
+        ) : null}
         {/* 예약 오픈(2026-10-19) — 공개 전이면 공개 시각(태국)과 알림 신청 수 */}
         {isUpcoming(actor.releaseAt) ? (
           <ThemedText type="small" style={{ color: theme.tint }}>
@@ -61,11 +70,49 @@ function ActorRow({ actor }: { actor: AdminActor }) {
   );
 }
 
+type KindTab = 'ALL' | 'FEMALE' | 'MALE' | 'NONE' | 'COUPLE';
+type StatusTab = 'ALL' | 'ACTIVE' | 'UPCOMING' | 'RETIRING' | 'RETIRED';
+const KIND_TABS: { key: KindTab; label: string; match: (actor: AdminActor) => boolean }[] = [
+  { key: 'ALL', label: '전체', match: () => true },
+  { key: 'FEMALE', label: '여성', match: (actor) => actor.kind === 'SOLO' && actor.gender === 'FEMALE' },
+  { key: 'MALE', label: '남성', match: (actor) => actor.kind === 'SOLO' && actor.gender === 'MALE' },
+  { key: 'NONE', label: '성별 지정 안 함', match: (actor) => actor.kind === 'SOLO' && !actor.gender },
+  { key: 'COUPLE', label: 'CP방', match: (actor) => actor.kind === 'COUPLE' },
+];
+const STATUS_TABS: { key: StatusTab; label: string; match: (actor: AdminActor) => boolean }[] = [
+  { key: 'ALL', label: '모든 상태', match: () => true },
+  { key: 'ACTIVE', label: '활동 중', match: (actor) => !actor.retiredAt && !actor.retireAt && !isUpcoming(actor.releaseAt) },
+  { key: 'UPCOMING', label: '공개 예정', match: (actor) => !actor.retiredAt && isUpcoming(actor.releaseAt) },
+  { key: 'RETIRING', label: '종료 예정', match: (actor) => !actor.retiredAt && !!actor.retireAt },
+  { key: 'RETIRED', label: '활동 종료', match: (actor) => !!actor.retiredAt },
+];
+const NO_AGENCY = 'none';
+/** 소속사 — 개인방은 자기 소속사, CP방은 멤버 소속사들 */
+const agencyIdsOf = (actor: AdminActor): string[] =>
+  actor.kind === 'COUPLE' ? [...new Set(actor.coupleMembers.map(({ member }) => member.agency?.id ?? NO_AGENCY))] : [actor.agency?.id ?? NO_AGENCY];
+
+/**
+ * 아티스트 관리(2026-10-20: 사용자 요청 "소속사별 몇 명, 여성·남성·CP방별로") — 검색 + 종류(전체·여성·남성·지정 안 함·CP방) + 소속사 + 상태 칩, 칩마다 개수.
+ * 개수는 다른 칩 조건을 건 결과(예: 소속사 A를 고르면 종류 칩은 A의 인원).
+ */
 export default function AdminActorsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [kind, setKind] = useState<KindTab>('ALL');
+  const [agency, setAgency] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusTab>('ALL');
   const { data: actors, isLoading } = useAdminActors(query.trim());
+  const all = actors ?? [];
+  const kindOk = (actor: AdminActor, key = kind) => KIND_TABS.find((tab) => tab.key === key)!.match(actor);
+  const statusOk = (actor: AdminActor, key = status) => STATUS_TABS.find((tab) => tab.key === key)!.match(actor);
+  const agencyOk = (actor: AdminActor, key = agency) => !key || agencyIdsOf(actor).includes(key);
+  const shown = all.filter((actor) => kindOk(actor) && statusOk(actor) && agencyOk(actor));
+  const agencies = new Map<string, string>();
+  for (const actor of all) {
+    if (actor.kind === 'COUPLE') for (const { member } of actor.coupleMembers) agencies.set(member.agency?.id ?? NO_AGENCY, member.agency?.name ?? '무소속');
+    else agencies.set(actor.agency?.id ?? NO_AGENCY, actor.agency?.name ?? '무소속');
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -77,21 +124,38 @@ export default function AdminActorsScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
         />
-        <AdminButton label="+ 아티스트 등록" onPress={() => router.push('/admin/actors/new')} />
-        <AdminButton label="+ CP방 만들기" onPress={() => router.push('/admin/actors/new-couple')} />
-        <AdminButton label="+ 일괄 등록(엑셀·CSV)·사진 묶어 올리기" onPress={() => router.push('/admin/actors/import')} />
+        {/* 아티스트·CP방(= 방) 등록은 화면 하나(2026-10-20 사용자 결정) — 한 명이든 엑셀 수백 줄이든. 패키지(묶음)는 묶음 상품 메뉴 */}
+        <AdminButtonRow>
+          <AdminButton label="+ 아티스트·CP 등록" onPress={() => router.push('/admin/actors/import')} />
+        </AdminButtonRow>
+        <ThemedView style={styles.chips}>
+          {KIND_TABS.map((tab) => (
+            <AdminChip key={tab.key} label={tab.label} count={all.filter((actor) => kindOk(actor, tab.key) && statusOk(actor) && agencyOk(actor)).length} selected={kind === tab.key} onPress={() => setKind(tab.key)} />
+          ))}
+        </ThemedView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipLine}>
+          <AdminChip label="모든 소속사" count={all.filter((actor) => kindOk(actor) && statusOk(actor)).length} selected={!agency} onPress={() => setAgency(null)} />
+          {[...agencies].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => (
+            <AdminChip key={id} label={name} count={all.filter((actor) => kindOk(actor) && statusOk(actor) && agencyOk(actor, id)).length} selected={agency === id} onPress={() => setAgency(id)} />
+          ))}
+        </ScrollView>
+        <ThemedView style={styles.chips}>
+          {STATUS_TABS.map((tab) => (
+            <AdminChip key={tab.key} label={tab.label} count={all.filter((actor) => kindOk(actor) && statusOk(actor, tab.key) && agencyOk(actor)).length} selected={status === tab.key} onPress={() => setStatus(tab.key)} />
+          ))}
+        </ThemedView>
       </ThemedView>
 
       {isLoading ? (
         <ActivityIndicator style={styles.loading} color={theme.tint} />
       ) : (
         <FlatList
-          data={actors}
+          data={shown}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-              {query ? '검색 결과가 없어요.' : '등록된 아티스트가 없어요.'}
+              {query || kind !== 'ALL' || agency || status !== 'ALL' ? '조건에 맞는 아티스트가 없어요.' : '등록된 아티스트가 없어요.'}
             </ThemedText>
           }
           renderItem={({ item }) => <ActorRow actor={item} />}
@@ -105,6 +169,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: Spacing.four, paddingTop: Spacing.two, gap: Spacing.two },
   search: { borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 16 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, backgroundColor: 'transparent' },
+  chipLine: { flexDirection: 'row', gap: Spacing.two },
   list: { padding: Spacing.four, gap: Spacing.three },
   row: { borderRadius: 14, padding: Spacing.three, gap: Spacing.three, flexDirection: 'row', alignItems: 'center' },
   rowBody: { flex: 1, gap: 2, backgroundColor: 'transparent' },

@@ -95,6 +95,9 @@ export interface Me {
   autoTranslateFanReplies?: boolean;
   /** 소속사 직원이면 소속사 이름(콘솔 왼쪽 위 표시) */
   agencyName?: string | null;
+  /** 운영자 권한 단계·2단계 인증(2026-10-20) — 운영자가 아니면 null/false */
+  adminLevel?: 'OWNER' | 'SUPPORT' | null;
+  mfaEnabled?: boolean;
 }
 
 export function useMe() {

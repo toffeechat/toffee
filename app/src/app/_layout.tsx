@@ -1,4 +1,6 @@
 import { WideShell } from '@/components/wide-shell';
+import { AppGate } from '@/components/app-gate';
+import { AdminMfaGate } from '@/components/admin-mfa-gate';
 import { InAppBanner } from '@/components/in-app-banner';
 import { HeaderBack, homeFor } from '@/components/header-back';
 import { ToastHost } from '@/components/toast';
@@ -188,6 +190,8 @@ function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <SplashOverlay />
           <OfflineBanner />
+          <AppGate>
+          <AdminMfaGate>
           <AuthGate>
             <WideShell>
             <Stack
@@ -224,6 +228,10 @@ function RootLayout() {
               <Stack.Screen name="media-viewer" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
               <Stack.Screen name="media-gallery/[actorId]" options={{ headerShown: true, title: t('gallery.title') }} />
               {/* 긴 메시지 전체보기(2026-10-19) */}
+              {/* 1:1 문의(2026-10-20) */}
+              <Stack.Screen name="support/index" options={{ headerShown: true, title: t('inquiry.inbox') }} />
+              <Stack.Screen name="support/new" options={{ headerShown: true, title: t('inquiry.new') }} />
+              <Stack.Screen name="support/[id]" options={{ headerShown: true, title: '' }} />
               <Stack.Screen name="message" options={{ headerShown: true, title: t('longMessage.title') }} />
               {/* 아티스트 계정 연결 링크(2026-10-19) — 로그인 전에도 열림 */}
               <Stack.Screen name="link/[token]" options={{ headerShown: false }} />
@@ -241,18 +249,23 @@ function RootLayout() {
               <Stack.Screen name="console/settlements" options={{ headerShown: true, title: t('settlement.title') }} />
               <Stack.Screen name="console/ranking" options={{ headerShown: true, title: t('dashboard.fullRanking') }} />
               {/* 운영자 화면은 운영자(한국어) 전용이라 의도적으로 다국어 처리 안 함 */}
-              <Stack.Screen name="admin/index" options={{ headerShown: true, title: '운영자' }} />
+              <Stack.Screen name="admin/index" options={{ headerShown: true, title: '운영자 홈' }} />
+              <Stack.Screen name="admin/inquiries/index" options={{ headerShown: true, title: '1:1 문의' }} />
+              <Stack.Screen name="admin/inquiries/[id]" options={{ headerShown: true, title: '문의' }} />
+              <Stack.Screen name="admin/app-settings" options={{ headerShown: true, title: '앱 설정' }} />
+              <Stack.Screen name="admin/security" options={{ headerShown: true, title: '보안·운영자' }} />
+              <Stack.Screen name="admin/store-todo" options={{ headerShown: true, title: '애플 판매 중지 할 일' }} />
+              <Stack.Screen name="admin/rooms" options={{ headerShown: true, title: '토피룸 모니터링' }} />
               <Stack.Screen name="admin/reports" options={{ headerShown: true, title: '신고 처리' }} />
               <Stack.Screen name="admin/banned-words" options={{ headerShown: true, title: '금칙어 관리' }} />
-              <Stack.Screen name="admin/users" options={{ headerShown: true, title: '회원 관리' }} />
+              <Stack.Screen name="admin/users/index" options={{ headerShown: true, title: '회원 관리' }} />
+              <Stack.Screen name="admin/users/[id]" options={{ headerShown: true, title: '회원' }} />
               <Stack.Screen name="admin/actors/index" options={{ headerShown: true, title: '아티스트 관리' }} />
-              <Stack.Screen name="admin/actors/new" options={{ headerShown: true, title: '아티스트 등록' }} />
-              <Stack.Screen name="admin/actors/new-couple" options={{ headerShown: true, title: 'CP방 만들기' }} />
-              <Stack.Screen name="admin/actors/import" options={{ headerShown: true, title: '아티스트 일괄 등록' }} />
+              <Stack.Screen name="admin/actors/import" options={{ headerShown: true, title: '아티스트·CP 등록' }} />
               <Stack.Screen name="admin/actors/[id]" options={{ headerShown: true, title: '아티스트' }} />
               <Stack.Screen name="admin/bundles/index" options={{ headerShown: true, title: '묶음 상품' }} />
               <Stack.Screen name="admin/bundles/new" options={{ headerShown: true, title: '묶음 만들기' }} />
-              <Stack.Screen name="admin/bundles/cp-set" options={{ headerShown: true, title: 'CP로 묶음 3개 만들기' }} />
+              <Stack.Screen name="admin/bundles/cp-set" options={{ headerShown: true, title: 'CP로 패키지 3개 만들기' }} />
               <Stack.Screen name="admin/bundles/[id]" options={{ headerShown: true, title: '묶음' }} />
               <Stack.Screen name="admin/agencies" options={{ headerShown: true, title: '소속사 관리' }} />
               <Stack.Screen name="admin/stats" options={{ headerShown: true, title: '통계' }} />
@@ -275,6 +288,8 @@ function RootLayout() {
             <InAppBanner />
             <ToastHost />
           </AuthGate>
+          </AdminMfaGate>
+          </AppGate>
         </ThemeProvider>
       </AuthProvider>
       </LocalePreferenceProvider>

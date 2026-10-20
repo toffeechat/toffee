@@ -5,6 +5,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 @Controller('actors/:actorId/stories')
 export class StoriesController {
@@ -12,6 +13,7 @@ export class StoriesController {
 
   // 배우 본인만 업로드 가능 — 소속사는 발송 권한 없음(읽기 전용 모니터링만)
   @Roles(Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
   @Post()
   create(@CurrentUser() user: AuthenticatedUser, @Param('actorId') actorId: string, @Body() dto: CreateStoryDto) {
     return this.storiesService.create(user.id, actorId, dto);

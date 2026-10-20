@@ -78,3 +78,30 @@ describe('아티스트 일괄 등록 계획', () => {
     expect(coupleName('Bright', 'Win')).toBe('Bright & Win');
   });
 });
+
+describe('화면에서 고른 CP방(2026-10-20)', () => {
+  const existing: ExistingSolo[] = [
+    { id: 'a', legalName: 'Old A', agencyId: 'x' },
+    { id: 'b', legalName: 'Old B', agencyId: 'y' },
+  ];
+
+  it('새 줄 + 기존 아티스트, 기존 둘끼리(줄 없이도), 같은 쌍은 한 번만', () => {
+    const plan = planImport([{ legalName: 'New', partners: ['Old A'] }], null, existing, [], [
+      [{ row: 0 }, { actorId: 'a' }],
+      [{ actorId: 'a' }, { actorId: 'b' }],
+    ]);
+    expect(plan.couples.map((couple) => couple.legalName)).toEqual(['New & Old A', 'Old A & Old B']);
+    expect(plan.errorCount).toBe(0);
+  });
+
+  it('이미 있는 CP는 건너뛰고, 같은 사람 둘·없는 줄은 오류', () => {
+    const plan = planImport([], null, existing, [['a', 'b']], [
+      [{ actorId: 'b' }, { actorId: 'a' }],
+      [{ actorId: 'a' }, { actorId: 'a' }],
+      [{ row: 3 }, { actorId: 'a' }],
+    ]);
+    expect(plan.couples).toMatchObject([{ status: 'exists' }]);
+    expect(plan.coupleErrors).toHaveLength(2);
+    expect(plan.errorCount).toBe(2);
+  });
+});

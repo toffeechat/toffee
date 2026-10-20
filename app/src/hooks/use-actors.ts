@@ -27,6 +27,8 @@ export interface Actor {
   retiredAt?: string | null;
   /** 공개 시각(2026-10-19 예약 오픈) — 미래면 "곧 공개" 카드 + 알림 받기(구독 불가) */
   releaseAt?: string | null;
+  /** 활동 종료 예정(2026-10-20) — 있으면 "N월 N일 활동 종료 예정", 새 구독 불가 */
+  retireAt?: string | null;
   // 무소속이면 null
   agency: AgencySummary | null;
   /** 1인 방 / 커플방(2026-09-29) — 커플방은 소속사가 없고 멤버 배우 2명 */
@@ -43,8 +45,9 @@ export interface CoupleMemberActor {
   officialProfileImageUrl: string | null;
   chatProfileImageUrl: string | null;
   retiredAt: string | null;
-  /** 멤버 소속사 — CP방 카드에 소속사를 보여 주는 용도(2026-10-16) */
-  agency?: { name: string } | null;
+  retireAt?: string | null;
+  /** 멤버 소속사 — CP방 카드에 소속사를 보여 주는 용도(2026-10-16). id는 /actors/mine에만(운영자 소속사 필터, 2026-10-20) */
+  agency?: { id?: string; name: string } | null;
 }
 
 /** 커플방 멤버 배우들(1인 방이면 빈 배열) */

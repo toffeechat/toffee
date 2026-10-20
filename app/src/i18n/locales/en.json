@@ -143,7 +143,13 @@
       "monitor": "Monitor the messages this artist sends to fans. Long-press a problematic message to unsend it on their behalf.",
       "replies": "Replies from fans. You can report a problematic reply or block that fan.",
       "stats": "Subscription, message and reply trends for this artist, plus where their fans are."
-    }
+    },
+    "monitorSearch": "Search by nickname, official name or agency",
+    "sortRecent": "Latest message",
+    "subscribers": "{{count}} subscribers",
+    "officialName": "Official name {{name}}",
+    "noAgency": "No agency",
+    "searchEmpty": "No results."
   },
   "onboarding": {
     "birthDateTitle": "What's your date of birth?",
@@ -387,7 +393,10 @@
     "subscribed": "Subscribed",
     "openChat": "Open messages",
     "notFound": "Artist not found",
-    "retired": "This artist is no longer active"
+    "retired": "This artist is no longer active",
+    "retiringOn": "Activity ends {{date}}",
+    "retiringNoNew": "Not accepting new subscriptions",
+    "retiringHint": "Subscribers keep getting messages until then and can still read past messages afterwards."
   },
   "subscribeFlow": {
     "subscribeTo": "Subscribe to",
@@ -425,7 +434,10 @@
     "notificationsHint": "Turn new-message alerts on or off for each artist. You'll still receive messages.",
     "noSubscriptions": "No active subscriptions",
     "loginInfo": "Login info",
-    "noEmail": "No email on file"
+    "noEmail": "No email on file",
+    "exportData": "Download my data",
+    "exportDataHint": "Get your account, subscription, payment, reply and inquiry records as a file",
+    "exportDataFailed": "Couldn't create the file. Please try again later."
   },
   "manage": {
     "active": "Active",
@@ -894,5 +906,40 @@
     "invalidTitle": "This link can't be used",
     "invalidBody": "Check the address or ask your agency contact for a new link.",
     "toLogin": "Go to sign in"
+  },
+  "appGate": {
+    "maintenanceTitle": "We're under maintenance",
+    "maintenanceBody": "We're making Toffee better. Please check back shortly.",
+    "maintenanceUntil": "Expected until {{date}}",
+    "retry": "Check again",
+    "staffLogin": "Staff sign-in",
+    "updateTitle": "Please update the app",
+    "updateBody": "This version of Toffee is no longer supported. Please update to the latest version from the store.",
+    "updateButton": "Update"
+  },
+  "inquiry": {
+    "inbox": "Help center",
+    "new": "New inquiry",
+    "empty": "You haven't sent any inquiries yet.",
+    "category": "What is it about?",
+    "titleLabel": "Title",
+    "bodyLabel": "Message",
+    "bodyHint": "Tell us which screen and what happened — it helps us help you faster.",
+    "send": "Send",
+    "team": "Toffee team",
+    "me": "Me",
+    "reply": "Ask a follow-up",
+    "closedHint": "This inquiry is closed. Start a new one if you need more help.",
+    "emailInstead": "Email us: {{email}}",
+    "failed": "Couldn't send. Please try again shortly.",
+    "cat_ACCOUNT": "Account",
+    "cat_PAYMENT": "Payment",
+    "cat_REFUND": "Refund",
+    "cat_ARTIST": "Artist & chat",
+    "cat_BUG": "Bug",
+    "cat_OTHER": "Other",
+    "st_OPEN": "Waiting for reply",
+    "st_ANSWERED": "Answered",
+    "st_CLOSED": "Closed"
   }
 }

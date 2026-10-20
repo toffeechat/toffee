@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminChip, AdminField, AdminMessage, AdminSection, formatBaht, parseBahtToCents } from '@/components/admin-ui';
@@ -26,7 +26,10 @@ const suggest = (regularCents: number, discount: number) => {
 export default function AdminCpBundleSetScreen() {
   const router = useRouter();
   const { data: rooms } = useCoupleRooms();
-  const [room, setRoom] = useState<Actor | null>(null);
+  const [picked, setRoom] = useState<Actor | null>(null);
+  // CP방 만들기·CP방 상세에서 넘어오면 그 CP가 골라진 채로(2026-10-20)
+  const { roomId } = useLocalSearchParams<{ roomId?: string }>();
+  const room = picked ?? rooms?.find((item) => item.id === roomId) ?? null;
   const [memberA, memberB] = room ? membersOf(room) : [];
   const { data: a } = useActor(memberA?.id ?? '');
   const { data: b } = useActor(memberB?.id ?? '');

@@ -143,7 +143,13 @@
       "monitor": "아티스트가 팬에게 보낸 메시지를 모니터링하는 화면이에요. 문제가 있는 메시지는 길게 눌러 대신 회수할 수 있어요.",
       "replies": "팬들이 보낸 답장을 보는 화면이에요. 문제가 있는 답장은 신고하거나 그 팬을 차단할 수 있어요.",
       "stats": "이 아티스트의 구독·메시지·답장 추이와 팬 분포를 보는 화면이에요."
-    }
+    },
+    "monitorSearch": "닉네임·공식 이름·소속사로 검색",
+    "sortRecent": "최근 메시지 순",
+    "subscribers": "구독자 {{count}}명",
+    "officialName": "공식 이름 {{name}}",
+    "noAgency": "무소속",
+    "searchEmpty": "검색 결과가 없어요."
   },
   "onboarding": {
     "birthDateTitle": "생년월일을 알려주세요",
@@ -387,7 +393,10 @@
     "subscribed": "구독 중",
     "openChat": "메시지 보기",
     "notFound": "아티스트를 찾을 수 없어요",
-    "retired": "활동을 종료한 아티스트예요"
+    "retired": "활동을 종료한 아티스트예요",
+    "retiringOn": "{{date}} 활동 종료 예정",
+    "retiringNoNew": "새 구독을 받지 않아요",
+    "retiringHint": "그날까지는 지금처럼 메시지를 받고, 지난 대화는 그 뒤에도 볼 수 있어요."
   },
   "subscribeFlow": {
     "subscribeTo": "구독할 아티스트",
@@ -425,7 +434,10 @@
     "notificationsHint": "아티스트별로 새 메시지 알림을 켜고 끌 수 있어요. 알림을 꺼도 메시지는 그대로 받아요.",
     "noSubscriptions": "구독 중인 아티스트가 없어요",
     "loginInfo": "로그인 정보",
-    "noEmail": "이메일 정보 없음"
+    "noEmail": "이메일 정보 없음",
+    "exportData": "내 정보 받기",
+    "exportDataHint": "가입 정보·구독·결제·답장·문의 기록을 파일로 받아요",
+    "exportDataFailed": "파일을 만들지 못했어요. 잠시 후 다시 시도해 주세요."
   },
   "manage": {
     "active": "구독 중",
@@ -894,5 +906,40 @@
     "invalidTitle": "사용할 수 없는 링크예요",
     "invalidBody": "주소가 맞는지 확인하거나 소속사 담당자에게 새 링크를 요청해 주세요.",
     "toLogin": "로그인 화면으로"
+  },
+  "appGate": {
+    "maintenanceTitle": "서비스 점검 중이에요",
+    "maintenanceBody": "더 좋은 토피를 위해 잠시 점검하고 있어요. 조금 뒤에 다시 열어 주세요.",
+    "maintenanceUntil": "{{date}}까지 예정이에요",
+    "retry": "다시 확인",
+    "staffLogin": "운영자 로그인",
+    "updateTitle": "새 버전으로 업데이트해 주세요",
+    "updateBody": "지금 버전에서는 토피를 쓸 수 없어요. 스토어에서 최신 버전으로 업데이트해 주세요.",
+    "updateButton": "업데이트하기"
+  },
+  "inquiry": {
+    "inbox": "1:1 문의",
+    "new": "새로 문의하기",
+    "empty": "아직 문의한 적이 없어요.",
+    "category": "어떤 문의인가요?",
+    "titleLabel": "제목",
+    "bodyLabel": "내용",
+    "bodyHint": "어떤 화면에서 무슨 일이 있었는지 자세히 적어 주시면 더 빨리 도와드릴 수 있어요.",
+    "send": "보내기",
+    "team": "토피 운영팀",
+    "me": "나",
+    "reply": "추가로 물어보기",
+    "closedHint": "끝난 문의예요. 더 궁금한 게 있으면 새로 문의해 주세요.",
+    "emailInstead": "메일로 문의: {{email}}",
+    "failed": "보내지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+    "cat_ACCOUNT": "계정",
+    "cat_PAYMENT": "결제",
+    "cat_REFUND": "환불",
+    "cat_ARTIST": "아티스트·대화",
+    "cat_BUG": "오류",
+    "cat_OTHER": "기타",
+    "st_OPEN": "답변 기다리는 중",
+    "st_ANSWERED": "답변 완료",
+    "st_CLOSED": "종료"
   }
 }

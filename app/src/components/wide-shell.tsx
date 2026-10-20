@@ -4,7 +4,7 @@ import { usePathname, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
-import { ADMIN_MENU } from '@/constants/admin-menu';
+import { adminMenuFor } from '@/constants/admin-menu';
 import { useAuth } from '@/lib/auth-context';
 import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
@@ -38,9 +38,10 @@ export function WideShell({ children }: { children: ReactNode }) {
   const { data: me } = useMe();
   if (!wide) return <>{children}</>;
 
-  const isAdmin = pathname.startsWith('/admin') || (role === 'ADMIN' && !pathname.startsWith('/console'));
+  // 운영자가 소속사 모니터링 화면(/console/…)을 열어도 운영자 메뉴 유지(2026-10-20 — 운영자 홈 순위·토피룸 모니터링에서 들어감)
+  const isAdmin = pathname.startsWith('/admin') || role === 'ADMIN';
   const items: { href: string; label: string }[] = isAdmin
-    ? [{ href: '/admin', label: '홈' }, ...ADMIN_MENU.map((item) => ({ href: item.href, label: item.label }))]
+    ? [{ href: '/admin', label: '홈' }, ...adminMenuFor(me?.adminLevel).map((item) => ({ href: item.href, label: item.label }))]
     : // 소속사 — 앱 하단 탭과 같은 순서(대시보드가 첫 화면, 2026-10-13) + PC 전용 정산
       [
         { href: '/console', label: t('consoleNav.dashboard') },
@@ -49,7 +50,14 @@ export function WideShell({ children }: { children: ReactNode }) {
         { href: '/console/settlements', label: t('settlement.title') },
         { href: '/console/settings', label: t('staffSettings.title') },
       ];
-  const active = isAdmin ? activeAdminItem(items, pathname) : activeConsoleItem(pathname);
+  // 모니터링(/console/<id>)은 토피룸 모니터링, 전체 순위는 홈
+  const active = isAdmin
+    ? pathname.startsWith('/console/ranking')
+      ? '/admin'
+      : pathname.startsWith('/console/')
+        ? '/admin/rooms'
+        : activeAdminItem(items, pathname)
+    : activeConsoleItem(pathname);
 
   return (
     <View style={styles.row}>
@@ -85,9 +93,16 @@ export function WideShell({ children }: { children: ReactNode }) {
           </ThemedText>
         </Pressable>
       </View>
-      <View style={styles.content}>{children}</View>
+      {/* 대시보드·정산·모니터링은 넓게, 나머지(목록·입력 화면)는 가운데 960px까지(2026-10-20 — 넓은 모니터에서 입력칸·버튼이 끝까지 늘어나던 것) */}
+      <View style={styles.content}>
+        <View style={[styles.page, !fullWidthPage(pathname) && styles.pageNarrow]}>{children}</View>
+      </View>
     </View>
   );
+}
+
+function fullWidthPage(pathname: string) {
+  return pathname === '/admin' || pathname === '/console' || pathname.includes('settlements') || /^\/console\/(?!records|settings|artists)/.test(pathname);
 }
 
 // 운영자: 가장 길게 맞는 메뉴
@@ -112,4 +127,6 @@ const styles = StyleSheet.create({
   menu: { gap: 2 },
   item: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two + 2, borderRadius: Radius.md },
   content: { flex: 1 },
+  page: { flex: 1, width: '100%' },
+  pageNarrow: { maxWidth: 960, alignSelf: 'center' },
 });

@@ -25,6 +25,13 @@ interface PushStrings {
   // 배우 활동 종료·입대 — 구독 팬에게(환불 안내)
   retiredFanTitle: (actor: string) => string;
   retiredFanBody: (days: number) => string;
+  // 활동 종료 예정(2026-10-20) — 예정을 정하면 구독 팬에게 미리. date는 받는 사람 언어로 쓴 날짜
+  retiringFanTitle: (actor: string, date: string) => string;
+  retiringFanBody: string;
+  // 공지 푸시 제목(2026-10-20) — 본문은 공지 제목
+  noticeTitle: string;
+  // 1:1 문의 답변(2026-10-20) — 본문은 답변 앞부분
+  inquiryReplyTitle: string;
   // 생일 축하 메시지(2026-10-12) — 생일 알림을 켠 팬에게, 생일 아침
   birthdayTitle: (actor: string) => string;
   birthdayBody: string;
@@ -49,6 +56,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `${days}일째 메시지가 없어요. 30일 동안 메시지가 없으면 팬 ${fans}명이 그 달 구독료 환불을 요청할 수 있어요. 지금 한 마디 남겨 주세요.`,
     retiredFanTitle: (actor) => `${actor}님의 활동이 종료됐어요`,
     retiredFanBody: (days) => `지난 대화는 계속 볼 수 있어요. 결제한 지 ${days}일 안이라면 구독 관리에서 이번 달 환불을 요청할 수 있어요.`,
+    retiringFanTitle: (actor, date) => `${actor}님이 ${date}에 활동을 마칠 예정이에요`,
+    retiringFanBody: '그날까지 지금처럼 메시지를 받을 수 있고, 지난 대화는 그 뒤에도 계속 볼 수 있어요.',
+    noticeTitle: '토피 공지',
+    inquiryReplyTitle: '문의에 답변이 왔어요',
     birthdayTitle: (actor) => `${actor}님이 생일 축하 메시지를 보냈어요`,
     birthdayBody: '생일 축하해요! 지금 확인해 보세요 🎂',
     releasedBody: '지금 토피룸이 열렸어요! 가장 먼저 만나 보세요',
@@ -69,6 +80,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `No messages for ${days} days. After 30 days without a message, ${fans} fans can request a refund for that month. Please send a message now.`,
     retiredFanTitle: (actor) => `${actor} has ended their activity`,
     retiredFanBody: (days) => `You can still read past messages. If you paid within the last ${days} days, you can request a refund for this month in Manage subscriptions.`,
+    retiringFanTitle: (actor, date) => `${actor} will end their activity on ${date}`,
+    retiringFanBody: 'You will keep getting messages until then, and you can still read past messages afterwards.',
+    noticeTitle: 'Toffee notice',
+    inquiryReplyTitle: 'You have a reply to your inquiry',
     birthdayTitle: (actor) => `${actor} sent you a birthday message`,
     birthdayBody: 'Happy birthday! Check it out now 🎂',
     releasedBody: 'Their Toffee Room is now open! Be one of the first to join',
@@ -89,6 +104,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `ไม่มีข้อความมา ${days} วันแล้ว หากไม่มีข้อความครบ 30 วัน แฟน ${fans} คนจะขอคืนเงินค่าสมาชิกของเดือนนั้นได้ ส่งข้อความสักประโยคตอนนี้เลย`,
     retiredFanTitle: (actor) => `${actor} ยุติกิจกรรมแล้ว`,
     retiredFanBody: (days) => `ยังดูข้อความเก่าได้ตามปกติ หากชำระเงินภายใน ${days} วันที่ผ่านมา สามารถขอคืนเงินของเดือนนี้ได้ที่จัดการการสมัครสมาชิก`,
+    retiringFanTitle: (actor, date) => `${actor} จะยุติกิจกรรมในวันที่ ${date}`,
+    retiringFanBody: 'คุณจะยังได้รับข้อความตามปกติจนถึงวันนั้น และยังดูข้อความเก่าได้หลังจากนั้น',
+    noticeTitle: 'ประกาศจาก Toffee',
+    inquiryReplyTitle: 'มีคำตอบสำหรับคำถามของคุณแล้ว',
     birthdayTitle: (actor) => `${actor} ส่งข้อความอวยพรวันเกิดถึงคุณ`,
     birthdayBody: 'สุขสันต์วันเกิด! เปิดดูได้เลย 🎂',
     releasedBody: 'Toffee Room เปิดแล้ว! เข้าไปพบกันก่อนใคร',
@@ -114,6 +133,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `${days}日間メッセージがありません。30日間メッセージがないと、ファン${fans}人がその月の購読料の返金を申請できます。今ひとこと送ってください。`,
     retiredFanTitle: (actor) => `${actor}さんの活動が終了しました`,
     retiredFanBody: (days) => `これまでのメッセージは引き続き見られます。お支払いから${days}日以内なら、購読管理から今月分の返金を申請できます。`,
+    retiringFanTitle: (actor, date) => `${actor}さんは${date}に活動を終了する予定です`,
+    retiringFanBody: 'その日まではこれまで通りメッセージが届き、過去のメッセージはその後も見られます。',
+    noticeTitle: 'Toffeeからのお知らせ',
+    inquiryReplyTitle: 'お問い合わせに返信が届きました',
     birthdayTitle: (actor) => `${actor}さんから誕生日メッセージが届きました`,
     birthdayBody: 'お誕生日おめでとう！今すぐチェック 🎂',
     releasedBody: 'Toffee Roomがオープンしました！いち早く会いに行こう',
@@ -134,6 +157,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `已 ${days} 天没有消息。30 天没有消息的话，${fans} 位粉丝可以申请当月订阅费退款。现在就发一句吧。`,
     retiredFanTitle: (actor) => `${actor} 已结束活动`,
     retiredFanBody: (days) => `仍可查看以往的消息。如果是 ${days} 天内付款的，可以在订阅管理中申请本月退款。`,
+    retiringFanTitle: (actor, date) => `${actor} 将于${date}结束活动`,
+    retiringFanBody: '在那之前仍会照常收到消息，之后也能继续查看以往的消息。',
+    noticeTitle: 'Toffee 公告',
+    inquiryReplyTitle: '你的咨询有回复了',
     birthdayTitle: (actor) => `${actor} 给你发来了生日祝福`,
     birthdayBody: '生日快乐！快去看看吧 🎂',
     releasedBody: 'Toffee Room 已开放！快来抢先见面',
@@ -154,6 +181,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `已 ${days} 天沒有訊息。30 天沒有訊息的話，${fans} 位粉絲可以申請當月訂閱費退款。現在就傳一句吧。`,
     retiredFanTitle: (actor) => `${actor} 已結束活動`,
     retiredFanBody: (days) => `仍可查看以往的訊息。如果是 ${days} 天內付款的，可以在訂閱管理中申請本月退款。`,
+    retiringFanTitle: (actor, date) => `${actor} 將於${date}結束活動`,
+    retiringFanBody: '在那之前仍會照常收到訊息，之後也能繼續查看以往的訊息。',
+    noticeTitle: 'Toffee 公告',
+    inquiryReplyTitle: '你的諮詢有回覆了',
     birthdayTitle: (actor) => `${actor} 傳來了生日祝福`,
     birthdayBody: '生日快樂！快去看看吧 🎂',
     releasedBody: 'Toffee Room 已開放！快來搶先見面',
@@ -174,6 +205,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `Đã ${days} ngày không có tin nhắn. Nếu 30 ngày không có tin nhắn, ${fans} fan có thể yêu cầu hoàn phí đăng ký của tháng đó. Hãy gửi một tin nhắn ngay nhé.`,
     retiredFanTitle: (actor) => `${actor} đã ngừng hoạt động`,
     retiredFanBody: (days) => `Bạn vẫn xem được các tin nhắn cũ. Nếu bạn thanh toán trong ${days} ngày qua, bạn có thể yêu cầu hoàn tiền tháng này trong Quản lý gói đăng ký.`,
+    retiringFanTitle: (actor, date) => `${actor} sẽ dừng hoạt động vào ${date}`,
+    retiringFanBody: 'Bạn vẫn nhận tin nhắn như bình thường đến ngày đó và vẫn xem được tin nhắn cũ sau đó.',
+    noticeTitle: 'Thông báo từ Toffee',
+    inquiryReplyTitle: 'Yêu cầu của bạn đã có phản hồi',
     birthdayTitle: (actor) => `${actor} đã gửi lời chúc mừng sinh nhật cho bạn`,
     birthdayBody: 'Chúc mừng sinh nhật! Xem ngay nhé 🎂',
     releasedBody: 'Toffee Room đã mở! Hãy là người gặp đầu tiên',
@@ -194,6 +229,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `${days} días sin mensajes. Tras 30 días sin mensajes, ${fans} fans podrán pedir el reembolso de ese mes. Envía un mensaje ahora.`,
     retiredFanTitle: (actor) => `${actor} ha terminado su actividad`,
     retiredFanBody: (days) => `Puedes seguir leyendo los mensajes anteriores. Si pagaste en los últimos ${days} días, puedes pedir el reembolso de este mes en Gestionar suscripciones.`,
+    retiringFanTitle: (actor, date) => `${actor} terminará su actividad el ${date}`,
+    retiringFanBody: 'Seguirás recibiendo mensajes hasta entonces y podrás leer los mensajes anteriores después.',
+    noticeTitle: 'Aviso de Toffee',
+    inquiryReplyTitle: 'Tu consulta tiene una respuesta',
     birthdayTitle: (actor) => `${actor} te envió un mensaje de cumpleaños`,
     birthdayBody: '¡Feliz cumpleaños! Míralo ahora 🎂',
     releasedBody: '¡Su Toffee Room ya está abierta! Sé de los primeros en entrar',
@@ -214,6 +253,10 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     idleRefundBody: (days, fans) => `${days} dias sem mensagens. Depois de 30 dias sem mensagens, ${fans} fãs poderão pedir o reembolso daquele mês. Envie uma mensagem agora.`,
     retiredFanTitle: (actor) => `${actor} encerrou as atividades`,
     retiredFanBody: (days) => `Você ainda pode ler as mensagens anteriores. Se pagou nos últimos ${days} dias, pode pedir o reembolso deste mês em Gerenciar assinaturas.`,
+    retiringFanTitle: (actor, date) => `${actor} vai encerrar as atividades em ${date}`,
+    retiringFanBody: 'Você continua recebendo mensagens até lá e ainda poderá ler as mensagens anteriores depois.',
+    noticeTitle: 'Aviso do Toffee',
+    inquiryReplyTitle: 'Sua solicitação recebeu uma resposta',
     birthdayTitle: (actor) => `${actor} enviou uma mensagem de aniversário para você`,
     birthdayBody: 'Feliz aniversário! Confira agora 🎂',
     releasedBody: 'A Toffee Room abriu! Seja um dos primeiros a entrar',

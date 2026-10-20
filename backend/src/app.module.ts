@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { AppSettingsModule } from './app-settings/app-settings.module.js';
+import { SupportModule } from './support/support.module.js';
+import { PrivacyModule } from './privacy/privacy.module.js';
+import { MaintenanceGuard } from './app-settings/maintenance.guard.js';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -36,6 +40,9 @@ import { ReleasesModule } from './releases/releases.module.js';
 
 @Module({
   imports: [
+    AppSettingsModule,
+    SupportModule,
+    PrivacyModule,
     SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
@@ -71,6 +78,8 @@ import { ReleasesModule } from './releases/releases.module.js';
     { provide: APP_GUARD, useClass: UserThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    // 점검 모드(2026-10-20) — 로그인 확인 뒤에 돌아서 운영자는 통과
+    { provide: APP_GUARD, useClass: MaintenanceGuard },
     // 오류 문구를 요청 언어로 번역 + 처리 안 된 예외(5xx)만 Sentry로 보냄(SentryGlobalFilter 확장)
     { provide: APP_FILTER, useClass: LocalizedExceptionFilter },
   ],
