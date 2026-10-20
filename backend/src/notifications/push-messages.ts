@@ -2,7 +2,7 @@ import { MessageMediaType } from '../generated/prisma/enums.js';
 import { resolveLocale, type SupportedLocale } from '../common/i18n/locales.js';
 
 // 서버가 만드는 푸시 문구 — 받는 사람의 User.locale로 고름. 앱 쪽 번역과 마찬가지로 th/ja/zh는
-// 원어민 검수 전(2026-09-28 기계 작성, vi는 2026-10-02).
+// 원어민 검수 전(2026-09-28 기계 작성, vi는 2026-10-02, es·pt-BR은 2026-10-20).
 interface PushStrings {
   media: Record<MessageMediaType, string>;
   /** 아티스트가 사진·영상을 여러 개 한꺼번에 보냈을 때 알림 한 건(2026-10-13) */
@@ -178,6 +178,46 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     birthdayBody: 'Chúc mừng sinh nhật! Xem ngay nhé 🎂',
     releasedBody: 'Toffee Room đã mở! Hãy là người gặp đầu tiên',
     releasedBundleBody: 'Gói combo đã mở! Xem ngay nhé',
+  },
+  es: {
+    media: { TEXT: 'Tienes un mensaje nuevo', PHOTO: 'Envió una foto', AUDIO: 'Envió un mensaje de voz', VIDEO: 'Envió un video' },
+    mediaBatch: (count) => `Envió ${count} fotos y videos`,
+    quotedReplyTitle: (actor) => `${actor} respondió a tu mensaje`,
+    quotedReplyPrefix: 'Te respondió · ',
+    staffNewStoryTitle: (actor) => `${actor} publicó una historia nueva`,
+    staffNewStoryBody: 'Échale un vistazo ahora',
+    idleActorTitle: (fans) => `${fans} fans te están esperando`,
+    idleActorBody: (days, room) => `${room ? `${room} · ` : ''}Tu último mensaje fue hace ${days} días. ¿Qué tal un saludo rápido?`,
+    idleStaffTitle: (actor, days) => `${actor} lleva ${days} días sin enviar mensajes`,
+    idleStaffBody: (fans) => `${fans} suscriptores activos`,
+    idleRefundTitle: (room, left) => `${room} · los fans podrán pedir reembolsos ${left === 1 ? 'a partir de mañana' : `en ${left} días`}`,
+    idleRefundBody: (days, fans) => `${days} días sin mensajes. Tras 30 días sin mensajes, ${fans} fans podrán pedir el reembolso de ese mes. Envía un mensaje ahora.`,
+    retiredFanTitle: (actor) => `${actor} ha terminado su actividad`,
+    retiredFanBody: (days) => `Puedes seguir leyendo los mensajes anteriores. Si pagaste en los últimos ${days} días, puedes pedir el reembolso de este mes en Gestionar suscripciones.`,
+    birthdayTitle: (actor) => `${actor} te envió un mensaje de cumpleaños`,
+    birthdayBody: '¡Feliz cumpleaños! Míralo ahora 🎂',
+    releasedBody: '¡Su Toffee Room ya está abierta! Sé de los primeros en entrar',
+    releasedBundleBody: '¡Este paquete ya está abierto! Échale un vistazo',
+  },
+  'pt-BR': {
+    media: { TEXT: 'Você tem uma nova mensagem', PHOTO: 'Enviou uma foto', AUDIO: 'Enviou uma mensagem de voz', VIDEO: 'Enviou um vídeo' },
+    mediaBatch: (count) => `Enviou ${count} fotos e vídeos`,
+    quotedReplyTitle: (actor) => `${actor} respondeu à sua mensagem`,
+    quotedReplyPrefix: 'Respondeu você · ',
+    staffNewStoryTitle: (actor) => `${actor} postou um novo story`,
+    staffNewStoryBody: 'Confira agora',
+    idleActorTitle: (fans) => `${fans} fãs estão esperando por você`,
+    idleActorBody: (days, room) => `${room ? `${room} · ` : ''}Sua última mensagem foi há ${days} dias. Que tal um oi rápido?`,
+    idleStaffTitle: (actor, days) => `${actor} está há ${days} dias sem enviar mensagens`,
+    idleStaffBody: (fans) => `${fans} assinantes ativos`,
+    idleRefundTitle: (room, left) => `${room} · os fãs poderão pedir reembolso ${left === 1 ? 'a partir de amanhã' : `em ${left} dias`}`,
+    idleRefundBody: (days, fans) => `${days} dias sem mensagens. Depois de 30 dias sem mensagens, ${fans} fãs poderão pedir o reembolso daquele mês. Envie uma mensagem agora.`,
+    retiredFanTitle: (actor) => `${actor} encerrou as atividades`,
+    retiredFanBody: (days) => `Você ainda pode ler as mensagens anteriores. Se pagou nos últimos ${days} dias, pode pedir o reembolso deste mês em Gerenciar assinaturas.`,
+    birthdayTitle: (actor) => `${actor} enviou uma mensagem de aniversário para você`,
+    birthdayBody: 'Feliz aniversário! Confira agora 🎂',
+    releasedBody: 'A Toffee Room abriu! Seja um dos primeiros a entrar',
+    releasedBundleBody: 'Este pacote abriu! Confira agora',
   },
 };
 

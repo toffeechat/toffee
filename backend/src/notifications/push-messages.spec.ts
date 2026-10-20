@@ -7,6 +7,8 @@ describe('pushStrings', () => {
     expect(pushStrings('th').media.PHOTO).toBe('ส่งรูปภาพ');
     expect(pushStrings('zh-Hant').media.VIDEO).toBe('傳送了一段影片');
     expect(pushStrings('vi').media.VIDEO).toBe('Đã gửi một video');
+    expect(pushStrings('es').media.PHOTO).toBe('Envió una foto');
+    expect(pushStrings('pt-BR').media.VIDEO).toBe('Enviou um vídeo');
     expect(pushStrings(null).media.TEXT).toBe('You have a new message');
     expect(pushStrings('fr').staffNewStoryTitle('Caramel')).toBe('Caramel posted a new story');
     expect(resolveLocale('zh')).toBe('en');

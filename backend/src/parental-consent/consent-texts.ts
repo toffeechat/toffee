@@ -1,7 +1,7 @@
 import { resolveLocale, SUPPORTED_LOCALES, type SupportedLocale } from '../common/i18n/locales.js';
 
 // 부모(법정대리인) 동의 메일·웹 페이지 문구 — 부모는 앱을 쓰지 않으므로 서버가 직접 언어를 골라 만듦.
-// th/ja/zh는 원어민 검수 전(2026-09-28 기계 작성, vi는 2026-10-02), 동의 안내 문구는 👤 변호사 검토 대상.
+// th/ja/zh는 원어민 검수 전(2026-09-28 기계 작성, vi는 2026-10-02, es·pt-BR은 2026-10-20), 동의 안내 문구는 👤 변호사 검토 대상.
 
 interface ConsentTexts {
   emailSubject: string;
@@ -153,6 +153,44 @@ export const CONSENT_TEXTS: Record<SupportedLocale, ConsentTexts> = {
     invalidTitle: 'Liên kết không hợp lệ hoặc đã hết hạn',
     invalidBody: 'Vui lòng nhờ con bạn gửi lại yêu cầu đồng ý từ ứng dụng.',
   },
+  es: {
+    emailSubject: 'Toffee: solicitud de consentimiento para la cuenta de tu hijo o hija',
+    intro: 'Tu hijo o hija te ha pedido, como padre, madre o tutor, tu consentimiento para usar Toffee.',
+    about: 'Toffee es un servicio de pago en el que los fans se suscriben para recibir mensajes de los artistas que les gustan.',
+    emailAction: 'Pulsa el botón de abajo para revisar la información y dar tu consentimiento. El enlace es válido durante 7 días.',
+    emailButton: 'Revisar y dar consentimiento',
+    emailIgnore: 'Si no esperabas este correo, puedes ignorarlo. Sin tu consentimiento, la cuenta de tu hijo o hija no podrá suscribirse.',
+    pageTitle: 'Consentimiento para la cuenta de tu hijo o hija',
+    points: [
+      'Las suscripciones son de pago y se cobran a través de App Store o Google Play. Los precios varían según el artista.',
+      'Tu hijo o hija puede recibir mensajes de artistas y responder con texto. Las respuestas las pueden ver el artista y su agencia, y si el artista cita una respuesta, otros suscriptores podrían verla junto con el apodo de tu hijo o hija.',
+      'Puedes retirar tu consentimiento en cualquier momento contactando con soporte desde la app.',
+    ],
+    agreeButton: 'Doy mi consentimiento',
+    doneTitle: 'Consentimiento completado',
+    doneBody: 'Tu hijo o hija ya puede seguir usando la app. Puedes cerrar esta ventana.',
+    invalidTitle: 'Este enlace no es válido o ha caducado',
+    invalidBody: 'Pide a tu hijo o hija que vuelva a enviar la solicitud de consentimiento desde la app.',
+  },
+  'pt-BR': {
+    emailSubject: 'Toffee: pedido de consentimento para a conta do seu filho ou filha',
+    intro: 'Seu filho ou filha pediu o seu consentimento, como responsável, para usar a Toffee.',
+    about: 'A Toffee é um serviço pago em que os fãs assinam para receber mensagens dos artistas de que gostam.',
+    emailAction: 'Toque no botão abaixo para conferir as informações e dar seu consentimento. O link é válido por 7 dias.',
+    emailButton: 'Conferir e consentir',
+    emailIgnore: 'Se você não esperava este e-mail, pode ignorá-lo. Sem o seu consentimento, a conta do seu filho ou filha não poderá fazer assinaturas.',
+    pageTitle: 'Consentimento para a conta do seu filho ou filha',
+    points: [
+      'As assinaturas são pagas e cobradas pela App Store ou pelo Google Play. Os preços variam conforme o artista.',
+      'Seu filho ou filha pode receber mensagens de artistas e responder com texto. As respostas ficam visíveis para o artista e a agência dele e, se o artista citar uma resposta, outros assinantes poderão vê-la com o apelido do seu filho ou filha.',
+      'Você pode retirar o consentimento a qualquer momento entrando em contato com o suporte pelo app.',
+    ],
+    agreeButton: 'Eu consinto',
+    doneTitle: 'Consentimento concluído',
+    doneBody: 'Seu filho ou filha já pode continuar usando o app. Você pode fechar esta janela.',
+    invalidTitle: 'Este link é inválido ou expirou',
+    invalidBody: 'Peça ao seu filho ou filha para enviar o pedido de consentimento novamente pelo app.',
+  },
 };
 
 // 언어 선택 줄에 보여줄 이름(항상 그 언어 자신의 표기)
@@ -164,6 +202,8 @@ const NATIVE_NAMES: Record<SupportedLocale, string> = {
   'zh-Hans': '简体中文',
   'zh-Hant': '繁體中文',
   vi: 'Tiếng Việt',
+  es: 'Español',
+  'pt-BR': 'Português (Brasil)',
 };
 
 // 자녀 계정에 앱 언어가 없을 때 국가로 추정
@@ -178,6 +218,15 @@ const LOCALE_BY_COUNTRY: Record<string, SupportedLocale> = {
   HK: 'zh-Hant',
   MO: 'zh-Hant',
   VN: 'vi',
+  // 스페인어권(스페인·중남미) — 2026-10-20
+  ES: 'es',
+  MX: 'es',
+  AR: 'es',
+  CO: 'es',
+  CL: 'es',
+  PE: 'es',
+  BR: 'pt-BR',
+  PT: 'pt-BR',
 };
 
 /** 자녀 계정 기준 언어 — 앱 언어 → 가입 국가 → 영어 */

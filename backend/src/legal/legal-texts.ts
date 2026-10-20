@@ -159,7 +159,7 @@ const PRIVACY: LegalSection[] = [
 export const LEGAL_SECTIONS: Record<LegalDoc, LegalSection[]> = { terms: TERMS, privacy: PRIVACY };
 
 export const LEGAL_TITLES: Record<LegalDoc, Record<SupportedLocale, string>> = {
-  terms: { ko: '이용약관', en: 'Terms of Service', th: 'ข้อกำหนดการใช้บริการ', ja: '利用規約', 'zh-Hans': '服务条款', 'zh-Hant': '服務條款', vi: 'Điều khoản dịch vụ' },
+  terms: { ko: '이용약관', en: 'Terms of Service', th: 'ข้อกำหนดการใช้บริการ', ja: '利用規約', 'zh-Hans': '服务条款', 'zh-Hant': '服務條款', vi: 'Điều khoản dịch vụ', es: 'Términos del servicio', 'pt-BR': 'Termos de Serviço' },
   privacy: {
     ko: '개인정보처리방침',
     en: 'Privacy Policy',
@@ -168,6 +168,8 @@ export const LEGAL_TITLES: Record<LegalDoc, Record<SupportedLocale, string>> = {
     'zh-Hans': '隐私政策',
     'zh-Hant': '隱私權政策',
     vi: 'Chính sách quyền riêng tư',
+    es: 'Política de privacidad',
+    'pt-BR': 'Política de Privacidade',
   },
 };
 
@@ -180,4 +182,6 @@ export const DRAFT_NOTICE: Record<SupportedLocale, { title: string; body: string
   'zh-Hans': { title: '本文件为草案', body: '将在正式上线前经律师审核后确定，目前不具法律效力。草案仅提供韩语版本。' },
   'zh-Hant': { title: '本文件為草案', body: '將在正式上線前經律師審核後確定，目前不具法律效力。草案僅提供韓文版本。' },
   vi: { title: 'Tài liệu này là bản nháp', body: 'Tài liệu sẽ được hoàn thiện sau khi luật sư xem xét trước khi ra mắt và hiện chưa có hiệu lực pháp lý. Bản nháp chỉ có bằng tiếng Hàn.' },
+  es: { title: 'Este documento es un borrador', body: 'Se finalizará tras una revisión legal antes del lanzamiento y por ahora no tiene efecto legal. El borrador solo está disponible en coreano.' },
+  'pt-BR': { title: 'Este documento é um rascunho', body: 'Ele será finalizado após revisão jurídica antes do lançamento e, por enquanto, não tem efeito legal. O rascunho está disponível apenas em coreano.' },
 };

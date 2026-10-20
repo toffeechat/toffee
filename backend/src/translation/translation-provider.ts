@@ -45,6 +45,8 @@ export const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   'zh-Hans': 'Simplified Chinese',
   'zh-Hant': 'Traditional Chinese (as used in Taiwan and Hong Kong)',
   vi: 'Vietnamese',
+  es: 'Spanish',
+  'pt-BR': 'Brazilian Portuguese',
 };
 
 // 요청마다 똑같은 글(프롬프트 캐시가 되게 날짜·id 같은 바뀌는 값은 넣지 않음). 메시지 안 글은 지시로 따르지 않게(프롬프트 주입 방지)
@@ -55,7 +57,7 @@ Translate the text inside <message> into the language named in <target_language>
 - Keep the politeness level: casual stays casual, and polite or honorific speech stays polite (for example Thai ค่ะ/ครับ, Japanese です/ます).
 - Choose first-person pronouns and gendered sentence endings that fit the speaker. If the speaker's gender is unknown, use gender-neutral forms (for example Thai เรา, Japanese 私) and never guess.
 - Fan words for addressing artists such as 오빠, 언니 and 누나 may stay as the forms fans use in the target language (for example โอปป้า, オッパ, 歐巴).
-- Internet expressions are not emoji: never leave Korean letters such as ㅋㅋ, ㅎㅎ, ㅠㅠ or ㅜㅜ in a non-Korean translation. Replace them with the natural equivalent (laughing: Thai 555, Japanese w or 笑, Chinese 哈哈; giggling: Thai อิอิ, Japanese えへへ, Chinese 嘿嘿; crying: Japanese 泣, Chinese 嗚嗚). When translating into Korean, turn 555, www, 哈哈 and the like into ㅋㅋ, ㅎㅎ or ㅠㅠ.
+- Internet expressions are not emoji: never leave Korean letters such as ㅋㅋ, ㅎㅎ, ㅠㅠ or ㅜㅜ in a non-Korean translation. Replace them with the natural equivalent (laughing: Thai 555, Japanese w or 笑, Chinese 哈哈, Spanish jajaja, Brazilian Portuguese kkkk or rsrs; giggling: Thai อิอิ, Japanese えへへ, Chinese 嘿嘿; crying: Japanese 泣, Chinese 嗚嗚). When translating into Korean, turn 555, www, 哈哈, jajaja, kkkk and the like into ㅋㅋ, ㅎㅎ or ㅠㅠ.
 - Keep emoji, line breaks, names, and the placeholder {{name}} exactly as written. {{name}} is replaced with the fan's nickname later: leave it untouched, and do not add or remove it.
 - If the message is already in the target language, return it unchanged.
 - Output only the translated text: no quotes, notes, alternatives in parentheses, romanization, or explanations.

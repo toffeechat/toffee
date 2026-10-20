@@ -51,6 +51,10 @@ describe('오류 문구 다국어', () => {
     expect(localeFromAcceptLanguage('zh-TW')).toBe('zh-Hant');
     expect(localeFromAcceptLanguage('zh-CN')).toBe('zh-Hans');
     expect(localeFromAcceptLanguage('vi-VN,vi;q=0.9')).toBe('vi');
+    expect(localeFromAcceptLanguage('es-MX,es;q=0.9')).toBe('es');
+    expect(localeFromAcceptLanguage('pt-BR')).toBe('pt-BR');
+    expect(localeFromAcceptLanguage('pt-PT')).toBe('pt-BR');
+    expect(localeFromAcceptLanguage('pt')).toBe('pt-BR');
     expect(localeFromAcceptLanguage('fr-FR')).toBe('en');
     expect(localeFromAcceptLanguage(undefined)).toBe('en');
   });
