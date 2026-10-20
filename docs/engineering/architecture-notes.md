@@ -1786,3 +1786,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   (웹 Blob 내려받기, 네이티브 expo-file-system + expo-sharing).
 - 마이그레이션 `20261020180000_ops_store_stop_app_settings_inquiries_admin_mfa`.
 
+
+## PC 웹 글꼴·정적 파일은 node_modules 경로로 내보내지 않기 (2026-10-20)
+
+- `expo export -p web`은 npm 패키지 안의 asset을 `dist/assets/node_modules/<패키지>/…`로 내보내는데, Cloudflare Pages는
+  `node_modules` 폴더를 업로드하지 않음 → 그 주소는 SPA fallback `index.html`(200 `text/html`)이 내려옴.
+- 그래서 Noto Sans Thai는 `@expo-google-fonts/noto-sans-thai` 대신 `app/assets/fonts/NotoSansThai-{Regular,Medium,SemiBold,Bold}.ttf`
+  (+ `NotoSansThai-LICENSE.txt`, OFL)를 `_layout.tsx` `useFonts`에서 `require`. 폰트 패밀리 이름(`NotoSansThai_400Regular` 등,
+  `constants/theme.ts`)은 그대로.
+- 새 글꼴·이미지를 패키지에서 가져올 땐 파일을 `assets/`로 복사해서 쓸 것. 확인: 빌드 후 `find dist/assets/node_modules -type f`
+  (지금 남은 건 expo-router 기본 아이콘뿐 — 화면에 안 쓰임).

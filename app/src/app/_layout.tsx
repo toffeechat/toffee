@@ -5,12 +5,6 @@ import { InAppBanner } from '@/components/in-app-banner';
 import { HeaderBack, homeFor } from '@/components/header-back';
 import { ToastHost } from '@/components/toast';
 import { useEffect, useState, type ReactNode } from 'react';
-import {
-  NotoSansThai_400Regular,
-  NotoSansThai_500Medium,
-  NotoSansThai_600SemiBold,
-  NotoSansThai_700Bold,
-} from '@expo-google-fonts/noto-sans-thai';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as Sentry from '@sentry/react-native';
@@ -173,10 +167,12 @@ function RootLayout() {
     Pretendard_500Medium: require('@/../assets/fonts/Pretendard-Medium.otf'),
     Pretendard_600SemiBold: require('@/../assets/fonts/Pretendard-SemiBold.otf'),
     Pretendard_700Bold: require('@/../assets/fonts/Pretendard-Bold.otf'),
-    NotoSansThai_400Regular,
-    NotoSansThai_500Medium,
-    NotoSansThai_600SemiBold,
-    NotoSansThai_700Bold,
+    // 태국어 글꼴도 assets/fonts에 직접 둠(2026-10-20) — npm 패키지 경로(assets/node_modules/…)로 내보내면 Cloudflare Pages가
+    // node_modules 폴더를 안 올려서 PC 웹에서 글꼴 대신 index.html이 내려옴
+    NotoSansThai_400Regular: require('@/../assets/fonts/NotoSansThai-Regular.ttf'),
+    NotoSansThai_500Medium: require('@/../assets/fonts/NotoSansThai-Medium.ttf'),
+    NotoSansThai_600SemiBold: require('@/../assets/fonts/NotoSansThai-SemiBold.ttf'),
+    NotoSansThai_700Bold: require('@/../assets/fonts/NotoSansThai-Bold.ttf'),
   });
 
   if (!fontsLoaded && !fontError) return null;
