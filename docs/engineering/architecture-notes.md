@@ -1807,6 +1807,7 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - `MessagesService.replyQuota` 응답에 `blocked`(ActorFanBlock) — 차단이면 `remaining: 0`, 앱은 `chat.replyBlocked` 안내로 입력칸을 막음.
   `REPLY_BLOCKED` 한국어 문구 "채널" → "토피룸".
 - `ChatBackground` 덮개 불투명도 다크 0.72 / 라이트 0.45.
+- `QuoteBlock`은 인용 글을 `showNameToken`으로 보여 줌 — 아티스트·소속사 화면에선 인용된 아티스트 메시지(CP방 서로 답장)의 `{{name}}`이 원문 그대로 오기 때문(팬 응답은 서버가 치환).
 - 로컬에서 고친 웹을 데모 서버에 붙여 볼 땐 `EXPO_PUBLIC_API_URL=https://api-demo.toffeechat.app npx expo export -p web` 후 SPA로 서빙.
   localhost 출처에선 구글 로그인 버튼 iframe이 `gis is not defined`를 던짐(구글 쪽, 허용 출처가 아니라서) — e2e 마지막 화면 오류 검사에 걸리니
   e2e는 배포된 데모 주소로 돌리거나 이 오류를 무시할 것. R2 업로드도 localhost 출처는 CORS로 막힘.
