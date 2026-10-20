@@ -143,7 +143,13 @@
       "monitor": "Monitor the messages this artist sends to fans. Long-press a problematic message to unsend it on their behalf.",
       "replies": "Replies from fans. You can report a problematic reply or block that fan.",
       "stats": "Subscription, message and reply trends for this artist, plus where their fans are."
-    }
+    },
+    "monitorSearch": "Search by nickname, official name or agency",
+    "sortRecent": "Latest message",
+    "subscribers": "{{count}} subscribers",
+    "officialName": "Official name {{name}}",
+    "noAgency": "No agency",
+    "searchEmpty": "No results."
   },
   "onboarding": {
     "birthDateTitle": "What's your date of birth?",

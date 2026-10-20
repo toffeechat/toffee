@@ -143,7 +143,13 @@
       "monitor": "查看艺人发给粉丝的消息。如有问题消息，长按即可代为撤回。",
       "replies": "查看粉丝发来的回复。如有问题回复，可以举报或拉黑该粉丝。",
       "stats": "查看该艺人的订阅、消息、回复趋势和粉丝分布。"
-    }
+    },
+    "monitorSearch": "按昵称、官方名称或经纪公司搜索",
+    "sortRecent": "最新消息",
+    "subscribers": "订阅者 {{count}} 人",
+    "officialName": "官方名称 {{name}}",
+    "noAgency": "无经纪公司",
+    "searchEmpty": "没有搜索结果。"
   },
   "onboarding": {
     "birthDateTitle": "请填写你的出生日期",

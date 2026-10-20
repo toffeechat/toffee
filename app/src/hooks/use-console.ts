@@ -10,6 +10,8 @@ export type MyActor = Actor & {
   lastMessage?: { body: string | null; mediaType: string; createdAt: string } | null;
   /** "곧 공개" 알림 신청 수(2026-10-19) — 소속사에 보여 줄 사전 수요 숫자 */
   releaseWatchCount?: number;
+  /** 지금 구독 중인 수(2026-10-20) — 토피룸 모니터링 목록의 운영 정보 줄 */
+  subscriberCount?: number;
 };
 
 export function useMyActors() {
@@ -140,11 +142,12 @@ export interface AgencyDashboard extends RangeInfo {
   actors: DashboardRow[];
 }
 
-export function useAgencyDashboard(selection: StatsSelection = { days: 30 }, kind: RoomKindFilter = 'ALL') {
-  const query = selectionQuery(selection);
+/** agencyId — 운영자 홈의 소속사 필터(2026-10-20, CP방은 멤버 소속사 기준). 소속사 직원은 원래 자기 소속사만 봄 */
+export function useAgencyDashboard(selection: StatsSelection = { days: 30 }, kind: RoomKindFilter = 'ALL', agencyId?: string | null) {
+  const query = `${selectionQuery(selection)}&kind=${kind}${agencyId ? `&agencyId=${encodeURIComponent(agencyId)}` : ''}`;
   return useQuery({
-    queryKey: ['agency-dashboard', query, kind],
-    queryFn: () => apiClient.get<AgencyDashboard>(`/actors/mine/dashboard?${query}&kind=${kind}`),
+    queryKey: ['agency-dashboard', query],
+    queryFn: () => apiClient.get<AgencyDashboard>(`/actors/mine/dashboard?${query}`),
     // 필터를 바꾸는 동안 이전 숫자를 그대로 보여 줌(화면이 깜빡이지 않게)
     placeholderData: (previous) => previous,
   });

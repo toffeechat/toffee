@@ -47,7 +47,8 @@ export default function AdminNewCoupleScreen() {
     create.mutate(
       { memberIds: members.map((member) => member.id), legalName: legalName.trim(), chatDisplayName: chatDisplayName.trim(), monthlyPriceCents },
       {
-        onSuccess: (room) => router.replace({ pathname: '/admin/actors/[id]', params: { id: (room as { id: string }).id } }),
+        // 2026-10-20: CP방을 만들면 보통 바로 묶음 3개도 만들어서, 그 화면으로 이어감(이 CP가 골라진 채로). 나중에 하려면 뒤로
+        onSuccess: (room) => router.replace({ pathname: '/admin/bundles/cp-set', params: { roomId: (room as { id: string }).id } }),
         onError: (e) => setError(e instanceof ApiError ? e.message : '만들지 못했어요.'),
       },
     );
@@ -71,7 +72,7 @@ export default function AdminNewCoupleScreen() {
               ))}
           </ThemedView>
         </AdminSection>
-        <AdminSection title="기본 정보" hint="공식 이름은 아티스트 찾기·CP방 소개에, 방 이름은 채팅방 위에 보여요(방 이름은 두 아티스트가 나중에 바꿀 수 있어요).">
+        <AdminSection title="기본 정보" hint="만들고 나면 이 CP로 묶음 3개(A + CP, B + CP, 전체) 만드는 화면으로 바로 넘어가요. 공식 이름은 아티스트 찾기·CP방 소개에, 방 이름은 채팅방 위에 보여요(방 이름은 두 아티스트가 나중에 바꿀 수 있어요).">
           <AdminField label="공식 이름" value={legalName} onChangeText={setLegalName} maxLength={100} />
           <AdminField label="방 이름" value={chatDisplayName} onChangeText={setChatDisplayName} maxLength={50} />
           <AdminField label="월 구독료(바트)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" placeholder="예: 69" />

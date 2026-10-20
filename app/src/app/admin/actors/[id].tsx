@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
   AdminAvatar,
   AdminButton,
+  AdminButtonRow,
   AdminChip,
   AdminField,
   AdminMessage,
@@ -369,6 +370,7 @@ export default function AdminActorDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: actor, isLoading } = useAdminActor(id);
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -380,6 +382,13 @@ export default function AdminActorDetailScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             {formatBaht(actor.monthlyPriceCents)}/월 · 구독자 {actor.activeSubscriberCount}명 · 등록 {formatDate(actor.createdAt)}
           </ThemedText>
+          {/* 소속사와 같은 모니터링 화면(보낸 메시지·팬 답장·스토리·통계, 2026-10-20) */}
+          <AdminButtonRow>
+            <AdminButton label="토피룸 모니터링" onPress={() => router.push(`/console/${actor.id}`)} />
+            {actor.kind === 'COUPLE' ? (
+              <AdminButton secondary label="이 CP로 묶음 3개 만들기" onPress={() => router.push({ pathname: '/admin/bundles/cp-set', params: { roomId: actor.id } })} />
+            ) : null}
+          </AdminButtonRow>
           <AdminSection title="프로필 사진" hint="공식 사진은 아티스트 찾기·아티스트 소개에, 대화방 사진은 채팅방에서 보여요. 공식 사진을 처음 올리면 비어 있는 대화방 사진에도 같이 들어가요(아티스트가 나중에 바꾸거나 기본 이미지로 돌릴 수 있음). 정사각으로 잘라서 올려요.">
             <ThemedView style={styles.photos}>
               <PhotoSlot actor={actor} field="officialProfileImageKey" label="공식 사진" />

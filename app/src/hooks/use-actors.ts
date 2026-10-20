@@ -43,8 +43,8 @@ export interface CoupleMemberActor {
   officialProfileImageUrl: string | null;
   chatProfileImageUrl: string | null;
   retiredAt: string | null;
-  /** 멤버 소속사 — CP방 카드에 소속사를 보여 주는 용도(2026-10-16) */
-  agency?: { name: string } | null;
+  /** 멤버 소속사 — CP방 카드에 소속사를 보여 주는 용도(2026-10-16). id는 /actors/mine에만(운영자 소속사 필터, 2026-10-20) */
+  agency?: { id?: string; name: string } | null;
 }
 
 /** 커플방 멤버 배우들(1인 방이면 빈 배열) */

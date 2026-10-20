@@ -47,7 +47,8 @@ const LIST_SELECT = {
           officialProfileImageUrl: true,
           chatProfileImageUrl: true,
           retiredAt: true,
-          agency: { select: { name: true } },
+          // id는 운영자 대시보드의 소속사 필터(CP방은 멤버 소속사로, 2026-10-20)
+          agency: { select: { id: true, name: true } },
         },
       },
     },
@@ -121,7 +122,13 @@ export class ActorsService {
       orderBy: { legalName: 'asc' },
     });
     const ids = actors.map((actor) => actor.id);
-    const [last, lastMessages, watchCounts] = await Promise.all([this.lastBroadcastMap(ids), this.lastMessageMap(ids), this.releases.actorWatchCounts(ids)]);
+    const [last, lastMessages, watchCounts, subscribers] = await Promise.all([
+      this.lastBroadcastMap(ids),
+      this.lastMessageMap(ids),
+      this.releases.actorWatchCounts(ids),
+      this.prisma.subscription.groupBy({ by: ['actorId'], where: { actorId: { in: ids }, cancelledAt: null }, _count: { _all: true } }),
+    ]);
+    const subscriberCounts = new Map(subscribers.map((row) => [row.actorId, row._count._all]));
     // 마지막 스타 메시지 시각 — 소속사 목록의 "N일째 미발송" 표시(2026-09-29). lastMessage는 토피룸 목록 미리보기(2026-10-14, 카톡 대화방 목록처럼)
     return Promise.all(
       actors.map(async (actor) => ({
@@ -130,6 +137,8 @@ export class ActorsService {
         lastMessage: lastMessages.get(actor.id) ?? null,
         // "곧 공개" 알림 신청 수(2026-10-19) — 소속사에 보여 줄 사전 수요 숫자. 공개 후에도 남음
         releaseWatchCount: watchCounts.get(actor.id) ?? 0,
+        // 지금 구독 중인 수(2026-10-20) — 운영자·소속사 토피룸 모니터링 목록의 운영 정보 줄
+        subscriberCount: subscriberCounts.get(actor.id) ?? 0,
       })),
     );
   }

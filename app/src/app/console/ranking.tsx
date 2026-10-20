@@ -21,11 +21,12 @@ export default function ConsoleRankingScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ metric?: string; days?: string; from?: string; to?: string; kind?: string }>();
+  // agencyId — 운영자 홈에서 소속사를 골라 들어온 경우 그대로 이어서(2026-10-20)
+  const params = useLocalSearchParams<{ metric?: string; days?: string; from?: string; to?: string; kind?: string; agencyId?: string }>();
   const [metric, setMetric] = useState<RankMetric>(isRankMetric(params.metric) ? params.metric : 'subscribers');
   const [selection, setSelection] = useState<StatsSelection>(() => selectionFromParams(params));
   const [kind, setKind] = useState<RoomKindFilter>(KINDS.find((value) => value === params.kind) ?? 'ALL');
-  const { data, isLoading } = useAgencyDashboard(selection, kind);
+  const { data, isLoading } = useAgencyDashboard(selection, kind, params.agencyId);
   // 지난 날짜인데 하루 기록이 없으면 구독자 순위는 비움
   const noRecord = metric === 'subscribers' && data && !data.audienceRecorded;
   const items = data && !noRecord ? rankItems(data.actors, metric, t) : [];

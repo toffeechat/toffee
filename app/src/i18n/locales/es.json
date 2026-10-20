@@ -143,7 +143,13 @@
       "monitor": "Supervisa los mensajes que este artista envía a sus fans. Mantén pulsado un mensaje problemático para retirarlo en su nombre.",
       "replies": "Respuestas de los fans. Puedes reportar una respuesta problemática o bloquear a ese fan.",
       "stats": "Tendencias de suscripciones, mensajes y respuestas de este artista, y de dónde son sus fans."
-    }
+    },
+    "monitorSearch": "Buscar por apodo, nombre oficial o agencia",
+    "sortRecent": "Mensaje más reciente",
+    "subscribers": "{{count}} suscriptores",
+    "officialName": "Nombre oficial {{name}}",
+    "noAgency": "Sin agencia",
+    "searchEmpty": "No hay resultados."
   },
   "onboarding": {
     "birthDateTitle": "¿Cuál es tu fecha de nacimiento?",

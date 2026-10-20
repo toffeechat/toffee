@@ -1721,3 +1721,21 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   앱: `utils/release.ts`(태국 시간 입력 ↔ ISO), `hooks/use-release.ts`(`useUpcoming`은 하루 안쪽이면 공개 시각에 다시 그림).
 - **긴 메시지**: `utils/long-message.ts`(`LONG_MESSAGE_CHARS=500`, `LONG_MESSAGE_LINES=15`, 코드 포인트 기준) → `components/message-text.tsx`가 자르고
   "전체보기"를 누르면 `lib/full-message.ts`(메모리)에 넣고 `/message`. `TranslatableText`가 `MessageText`를 쓰고 `full`·`sender` props, 말풍선 안 번역도 같은 길이로 자름.
+
+## 2026-10-20 — 운영자 홈 대시보드·토피룸 모니터링
+
+- 운영자 홈(`app/src/app/admin/index.tsx`)은 소속사 대시보드 부품(`console-charts`·`console-stats`·`console-rank`)을 그대로 씀.
+  아티스트 활동 숫자는 `GET /actors/mine/dashboard`(ADMIN이면 `findMine`이 전체 방) + 새 `agencyId` 쿼리(`AgencyDashboardQueryDto`,
+  SOLO는 `actor.agency.id`, COUPLE은 `coupleMembers[].member.agency.id` — `LIST_SELECT` 멤버 agency에 id 추가). 앱 `useAgencyDashboard(selection, kind, agencyId)`
+  는 쿼리 문자열 전체를 queryKey로.
+- 서비스 전체 추이는 `GET /admin/stats/overview?days|from&to`(`AdminStatsService.overview`, `resolveRange`·`WEEKLY_AFTER_DAYS` 재사용,
+  `bucketOverviewWeekly`) — 일별 가입·신규 구독 금액 + totals/previous. `/admin/stats/daily`와 `breakdown.actors`는 삭제(쓰는 곳 없음).
+  `/admin/stats` 화면은 `Redirect`로 홈.
+- 토피룸 목록 `components/room-monitor-list.tsx`(`RoomMonitorList`, `admin` prop) — 소속사 `console/(tabs)/artists.tsx`와 운영자
+  `admin/rooms.tsx` 공용, 행은 기존 `RoomListRow` + extra(운영 정보 줄·미발송 줄). `GET /actors/mine` 응답에 `subscriberCount`(구독 groupBy) 추가.
+  검색·정렬·필터는 앱에서(방 수가 적음 — 수백 개가 되면 서버 쪽으로).
+- `WideShell`: ADMIN이면 `/console/*`에서도 운영자 메뉴(모니터링 → "토피룸 모니터링", 전체 순위 → 홈 활성). 목록·입력 화면은 `pageNarrow`
+  (maxWidth 960), `fullWidthPage`(홈·정산·`/console/<id>`·`/console`)만 넓게. `AdminButton`은 `useWideLayout`이면 `alignSelf: flex-start`,
+  `secondary`(테두리), `AdminButtonRow`.
+- `admin/bundles/cp-set`은 `?roomId=`로 CP 미리 선택(CP방 만들기 성공 시·CP방 상세에서 넘어옴).
+

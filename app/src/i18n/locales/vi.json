@@ -143,7 +143,13 @@
       "monitor": "Màn hình theo dõi tin nhắn nghệ sĩ gửi cho fan. Nhấn giữ tin nhắn có vấn đề để thu hồi thay.",
       "replies": "Màn hình xem phản hồi của fan. Có thể báo cáo phản hồi có vấn đề hoặc chặn fan đó.",
       "stats": "Màn hình xem xu hướng đăng ký, tin nhắn, phản hồi và phân bố fan của nghệ sĩ này."
-    }
+    },
+    "monitorSearch": "Tìm theo biệt danh, tên chính thức hoặc công ty",
+    "sortRecent": "Tin nhắn mới nhất",
+    "subscribers": "{{count}} người đăng ký",
+    "officialName": "Tên chính thức {{name}}",
+    "noAgency": "Không có công ty",
+    "searchEmpty": "Không có kết quả."
   },
   "onboarding": {
     "birthDateTitle": "Ngày sinh của bạn là gì?",

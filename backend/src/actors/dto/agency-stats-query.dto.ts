@@ -26,6 +26,11 @@ export class AgencyDashboardQueryDto extends ActorStatsQueryDto {
   @IsOptional()
   @IsIn(['ALL', 'SOLO', 'COUPLE'])
   kind?: 'ALL' | 'SOLO' | 'COUPLE';
+
+  // 한 소속사만(2026-10-20, 운영자 홈 대시보드) — CP방은 멤버 중 한 명이라도 그 소속사면 포함. 소속사 직원은 원래 자기 소속사만 보여서 의미 없음
+  @IsOptional()
+  @IsString()
+  agencyId?: string;
 }
 
 export class AgencyRecordsQueryDto {

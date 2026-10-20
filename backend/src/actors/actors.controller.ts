@@ -37,7 +37,7 @@ export class ActorsController {
   @Roles(Role.AGENCY_STAFF, Role.ADMIN)
   @Get('mine/dashboard')
   dashboard(@CurrentUser() user: AuthenticatedUser, @Query() query: AgencyDashboardQueryDto) {
-    return this.agencyStats.dashboard(user.id, resolveRange(query), query.kind);
+    return this.agencyStats.dashboard(user.id, resolveRange(query), query.kind, query.agencyId);
   }
 
   // 소속사 "기록"(2026-10-13) — 소속 아티스트 방의 차단·신고·메시지 삭제

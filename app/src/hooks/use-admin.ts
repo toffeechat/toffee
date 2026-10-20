@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Bundle } from './use-bundles';
 import type { ArtistGender, CoupleMemberActor } from './use-actors';
 import { apiClient } from '@/lib/api-client';
+import { selectionQuery, type StatsSelection } from './use-console';
 
 // 같은 메시지 신고는 서버가 한 줄로 묶고(reportCount), 여러 명이 신고한 것부터 내려줌
 export interface PendingReport {
@@ -440,14 +441,20 @@ export interface AdminStatsSummary {
   messages: { starToday: number; fanRepliesToday: number };
 }
 
-export interface AdminStatsDay {
-  day: string;
+/** 운영자 홈 서비스 전체 추이(2026-10-20) — 기간은 소속사 대시보드와 같은 선택(최근 N일 또는 직접 고른 날짜, 최대 1년) */
+export interface AdminOverviewTotals {
   signups: number;
-  subscriptionsStarted: number;
-  subscriptionsCancelled: number;
+  /** 그 기간에 새로 시작한 구독의 적용 가격 합(할인 반영) */
   newRevenueCents: number;
-  starMessages: number;
-  fanReplies: number;
+}
+export interface AdminOverview {
+  from: string;
+  to: string;
+  days: number;
+  bucket: 'day' | 'week';
+  totals: AdminOverviewTotals;
+  previous: AdminOverviewTotals;
+  daily: (AdminOverviewTotals & { day: string })[];
 }
 
 export interface AdminStatsBreakdown {
@@ -455,15 +462,6 @@ export interface AdminStatsBreakdown {
   platforms: { key: string; count: number }[];
   locales: { key: string; count: number }[];
   providers: { key: string; count: number }[];
-  actors: {
-    id: string;
-    name: string;
-    nickname: string;
-    activeSubscribers: number;
-    started30d: number;
-    cancelled30d: number;
-    newRevenue30dCents: number;
-  }[];
 }
 
 export function useAdminStatsSummary() {
@@ -474,10 +472,12 @@ export function useAdminStatsSummary() {
   });
 }
 
-export function useAdminStatsDaily(days: number) {
+export function useAdminStatsOverview(selection: StatsSelection) {
+  const query = selectionQuery(selection);
   return useQuery({
-    queryKey: ['admin', 'stats', 'daily', days],
-    queryFn: () => apiClient.get<AdminStatsDay[]>(`/admin/stats/daily?days=${days}`),
+    queryKey: ['admin', 'stats', 'overview', query],
+    queryFn: () => apiClient.get<AdminOverview>(`/admin/stats/overview?${query}`),
+    placeholderData: (previous) => previous,
   });
 }
 

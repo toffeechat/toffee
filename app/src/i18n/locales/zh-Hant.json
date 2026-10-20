@@ -143,7 +143,13 @@
       "monitor": "查看藝人傳給粉絲的訊息。如有問題訊息，長按即可代為收回。",
       "replies": "查看粉絲傳來的回覆。如有問題回覆，可以檢舉或封鎖該粉絲。",
       "stats": "查看該藝人的訂閱、訊息、回覆趨勢和粉絲分布。"
-    }
+    },
+    "monitorSearch": "依暱稱、官方名稱或經紀公司搜尋",
+    "sortRecent": "最新訊息",
+    "subscribers": "訂閱者 {{count}} 人",
+    "officialName": "官方名稱 {{name}}",
+    "noAgency": "無經紀公司",
+    "searchEmpty": "沒有搜尋結果。"
   },
   "onboarding": {
     "birthDateTitle": "請填寫你的出生日期",

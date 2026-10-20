@@ -241,7 +241,8 @@ function RootLayout() {
               <Stack.Screen name="console/settlements" options={{ headerShown: true, title: t('settlement.title') }} />
               <Stack.Screen name="console/ranking" options={{ headerShown: true, title: t('dashboard.fullRanking') }} />
               {/* 운영자 화면은 운영자(한국어) 전용이라 의도적으로 다국어 처리 안 함 */}
-              <Stack.Screen name="admin/index" options={{ headerShown: true, title: '운영자' }} />
+              <Stack.Screen name="admin/index" options={{ headerShown: true, title: '운영자 홈' }} />
+              <Stack.Screen name="admin/rooms" options={{ headerShown: true, title: '토피룸 모니터링' }} />
               <Stack.Screen name="admin/reports" options={{ headerShown: true, title: '신고 처리' }} />
               <Stack.Screen name="admin/banned-words" options={{ headerShown: true, title: '금칙어 관리' }} />
               <Stack.Screen name="admin/users" options={{ headerShown: true, title: '회원 관리' }} />

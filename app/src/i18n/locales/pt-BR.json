@@ -143,7 +143,13 @@
       "monitor": "Monitore as mensagens que este artista envia aos fãs. Toque e segure uma mensagem problemática para retirá-la em nome dele.",
       "replies": "Respostas dos fãs. Você pode denunciar uma resposta problemática ou bloquear esse fã.",
       "stats": "Tendências de assinaturas, mensagens e respostas deste artista, e de onde são os fãs."
-    }
+    },
+    "monitorSearch": "Buscar por apelido, nome oficial ou agência",
+    "sortRecent": "Mensagem mais recente",
+    "subscribers": "{{count}} assinantes",
+    "officialName": "Nome oficial {{name}}",
+    "noAgency": "Sem agência",
+    "searchEmpty": "Nenhum resultado."
   },
   "onboarding": {
     "birthDateTitle": "Qual é a sua data de nascimento?",

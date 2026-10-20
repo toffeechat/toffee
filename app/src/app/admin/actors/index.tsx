@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AdminAvatar, AdminButton, formatBaht } from '@/components/admin-ui';
+import { AdminAvatar, AdminButton, AdminButtonRow, formatBaht } from '@/components/admin-ui';
 import { useAdminActors, type AdminActor } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
@@ -77,9 +77,12 @@ export default function AdminActorsScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
         />
-        <AdminButton label="+ 아티스트 등록" onPress={() => router.push('/admin/actors/new')} />
-        <AdminButton label="+ CP방 만들기" onPress={() => router.push('/admin/actors/new-couple')} />
-        <AdminButton label="+ 일괄 등록(엑셀·CSV)·사진 묶어 올리기" onPress={() => router.push('/admin/actors/import')} />
+        {/* 등록 3가지를 한 줄로(2026-10-20) — 보통은 일괄 등록(엑셀에 CP 짝까지 적으면 CP방도 같이 생김), 한두 명은 직접 */}
+        <AdminButtonRow>
+          <AdminButton label="+ 일괄 등록(엑셀·CSV·사진)" onPress={() => router.push('/admin/actors/import')} />
+          <AdminButton secondary label="+ 한 명 등록" onPress={() => router.push('/admin/actors/new')} />
+          <AdminButton secondary label="+ CP방 만들기" onPress={() => router.push('/admin/actors/new-couple')} />
+        </AdminButtonRow>
       </ThemedView>
 
       {isLoading ? (
