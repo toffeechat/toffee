@@ -37,6 +37,16 @@ const ACTION_LABELS: Record<string, string> = {
   BANNED_WORD_DELETE: '금칙어 삭제',
   BANNED_WORD_DEFAULTS: '금칙어 기본 목록 넣기',
   ACTOR_RETIRE_SCHEDULE: '활동 종료 예정 변경',
+  // 운영 기능(2026-10-20)
+  STORE_SALE_STOPPED: '애플 판매 중지 표시',
+  ACTOR_CONTRACT: '계약 끝나는 날 변경',
+  APP_SETTINGS: '앱 설정(점검·최소 버전) 변경',
+  NOTICE_PUSH: '공지 푸시 보냄',
+  INQUIRY_REPLY: '1:1 문의 답변',
+  INQUIRY_CLOSE: '1:1 문의 닫음',
+  ADMIN_LEVEL: '운영자 권한 단계 변경',
+  ADMIN_MFA: '2단계 인증 켜기·끄기·초기화',
+  USER_EXPORT: '개인정보 파일 받기',
 };
 
 function detailText(entry: AdminActionEntry): string {
