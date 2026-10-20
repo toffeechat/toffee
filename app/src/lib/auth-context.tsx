@@ -12,6 +12,8 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** 서버에서 역할을 다시 읽음 — 연결 링크로 아티스트 계정이 됐을 때(2026-10-19) */
+  refreshRole: () => Promise<void>;
   /** 정지·영구차단 등으로 로그인이 끊긴 이유(로그인 화면에 보여줌) */
   signedOutReason: string | null;
 }
@@ -75,6 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(fetchedRole);
   };
 
+  const refreshRole = async () => {
+    const fetchedRole = await fetchRole();
+    if (!fetchedRole) return;
+    if (fetchedRole !== 'USER') setAppBadgeCount(0);
+    setRole(fetchedRole);
+  };
+
   const logout = async () => {
     // 로그인 토큰이 있을 때 먼저 이 기기의 푸시 등록을 해제(안 하면 같은 폰의 다음 사람에게 앞 사람 알림이 감)
     await unregisterThisDevice();
@@ -87,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
   };
 
-  return <AuthContext.Provider value={{ token, role, isLoading, login, logout, signedOutReason }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ token, role, isLoading, login, logout, refreshRole, signedOutReason }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

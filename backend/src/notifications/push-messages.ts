@@ -28,6 +28,9 @@ interface PushStrings {
   // 생일 축하 메시지(2026-10-12) — 생일 알림을 켠 팬에게, 생일 아침
   birthdayTitle: (actor: string) => string;
   birthdayBody: string;
+  // 예약 오픈(2026-10-19) — "곧 공개"에서 알림 받기를 누른 팬에게, 공개 시각에. 제목은 아티스트·묶음 이름
+  releasedBody: string;
+  releasedBundleBody: string;
 }
 
 const STRINGS: Record<SupportedLocale, PushStrings> = {
@@ -48,6 +51,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `지난 대화는 계속 볼 수 있어요. 결제한 지 ${days}일 안이라면 구독 관리에서 이번 달 환불을 요청할 수 있어요.`,
     birthdayTitle: (actor) => `${actor}님이 생일 축하 메시지를 보냈어요`,
     birthdayBody: '생일 축하해요! 지금 확인해 보세요 🎂',
+    releasedBody: '지금 토피룸이 열렸어요! 가장 먼저 만나 보세요',
+    releasedBundleBody: '묶음 구독이 열렸어요! 지금 확인해 보세요',
   },
   en: {
     media: { TEXT: 'You have a new message', PHOTO: 'Sent a photo', AUDIO: 'Sent a voice message', VIDEO: 'Sent a video' },
@@ -66,6 +71,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `You can still read past messages. If you paid within the last ${days} days, you can request a refund for this month in Manage subscriptions.`,
     birthdayTitle: (actor) => `${actor} sent you a birthday message`,
     birthdayBody: 'Happy birthday! Check it out now 🎂',
+    releasedBody: 'Their Toffee Room is now open! Be one of the first to join',
+    releasedBundleBody: 'This bundle is now open! Check it out',
   },
   th: {
     media: { TEXT: 'มีข้อความใหม่', PHOTO: 'ส่งรูปภาพ', AUDIO: 'ส่งข้อความเสียง', VIDEO: 'ส่งวิดีโอ' },
@@ -84,6 +91,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `ยังดูข้อความเก่าได้ตามปกติ หากชำระเงินภายใน ${days} วันที่ผ่านมา สามารถขอคืนเงินของเดือนนี้ได้ที่จัดการการสมัครสมาชิก`,
     birthdayTitle: (actor) => `${actor} ส่งข้อความอวยพรวันเกิดถึงคุณ`,
     birthdayBody: 'สุขสันต์วันเกิด! เปิดดูได้เลย 🎂',
+    releasedBody: 'Toffee Room เปิดแล้ว! เข้าไปพบกันก่อนใคร',
+    releasedBundleBody: 'แพ็กเกจนี้เปิดแล้ว! เข้าไปดูได้เลย',
   },
   ja: {
     media: {
@@ -107,6 +116,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `これまでのメッセージは引き続き見られます。お支払いから${days}日以内なら、購読管理から今月分の返金を申請できます。`,
     birthdayTitle: (actor) => `${actor}さんから誕生日メッセージが届きました`,
     birthdayBody: 'お誕生日おめでとう！今すぐチェック 🎂',
+    releasedBody: 'Toffee Roomがオープンしました！いち早く会いに行こう',
+    releasedBundleBody: 'セット購読がオープンしました！今すぐチェック',
   },
   'zh-Hans': {
     media: { TEXT: '你有一条新消息', PHOTO: '发送了一张照片', AUDIO: '发送了一条语音消息', VIDEO: '发送了一段视频' },
@@ -125,6 +136,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `仍可查看以往的消息。如果是 ${days} 天内付款的，可以在订阅管理中申请本月退款。`,
     birthdayTitle: (actor) => `${actor} 给你发来了生日祝福`,
     birthdayBody: '生日快乐！快去看看吧 🎂',
+    releasedBody: 'Toffee Room 已开放！快来抢先见面',
+    releasedBundleBody: '套餐已开放！快去看看吧',
   },
   'zh-Hant': {
     media: { TEXT: '你有一則新訊息', PHOTO: '傳送了一張照片', AUDIO: '傳送了一則語音訊息', VIDEO: '傳送了一段影片' },
@@ -143,6 +156,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `仍可查看以往的訊息。如果是 ${days} 天內付款的，可以在訂閱管理中申請本月退款。`,
     birthdayTitle: (actor) => `${actor} 傳來了生日祝福`,
     birthdayBody: '生日快樂！快去看看吧 🎂',
+    releasedBody: 'Toffee Room 已開放！快來搶先見面',
+    releasedBundleBody: '組合已開放！快去看看吧',
   },
   vi: {
     media: { TEXT: 'Bạn có tin nhắn mới', PHOTO: 'Đã gửi một ảnh', AUDIO: 'Đã gửi một tin nhắn thoại', VIDEO: 'Đã gửi một video' },
@@ -161,6 +176,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `Bạn vẫn xem được các tin nhắn cũ. Nếu bạn thanh toán trong ${days} ngày qua, bạn có thể yêu cầu hoàn tiền tháng này trong Quản lý gói đăng ký.`,
     birthdayTitle: (actor) => `${actor} đã gửi lời chúc mừng sinh nhật cho bạn`,
     birthdayBody: 'Chúc mừng sinh nhật! Xem ngay nhé 🎂',
+    releasedBody: 'Toffee Room đã mở! Hãy là người gặp đầu tiên',
+    releasedBundleBody: 'Gói combo đã mở! Xem ngay nhé',
   },
   es: {
     media: { TEXT: 'Tienes un mensaje nuevo', PHOTO: 'Envió una foto', AUDIO: 'Envió un mensaje de voz', VIDEO: 'Envió un video' },
@@ -179,6 +196,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `Puedes seguir leyendo los mensajes anteriores. Si pagaste en los últimos ${days} días, puedes pedir el reembolso de este mes en Gestionar suscripciones.`,
     birthdayTitle: (actor) => `${actor} te envió un mensaje de cumpleaños`,
     birthdayBody: '¡Feliz cumpleaños! Míralo ahora 🎂',
+    releasedBody: '¡Su Toffee Room ya está abierta! Sé de los primeros en entrar',
+    releasedBundleBody: '¡Este paquete ya está abierto! Échale un vistazo',
   },
   'pt-BR': {
     media: { TEXT: 'Você tem uma nova mensagem', PHOTO: 'Enviou uma foto', AUDIO: 'Enviou uma mensagem de voz', VIDEO: 'Enviou um vídeo' },
@@ -197,6 +216,8 @@ const STRINGS: Record<SupportedLocale, PushStrings> = {
     retiredFanBody: (days) => `Você ainda pode ler as mensagens anteriores. Se pagou nos últimos ${days} dias, pode pedir o reembolso deste mês em Gerenciar assinaturas.`,
     birthdayTitle: (actor) => `${actor} enviou uma mensagem de aniversário para você`,
     birthdayBody: 'Feliz aniversário! Confira agora 🎂',
+    releasedBody: 'A Toffee Room abriu! Seja um dos primeiros a entrar',
+    releasedBundleBody: 'Este pacote abriu! Confira agora',
   },
 };
 

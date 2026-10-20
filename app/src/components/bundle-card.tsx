@@ -9,6 +9,7 @@ import { bundleDiscountPercent, type Bundle } from '@/hooks/use-bundles';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
+import { formatReleaseAt, isUpcoming } from '@/utils/release';
 
 /** 겹친 원형 사진 — 묶음에 든 배우들 */
 export function BundleAvatars({ actors, size = 40 }: { actors: Pick<Bundle['actors'][number], 'id' | 'chatDisplayName' | 'chatProfileImageUrl'>[]; size?: number }) {
@@ -33,7 +34,7 @@ export function BundleAvatars({ actors, size = 40 }: { actors: Pick<Bundle['acto
  */
 export function BundleCard({ bundle, onPress }: { bundle: Bundle; onPress: () => void }) {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const discount = bundleDiscountPercent(bundle);
   return (
     <Pressable
@@ -49,6 +50,11 @@ export function BundleCard({ bundle, onPress }: { bundle: Bundle; onPress: () =>
           {formatPrice(bundle.priceCents)} {t('actorProfile.perMonth')}
           {discount > 0 ? ` · ${t('bundle.saveVsSingle', { percent: discount })}` : ''}
         </ThemedText>
+        {isUpcoming(bundle.opensAt) ? (
+          <ThemedText type="captionBold" style={{ color: theme.tint }}>
+            {t('release.comingSoon')} · {formatReleaseAt(bundle.opensAt!, i18n.language)}
+          </ThemedText>
+        ) : null}
       </View>
       <Icon as={ChevronRight} size={18} themeColor="textTertiary" />
     </Pressable>

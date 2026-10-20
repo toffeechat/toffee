@@ -5,6 +5,8 @@ import { AuditService } from '../audit/audit.service.js';
 import { appError } from '../common/i18n/app-error.js';
 import { ensureStoreProductIdFree } from '../common/store/store-product.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { bundleOpensAt } from '../common/release/release.js';
+import { ReleaseService } from '../releases/release.service.js';
 import type { CreateBundleDto, UpdateBundleDto } from './dto/upsert-bundle.dto.js';
 
 const BUNDLE_SELECT = {
@@ -13,11 +15,12 @@ const BUNDLE_SELECT = {
   priceCents: true,
   storeProductId: true,
   active: true,
+  releaseAt: true,
   createdAt: true,
   actors: {
     select: {
       actor: {
-        select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, monthlyPriceCents: true, retiredAt: true },
+        select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, monthlyPriceCents: true, retiredAt: true, releaseAt: true },
       },
     },
   },
@@ -34,6 +37,7 @@ export class BundlesService {
     private readonly prisma: PrismaService,
     private readonly media: MediaService,
     private readonly audit: AuditService,
+    private readonly releases: ReleaseService,
   ) {}
 
   /** 이 배우가 들어 있는 판매 중인 묶음(활동 종료한 배우가 섞인 묶음은 뺌) */
@@ -56,15 +60,18 @@ export class BundlesService {
 
   async adminList() {
     const rows = await this.prisma.bundle.findMany({ select: BUNDLE_SELECT, orderBy: { createdAt: 'desc' } });
-    const counts = await this.activeCounts(rows.map((row) => row.id));
-    return Promise.all(rows.map(async (row) => ({ ...(await this.toPublic(row)), activePurchaseCount: counts.get(row.id) ?? 0 })));
+    const ids = rows.map((row) => row.id);
+    const [counts, watches] = await Promise.all([this.activeCounts(ids), this.releases.bundleWatchCounts(ids)]);
+    return Promise.all(
+      rows.map(async (row) => ({ ...(await this.toPublic(row)), activePurchaseCount: counts.get(row.id) ?? 0, releaseWatchCount: watches.get(row.id) ?? 0 })),
+    );
   }
 
   async adminFindOne(id: string) {
     const row = await this.prisma.bundle.findUnique({ where: { id }, select: BUNDLE_SELECT });
     if (!row) throw new NotFoundException(appError('BUNDLE_NOT_FOUND'));
-    const counts = await this.activeCounts([id]);
-    return { ...(await this.toPublic(row)), activePurchaseCount: counts.get(id) ?? 0 };
+    const [counts, watches] = await Promise.all([this.activeCounts([id]), this.releases.bundleWatchCounts([id])]);
+    return { ...(await this.toPublic(row)), activePurchaseCount: counts.get(id) ?? 0, releaseWatchCount: watches.get(id) ?? 0 };
   }
 
   async create(adminId: string, dto: CreateBundleDto) {
@@ -75,6 +82,7 @@ export class BundlesService {
         name: dto.name.trim(),
         priceCents: dto.priceCents,
         storeProductId: dto.storeProductId ?? null,
+        releaseAt: dto.releaseAt ? new Date(dto.releaseAt) : null,
         actors: { create: actorIds.map((actorId) => ({ actorId })) },
       },
       select: { id: true },
@@ -84,7 +92,7 @@ export class BundlesService {
   }
 
   async update(adminId: string, id: string, dto: UpdateBundleDto) {
-    const before = await this.prisma.bundle.findUnique({ where: { id }, select: { name: true, priceCents: true, storeProductId: true, active: true } });
+    const before = await this.prisma.bundle.findUnique({ where: { id }, select: { name: true, priceCents: true, storeProductId: true, active: true, releaseAt: true } });
     if (!before) throw new NotFoundException(appError('BUNDLE_NOT_FOUND'));
     await ensureStoreProductIdFree(this.prisma, dto.storeProductId, { bundleId: id });
     let actorIds: string[] | undefined;
@@ -96,7 +104,14 @@ export class BundlesService {
     await this.prisma.$transaction([
       this.prisma.bundle.update({
         where: { id },
-        data: { name: dto.name?.trim(), priceCents: dto.priceCents, storeProductId: dto.storeProductId, active: dto.active },
+        data: {
+          name: dto.name?.trim(),
+          priceCents: dto.priceCents,
+          storeProductId: dto.storeProductId,
+          active: dto.active,
+          // 공개 시각을 바꾸면 공개 알림을 다시 보낼 수 있게(이미 열린 걸 미래로 미루는 경우 포함)
+          ...(dto.releaseAt !== undefined ? { releaseAt: dto.releaseAt ? new Date(dto.releaseAt) : null, releaseNotifiedAt: null } : {}),
+        },
       }),
       ...(actorIds
         ? [
@@ -107,7 +122,7 @@ export class BundlesService {
     ]);
     await this.audit.record(adminId, 'BUNDLE_UPDATE', 'BUNDLE', id, {
       from: before,
-      to: { name: dto.name, priceCents: dto.priceCents, storeProductId: dto.storeProductId, active: dto.active, actorIds },
+      to: { name: dto.name, priceCents: dto.priceCents, storeProductId: dto.storeProductId, active: dto.active, actorIds, releaseAt: dto.releaseAt },
     } as Prisma.InputJsonValue);
     return this.adminFindOne(id);
   }
@@ -139,6 +154,8 @@ export class BundlesService {
       })),
     );
     const regularPriceCents = actors.reduce((sum, actor) => sum + actor.monthlyPriceCents, 0);
-    return { ...row, actors, regularPriceCents };
+    // 실제로 열리는 시각 — 묶음 자체와 든 방 중 가장 늦은 공개 시각(앱은 이 값이 미래면 "곧 공개")
+    const opensAt = bundleOpensAt(row.releaseAt, row.actors.map(({ actor }) => actor.releaseAt));
+    return { ...row, actors, regularPriceCents, opensAt };
   }
 }

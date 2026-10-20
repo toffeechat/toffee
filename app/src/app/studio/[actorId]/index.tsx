@@ -15,6 +15,8 @@ import {
 import { ArrowUp, AtSign, Camera, Copy, CornerUpLeft, ImagePlus, Mic, MoreHorizontal, Send, Settings, Square, Undo2, Video, X } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { MessageText } from '@/components/message-text';
+import { formatReleaseAt, isUpcoming } from '@/utils/release';
 import { MediaTile } from '@/components/media-tile';
 import { ReplyTicker } from '@/components/reply-ticker';
 import { QuoteBlock } from '@/components/quote-block';
@@ -141,7 +143,7 @@ function MyMessage({
         {message.mediaType === 'AUDIO' ? (
           <VoiceMessage id={message.id} url={message.mediaUrl} durationMs={message.mediaDurationMs} waveform={message.waveform} tone="dark" />
         ) : null}
-        {bodyText ? <ThemedText>{bodyText}</ThemedText> : null}
+        {bodyText ? <MessageText message={{ text: bodyText, createdAt: message.createdAt }} /> : null}
       </View>
     ) : null;
 
@@ -473,6 +475,14 @@ export default function StudioChannelScreen() {
       {/* 토피룸 배경 사진(2026-10-14) — 팬이 보는 것과 같게 */}
       <ChatBackground uri={actor?.chatBackgroundUrl} />
       <SafeAreaView style={styles.inner} edges={['bottom']}>
+        {/* 공개 예정(2026-10-19) — 공개 전에 보낸 메시지는 공개 후 구독한 팬에게 안 보임(팬은 구독 시작 이후 메시지만) */}
+        {isUpcoming(actor?.releaseAt) ? (
+          <View style={[styles.releaseNotice, { backgroundColor: theme.tintSoft }]}>
+            <ThemedText type="small" style={{ color: theme.tint }}>
+              {t('release.studioNotice', { date: formatReleaseAt(actor!.releaseAt!, i18n.language) })}
+            </ThemedText>
+          </View>
+        ) : null}
         {isLoading ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
         ) : (
@@ -701,6 +711,7 @@ export default function StudioChannelScreen() {
 }
 
 const styles = StyleSheet.create({
+  releaseNotice: { marginHorizontal: Spacing.three, marginTop: Spacing.two, borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   listArea: { flex: 1 },
   container: { flex: 1 },
   inner: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },

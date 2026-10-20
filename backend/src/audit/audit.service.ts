@@ -28,7 +28,13 @@ export type AdminActionType =
   // 공지사항 쓰기·고치기·지우기(2026-10-12)
   | 'NOTICE_CREATE'
   | 'NOTICE_UPDATE'
-  | 'NOTICE_DELETE';
+  | 'NOTICE_DELETE'
+  // 아티스트 일괄 등록·공개 시각 변경·계정 연결 링크 발급/취소(운영자)·링크로 연결(아티스트 본인이 adminId 자리에, 2026-10-19)
+  | 'ACTOR_IMPORT'
+  | 'ACTOR_RELEASE'
+  | 'ACTOR_LINK_ISSUE'
+  | 'ACTOR_LINK_REVOKE'
+  | 'ACTOR_LINK_CLAIM';
 
 /**
  * 운영자 작업 기록(AdminAction) — 제재·역할 변경·신고 처리·배우 활동 종료를 누가 언제 했는지. 유료 서비스 분쟁·문의 대응용.

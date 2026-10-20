@@ -63,6 +63,7 @@ export class IdleReminderService {
         kind: true,
         chatDisplayName: true,
         createdAt: true,
+        releaseAt: true,
         selfUserId: true,
         idleReminderStage: true,
         idleReminderFor: true,
@@ -81,7 +82,9 @@ export class IdleReminderService {
     let sent = 0;
     for (const room of rooms) {
       // 아직 한 번도 안 보낸 방은 방이 만들어진 때부터 셈
-      const since = lastByRoom.get(room.id) ?? room.createdAt;
+      // 예약 오픈한 방(2026-10-19)은 공개 시각부터 셈 — 미리 등록·공개 전 메시지 때문에 열리자마자 "N일째 미발송"이 되지 않게
+      const lastOrCreated = lastByRoom.get(room.id) ?? room.createdAt;
+      const since = room.releaseAt && room.releaseAt > lastOrCreated ? room.releaseAt : lastOrCreated;
       const days = Math.floor((now.getTime() - since.getTime()) / DAY_MS);
       const stage = idleStage(days, rule);
       if (stage === 0) continue;

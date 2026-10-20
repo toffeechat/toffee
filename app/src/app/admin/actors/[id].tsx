@@ -23,7 +23,9 @@ import {
   useAdminAgencies,
   useAdminUsers,
   useAssignActorAgency,
+  useIssueActorLinks,
   useLinkActorUser,
+  useRevokeActorLink,
   useSetActorRetired,
   useUpdateActor,
   useUpdateActorImages,
@@ -32,6 +34,9 @@ import {
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
+import { actorLinkUrl } from '@/lib/actor-link';
+import { copyText } from '@/lib/copy-text';
+import { ReleaseSection } from '@/components/admin-release';
 import { uploadProfileImage } from '@/lib/upload-media';
 import { Spacing } from '@/constants/theme';
 import { STORE_PRODUCT_ID_PATTERN } from '@/utils/store-product';
@@ -206,6 +211,56 @@ function AgencySection({ actor }: { actor: AdminActor }) {
   );
 }
 
+// 1회용 연결 링크(2026-10-19) — 아이디·비밀번호 대신. 아티스트가 링크를 열고 평소 쓰는 소셜 계정으로 로그인해 [연결하기]를 누르면 끝.
+// 원문 링크는 만들 때 한 번만 보임(서버엔 해시만) — 잃어버리면 새로 만들면 되고, 새로 만들면 예전 링크는 바로 무효
+function LinkInvite({ actor }: { actor: AdminActor }) {
+  const issue = useIssueActorLinks();
+  const revoke = useRevokeActorLink(actor.id);
+  const [url, setUrl] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const make = async () => {
+    if (actor.linkPendingUntil && !(await confirm('연결 링크 새로 만들기', '아직 안 쓴 링크가 있어요. 새로 만들면 예전 링크는 바로 쓸 수 없게 돼요.', '새로 만들기', '취소'))) return;
+    issue.mutate([actor.id], {
+      onSuccess: (result) => {
+        const link = result.links[0];
+        if (!link) return setMessage({ text: '이미 본인 계정이 연결된 아티스트예요.', error: true });
+        setUrl(actorLinkUrl(link.token));
+        setMessage({ text: `${formatDate(link.expiresAt)}까지 쓸 수 있어요. 소속사 담당자를 통해 아티스트에게 보내 주세요.` });
+      },
+      onError: (e) => setMessage({ text: errorText(e, '만들지 못했어요.'), error: true }),
+    });
+  };
+
+  return (
+    <ThemedView style={styles.linkBox}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {actor.linkPendingUntil ? `보낸 링크가 아직 안 쓰였어요(${formatDate(actor.linkPendingUntil)}까지).` : '아티스트에게 1회용 연결 링크를 보내면 본인이 직접 계정을 붙여요.'}
+      </ThemedText>
+      {url ? (
+        <ThemedView style={styles.linkedRow}>
+          <ThemedText type="small" style={styles.flex} selectable>
+            {url}
+          </ThemedText>
+          <AdminChip label="복사" onPress={() => copyText(`${actor.legalName}: ${url}`)} />
+        </ThemedView>
+      ) : null}
+      <AdminMessage text={message?.text ?? null} error={message?.error} />
+      <ThemedView style={styles.chips}>
+        <AdminChip label={issue.isPending ? '만드는 중…' : actor.linkPendingUntil ? '연결 링크 새로 만들기' : '연결 링크 만들기'} disabled={issue.isPending} onPress={() => void make()} />
+        {actor.linkPendingUntil ? (
+          <AdminChip
+            label="링크 취소"
+            danger
+            disabled={revoke.isPending}
+            onPress={() => revoke.mutate(undefined, { onSuccess: () => (setUrl(null), setMessage({ text: '링크를 취소했어요.' })) })}
+          />
+        ) : null}
+      </ThemedView>
+    </ThemedView>
+  );
+}
+
 function SelfAccountSection({ actor }: { actor: AdminActor }) {
   const theme = useTheme();
   const [query, setQuery] = useState('');
@@ -223,7 +278,7 @@ function SelfAccountSection({ actor }: { actor: AdminActor }) {
   return (
     <AdminSection
       title="본인 계정"
-      hint="연결된 계정으로 로그인하면 스튜디오에서 이 아티스트로 메시지를 보내요. 회원 관리에서 역할을 '아티스트'로 바꾼 계정만 나와요.">
+      hint="연결된 계정으로 로그인하면 스튜디오에서 이 아티스트로 메시지를 보내요. 보통은 연결 링크를 보내고, 아래 검색은 회원 관리에서 역할을 '아티스트'로 바꾼 계정을 직접 붙일 때만.">
       {actor.selfUser ? (
         <ThemedView style={styles.linkedRow}>
           <ThemedText type="small" style={styles.flex}>
@@ -233,7 +288,8 @@ function SelfAccountSection({ actor }: { actor: AdminActor }) {
         </ThemedView>
       ) : (
         <>
-          <AdminField label="아티스트 계정 검색" value={query} onChangeText={setQuery} placeholder="이름 또는 이메일" />
+          <LinkInvite actor={actor} />
+          <AdminField label="직접 연결 — 아티스트 계정 검색" value={query} onChangeText={setQuery} placeholder="이름 또는 이메일" />
           {candidates?.length ? (
             candidates.map((user) => (
               <ThemedView key={user.id} style={[styles.linkedRow, { borderColor: theme.backgroundSelected }]}>
@@ -295,6 +351,20 @@ function RetireSection({ actor }: { actor: AdminActor }) {
   );
 }
 
+function ActorRelease({ actor }: { actor: AdminActor }) {
+  const update = useUpdateActor(actor.id);
+  return (
+    <ReleaseSection
+      key={actor.releaseAt ?? 'none'}
+      releaseAt={actor.releaseAt}
+      watchCount={actor.releaseWatchCount}
+      saving={update.isPending}
+      onSave={(releaseAt) => update.mutateAsync({ releaseAt })}
+      note={actor.kind === 'SOLO' ? '이 아티스트가 든 CP방·묶음은 각자 공개 시각을 따로 정해요(묶음은 든 방 중 가장 늦게 열리는 방에 맞춰 열려요).' : undefined}
+    />
+  );
+}
+
 export default function AdminActorDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -332,6 +402,7 @@ export default function AdminActorDetailScreen() {
               <SelfAccountSection actor={actor} />
             </>
           )}
+          <ActorRelease actor={actor} />
           <RetireSection actor={actor} />
         </ScrollView>
       )}
@@ -349,4 +420,5 @@ const styles = StyleSheet.create({
   history: { gap: 2, backgroundColor: 'transparent' },
   linkedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, backgroundColor: 'transparent' },
   flex: { flex: 1 },
+  linkBox: { gap: Spacing.two, backgroundColor: 'transparent', paddingBottom: Spacing.two },
 });

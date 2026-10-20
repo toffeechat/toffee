@@ -25,6 +25,8 @@ export interface Actor {
   createdAt?: string;
   /** 활동 종료한 배우(목록엔 안 나오고, 프로필 링크로 들어오면 신규 구독 대신 안내) */
   retiredAt?: string | null;
+  /** 공개 시각(2026-10-19 예약 오픈) — 미래면 "곧 공개" 카드 + 알림 받기(구독 불가) */
+  releaseAt?: string | null;
   // 무소속이면 null
   agency: AgencySummary | null;
   /** 1인 방 / 커플방(2026-09-29) — 커플방은 소속사가 없고 멤버 배우 2명 */

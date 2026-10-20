@@ -854,5 +854,45 @@
     "version": "Versión {{version}}",
     "embedded": "integrada",
     "update": "actualizada el {{date}}"
+  },
+  "release": {
+    "comingSoon": "Próximamente",
+    "opensAt": "Abre el {{date}}",
+    "notifyMe": "Avísame",
+    "notifying": "Te avisaremos",
+    "notifyHint": "Te avisaremos en cuanto abra.",
+    "notifyOn": "¡Listo! Te avisaremos en el momento en que abra. Toca de nuevo para cancelar.",
+    "notifyOff": "Aviso cancelado.",
+    "notifyFailed": "No se pudo activar el aviso.",
+    "studioNotice": "Abre el {{date}}. Los mensajes que envíes ahora no los verán los fans que se suscriban después de la apertura. Prepara con antelación tus mensajes de bienvenida y de cumpleaños y tu perfil.",
+    "consoleLine": "Abre el {{date}} · Solicitudes de aviso: {{count}}"
+  },
+  "longMessage": {
+    "seeAll": "Ver todo",
+    "title": "Mensaje completo",
+    "gone": "Vuelve a abrir el mensaje.",
+    "back": "Volver"
+  },
+  "actorLink": {
+    "eyebrow": "Vincular cuenta de artista",
+    "intro": "Este enlace conecta tu cuenta con el artista {{name}}.",
+    "how": "Inicia sesión con la cuenta que usas normalmente (Google, Apple, LINE, etc.) y vincúlala. A partir de entonces, inicia sesión con esa cuenta para enviar mensajes a los fans. No necesitas otro usuario ni contraseña.",
+    "loginAndLink": "Iniciar sesión y vincular",
+    "confirm": "¿Vincular esta cuenta con {{name}}?",
+    "confirmHint": "La cuenta con la que iniciaste sesión pasará a ser una cuenta de artista y no podrá usarse para suscribirse como fan. Si es tu cuenta de fan, inicia sesión con otra.",
+    "link": "Vincular cuenta",
+    "otherAccount": "Usar otra cuenta",
+    "failed": "No se pudo vincular la cuenta. Inténtalo de nuevo en un momento.",
+    "expiresAt": "Válido hasta el {{date}}.",
+    "doneTitle": "¡Cuenta vinculada!",
+    "doneBody": "Ya puedes enviar mensajes a los fans como {{name}}.",
+    "start": "Empezar",
+    "usedTitle": "Este enlace ya se usó",
+    "usedBody": "Inicia sesión con la cuenta que vinculaste. Si necesitas vincular otra cuenta, pide un enlace nuevo a tu contacto de la agencia.",
+    "expiredTitle": "Este enlace ha caducado",
+    "expiredBody": "Pide un enlace nuevo a tu contacto de la agencia.",
+    "invalidTitle": "Este enlace no se puede usar",
+    "invalidBody": "Revisa la dirección o pide un enlace nuevo a tu contacto de la agencia.",
+    "toLogin": "Ir a iniciar sesión"
   }
 }

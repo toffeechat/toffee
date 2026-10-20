@@ -13,6 +13,8 @@ import { ensureStoreProductIdFree } from '../common/store/store-product.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 import { PushService } from '../notifications/push.service.js';
 import { pushStrings } from '../notifications/push-messages.js';
+import { ReleaseService } from '../releases/release.service.js';
+import { ActorLinksService } from './actor-links.service.js';
 
 const ADMIN_ACTOR_SELECT = {
   id: true,
@@ -27,6 +29,7 @@ const ADMIN_ACTOR_SELECT = {
   kind: true,
   coupleMembers: { select: { member: { select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, retiredAt: true } } } },
   retiredAt: true,
+  releaseAt: true,
   createdAt: true,
   agency: { select: { id: true, name: true, logoUrl: true } },
   selfUser: { select: { id: true, displayName: true, email: true } },
@@ -48,6 +51,8 @@ export class AdminActorsService {
     private readonly agencies: AdminAgenciesService,
     private readonly audit: AuditService,
     private readonly push: PushService,
+    private readonly releases: ReleaseService,
+    private readonly links: ActorLinksService,
   ) {}
 
   /**
@@ -96,13 +101,14 @@ export class AdminActorsService {
       orderBy: { legalName: 'asc' },
     });
     const last = await this.actors.lastBroadcastMap(rows.map((row) => row.id));
-    return Promise.all(rows.map(async (row) => ({ ...(await this.toResponse(row)), lastBroadcastAt: last.get(row.id) ?? null })));
+    const extras = await this.extras(rows.map((row) => row.id));
+    return Promise.all(rows.map(async (row) => ({ ...(await this.toResponse(row, extras)), lastBroadcastAt: last.get(row.id) ?? null })));
   }
 
   async findOne(id: string) {
     const row = await this.prisma.actor.findUnique({ where: { id }, select: ADMIN_ACTOR_SELECT });
     if (!row) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
-    return this.toResponse(row);
+    return this.toResponse(row, await this.extras([id]));
   }
 
   /**
@@ -151,7 +157,7 @@ export class AdminActorsService {
   }
 
   async update(adminId: string, id: string, dto: UpdateActorDto) {
-    const before = await this.prisma.actor.findUnique({ where: { id }, select: { monthlyPriceCents: true, storeProductId: true, kind: true } });
+    const before = await this.prisma.actor.findUnique({ where: { id }, select: { monthlyPriceCents: true, storeProductId: true, kind: true, releaseAt: true } });
     if (!before) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
     // 커플방은 성별이 없음(둘러보기 CP 줄로만)
     const gender = before.kind === ActorKind.COUPLE ? undefined : dto.gender;
@@ -165,8 +171,14 @@ export class AdminActorsService {
         verified: dto.verified,
         gender,
         storeProductId: dto.storeProductId,
+        // 공개 시각을 바꾸면 공개 알림을 다시 보낼 수 있게(미래로 미룬 경우 그 시각에 다시)
+        ...(dto.releaseAt !== undefined ? { releaseAt: dto.releaseAt ? new Date(dto.releaseAt) : null, releaseNotifiedAt: null } : {}),
       },
     });
+    const nextRelease = dto.releaseAt === undefined ? undefined : dto.releaseAt ? new Date(dto.releaseAt).toISOString() : null;
+    if (nextRelease !== undefined && nextRelease !== (before.releaseAt?.toISOString() ?? null)) {
+      await this.audit.record(adminId, 'ACTOR_RELEASE', 'ACTOR', id, { releaseAt: nextRelease });
+    }
     // 가격·스토어 상품은 돈과 직결 — 바뀌면 운영자 작업 기록에
     const priceChanged = dto.monthlyPriceCents !== undefined && dto.monthlyPriceCents !== before.monthlyPriceCents;
     const productChanged = dto.storeProductId !== undefined && dto.storeProductId !== before.storeProductId;
@@ -221,7 +233,18 @@ export class AdminActorsService {
     return actor;
   }
 
-  private async toResponse({ _count, ...row }: AdminActorRow) {
-    return { ...(await this.actors.withImageUrls(row)), activeSubscriberCount: _count.subscriptions };
+  /** "알림 신청 N명"(곧 공개)·아직 안 쓴 연결 링크의 만료 시각(2026-10-19) */
+  private async extras(ids: string[]) {
+    const [watches, pendingLinks] = await Promise.all([this.releases.actorWatchCounts(ids), this.links.pendingMap(ids)]);
+    return { watches, pendingLinks };
+  }
+
+  private async toResponse({ _count, ...row }: AdminActorRow, extras: Awaited<ReturnType<AdminActorsService['extras']>>) {
+    return {
+      ...(await this.actors.withImageUrls(row)),
+      activeSubscriberCount: _count.subscriptions,
+      releaseWatchCount: extras.watches.get(row.id) ?? 0,
+      linkPendingUntil: extras.pendingLinks.get(row.id) ?? null,
+    };
   }
 }

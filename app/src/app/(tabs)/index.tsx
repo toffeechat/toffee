@@ -21,6 +21,7 @@ import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { useTheme } from '@/hooks/use-theme';
 import { useManualRefresh } from '@/hooks/use-manual-refresh';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { formatReleaseAt, isUpcoming } from '@/utils/release';
 
 // 등록 후 이 기간 안이면 "NEW"
 const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -28,7 +29,11 @@ const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 type DiscoverView = { kind: 'home' } | { kind: 'new' } | { kind: 'female' } | { kind: 'male' } | { kind: 'couple' } | { kind: 'agency'; agencyId: string; name: string };
 
 const photoOf = (actor: Actor) => actor.officialProfileImageUrl ?? actor.chatProfileImageUrl;
-const isNew = (actor: Actor) => !!actor.createdAt && Date.now() - new Date(actor.createdAt).getTime() < NEW_WINDOW_MS;
+// 공개 시각이 있으면 그때부터 30일(미리 등록해 둔 아티스트가 공개될 때 NEW로, 2026-10-19). 공개 전이면 "곧 공개"가 먼저
+const isNew = (actor: Actor) => {
+  const since = actor.releaseAt ?? actor.createdAt;
+  return !!since && Date.now() - new Date(since).getTime() < NEW_WINDOW_MS;
+};
 
 /**
  * 둘러보기(2026-10-02 개편, 사용자 결정) — 검색 · 새로 온 아티스트·CP(사진 카드, 등록 30일 이내) · 소속사별 보기(로고) ·
@@ -113,7 +118,11 @@ export default function DiscoverScreen() {
               <ThemedText type="smallMedium" numberOfLines={1} style={styles.ringName}>
                 {actor.legalName}
               </ThemedText>
-              {actor.agency ? (
+              {isUpcoming(actor.releaseAt) ? (
+                <ThemedText type="captionBold" numberOfLines={1} style={[styles.ringName, { color: theme.tint }]}>
+                  {t('release.comingSoon')}
+                </ThemedText>
+              ) : actor.agency ? (
                 <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1} style={styles.ringName}>
                   {actor.agency.name}
                 </ThemedText>
@@ -245,9 +254,11 @@ export default function DiscoverScreen() {
 /** 사진 카드 — 아래쪽 어둡게 깔고 이름·소속사, 오른쪽 아래 + (프로필로) */
 function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; width: number; subscribed: boolean; onPress: () => void }) {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const photo = photoOf(actor);
   const agencyLabel = agencyLabelOf(actor);
+  // 공개 예정(2026-10-19) — 왼쪽 위 "곧 공개", 아래 줄에 공개 시각(팬 휴대폰 시간)
+  const upcoming = isUpcoming(actor.releaseAt);
   return (
     <Pressable
       onPress={onPress}
@@ -264,7 +275,14 @@ function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; w
       )}
       <LinearGradient colors={['transparent', 'rgba(15,17,21,0.78)']} style={styles.cardShade} />
       {/* CP는 보라 "CP", 1인은 등록 30일 이내면 흰 "NEW" — 구독 중이면 "구독 중"이 먼저 */}
-      {!subscribed && (actor.kind === 'COUPLE' || isNew(actor)) && (
+      {upcoming && (
+        <View style={[styles.tag, { backgroundColor: theme.tint }]}>
+          <ThemedText type="captionBold" style={{ color: '#ffffff', fontSize: 10, lineHeight: 14 }}>
+            {t('release.comingSoon')}
+          </ThemedText>
+        </View>
+      )}
+      {!upcoming && !subscribed && (actor.kind === 'COUPLE' || isNew(actor)) && (
         <View style={[styles.tag, { backgroundColor: actor.kind === 'COUPLE' ? theme.tint : '#ffffff' }]}>
           <ThemedText type="captionBold" style={{ color: actor.kind === 'COUPLE' ? '#ffffff' : theme.tint, fontSize: 10, lineHeight: 14 }}>
             {actor.kind === 'COUPLE' ? t('discover.cpBadge') : t('discover.newBadge')}
@@ -284,6 +302,11 @@ function ActorPhotoCard({ actor, width, subscribed, onPress }: { actor: Actor; w
           <ThemedText type="headline" numberOfLines={actor.kind === 'COUPLE' ? 3 : 2} style={styles.onPhoto}>
             {actor.legalName}
           </ThemedText>
+          {upcoming ? (
+            <ThemedText type="captionBold" numberOfLines={1} style={styles.onPhoto}>
+              {t('release.opensAt', { date: formatReleaseAt(actor.releaseAt!, i18n.language) })}
+            </ThemedText>
+          ) : null}
           {agencyLabel ? (
             <ThemedText type="caption" numberOfLines={1} style={styles.onPhotoSoft}>
               {agencyLabel}

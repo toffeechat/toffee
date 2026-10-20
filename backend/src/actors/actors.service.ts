@@ -10,6 +10,7 @@ import { MediaService } from '../storage/media.service.js';
 import { appError } from '../common/i18n/app-error.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 import { withFirstOfficialAsChat } from './profile-images.js';
+import { ReleaseService } from '../releases/release.service.js';
 
 // legalName/officialProfileImageUrl는 탐색 화면(공식 프로필, 운영자가 관리)에, chatDisplayName(배우가 직접 정하는
 // 닉네임)/chatProfileImageUrl는 채팅방 안에서 씀 — 어느 쪽을 보여줄지는 클라이언트가 화면 맥락에 맞게 고름
@@ -29,6 +30,8 @@ const LIST_SELECT = {
   // 둘러보기 성별 줄(커플방·지정 안 함은 null)
   gender: true,
   retiredAt: true,
+  // 공개 예정(2026-10-19) — 미래 시각이면 팬 화면은 "곧 공개" 카드 + 알림 받기(구독 불가)
+  releaseAt: true,
   // 소속사는 팬에게도 공개(소속사별 목록/검색) — 무소속이면 null
   agency: { select: { id: true, name: true, logoUrl: true } },
   // 1인 방(SOLO) / 커플방(COUPLE, 2026-09-29) — 커플방이면 멤버 배우 2명
@@ -60,6 +63,7 @@ export class ActorsService {
     private readonly prisma: PrismaService,
     private readonly media: MediaService,
     private readonly moderation: ModerationService,
+    private readonly releases: ReleaseService,
   ) {}
 
   // q는 배우 이름뿐 아니라 소속사 이름에도 매칭 — "GMMTV"로 검색하면 소속 배우가 다 나오게
@@ -87,6 +91,8 @@ export class ActorsService {
             ? [{ createdAt: 'desc' }]
             : { legalName: 'asc' },
     });
+    // "새로 온" 줄은 공개 시각(없으면 등록 시각) 기준 — 미리 등록해 둔 아티스트가 공개될 때 맨 앞에 오게(2026-10-19)
+    if (sort === 'new') actors.sort((a, b) => (b.releaseAt ?? b.createdAt).getTime() - (a.releaseAt ?? a.createdAt).getTime());
     return Promise.all(actors.map((actor) => this.withImageUrls(actor)));
   }
 
@@ -115,13 +121,15 @@ export class ActorsService {
       orderBy: { legalName: 'asc' },
     });
     const ids = actors.map((actor) => actor.id);
-    const [last, lastMessages] = await Promise.all([this.lastBroadcastMap(ids), this.lastMessageMap(ids)]);
+    const [last, lastMessages, watchCounts] = await Promise.all([this.lastBroadcastMap(ids), this.lastMessageMap(ids), this.releases.actorWatchCounts(ids)]);
     // 마지막 스타 메시지 시각 — 소속사 목록의 "N일째 미발송" 표시(2026-09-29). lastMessage는 토피룸 목록 미리보기(2026-10-14, 카톡 대화방 목록처럼)
     return Promise.all(
       actors.map(async (actor) => ({
         ...(await this.withImageUrls(actor)),
         lastBroadcastAt: last.get(actor.id) ?? null,
         lastMessage: lastMessages.get(actor.id) ?? null,
+        // "곧 공개" 알림 신청 수(2026-10-19) — 소속사에 보여 줄 사전 수요 숫자. 공개 후에도 남음
+        releaseWatchCount: watchCounts.get(actor.id) ?? 0,
       })),
     );
   }

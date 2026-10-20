@@ -233,6 +233,12 @@ export interface AdminActor {
   activeSubscriberCount: number;
   /** 마지막 스타 메시지 시각(목록에서만, 없으면 null) — "N일째 미발송" 표시 */
   lastBroadcastAt?: string | null;
+  /** 공개 시각(2026-10-19 예약 오픈) — 미래면 팬 화면에 "곧 공개" */
+  releaseAt: string | null;
+  /** "곧 공개" 알림 신청 수(사전 수요) */
+  releaseWatchCount: number;
+  /** 아직 안 쓴 계정 연결 링크의 만료 시각(없으면 null) */
+  linkPendingUntil: string | null;
 }
 
 export interface AgencyHistoryEntry {
@@ -264,7 +270,7 @@ export function useActorAgencyHistory(id: string) {
 }
 
 // 배우 정보가 바뀌면 팬 쪽 목록(['actors'])·운영자 목록 둘 다 새로고침
-function useActorMutation<TInput>(request: (input: TInput) => Promise<unknown>) {
+function useActorMutation<TInput, TOutput = unknown>(request: (input: TInput) => Promise<TOutput>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: request,
@@ -285,7 +291,15 @@ export function useCreateActor() {
 
 export function useUpdateActor(id: string) {
   return useActorMutation(
-    (input: { legalName?: string; chatDisplayName?: string; monthlyPriceCents?: number; verified?: boolean; gender?: ArtistGender | null; storeProductId?: string | null }) =>
+    (input: {
+      legalName?: string;
+      chatDisplayName?: string;
+      monthlyPriceCents?: number;
+      verified?: boolean;
+      gender?: ArtistGender | null;
+      storeProductId?: string | null;
+      releaseAt?: string | null;
+    }) =>
       apiClient.patch<AdminActor>(`/admin/actors/${id}`, input),
   );
 }
@@ -306,6 +320,52 @@ export function useLinkActorUser(id: string) {
 
 export function useSetActorRetired(id: string) {
   return useActorMutation((retired: boolean) => apiClient.patch<AdminActor>(`/admin/actors/${id}/retire`, { retired }));
+}
+
+// ── 아티스트 일괄 등록·계정 연결 링크(2026-10-19) ──
+
+export interface ImportRow {
+  legalName: string;
+  chatDisplayName?: string;
+  gender?: ArtistGender | null;
+  partners?: string[];
+}
+
+export interface ImportPlan {
+  rows: { index: number; legalName: string; chatDisplayName: string; gender: ArtistGender | null; partners: string[]; status: 'new' | 'exists' | 'error'; errors: string[] }[];
+  couples: { legalName: string; memberNames: [string, string]; status: 'new' | 'exists' }[];
+  errorCount: number;
+}
+
+export interface ImportInput {
+  agencyId?: string;
+  monthlyPriceCents: number;
+  couplePriceCents: number;
+  releaseAt?: string | null;
+  dryRun: boolean;
+  rows: ImportRow[];
+}
+
+export interface ImportResult {
+  plan: ImportPlan;
+  created: { actors: { id: string; legalName: string }[]; couples: { id: string; legalName: string }[] } | null;
+}
+
+export function useImportActors() {
+  return useActorMutation((input: ImportInput) => apiClient.post<ImportResult>('/admin/actors/import', input));
+}
+
+export interface IssuedLinks {
+  links: { actorId: string; legalName: string; token: string; expiresAt: string }[];
+  skipped: { actorId: string; legalName: string; reason: 'COUPLE' | 'LINKED' }[];
+}
+
+export function useIssueActorLinks() {
+  return useActorMutation((actorIds: string[]) => apiClient.post<IssuedLinks>('/admin/actors/link-tokens', { actorIds }));
+}
+
+export function useRevokeActorLink(id: string) {
+  return useActorMutation(() => apiClient.delete<{ revoked: number }>(`/admin/actors/${id}/link-token`));
 }
 
 export interface AdminActionEntry {
@@ -436,6 +496,9 @@ export interface AdminBundle extends Bundle {
   createdAt: string;
   /** 지금 이 묶음을 구독 중인 팬 수 — 있으면 배우 구성을 못 바꿈 */
   activePurchaseCount: number;
+  /** 묶음 자체의 공개 시각(2026-10-19) — 실제로 열리는 시각은 opensAt(든 방 중 더 늦은 게 있으면 그것) */
+  releaseAt: string | null;
+  releaseWatchCount: number;
 }
 
 export interface BundleInput {
@@ -444,6 +507,7 @@ export interface BundleInput {
   actorIds?: string[];
   storeProductId?: string | null;
   active?: boolean;
+  releaseAt?: string | null;
 }
 
 export function useAdminBundles() {

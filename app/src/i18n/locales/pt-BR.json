@@ -854,5 +854,45 @@
     "version": "Versão {{version}}",
     "embedded": "integrada",
     "update": "atualizada em {{date}}"
+  },
+  "release": {
+    "comingSoon": "Em breve",
+    "opensAt": "Abre em {{date}}",
+    "notifyMe": "Avise-me",
+    "notifying": "Você será avisado",
+    "notifyHint": "Avisaremos você assim que abrir.",
+    "notifyOn": "Pronto! Avisaremos você no momento em que abrir. Toque de novo para cancelar.",
+    "notifyOff": "Aviso cancelado.",
+    "notifyFailed": "Não foi possível ativar o aviso.",
+    "studioNotice": "Abre em {{date}}. As mensagens que você enviar agora não serão vistas pelos fãs que assinarem depois da abertura. Prepare com antecedência suas mensagens de boas-vindas e de aniversário e seu perfil.",
+    "consoleLine": "Abre em {{date}} · Pedidos de aviso: {{count}}"
+  },
+  "longMessage": {
+    "seeAll": "Ver tudo",
+    "title": "Mensagem completa",
+    "gone": "Abra a mensagem novamente.",
+    "back": "Voltar"
+  },
+  "actorLink": {
+    "eyebrow": "Vincular conta de artista",
+    "intro": "Este link conecta sua conta ao artista {{name}}.",
+    "how": "Entre com a conta que você costuma usar (Google, Apple, LINE etc.) e vincule-a. A partir daí, entre com essa conta para enviar mensagens aos fãs. Não é preciso outro usuário nem senha.",
+    "loginAndLink": "Entrar e vincular",
+    "confirm": "Vincular esta conta a {{name}}?",
+    "confirmHint": "A conta com que você entrou vai virar uma conta de artista e não poderá ser usada para assinar como fã. Se esta for sua conta de fã, entre com outra.",
+    "link": "Vincular conta",
+    "otherAccount": "Usar outra conta",
+    "failed": "Não foi possível vincular a conta. Tente novamente em instantes.",
+    "expiresAt": "Válido até {{date}}.",
+    "doneTitle": "Conta vinculada!",
+    "doneBody": "Agora você pode enviar mensagens aos fãs como {{name}}.",
+    "start": "Começar",
+    "usedTitle": "Este link já foi usado",
+    "usedBody": "Entre com a conta que você vinculou. Se precisar vincular outra conta, peça um link novo ao seu contato na agência.",
+    "expiredTitle": "Este link expirou",
+    "expiredBody": "Peça um link novo ao seu contato na agência.",
+    "invalidTitle": "Este link não pode ser usado",
+    "invalidBody": "Confira o endereço ou peça um link novo ao seu contato na agência.",
+    "toLogin": "Ir para o login"
   }
 }

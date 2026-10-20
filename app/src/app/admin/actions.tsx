@@ -28,6 +28,11 @@ const ACTION_LABELS: Record<string, string> = {
   NOTICE_CREATE: '공지 올리기',
   NOTICE_UPDATE: '공지 고치기',
   NOTICE_DELETE: '공지 삭제',
+  ACTOR_IMPORT: '아티스트 일괄 등록',
+  ACTOR_RELEASE: '공개 시각 변경',
+  ACTOR_LINK_ISSUE: '계정 연결 링크 만들기',
+  ACTOR_LINK_REVOKE: '계정 연결 링크 취소',
+  ACTOR_LINK_CLAIM: '아티스트가 링크로 계정 연결',
 };
 
 function detailText(entry: AdminActionEntry): string {
@@ -36,6 +41,9 @@ function detailText(entry: AdminActionEntry): string {
   if (typeof d.category === 'string') parts.push(`사유 ${d.category}`);
   if (typeof d.title === 'string') parts.push(`"${d.title}"`);
   if (typeof d.note === 'string' && d.note) parts.push(`메모 "${d.note}"`);
+  if (typeof d.count === 'number') parts.push(`${d.count}명`);
+  if (typeof d.releaseAt === 'string') parts.push(`공개 ${new Date(d.releaseAt).toLocaleString('ko-KR', { timeZone: 'Asia/Bangkok' })}(태국)`);
+  if (d.releaseAt === null) parts.push('바로 공개');
   if (typeof d.until === 'string') parts.push(`해제 ${new Date(d.until).toLocaleString('ko-KR')}`);
   if (typeof d.from === 'string' && typeof d.to === 'string') parts.push(`${d.from} → ${d.to}`);
   // 정산 배분율(숫자, null = 기본값)
