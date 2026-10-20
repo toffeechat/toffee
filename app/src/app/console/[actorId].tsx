@@ -183,18 +183,17 @@ function MonitorBubble({
   avatarUri?: string | null;
   name: string;
   actorId: string;
-  /** 회수할 메시지 id들 — 사진 격자면 묶음 전체(⋯) 또는 길게 누른 한 장 */
+  /** 회수할 메시지 id들 — 사진 격자면 묶음 전체(2026-10-15 결정: 같이 보낸 사진은 통째로 회수, 아티스트 화면과 같음) */
   onDelete: (ids: string[]) => void;
   onOpenReplies: () => void;
-  /** 메뉴가 열린 메시지 id(격자 안 한 장일 수도), 묶음 전체면 `album-<첫 장 id>` — 아티스트 화면과 같음 */
+  /** 메뉴가 열린 메시지 id(격자 안 어느 장을 눌러도 그 묶음 줄의 메뉴) */
   menuFor: string | null;
   onOpenMenu: (id: string) => void;
   onCloseMenu: () => void;
 }) {
-  const albumKey = message.album ? `album-${message.album[0].id}` : null;
-  const menuOpen = !!menuFor && (menuFor === albumKey || rowHas(message, menuFor));
-  const retractIds = !message.album ? [message.id] : menuFor === albumKey ? message.album.map((item) => item.id) : menuFor ? [menuFor] : [];
-  const onMenuChange = (open: boolean) => (open ? onOpenMenu(albumKey ?? message.id) : onCloseMenu());
+  const menuOpen = !!menuFor && rowHas(message, menuFor);
+  const retractIds = message.album ? message.album.map((item) => item.id) : [message.id];
+  const onMenuChange = (open: boolean) => (open ? onOpenMenu(message.id) : onCloseMenu());
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const isMedia = message.mediaType === 'PHOTO' || message.mediaType === 'VIDEO';
