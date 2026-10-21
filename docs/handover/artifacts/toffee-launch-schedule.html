@@ -135,7 +135,20 @@ textarea{resize:vertical;min-height:64px}
 .cost td:first-child{width:92px;color:var(--muted);white-space:nowrap}
 
 /* 탭 */
-.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 -16px;padding:0 16px;scrollbar-width:none;position:sticky;top:0;background:var(--bg);z-index:5}
+.topbar{position:sticky;top:0;z-index:5;background:var(--bg);margin:0 -16px;padding:10px 16px 0;display:flex;flex-direction:column;gap:8px}
+.search{position:relative}
+.search input{font:inherit;font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 36px 9px 12px;width:100%}
+.search input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.search .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;cursor:pointer}
+.results{border:1px solid var(--line);border-radius:var(--r);background:var(--bg);max-height:60vh;overflow-y:auto}
+.results .rs-head{font-size:12.5px;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--line)}
+.results button{display:grid;grid-template-columns:72px 1fr;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 12px;cursor:pointer;font-size:14px}
+.results button:hover,.results button:focus-visible{background:var(--surface)}
+.results .rt{font-size:12px;font-weight:600;color:var(--accent-strong)}
+.results mark{background:var(--bench-soft);color:var(--fg);border-radius:3px;padding:0 1px}
+.hit{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px;transition:outline-color 1.5s}
+.hit.fade{outline-color:transparent}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 -16px;padding:0 16px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{border:0;background:none;padding:10px 12px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent-strong)}
@@ -220,6 +233,12 @@ table.t tr.hl td{background:var(--accent-soft)}
 
   <div id="banner" class="banner" hidden></div>
 
+  <div class="topbar">
+  <div class="search" role="search">
+    <input type="text" id="q" placeholder="검색 — 예: 서버비, 자본금, 세무사, 11/30  ( / 키)" aria-label="이 페이지에서 검색" autocomplete="off">
+    <button class="clear" id="qClear" type="button" aria-label="검색 지우기" hidden>×</button>
+  </div>
+  <div class="results" id="results" hidden></div>
   <nav class="tabs" role="tablist" aria-label="보기">
     <button class="tab" role="tab" data-tab="now" aria-controls="tab-now">지금</button>
     <button class="tab" role="tab" data-tab="tasks" aria-controls="tab-tasks">할 일</button>
@@ -229,6 +248,7 @@ table.t tr.hl td{background:var(--accent-soft)}
     <button class="tab" role="tab" data-tab="biz" aria-controls="tab-biz">사업 요약</button>
     <button class="tab" role="tab" data-tab="links" aria-controls="tab-links">다른 페이지</button>
   </nav>
+  </div>
 
   <div class="tabpanel" id="tab-now" role="tabpanel">
   <section class="summary" aria-label="요약">
@@ -1075,6 +1095,78 @@ document.querySelector("[role=tablist]").addEventListener("keydown", e => {
 });
 document.addEventListener("click", e => { const g = e.target.closest && e.target.closest("[data-goto]"); if (g) { showTab(g.dataset.goto); window.scrollTo(0, 0); } });
 { let t0 = (location.hash || "").slice(1); if (!TABS.includes(t0)) { try { t0 = localStorage.getItem("toffee-tab") || ""; } catch(e) { t0 = ""; } } showTab(t0); }
+
+// 검색 — 모든 탭(할 일·메모 포함)에서 글자를 찾아 결과를 누르면 그 탭·위치로
+const TABNAME = {now:"지금", tasks:"할 일", decide:"정할 것", money:"돈", server:"서버", biz:"사업 요약", links:"다른 페이지"};
+const SEL = ".tabpanel tr, .tabpanel li, .tabpanel .task, .tabpanel .kpi, .tabpanel .price, .tabpanel .phase, .tabpanel p, .tabpanel h2, .tabpanel h3, .tabpanel .st-note, .tabpanel .memo-view, .tabpanel .box > b";
+let hits = [];
+const norm = t => t.replace(/\s+/g, " ").trim();
+// 표 칸·줄바꿈 사이에 띄어쓰기를 넣어 글자가 붙지 않게
+const BREAK = new Set(["TD","TH","BR","DIV","LI","P","H2","H3","LABEL"]);
+function textOf(node){
+  if (node.tagName === "TR") return [...node.cells].map(textOf).join(" · ");
+  let out = "";
+  node.childNodes.forEach(n => {
+    if (n.nodeType === 3) out += n.nodeValue;
+    else if (n.nodeType === 1 && n.tagName !== "BUTTON" && n.tagName !== "TEXTAREA") out += textOf(n) + (BREAK.has(n.tagName) ? " " : "");
+  });
+  return norm(out);
+}
+function findHits(q){
+  const ql = q.toLowerCase();
+  const all = [...document.querySelectorAll(SEL)].filter(el => textOf(el).toLowerCase().includes(ql));
+  const set = new Set(all);
+  // 더 작은 단위가 같이 맞으면 큰 묶음은 뺌(가장 안쪽 것만)
+  return all.filter(el => ![...el.querySelectorAll(SEL)].some(c => set.has(c))).slice(0, 60);
+}
+function snippet(text, q){
+  const t = text, i = t.toLowerCase().indexOf(q.toLowerCase());
+  const a = Math.max(0, i - 30), b = Math.min(t.length, i + q.length + 60);
+  return (a > 0 ? "…" : "") + esc(t.slice(a, i)) + "<mark>" + esc(t.slice(i, i + q.length)) + "</mark>" + esc(t.slice(i + q.length, b)) + (b < t.length ? "…" : "");
+}
+function runSearch(){
+  const q = $("#q").value.trim();
+  $("#qClear").hidden = !q;
+  const box = $("#results");
+  if (!q) { box.hidden = true; box.innerHTML = ""; hits = []; return; }
+  hits = findHits(q);
+  box.hidden = false;
+  box.innerHTML = `<div class="rs-head">${hits.length ? `${hits.length}${hits.length === 60 ? "+" : ""}개 찾음 — 누르면 그 자리로` : "찾는 글자가 없어요. 다른 말로 찾아보세요."}</div>` +
+    hits.map((el, i) => { const tab = el.closest(".tabpanel").id.slice(4);
+      return `<button type="button" data-hit="${i}"><span class="rt">${TABNAME[tab] || ""}</span><span>${snippet(textOf(el), q)}</span></button>`; }).join("");
+}
+function goHit(i){
+  let el = hits[i];
+  if (!el || !el.isConnected) { hits = findHits($("#q").value.trim()); el = hits[i]; if (!el) return; }
+  showTab(el.closest(".tabpanel").id.slice(4));
+  let d = el.closest("details"); while (d) { d.open = true; d = d.parentElement && d.parentElement.closest("details"); }
+  $("#results").hidden = true;
+  const top = el.getBoundingClientRect().top + window.scrollY - document.querySelector(".topbar").offsetHeight - 12;
+  window.scrollTo({top, behavior: "smooth"});
+  el.classList.remove("fade"); el.classList.add("hit");
+  setTimeout(() => el.classList.add("fade"), 1200);
+  setTimeout(() => el.classList.remove("hit", "fade"), 3000);
+}
+let qTimer;
+$("#q").addEventListener("input", () => { clearTimeout(qTimer); qTimer = setTimeout(runSearch, 150); });
+$("#q").addEventListener("focus", () => { if ($("#q").value.trim()) runSearch(); });
+$("#q").addEventListener("keydown", e => {
+  if (e.key === "Escape") { $("#q").value = ""; runSearch(); $("#q").blur(); }
+  if (e.key === "Enter" && hits.length) { e.preventDefault(); goHit(0); }
+  if (e.key === "ArrowDown" && hits.length) { e.preventDefault(); const b = $("#results button"); if (b) b.focus(); }
+});
+$("#results").addEventListener("keydown", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); (b.nextElementSibling || b).focus(); }
+  if (e.key === "ArrowUp") { e.preventDefault(); const p = b.previousElementSibling; (p && p.tagName === "BUTTON" ? p : $("#q")).focus(); }
+  if (e.key === "Escape") { $("#q").focus(); }
+});
+$("#results").addEventListener("click", e => { const b = e.target.closest("[data-hit]"); if (b) goHit(+b.dataset.hit); });
+$("#qClear").addEventListener("click", () => { $("#q").value = ""; runSearch(); $("#q").focus(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); $("#q").focus(); }
+});
+document.addEventListener("click", e => { if (!e.target.closest(".topbar")) $("#results").hidden = true; });
 </script>
 
 </body></html>
