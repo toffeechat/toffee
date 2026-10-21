@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>토피 사업화 일정</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,7 +165,6 @@ textarea{resize:vertical;min-height:64px}
       <div class="filters" role="group" aria-label="보기">
         <button class="chip" data-f="all" aria-pressed="true">전체</button>
         <button class="chip" data-f="todo" aria-pressed="false">남은 것만</button>
-        <button class="chip" data-f="advisor" aria-pressed="false">현지 조언</button>
         <button class="chip" data-f="bench" aria-pressed="false">벤치마킹</button>
         <button class="chip" data-f="money" aria-pressed="false">비용 기록</button>
       </div>
@@ -173,41 +172,15 @@ textarea{resize:vertical;min-height:64px}
     <div class="stages" id="stages"></div>
   </section>
 
-  <section class="panel" aria-label="지출 장부" style="background:var(--bg);border:1px solid var(--line)">
-    <div>
-      <h2>지출 장부</h2>
-      <p class="sub">토피·젤리에 쓴 돈을 적어 두세요. 세무사 첫 상담 때 이 표를 그대로 넘기면 돼요. 인보이스 PDF는 따로 한 폴더에 모으고, 받았으면 "인보이스"에 체크하세요.</p>
-    </div>
-    <form class="ex-form" id="exForm">
-      <input type="date" id="exDate" aria-label="날짜" required>
-      <input type="text" id="exItem" placeholder="항목 (예: 애플 개발자 계정 1년)" aria-label="항목" required>
-      <input type="number" id="exAmount" placeholder="원화 금액" min="0" step="1" inputmode="numeric" aria-label="원화 금액" required>
-      <div class="wide">
-        <select id="exCat" aria-label="분류">
-          <option value="account">계정·서비스</option><option value="devtool">개발 도구</option><option value="bench">벤치마킹</option>
-          <option value="meeting">미팅</option><option value="asset">장비(자산)</option><option value="etc">기타</option>
-        </select>
-        <select id="exProj" aria-label="사업"><option value="toffee">토피</option><option value="gelly">젤리</option><option value="both">공통</option></select>
-        <select id="exMethod" aria-label="결제 수단"><option value="card">토피 전용 카드</option><option value="personal">개인 카드</option><option value="other">현금·기타</option></select>
-        <button class="btn" id="exAdd" type="submit">지출 추가</button>
-      </div>
-      <input type="text" id="exMemo" class="wide" style="display:block" placeholder="메모 (선택) — 달러 금액, 미팅이면 누구와·무슨 목적" aria-label="메모">
-    </form>
-    <div class="ex-sum" id="exSum"></div>
-    <div class="ex-tools">
-      <span class="saved" id="exHint">2026년에 쓴 돈은 법인 비용으로 인정되지 않을 수 있어요(첫 사업연도 1년 제한). 그래도 코드 이전·사업계획서 근거로 남겨 두세요.</span>
-      <button class="linkbtn" id="exCopy" type="button">표 복사(엑셀에 붙여넣기)</button>
-    </div>
-    <div class="ex-tablewrap"><table class="ex-table">
-      <thead><tr><th>날짜</th><th>항목</th><th>분류</th><th>사업</th><th>결제</th><th class="amt">금액</th><th>인보이스</th><th></th></tr></thead>
-      <tbody id="exRows"><tr><td colspan="8" class="empty">아직 기록이 없어요. 위에서 첫 지출을 추가해 보세요.</td></tr></tbody>
-    </table></div>
+  <section class="panel" aria-label="돈 기록" style="background:var(--bg);border:1px solid var(--line)">
+    <h2>돈 기록은 한곳에</h2>
+    <p class="sub" style="margin:0">결제·계정은 <a href="https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR">Toffee 사업화 장부</a>에, 법인 전 지출의 비용처리는 <a href="https://claude.ai/artifact/GSj89sPKMn6mQVSHZ3GPtz">설립 전 지출 처리</a>에 모아요. 결제했다고 Claude에게 말하면 장부에 적어요.</p>
   </section>
 
   <section class="panel" aria-label="메모장" style="background:var(--bg);border:1px solid var(--line)">
     <div>
       <h2>메모장</h2>
-      <p class="sub">벤치마킹하면서 느낀 점, 대표님 통화 내용, 소속사 반응을 날짜와 함께 쌓아 두세요. 4단계 사업계획서의 근거가 돼요.</p>
+      <p class="sub">벤치마킹하면서 느낀 점, 소속사 반응을 날짜와 함께 쌓아 두세요. 4단계 사업계획서의 근거가 돼요.</p>
     </div>
     <form class="notes-form" id="noteForm">
       <select id="noteKind" aria-label="분류">
@@ -225,10 +198,10 @@ textarea{resize:vertical;min-height:64px}
   <section class="panel" aria-label="돈이 나가는 시점">
     <h2>돈이 나가는 시점</h2>
     <table class="cost">
-      <tr><td>1~3단계</td><td>도메인 연 1~2만 원, 데모 서버 월 1~3만 원, 버블·위버스 벤치마킹 2개월 약 2~5만 원</td></tr>
-      <tr><td>4단계</td><td>거의 없음</td></tr>
-      <tr><td>5단계</td><td>법인 설립 30~50만 원, 구글 법인 계정 $25, 세무 기장 월 10~20만 원 시작</td></tr>
-      <tr><td>6단계</td><td>변호사·번역 검수(건별, 지원금으로 충당하면 좋음), 운영 서버 월 2~8만 원</td></tr>
+      <tr><td>1~3단계</td><td>도메인 연 1~2만 원, 데모 서버 월 1~3만 원, 버블·위버스 벤치마킹 약 2~5만 원</td></tr>
+      <tr><td>4단계</td><td>법인 설립 약 20~60만 원(세무사 대행 포함 여부에 따라), 상표 출원 분류당 수만 원~, 구글 법인 계정 $25, 세무 기장 월 약 16.5만 원 시작</td></tr>
+      <tr><td>5단계</td><td>변호사 100~300만 원, 태국어 검수 30~80만 원, 운영 서버 월 3~10만 원</td></tr>
+      <tr><td>합계</td><td>2027년 10월까지 12개월 약 910만 원 — 필수 760만 + 팬 모으기 광고 150만(자세한 건 <a href="https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR">토피 사업 계획</a>)</td></tr>
     </table>
   </section>
 
@@ -243,81 +216,90 @@ const STAGES = [
     ["s1-domain","도메인 구매","연 1~2만 원, Cloudflare 추천. 앱 번들 ID(com.toffeechat.app, 잠정)도 도메인에 맞춰 이때 확정"],
     ["s1-mail","회사 메일(hello@, support@)","Cloudflare 메일 전달(무료)로 시작, 보내기까지 필요하면 Google Workspace"],
     ["s1-2fa","비밀번호 관리자 + 모든 계정 2단계 인증",""],
-    ["s1-card","토피 전용 카드 정하고 지출 기록 시작","해외 결제 되는 체크카드 하나로 토피·젤리 비용만 결제, 인보이스 PDF는 한 폴더에, 아래 지출 장부에 기록(매달 한 번 10분)","money"],
+    ["s1-card","토피 전용 카드 정하고 지출 기록 시작","해외 결제 되는 체크카드 하나로 토피·젤리 비용만 결제, 인보이스 PDF는 한 폴더에, 결제는 사업화 장부에 기록","money"],
     ["s1-org","GitHub Organization으로 저장소 옮기기","무료. 옮긴 뒤 Claude GitHub App 새로 설치"],
     ["s1-accounts","토피 전용 메일로 서비스 가입","Cloudflare(R2 파일 저장소), Firebase(푸시), Sentry(오류), Expo(앱 빌드)"],
     ["s1-demo","호스팅 고르고 데모 서버 띄우기","운영과 분리된 데모 환경에 가상 배우 데이터만(실제 배우 정보 금지)"],
     ["s1-social","소셜 로그인 개발자 등록","구글·카카오·네이버·라인(무료, 개인 가능). 애플은 기존 개인 계정에서 개발용 번들 ID(…app.dev)로만"],
     ["s1-anthropic","Anthropic API 키 발급","scripts/translation-sample.mjs로 태국어 등 예문 번역 품질 확인"],
     ["s1-keys","소셜 로그인 키 넣고 실제 로그인 확인","버튼 코드는 완료, 키가 들어간 버튼만 보여요"],
-    ["s1-device","실기기 테스트 빌드","TestFlight·구글 내부 테스트로 푸시 수신, 카메라·녹음, 사진 확대 제스처, 영상 썸네일, 화면 꺼도 음성 재생 확인"],
-    ["s1-bench","버블·위버스 DM 직접 결제 시작","각각 아티스트 1~2명(태국 배우 우선), 폰 앱 스토어 결제로. 결제일과 갱신일을 달력에 적기","bench","2026-10-05"],
-    ["s1-advisor","대표님께 첫 연락","\"30분 통화로 몇 가지 여쭙고 싶다\"는 짧은 메시지. 통화는 데모가 준비되는 10월 말로 잡기","advisor","2026-10-07"],
+    ["s1-device","실기기 테스트 빌드","TestFlight·구글 내부 테스트로 푸시 수신, 카메라·녹음, 사진 확대 제스처, 영상 썸네일, 화면 꺼도 음성 재생 확인","","2026-10-18"],
+    ["s1-bench","버블·위버스 DM 직접 결제 시작","각각 아티스트 1~2명(태국 배우 우선), 폰 앱 스토어 결제로. 결제일과 갱신일을 달력에 적기","bench","2026-10-15"],
    ]},
-  {n:2, title:"데모·제안 자료", range:"10-19 ~ 11-01", start:"2026-10-19", end:"2026-11-01", biz:"사업자 없음", tasks:[
-    ["s2-demo","직접 눌러 보는 데모","데모 서버 주소 + 소속사 체험용 계정. 영상보다 설득력이 커요"],
-    ["s2-advisor","대표님과 첫 통화(제안서 보내기 전)","데모 링크를 들고: 태국 팬이 월 구독을 낼지·적정 바트 가격, 제안 조건이 통하는지, 첫 연락 방식(메일/LINE/대면), 소개받을 곳","advisor","2026-10-28"],
-    ["s2-video","데모 영상 2~3분","팬(둘러보기 → 구독 → 채팅) → 스타 스튜디오 → 소속사 모니터링·통계"],
-    ["s2-proposal","영문 제안서 1~2장","비용 없음·독점 없음·수익 배분만·3개월 파일럿·기술/번역/운영은 우리가. 가능하면 태국어 요약"],
-    ["s2-landing","간단한 랜딩 페이지","도메인 첫 화면"],
-    ["s2-bench","벤치마킹 1개월 차 정리","따라 할 것 / 우리가 더 나은 것 / 일부러 다르게 하는 것. 제안서 차별점 뽑기. 새 기능은 STATUS.md 아이디어 보관함으로","bench","2026-10-31"],
-    ["s2-list","연락할 곳 목록 15~20곳","대형보다 중소 제작사·신인 위주 소속사·매니저부터"],
+  {n:2, title:"제안 자료 + 벤치마킹", range:"10-13 ~ 10-25", start:"2026-10-13", end:"2026-10-25", biz:"사업자 없음",
+   note:"압축 일정(2026-10-12 확정): 첫 출시 <strong>2027년 2월</strong>. 벤치마킹과 제안 자료를 동시에 준비해요. 가격·정산 비율은 메일에 들어가야 하니 <strong>10/24까지 잠정안</strong>을 정해요. 현지 대표님 조언은 아이디어 보호를 위해 보류.",
+   tasks:[
+    ["s2-terms","제안 조건 잠정안 확정(가격·정산 비율)","토피 소속사 제안 페이지의 확정안 → 메일에 넣을 숫자 결정","money","2026-10-24"],
+    ["s2-qa","실기기 테스트 결과 버그 수정","실기기 빌드에서 나온 문제를 고치고 데모 서버에 반영. 소속사 연락 전에 끝내기","","2026-10-25"],
+    ["s2-demo","소속사 체험 계정 + 데모 점검","데모 서버 주소 + 소속사 화면을 볼 수 있는 계정. 영상보다 설득력이 커요"],
+    ["s2-video","데모 영상 1분","팬(구독 → 채팅) → 배우 스튜디오 → 소속사 모니터링·정산"],
+    ["s2-proposal","영문 제안 메일 + 1장 소개서","비용 없음·독점 없음·수익 배분·3개월 파일럿·기술/번역/운영은 우리가. 가능하면 태국어 요약 3줄","","2026-10-25"],
+    ["s2-list","연락할 곳 목록 15곳","중소 제작사·신인 위주 소속사·매니저부터. 배우별 팔로워 수·해외 팬 분포 메모"],
+    ["s2-bench","벤치마킹 1주 차 정리","따라 할 것 / 우리가 더 나은 것 / 일부러 다르게 하는 것 → 제안서 차별점. 새 기능은 STATUS.md 아이디어 보관함으로","bench","2026-10-24"],
+    ["s2-landing","랜딩 페이지 1장(선택)","도메인 첫 화면. 시간 없으면 건너뛰기"],
     ["s2-name","회사 이름 표기 확인","등록 전엔 \"Co., Ltd.\"·\"주식회사\" 금지 → \"Toffee\", \"Toffee Team\""],
   ]},
-  {n:3, title:"소속사 의견 듣기", range:"11-02 ~ 12-31", start:"2026-11-02", end:"2026-12-31", biz:"사업자 없음",
-   note:"목표는 서명된 계약서가 아니라 <strong>관심의 증거</strong>예요. <strong>분기점</strong>: 반응 있음 + \"회사가 있어야 한다\" → 5단계(법인)를 앞당김. 3개월 반응 0 → 방향 점검, 지원사업은 그대로 신청.",
+  {n:3, title:"소속사 연락 + IR 자료", range:"10-26 ~ 11-30", start:"2026-10-26", end:"2026-11-30", biz:"사업자 없음",
+   note:"목표는 \"괜찮네요\"가 아니라 <strong>\"이 배우로, 이때부터 파일럿 하겠다\"</strong>는 한 줄이에요. 기다리는 동안 법인 없이 할 수 있는 준비를 끝내요. <strong>11/30 분기점</strong>: 파일럿 의사 1곳 이상 → 12월 법인. 0곳 → 방향 점검 + 2027 예비창업패키지 신청(사업자 등록을 안 했으니 자격 유지).",
    tasks:[
-    ["s3-first","1차 5곳 연락 → 문구·조건 다듬기 → 2차 5~10곳",""],
-    ["s3-intro","소개 경로 찾기","KOTRA 방콕무역관 파트너 발굴 문의, 태국 엔터 쪽 한국 업계 사람, 현지 팬 커뮤니티"],
-    ["s3-log","답장·미팅 메모 모으기","예: N곳 연락, M곳 미팅, 파일럿 검토 의사 K곳 (아래 메모장 활용)"],
-    ["s3-dev","개발은 피드백 반영만","소속사가 공통으로 원하는 게 있을 때만 1차/2차에"],
-    ["s3-share","정산 비율 초안 정리","feature-decisions.md \"소속사 계약/정산 조건\""],
-    ["s3-bench","벤치마킹 끝 — 갱신 전에 해지","해지하면서 해지·환불 안내 흐름도 기록, 최종 메모 남기기","bench","2026-11-28"],
-    ["s3-advisor","대표님께 중간 점검","반응 해석(예의상 긍정인지 진짜 관심인지), 정산 조건 감각(7:3, 계약금), 한국 개인·법인과 계약하는 데 거부감","advisor","2026-12-04"],
+    ["s3-first","1차 5곳 연락","반응을 보고 문구·조건 다듬기","","2026-10-27"],
+    ["s3-second","2차 10곳 연락","","","2026-11-09"],
+    ["s3-log","연락 기록","소속사 · 날짜 · 단계(답장/미팅/검토/파일럿 의사/계약) · 한 줄 메모 (아래 메모장)"],
+    ["s3-ir","IR 자료 초안","토피 사업 계획 페이지 + 소속사 반응 숫자로. 정리되면 지민님께 보여 드리고 엔젤투자자 소개 부탁","money","2026-11-20"],
+    ["s3-prep","법인 없이 미리 할 준비","변호사 견적·약관 검토 의뢰, 태국어 번역 검수, 소속사 계약서 초안"],
+    ["s3-thai","태국 현지 창구 연락","태국 Y콘텐츠진흥협회(소속사·제작사와 DITP를 잇는 곳), KOCCA 태국 비즈니스센터(한·태 K-콘텐츠 비즈위크), KOTRA 방콕 — DITP Y-Economy 행사·2027 Thailand Content Market 참가 문의"],
+    ["s3-load","실제 서버에서 부하 테스트","내 컴퓨터에서만 했던 테스트를 Railway에서 한 번 더"],
+    ["s3-dev","개발은 피드백 반영만","소속사가 공통으로 원하는 게 있을 때만"],
+    ["s3-bench","벤치마킹 끝 — 갱신 전에 해지","해지하면서 해지·환불 안내 흐름도 기록, 최종 메모 남기기","bench","2026-11-10"],
+    ["s3-corpname","회사 이름 정하기(법인명)","토피·젤리를 아우르는 이름. 후보 2~3개 → 인터넷등기소(같은 이름)·KIPRIS(상표)·도메인·앱스토어 검색, 영문 표기·태국어 발음 확인. 나중에 바꾸면 애플 판매자 이름·계약서·통장을 다 바꿔야 해서 설립 전에 확정","","2026-11-30"],
+    ["s3-address","본점 주소 정하기","자택은 등기부·스토어·약관 사업자 정보에 주소가 공개됨 → 대전 창업보육센터(KAIST·충남대·한밭대·대전창조경제혁신센터 등) 입주·비상주 가능 여부 문의, 안 되면 대전 비상주 사무실. 대전(과밀억제권역 밖)이어야 등록면허세 기본·청년창업 세액감면 유지"],
+    ["s3-taxfirm","세무사 2~3곳 상담·견적(설립~기장 맡김)","설립 대행 포함인지(기장 계약 시 무료인 곳 많음), 월 기장료·결산 조정료, 해외(애플·구글·태국 소속사) 정산 경험. 5단계 질문 목록 그대로 가져가기","money"],
+    ["s3-decide","분기점 결정","파일럿 의사 1곳 이상이면 법인, 0곳이면 방향 점검 + 예비창업패키지","","2026-11-30"],
   ]},
-  {n:4, title:"지원사업", range:"2027-01 ~ 03 (발표 보통 4~5월)", start:"2027-01-01", end:"2027-03-31", biz:"사업자 없음(중요)",
-   note:"지원금은 <strong>자본금이 아니에요</strong>. 협약한 용도에만 쓰고 증빙하는 돈이라 자본금·생활비로 못 써요. 법인 자본금은 개인 돈 100만~500만 원 정도로 작게.",
+  {n:4, title:"법인 설립·계약", range:"2026-12", start:"2026-12-01", end:"2026-12-31", biz:"법인",
+   note:"가장 오래 기다리는 건 <strong>D-U-N-S 번호</strong>(몇 주)와 <strong>애플 계정 법인 전환</strong>이에요. 설립 당일 신청해요. 12월 법인이면 2027년 초기창업패키지(업력 3년 이내)에 신청할 수 있어요.",
    tasks:[
-    ["s4-plan","사업계획서 작성(1월)","재료: 동작하는 서비스, 젤리 운영 실적, 소속사 반응, 비용 문서"],
-    ["s4-notice","공고 확인","K-Startup, 기업마당(대전), 대전창조경제혁신센터, 대전정보문화산업진흥원, 대학 창업지원단, 한국콘텐츠진흥원"],
-    ["s4-apply","신청","예비창업패키지(청년) + 대전 지역 사업. 재직자 신청 가능 여부·현금 자부담 확인"],
-    ["s4-quotes","견적만 받아 두기","변호사, 원어민 번역 검수(태·일·중), 세무사"],
-  ]},
-  {n:5, title:"법인 설립", range:"선정 직후 또는 소속사 요구 시", biz:"법인", tasks:[
-    ["s5-advisor","설립 직전 대표님께","태국 법인이 따로 필요한지, 원천징수·해외 송금 실무, 태국 PDPA, 현지 로펌·세무사 소개","advisor"],
-    ["s5-corp","법인 설립 → 사업자등록 → 통신판매업 신고 → 법인 계좌","셀프 또는 법무사, 30만~50만 원"],
+    ["s5-corp","법인 설립 → 사업자등록 → 통신판매업 신고 → 법인 계좌","세무사에게 맡김(2026-10-21 결정). 실비 약 20만 원(대전 등록면허세 약 13.5만 + 등기 수수료·인감) + 대행 0~40만 원","","2026-12-07"],
+    ["s5-articles","정관·설립 내용 확인","자본금 100만~300만 원(지분 100% 내 것), 1주 100원, 발행 예정 주식 넉넉히(예: 1,000만 주), 사업 목적 넉넉히(앱·소프트웨어, 통신판매업, 통신판매중개업, 플랫폼 운영, 콘텐츠 유통, 광고 등), 투자 대비 조항(제3자 신주 배정·종류주식(우선주)·스톡옵션), 대표 1명, 결산월은 세무사와"],
+    ["s5-capital","자본금 넣기 + 돈 분리 규칙","개인 통장에 자본금 → 잔고증명 → 설립 후 법인 통장으로. 이후 회사 비용은 회사 통장·카드로만. 모자라면 개인 → 회사 이체(메모 '대표 가수금')로 빌려주고 나중에 돌려받기. 회사 돈을 생활비로 꺼내면 가지급금(세금·실사 감점)","money"],
+    ["s5-ip","코드·자산을 개인 → 법인으로 넘기기","토피·젤리 코드, 디자인, 도메인, 앱·서비스 계정. 엑시트·투자 실사의 기본 — 세무사·변호사에게 계약서 형태 확인"],
+    ["s5-tm","상표 출원(토피·젤리)","회사 이름 등기는 상표가 아님. 법인 명의로, 앱·소프트웨어·온라인 서비스 분류(변리사 상담). 태국 상표는 나중에","money"],
     ["s5-duns","D-U-N-S 번호 바로 신청","무료, 몇 주 걸림. 애플·구글 법인 계정의 선행 조건"],
     ["s5-tax","세무사 기장 계약","청년창업 세액감면, 무보수 대표이사, 태국 지급 원천징수, 코드·자산 법인 이전"],
-    ["s5-taxpre","세무사에게 설립 전 비용 묻기","결산월에 따라 설립 전 비용을 어디까지 넣을 수 있는지(첫 사업연도 1년 제한), 지출 장부를 그대로 넘기면 되는지, 테스트 폰·노트북 같은 장비를 법인으로 넘기는 방법","money"],
+    ["s5-taxpre","세무사에게 설립 전 비용 묻기","결산월에 따라 설립 전 비용을 어디까지 넣을 수 있는지(첫 사업연도 1년 제한), 사업화 장부·설립 전 지출 기록을 그대로 넘기면 되는지, 장비를 법인으로 넘기는 방법","money"],
+    ["s4-contract","소속사 계약서 서명","정산 비율·주기·통화, CP방·묶음 배분, 초상권, 최소 발송 빈도, 종료 처리, 환불 책임(변호사 검토)"],
+    ["s4-angel","엔젤투자 협상(필요하면)","투자는 법인이 있어야 받을 수 있어요. 자기자본으로 충분하면 건너뛰기","money"],
+    ["s4-grant","2027 초기창업패키지 공고 확인","보통 연초 공고. K-Startup·기업마당"],
     ["s5-gelly","젤리도 법인 사업으로","젤리 중고거래는 이때부터 준비(통신판매중개업 신고)"],
     ["s5-apple","애플 개인 계정을 법인으로 전환","젤리 그대로, 판매자 이름만 변경 → 그 뒤 토피 운영 번들 ID 등록"],
     ["s5-google","구글 법인 조직 계정 새로 만들기","토피 등록 + 젤리는 앱 이전 기능으로"],
     ["s5-owners","기존 서비스 계정은 소유자 정보만 변경","새로 만들면 기존 로그인 회원 식별값이 달라져요"],
     ["s5-job","직장 겸업금지 조항 다시 확인","무보수 대표면 4대보험으로 드러날 일은 거의 없음(세무사 확인)"],
   ]},
-  {n:6, title:"출시 준비", range:"설립 후 6~8주", biz:"법인", tasks:[
-    ["s6-contract","소속사 계약서(변호사 검토)","정산 비율·주기·통화, 커플방·묶음 배분, 초상권, 최소 발송 빈도, 종료 처리, 환불 책임"],
+  {n:5, title:"출시 준비", range:"2027-01", start:"2027-01-01", end:"2027-01-31", biz:"법인", tasks:[
     ["s6-legal","약관·개인정보처리방침 + 정책 표 확정","STATUS.md \"출시 전 확정할 정책\"을 한 번에(태국 PDPA 포함)"],
-    ["s6-i18n","원어민 검수","앱·알림·오류 문구(태·일·중 간체/번체)"],
-    ["s6-products","스토어 구독 상품 등록","배우별·묶음별, 운영자 화면에 상품 ID 입력"],
+    ["s6-i18n","원어민 검수(태국어 먼저)","앱·알림·오류 문구. 다른 언어는 파일럿 뒤"],
+    ["s6-pricing","나라별 가격 확정 + 정산을 실제 결제 금액 기준으로(개발)","상품 등록 전에. 지금 정산은 태국 정가 기준이라 나라별 가격을 쓰면 소속사에 더 줌. 한국은 버블·위버스보다 낮게, 필리핀·인니·베트남·중남미 약 40% 낮게, 나머지 스토어 자동 변환 (STATUS 1차)","money"],
+    ["s6-products","스토어 구독 상품 등록","배우별·묶음별, 나라별 가격, 운영자 화면에 상품 ID 입력"],
     ["s6-sandbox","샌드박스 결제로 끝까지 확인","구독·복원·갱신·해지·환불"],
     ["s6-smb","애플 소규모 사업자 프로그램 신청","수수료 30% → 15%"],
     ["s6-prod","운영 서버·DB + 모든 키 입력","데모와 분리, 실제 배우 사진으로 스토어 스크린샷"],
-    ["s6-submit","스토어 제출","store-submission.md + 심사용 계정 + 실존 인물 콘텐츠 권리 증빙"],
+    ["s6-submit","스토어 제출","store-submission.md + 심사용 계정 + 실존 인물 콘텐츠 권리 증빙. 반려 대비 2주 여유","","2027-01-20"],
   ]},
-  {n:7, title:"출시·파일럿", range:"3개월, 목표 2027년 여름", biz:"법인",
-   note:"매주 볼 숫자: 구독 전환율, <strong>월 해지율(가장 중요)</strong>, 배우 발송 빈도, 환불·신고 건수, 문의 건수. 스토어 매출은 약 1~2개월 뒤에 들어와요.",
+  {n:6, title:"출시·파일럿", range:"2027-02 ~ 04", start:"2027-02-01", end:"2027-04-30", biz:"법인",
+   note:"매주 볼 숫자: 구독 전환율, <strong>월 해지율(가장 중요)</strong>, 배우 발송 빈도, 환불·신고 건수, 문의 건수. 스토어 매출은 약 1~2개월 뒤(3~4월)에 들어와요.",
    tasks:[
-    ["s7-launch","배우 5~10명으로 출시","태국 팬 중심"],
-    ["s7-metrics","주간 숫자 기록 시작","다음 소속사를 설득하는 영업 자료가 돼요"],
-    ["s7-advisor","출시 전후 대표님께","태국 팬 마케팅(팬 커뮤니티·인플루언서·X·TikTok), 태국어 운영 담당 채용 기준·경로","advisor"],
+    ["s7-launch","배우 5~10명으로 출시","태국 팬 중심","","2027-02-01"],
+    ["s7-metrics","주간 숫자 기록 시작","다음 소속사·투자자를 설득하는 자료가 돼요. 전업 판단용으로 '토피에 쓴 시간'과 '문의 답변까지 걸린 시간'도 같이. 투자 목표: 유료 구독 1,000건·월 해지율 10% 이하·소속사 2곳"],
+    ["s7-review","파일럿 3개월 뒤 조건 재협의","실제 숫자로 정산 비율·가격 다시 보기","money"],
   ]},
-  {n:8, title:"확장·채용·퇴사 판단", range:"이후", biz:"법인", tasks:[
+  {n:7, title:"확장·채용·퇴사 판단", range:"2027-05 이후", biz:"법인", tasks:[
     ["s8-expand","같은 소속사의 다른 배우 → 다른 소속사로","젤리는 GL 팬 유입 창구로"],
-    ["s8-hire","채용·퇴사 기준 점검","business-faq.md 7번·8번"],
+    ["s8-raise","시드·엔젤 투자 유치","시범 운영 숫자로 최소 약 8,600만~넉넉히 약 1.2억 원(대표 월급 포함 18개월치). 입금되면 전업","money","2027-05-01"],
+    ["s8-hire","채용·퇴사 기준 점검","전업 = ① 투자로 월급 포함 18개월치 또는 ② 토피 몲 월 550만 원 3개월 연속, ③ 과부하는 서두를 신호(토피 사업 계획 '전업 기준')"],
   ]},
 ];
-const BENCH = {n:"B", title:"벤치마킹 — 볼 것", range:"버블·위버스 DM, 2026-10 ~ 11", biz:"약 2~5만 원",
+const BENCH = {n:"B", title:"벤치마킹 — 볼 것", range:"버블·위버스 DM, 2026-10-13 ~ 11-10", biz:"약 2~5만 원",
   note:"기능 목록은 이미 알아요. 문서로는 모르는 <strong>느낌·빈도·결제 경험</strong>을 보세요. 스크린샷은 개인 폴더에만(경쟁사 화면은 공개 자료에 쓰지 않아요).",
   tasks:[
     ["b-signup","가입~첫 메시지","몇 단계·몇 분인지, 결제 화면의 가격 표시·안내 문구","bench"],
@@ -331,7 +313,7 @@ const BENCH = {n:"B", title:"벤치마킹 — 볼 것", range:"버블·위버스
     ["b-upsell","돈을 더 쓰게 만드는 장치","묶음·할인, 기념일, 유료 부가 기능","bench"],
     ["b-pain","불편했던 점","토피가 이길 수 있는 지점 → 제안서 차별점","bench"],
   ]};
-const ALL_GROUPS = [...STAGES.slice(0,3), BENCH, ...STAGES.slice(3)];
+const ALL_GROUPS = [...STAGES.slice(0,2), BENCH, ...STAGES.slice(2)];
 const TAGNAME = {advisor:"현지 조언", bench:"벤치마킹", money:"비용 기록"};
 const CATNAME = {account:"계정·서비스", devtool:"개발 도구", bench:"벤치마킹", meeting:"미팅", asset:"장비(자산)", etc:"기타"};
 const PROJNAME = {toffee:"토피", gelly:"젤리", both:"공통"};
@@ -446,6 +428,7 @@ function renderNotes(){
 
 const won = n => (Math.round(n)||0).toLocaleString("ko-KR") + "원";
 function renderExpenses(){
+  if (!document.getElementById("exSum")) return;
   const rows = state.expenses.map(d => ({id:d.id, ...d.data()}));
   const total = rows.reduce((a,r) => a + (+r.amount||0), 0);
   const y27 = rows.filter(r => (r.date||"") >= "2027-01-01").reduce((a,r) => a + (+r.amount||0), 0);
@@ -552,7 +535,7 @@ $("#noteForm").addEventListener("submit", async e => {
   $("#noteAdd").disabled = !canWrite;
 });
 
-$("#exForm").addEventListener("submit", async e => {
+document.getElementById("exForm") && $("#exForm").addEventListener("submit", async e => {
   e.preventDefault();
   if (!db) return;
   const date = $("#exDate").value, item = $("#exItem").value.trim(), amount = Math.round(+$("#exAmount").value);
@@ -565,7 +548,7 @@ $("#exForm").addEventListener("submit", async e => {
   } catch(err) { showBanner(err && err.code === "quota_exceeded" ? "저장 공간이 가득 찼어요." : "지출을 저장하지 못했어요. 다시 시도해 주세요."); }
   $("#exAdd").disabled = !canWrite;
 });
-$("#exDate").value = today();
+if (document.getElementById("exDate")) $("#exDate").value = today();
 
 function showBanner(msg){ const b = $("#banner"); b.textContent = msg; b.hidden = false; }
 
@@ -588,9 +571,6 @@ renderAll();
   db.collection("notes").orderBy("createdAt", "desc").onSnapshot(snap => {
     state.notes = snap.docs; renderNotes();
   }, err => showBanner("메모 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
-  db.collection("expenses").orderBy("date", "desc").onSnapshot(snap => {
-    state.expenses = snap.docs; renderExpenses();
-  }, err => showBanner("지출 장부 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
 })();
 </script>
 
