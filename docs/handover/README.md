@@ -55,7 +55,7 @@ JSON으로 내보내 **파일로 따로 전달**했다(로그인 이메일·Team
    - 사업화 장부: toffee docs/handover/artifacts/toffee-ledger.html
      (capabilities: db, 규칙 [{"path":"","read":"view","write":"admin"}])
      데이터: zip의 toffee-ledger/accounts, expenses, meta/roadmap → 같은 컬렉션·같은 문서 id로 ArtifactData batch
-   - 사업화 일정: toffee docs/handover/artifacts/toffee-launch-schedule.html (capabilities: db)
+   - 사업화 일정(2026-10-21부터 "토피 사업 본부" — 사업 계획을 합침): toffee docs/handover/artifacts/toffee-launch-schedule.html (capabilities: db). 옛 사업 계획 내용은 `artifacts/toffee-business-plan-until-2026-10-21.html`
      데이터: zip의 toffee-launch-schedule/tasks → tasks 컬렉션
    - 세 서비스 운영비: gelly docs/handover/artifacts/three-services-opcosts.html (capabilities: db)
      데이터: zip의 three-services-opcosts/costs, settings → 같은 컬렉션

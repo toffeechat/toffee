@@ -1,6 +1,6 @@
 # 사업화 일정 — 지금부터 첫 매출까지
 
-> 체크리스트 페이지: [토피 사업화 일정](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) · 계정·비용: [사업화 장부](https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR) — Claude가 진행될 때마다 같이 갱신
+> 체크리스트 페이지: [토피 사업 본부](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6)(2026-10-21 사업 계획과 합침 — 할 일·정할 것·돈·서버 탭) · 계정·비용: [사업화 장부](https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR) — Claude가 진행될 때마다 같이 갱신
 
 2026-09-29 작성. **"이제 뭘 해야 하지?"를 이 문서 하나로 답하는 것**이 목적이다. 기능이 어디까지 됐는지는
 [`STATUS.md`](../../STATUS.md), 계정·인프라 결정의 자세한 이유는 [`ops-infra-backlog.md`](./ops-infra-backlog.md),
@@ -184,7 +184,7 @@
 **판단 지점(게이트, 2026-10-19 — 진행하면서 고쳐 나감)**
 - **11/15**: 태국어 제안서·메일로 1차 5곳 발송 완료 → 못 하면 오픈을 3월로.
 - **11/30**: 최소 1곳에서 파일럿 의향 → 있으면 12월에 법인 설립 시작(5단계, D-U-N-S·애플 법인 전환은 설립 당일 신청), 0곳이면 방향 점검 — 사업자 등록 전이라 예비창업패키지 신청 가능
-  ("토피 사업 계획" 페이지 https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR 기준. 10-19에 12/5로 잘못 적었던 것 정정).
+  ("토피 사업 계획" 페이지 기준 — 2026-10-21부터 사업 본부 https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6 로 합침. 10-19에 12/5로 잘못 적었던 것 정정).
 - 그 뒤: 1월 초 계약 서명·아티스트 자료 → 1월 중순 스토어 제출(실존 인물 권리 증빙 = 계약서) → 2월 오픈.
 
 **소속사 답과 상관없이 지금 할 일**: 태국어 번역(유료 원어민 검수는 안 함, 2026-10-20), 법무사·변호사 견적과 소속사 계약서 틀, 1차 남은 개발
