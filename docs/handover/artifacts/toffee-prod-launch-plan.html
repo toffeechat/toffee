@@ -199,7 +199,7 @@ td:first-child { font-weight: 600; white-space: nowrap; }
       <thead><tr><th>구성</th><th>지금(데모)</th><th>운영</th></tr></thead>
       <tbody>
         <tr><td>API 서버</td><td>Railway <code>toffee-demo</code>, <code>NODE_ENV=development</code>, 입장 코드 로그인·결제 없는 구독 켜짐, 매일 새벽 초기화</td><td>Railway 새 프로젝트(싱가포르), <code>NODE_ENV=production</code> — 테스트 로그인·샌드박스 구독을 켜 두면 서버가 아예 안 켜짐(설정 점검). 메모리 1GB 이상</td></tr>
-        <tr><td>주소</td><td><code>api-demo.toffeechat.app</code> / <code>demo.toffeechat.app</code></td><td>추천 <code>api.toffeechat.app</code> / <code>app.toffeechat.app</code>(소속사·운영자 PC 웹)</td></tr>
+        <tr><td>주소</td><td><code>api-demo.toffeechat.app</code> / <code>demo.toffeechat.app</code></td><td><code>api.toffeechat.app</code> / <code>app.toffeechat.app</code>(소속사·운영자 PC 웹) — 10-21 확정</td></tr>
         <tr><td>DB</td><td>데모 Postgres, 가상 아티스트·팬 데이터</td><td>새 Postgres, 자동 백업 켜고 복구 한 번 해 보기. <code>DEMO_*</code> 비움</td></tr>
         <tr><td>파일 저장소</td><td>R2 버킷 <code>toffee-demo</code></td><td>새 비공개 버킷(예: <code>toffee-media</code>) + 새 토큰, CORS는 운영 웹 주소</td></tr>
         <tr><td>웹 화면</td><td>Cloudflare Pages <code>toffee-demo</code></td><td>새 Pages 프로젝트, 빌드 때 운영 API 주소</td></tr>
@@ -220,7 +220,7 @@ td:first-child { font-weight: 600; white-space: nowrap; }
     <h2>운영 전에 고쳐야 하는 것</h2>
     <p class="lede">코드·설정 파일을 직접 확인한 결과입니다. 아래 체크리스트에 <span class="chip found">조사 발견</span> 표시로 들어가 있습니다.</p>
     <div class="issues">
-      <div class="issue"><span class="sev ok">고침</span><p>운영 빌드 프로필에 서버 주소가 없어서, 그대로 빌드했다면 스토어 앱이 <code>localhost:3000</code>에 붙었을 것 — 추천 주소(<code>api.toffeechat.app</code>·<code>app.toffeechat.app</code>)를 잠정으로 넣음. 주소를 바꾸면 이 두 줄만</p><span class="where">app/eas.json production · app/src/lib/env.ts</span></div>
+      <div class="issue"><span class="sev ok">고침</span><p>운영 빌드 프로필에 서버 주소가 없어서, 그대로 빌드했다면 스토어 앱이 <code>localhost:3000</code>에 붙었을 것 — 운영 주소(<code>api.toffeechat.app</code>·<code>app.toffeechat.app</code>, 10-21 확정)를 넣음</p><span class="where">app/eas.json production · app/src/lib/env.ts</span></div>
       <div class="issue"><span class="sev crit">필수</span><p>운영 빌드가 찾는 Firebase 설정 파일(<code>GoogleService-Info.plist</code>, <code>google-services.json</code>)이 없음 — 없으면 운영 빌드 자체가 실패</p><span class="where">app/app.config.ts googleServicesFile</span></div>
       <div class="issue"><span class="sev crit">필수</span><p>운영 빌드의 카카오·네이버·LINE·구글 iOS 키(<code>_PROD</code>)가 전부 비어 있음 — 비면 그 로그인 버튼이 안 보임(애플만 남음)</p><span class="where">app/eas.json · app/.env.example</span></div>
       <div class="issue"><span class="sev crit">필수</span><p>첫 운영자를 만들 방법이 없음 — 운영 서버엔 입장 코드 로그인이 없고, 역할 변경은 운영자만 할 수 있음. 소셜 로그인으로 가입한 내 계정을 운영자로 올리는 1회용 명령이 필요</p><span class="where">backend/scripts (없음)</span></div>
@@ -255,7 +255,7 @@ td:first-child { font-weight: 600; white-space: nowrap; }
       <div class="card">
         <h3>내가 정해야 하는 것(추천안)</h3>
         <ul>
-          <li><b>운영 주소</b> — <code>api.</code>·<code>app.toffeechat.app</code> (잠정 적용함)</li>
+          <li><b>운영 주소</b> — <code>api.</code>·<code>app.toffeechat.app</code> <b>확정(10-21)</b>, 앱 운영 빌드 설정에 넣어 둠</li>
           <li><b>오픈 날짜</b> — 2월 둘째~셋째 주 평일, 소속사 홍보 일정에 맞춤</li>
           <li><b>나라별 가격</b> — 상품 등록 전에. 한국은 버블·위버스보다 낮게, 필리핀 등은 약 40% 낮게</li>
           <li><b>소속사 배분율</b> — 계약서와 운영자 화면 값이 같아야 함</li>
