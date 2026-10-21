@@ -33,7 +33,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '환불받을 수 있나요?',
-          a: '결제(자동 갱신 결제 포함) 후 7일 안이면 전액 환불을 요청할 수 있어요. App Store 결제는 Apple 환불 요청 페이지(reportaproblem.apple.com)에서, Google Play 결제는 Google Play 또는 토피 고객센터로 요청해 주세요. 또 결제한 이용 기간 동안 아티스트 메시지가 하나도 없었거나, 아티스트 활동이 종료돼 결제 후 14일 안에 구독할 수 없게 되면 구독 관리에서 환불을 요청할 수 있어요.',
+          a: '결제(자동 갱신 결제 포함) 후 7일 안이면 전액 환불을 요청할 수 있어요. App Store 결제는 Apple 환불 요청 페이지(reportaproblem.apple.com)에서, Google Play 결제는 Google Play 또는 토피 고객센터로 요청해 주세요. 또 결제한 이용 기간 동안 아티스트 메시지가 하나도 없었거나, 아티스트 활동이 종료돼 결제 후 14일 안에 구독할 수 없게 되면 구독 관리에서 환불을 요청할 수 있어요. 단, 활동 종료 예정 안내를 받은 뒤 종료일 전에 결제된 구독료는 활동 종료 환불 대상이 아니에요(7일 안 환불은 그대로).',
         },
         {
           q: '해지했다가 다시 구독하면 예전 대화가 보이나요?',
@@ -90,7 +90,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Can I get a refund?',
-          a: 'You can request a full refund within 7 days of a payment (including auto-renewals). For App Store payments, use Apple’s refund page (reportaproblem.apple.com); for Google Play payments, use Google Play or Toffee support. You can also request a refund in Manage subscriptions if the artist sent no messages during the paid period, or if the artist ended their activity within 14 days after you paid.',
+          a: 'You can request a full refund within 7 days of a payment (including auto-renewals). For App Store payments, use Apple’s refund page (reportaproblem.apple.com); for Google Play payments, use Google Play or Toffee support. You can also request a refund in Manage subscriptions if the artist sent no messages during the paid period, or if the artist ended their activity within 14 days after you paid. However, payments made after an activity-end notice and before the end date aren’t eligible for the activity-end refund (the 7-day refund still applies).',
         },
         {
           q: 'If I subscribe again, can I see my old conversation?',
@@ -147,7 +147,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'ขอคืนเงินได้ไหม',
-          a: 'ขอคืนเงินเต็มจำนวนได้ภายใน 7 วันหลังชำระเงิน (รวมการต่ออายุอัตโนมัติ) การชำระผ่าน App Store ให้ขอที่หน้าคืนเงินของ Apple (reportaproblem.apple.com) ส่วน Google Play ให้ขอผ่าน Google Play หรือฝ่ายบริการลูกค้าของ Toffee นอกจากนี้ หากศิลปินไม่ได้ส่งข้อความเลยตลอดรอบที่ชำระ หรือศิลปินยุติกิจกรรมภายใน 14 วันหลังชำระเงิน สามารถขอคืนเงินได้ที่จัดการการสมัครสมาชิก',
+          a: 'ขอคืนเงินเต็มจำนวนได้ภายใน 7 วันหลังชำระเงิน (รวมการต่ออายุอัตโนมัติ) การชำระผ่าน App Store ให้ขอที่หน้าคืนเงินของ Apple (reportaproblem.apple.com) ส่วน Google Play ให้ขอผ่าน Google Play หรือฝ่ายบริการลูกค้าของ Toffee นอกจากนี้ หากศิลปินไม่ได้ส่งข้อความเลยตลอดรอบที่ชำระ หรือศิลปินยุติกิจกรรมภายใน 14 วันหลังชำระเงิน สามารถขอคืนเงินได้ที่จัดการการสมัครสมาชิก ทั้งนี้ การชำระเงินหลังได้รับประกาศยุติกิจกรรมและก่อนวันยุติจะไม่ได้รับเงินคืนกรณียุติกิจกรรม (ยังขอคืนเงินภายใน 7 วันได้ตามปกติ)',
         },
         {
           q: 'ถ้าสมัครใหม่ จะเห็นแชทเก่าไหม',
@@ -204,7 +204,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '返金してもらえますか？',
-          a: 'お支払い（自動更新を含む）から7日以内なら全額返金を申請できます。App Storeでのお支払いはAppleの返金リクエストページ（reportaproblem.apple.com）、Google Playでのお支払いはGoogle PlayまたはToffeeのサポートへお申し込みください。また、支払った期間中にアーティストからのメッセージが一度もなかった場合や、お支払いから14日以内にアーティストの活動が終了した場合も、購読管理から返金を申請できます。',
+          a: 'お支払い（自動更新を含む）から7日以内なら全額返金を申請できます。App Storeでのお支払いはAppleの返金リクエストページ（reportaproblem.apple.com）、Google Playでのお支払いはGoogle PlayまたはToffeeのサポートへお申し込みください。また、支払った期間中にアーティストからのメッセージが一度もなかった場合や、お支払いから14日以内にアーティストの活動が終了した場合も、購読管理から返金を申請できます。ただし、活動終了予定のお知らせ後、終了日より前に行われた決済は、活動終了による返金の対象外です（7日以内の返金はそのまま適用）。',
         },
         {
           q: '解約後にまた購読すると、以前のトークは見られますか？',
@@ -261,7 +261,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '可以退款吗？',
-          a: '付款（包括自动续订）后7天内可申请全额退款。App Store 付款请在 Apple 退款页面（reportaproblem.apple.com）申请，Google Play 付款请通过 Google Play 或 Toffee 客服申请。此外，如在已付费期间内艺人未发送任何消息，或付款后14天内艺人停止活动，也可在订阅管理中申请退款。',
+          a: '付款（包括自动续订）后7天内可申请全额退款。App Store 付款请在 Apple 退款页面（reportaproblem.apple.com）申请，Google Play 付款请通过 Google Play 或 Toffee 客服申请。此外，如在已付费期间内艺人未发送任何消息，或付款后14天内艺人停止活动，也可在订阅管理中申请退款。但收到活动结束预告后、结束日之前的付款不属于活动结束退款范围（7 天内退款仍然适用）。',
         },
         {
           q: '取消后再次订阅，能看到以前的聊天吗？',
@@ -318,7 +318,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '可以退款嗎？',
-          a: '付款（包含自動續訂）後7天內可申請全額退款。App Store 付款請在 Apple 退款頁面（reportaproblem.apple.com）申請，Google Play 付款請透過 Google Play 或 Toffee 客服申請。此外，若在已付費期間內藝人未傳送任何訊息，或付款後14天內藝人停止活動，也可在訂閱管理中申請退款。',
+          a: '付款（包含自動續訂）後7天內可申請全額退款。App Store 付款請在 Apple 退款頁面（reportaproblem.apple.com）申請，Google Play 付款請透過 Google Play 或 Toffee 客服申請。此外，若在已付費期間內藝人未傳送任何訊息，或付款後14天內藝人停止活動，也可在訂閱管理中申請退款。但收到活動結束預告後、結束日之前的付款不適用活動結束退款（7 天內退款仍然適用）。',
         },
         {
           q: '取消後再次訂閱，看得到以前的聊天嗎？',
@@ -375,7 +375,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Tôi có được hoàn tiền không?',
-          a: 'Bạn có thể yêu cầu hoàn tiền toàn bộ trong vòng 7 ngày sau khi thanh toán (kể cả tự động gia hạn). Thanh toán qua App Store hãy yêu cầu tại trang hoàn tiền của Apple (reportaproblem.apple.com); thanh toán qua Google Play hãy yêu cầu qua Google Play hoặc bộ phận hỗ trợ của Toffee. Ngoài ra, nếu nghệ sĩ không gửi tin nhắn nào trong kỳ đã thanh toán, hoặc nghệ sĩ ngừng hoạt động trong vòng 14 ngày sau khi bạn thanh toán, bạn có thể yêu cầu hoàn tiền trong Quản lý gói đăng ký.',
+          a: 'Bạn có thể yêu cầu hoàn tiền toàn bộ trong vòng 7 ngày sau khi thanh toán (kể cả tự động gia hạn). Thanh toán qua App Store hãy yêu cầu tại trang hoàn tiền của Apple (reportaproblem.apple.com); thanh toán qua Google Play hãy yêu cầu qua Google Play hoặc bộ phận hỗ trợ của Toffee. Ngoài ra, nếu nghệ sĩ không gửi tin nhắn nào trong kỳ đã thanh toán, hoặc nghệ sĩ ngừng hoạt động trong vòng 14 ngày sau khi bạn thanh toán, bạn có thể yêu cầu hoàn tiền trong Quản lý gói đăng ký. Tuy nhiên, các khoản thanh toán sau khi có thông báo dừng hoạt động và trước ngày dừng không được hoàn tiền do dừng hoạt động (vẫn áp dụng hoàn tiền trong 7 ngày).',
         },
         {
           q: 'Nếu đăng ký lại, tôi có xem được cuộc trò chuyện cũ không?',
@@ -432,7 +432,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '¿Puedo pedir un reembolso?',
-          a: 'Puedes pedir el reembolso completo dentro de los 7 días posteriores a un pago (incluidas las renovaciones automáticas). Para pagos en App Store, usa la página de reembolsos de Apple (reportaproblem.apple.com); para pagos en Google Play, usa Google Play o el soporte de Toffee. También puedes pedir un reembolso en Gestionar suscripciones si el artista no envió ningún mensaje durante el periodo pagado, o si el artista terminó su actividad en los 14 días posteriores a tu pago.',
+          a: 'Puedes pedir el reembolso completo dentro de los 7 días posteriores a un pago (incluidas las renovaciones automáticas). Para pagos en App Store, usa la página de reembolsos de Apple (reportaproblem.apple.com); para pagos en Google Play, usa Google Play o el soporte de Toffee. También puedes pedir un reembolso en Gestionar suscripciones si el artista no envió ningún mensaje durante el periodo pagado, o si el artista terminó su actividad en los 14 días posteriores a tu pago. Sin embargo, los pagos realizados después del aviso de fin de actividad y antes de la fecha de fin no tienen ese reembolso (el reembolso de 7 días sigue aplicando).',
         },
         {
           q: 'Si me vuelvo a suscribir, ¿puedo ver mi conversación anterior?',
@@ -489,7 +489,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Posso pedir reembolso?',
-          a: 'Você pode pedir o reembolso total em até 7 dias após um pagamento (incluindo renovações automáticas). Para pagamentos na App Store, use a página de reembolso da Apple (reportaproblem.apple.com); para pagamentos no Google Play, use o Google Play ou o suporte da Toffee. Você também pode pedir reembolso em Gerenciar assinaturas se o artista não enviou nenhuma mensagem durante o período pago, ou se o artista encerrou as atividades em até 14 dias após o seu pagamento.',
+          a: 'Você pode pedir o reembolso total em até 7 dias após um pagamento (incluindo renovações automáticas). Para pagamentos na App Store, use a página de reembolso da Apple (reportaproblem.apple.com); para pagamentos no Google Play, use o Google Play ou o suporte da Toffee. Você também pode pedir reembolso em Gerenciar assinaturas se o artista não enviou nenhuma mensagem durante o período pago, ou se o artista encerrou as atividades em até 14 dias após o seu pagamento. Porém, pagamentos feitos depois do aviso de encerramento e antes da data final não têm esse reembolso (o reembolso de 7 dias continua valendo).',
         },
         {
           q: 'Se eu assinar de novo, consigo ver a conversa antiga?',

@@ -1811,3 +1811,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 로컬에서 고친 웹을 데모 서버에 붙여 볼 땐 `EXPO_PUBLIC_API_URL=https://api-demo.toffeechat.app npx expo export -p web` 후 SPA로 서빙.
   localhost 출처에선 구글 로그인 버튼 iframe이 `gis is not defined`를 던짐(구글 쪽, 허용 출처가 아니라서) — e2e 마지막 화면 오류 검사에 걸리니
   e2e는 배포된 데모 주소로 돌리거나 이 오류를 무시할 것. R2 업로드도 localhost 출처는 CORS로 막힘.
+
+## 활동 종료 환불 — 예정 알림 뒤 결제 제외 (2026-10-21)
+
+- `Actor.retireNoticedAt`: `AdminActorsService.setRetireAt`이 `retireAt`을 처음 넣을 때 `now`, 바꿀 땐 기존 값 유지, `null`(취소) 땐 지움.
+  `setRetired(false)`(재개)도 지움, `setRetired(true)`·`retireDue`는 유지(환불 판단에 필요).
+- `RefundService.roomsEnded()`가 `{ at, noticedAt }` 반환 — 방마다 먼저 끝난 행(방 자체 또는 CP 멤버)의 `retiredAt`/`retireNoticedAt`, 묶음은 그중 가장 늦게
+  끝난 방. `noticedAt <= chargedAt < at`이면 `ACTOR_RETIRED` 후보에서 빠지고 `STAR_IDLE` 판단으로 넘어감. 종료 뒤 결제(`chargedAt >= at`)는 알림과 무관하게 후보.
+- 문구: `push-messages.ts` `retiringFanBody`·`retiredFanBody`, 앱 `actorProfile.retiringHint`, `legal-texts.ts` 3조 ③, `faq-texts.ts` 환불 답변(9개 언어).
+  `LEGAL_VERSION`은 출시 전 초안이라 안 올림(10-14 방침과 같음).
+
