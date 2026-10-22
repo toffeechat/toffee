@@ -21,6 +21,8 @@ const THB_RATE: Record<string, number> = {
   VND: 780,
   SGD: 0.039,
   MYR: 0.13,
+  PHP: 1.75, // 2026-10-22 추가 — 필리핀은 집중 시장인데 달러로 보였음
+  IDR: 490,
 };
 
 const REGION_CURRENCY: Record<string, string> = {
@@ -35,13 +37,15 @@ const REGION_CURRENCY: Record<string, string> = {
   VN: 'VND',
   SG: 'SGD',
   MY: 'MYR',
+  PH: 'PHP',
+  ID: 'IDR',
 };
 
 // 웹에서 브라우저 언어가 지역 없이 "ko"처럼만 오면 언어로 짐작
-const LANGUAGE_REGION: Record<string, string> = { ko: 'KR', ja: 'JP', th: 'TH', vi: 'VN', zh: 'CN', en: 'US' };
+const LANGUAGE_REGION: Record<string, string> = { ko: 'KR', ja: 'JP', th: 'TH', vi: 'VN', zh: 'CN', en: 'US', fil: 'PH', tl: 'PH', id: 'ID' };
 
-/** 반올림 단위 — 원은 100원, 엔은 10엔, 동은 1,000동 단위로(나머지는 통화 기본 소수 자리) */
-const ROUND_STEP: Record<string, number> = { KRW: 100, JPY: 10, VND: 1000, TWD: 1, THB: 1 };
+/** 반올림 단위 — 원은 100원, 엔은 10엔, 동·루피아는 1,000 단위로(나머지는 통화 기본 소수 자리) */
+const ROUND_STEP: Record<string, number> = { KRW: 100, JPY: 10, VND: 1000, IDR: 1000, TWD: 1, THB: 1, PHP: 1 };
 
 /** 기기 지역의 통화(지원 목록에 없으면 USD). 테스트에서 바꿀 수 있게 인자로 locale을 받음 */
 export function displayCurrency(locale = getLocales()[0]): string {

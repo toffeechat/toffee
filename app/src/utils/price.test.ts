@@ -21,4 +21,10 @@ describe('표시 통화(2026-10-12)', () => {
     expect(formatPrice(9900, 'JPY', 'ja-JP')).toBe('≈ ￥450');
     expect(formatPrice(9900, 'USD', 'en-US')).toBe('≈ $2.97');
   });
+  it('필리핀 페소·인도네시아 루피아(2026-10-22)', () => {
+    expect(displayCurrency({ languageCode: 'en', regionCode: 'PH', currencyCode: 'PHP' } as never)).toBe('PHP');
+    expect(displayCurrency({ languageCode: 'id', regionCode: null, currencyCode: null } as never)).toBe('IDR');
+    expect(formatPrice(14900, 'PHP', 'en-PH')).toBe('≈ ₱261');
+    expect(formatPrice(14900, 'IDR', 'id-ID')).toMatch(/^≈ Rp\s73\.000$/);
+  });
 });
