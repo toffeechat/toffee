@@ -298,7 +298,7 @@ const PLATFORM: Record<string, string> = { IOS: '애플', ANDROID: '구글', SAN
 const REFUND_REASON: Record<string, string> = { STAR_IDLE: '아티스트 미발송', ACTOR_RETIRED: '활동 종료' };
 const day = (iso: string) => new Date(iso).toLocaleDateString('ko-KR');
 const at = (iso: string) => new Date(iso).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
-const baht = (cents: number) => `฿${(cents / 100).toLocaleString('ko-KR')}`;
+const baht = (cents: number) => `${cents < 0 ? '-' : ''}฿${(Math.abs(cents) / 100).toLocaleString('ko-KR')}`;
 const short = (text: string | null, max = 60) => (!text ? '' : text.length > max ? `${text.slice(0, max)}…` : text);
 const roomName = (actor: { legalName: string; kind?: 'SOLO' | 'COUPLE' }) => `${actor.legalName}${actor.kind === 'COUPLE' ? ' [CP]' : ''}`;
 
