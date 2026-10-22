@@ -97,7 +97,7 @@
 | 구글 클라우드 조직 | 지금은 "조직 없음"(토피 Gmail 소유 프로젝트 `toffee-c6cba` — Firebase·구글 로그인 공용, 2026-10-02) — 1인 팀엔 문제없음 | 법인 설립 후 팀원이 생기면 `toffeechat.app` 도메인으로 무료 Cloud Identity를 만들어 조직을 생성하고 프로젝트를 옮길지 검토(프로젝트 ID·로그인 키는 그대로) |
 | 아티스트 연결 링크 주소·예약 오픈(2026-10-20) | 링크는 `웹주소/link/<토큰>` — 운영자가 연 웹 주소를 씀(앱에서 만들면 데모 주소). 예약 오픈은 공개 시각이 되면 자동으로 열림 | 운영 웹 주소가 정해지면 앱 빌드 환경 변수 `EXPO_PUBLIC_WEB_URL`에 넣기. 예약 오픈하는 아티스트·묶음의 스토어 상품은 공개 시각 전에 심사 통과해 두기. 필요하면 서버 `ACTOR_LINK_TTL_DAYS`(링크 유효 일수, 기본 14) |
 | 영상 스트리밍 | 당분간 불필요(압축 업로드 + 다운로드 재생) | 영상이 많아지면 Cloudflare Stream 검토 |
-| 운영 주소(2026-10-21 사용자 확정) | 서버 `api.toffeechat.app`, 소속사·운영자 PC 웹 `app.toffeechat.app` — 앱 `eas.json` production 프로필의 `EXPO_PUBLIC_API_URL`·`EXPO_PUBLIC_WEB_URL`에 넣어 둠 | 운영 Railway·Cloudflare Pages를 만들 때 이 주소로 연결, 서버 `API_PUBLIC_URL`·`WEB_LOGIN_ORIGINS`, 각 로그인 콘솔 돌아올 주소, 랜딩 약관 링크. 순서는 [운영 전환 계획](https://claude.ai/artifact/J5AfcyX1PPQJsAvHBGkmmq) 2단계 |
+| 운영 주소(2026-10-21 사용자 확정) | 서버 `api.toffeechat.app`, 소속사·운영자 PC 웹 `app.toffeechat.app` — 앱 `eas.json` production 프로필의 `EXPO_PUBLIC_API_URL`·`EXPO_PUBLIC_WEB_URL`에 넣어 둠 | 운영 Railway·Cloudflare Pages를 만들 때 이 주소로 연결, 서버 `API_PUBLIC_URL`·`WEB_LOGIN_ORIGINS`, 각 로그인 콘솔 돌아올 주소, 랜딩 약관 링크. 순서는 [사업 본부](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) "운영 전환" 탭 2단계 |
 | 운영 기능 설정(2026-10-20) | 코드 완료 — 값만 넣으면 동작 | 👤 운영 서버: `ADMIN_ALERT_EMAIL`(운영자 알림 받을 주소, 저장소에 적지 말 것), 필요하면 `ADMIN_ALERT_KINDS`, `ADMIN_MFA_HOURS`(기본 12). 구글 Play 서비스 계정에 **구독 관리(주문·구독 관리) 권한** — 활동 종료 때 구독 갱신 해지에 필요. 앱 빌드 변수 `EXPO_PUBLIC_IOS_APP_STORE_ID`(앱스토어 등록 후 — 강제 업데이트 화면이 바로 앱 페이지로). 애플 상품 판매 중지가 기존 구독 갱신을 멈추는지 샌드박스로 확인 |
 
 ## 3. 사업·법무

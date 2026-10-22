@@ -109,6 +109,9 @@ gelly docs/handover/README.md와 docs/deployment-readiness-plan.md 위쪽(다음
   문서 id 그대로 넣은 뒤 다시 읽어 개수(장부 `accounts` 16·`expenses` 10·`meta` 1, 일정 `tasks` 11, 운영비 `costs` 14·`settings` 1)와
   내용(53건 전부 백업 파일과 필드 단위 일치)을 확인했다. `CLAUDE.md` 5번 규칙, `launch-roadmap.md`(맨 위·체크리스트 안내·Gmail 줄),
   `ops-infra-backlog.md`의 장부 링크를 새 주소로 바꿈. 실기기 체크리스트는 데이터 없이 페이지만.
+- **2026-10-22 아티팩트 정리(11개 → 6개, 사용자 요청)**: 남긴 것 — 사업 본부(6WgyADTTudgmSV3tdWvKK6), 사업화 장부(RinLbRwEas5gqHdZ7PzzHR), 토피 소속사(LGkCkGRdmGSF2xdvKXQqwp, 옛 "소속사 연락처"에 "소속사 제안"을 합침), 소속사 제안서 한국어판(PL7ENDwuzCHg2YiYv9zgNg), 실기기 테스트(7yFZj5kvHj1rCtfjQ7GrUc), 세 서비스 운영비(BLYi5jU21RPAiwr87eBWWc).
+  지운 것과 백업 — 운영 전환 계획(J5Afcy…, 본부 "운영 전환" 탭으로, `artifacts/toffee-prod-launch-plan.html`), 설립 전 지출 처리(GSj89…, 본부 "돈" 탭으로, `artifacts/toffee-pre-incorporation-expenses-until-2026-10-22.html`),
+  토피 소속사 제안(GZbpq…, `artifacts/toffee-agency-proposal-until-2026-10-22.html`), 제안서 영어판(8cC6F…)·태국어판(Asz8E…, `artifacts/decks/` — 이미지는 백업 안 됨, 한국어판에서 새로 만들 것). 멘토용 A4(DgQq55…)는 이미 열리지 않았고 다시 두지 않기로 함.
 - "Design System"(https://claude.ai/artifact/7VV1nWvFzpd9mTcCt7MTPD)은 빈 시스템(내용 파일 없음)이라 백업할 것이 없다.
 
 ---

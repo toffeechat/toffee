@@ -1,0 +1,144 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>설립 전 지출 처리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 한 열 문서형: 결론 → 조건 → 한계 → 체크리스트 → 기록 양식 */
+:root{
+  --bg:#FFFFFF; --panel:#F4F6FB; --tint:#DCE1FF; --fg:#0F1115; --muted:#5A6072; --line:#E2E5EF;
+  --accent:#4E5BD6; --warn:#9A5B00; --warn-bg:#FFF4E0; --ok:#1F7A4D;
+  --sans:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1115; --panel:#181B22; --tint:#252B48; --fg:#E9EBF2; --muted:#9AA0B2; --line:#2A2E39;
+  --accent:#9AA6FF; --warn:#F2B860; --warn-bg:#2E2412; --ok:#6FD3A0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1115; --panel:#181B22; --tint:#252B48; --fg:#E9EBF2; --muted:#9AA0B2; --line:#2A2E39;
+  --accent:#9AA6FF; --warn:#F2B860; --warn-bg:#2E2412; --ok:#6FD3A0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15.5px;line-height:1.7;padding:0 16px}
+main{max-width:760px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:36px}
+h1{font-size:28px;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:19px;margin:0 0 10px;text-wrap:balance}
+p{margin:0}
+section{display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.lead{font-size:17px}
+.verdict{background:var(--tint);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.verdict strong{color:var(--accent)}
+.note{background:var(--warn-bg);color:var(--fg);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px}
+.note b{color:var(--warn)}
+ul,ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.timeline{display:grid;grid-template-columns:1fr;gap:8px;font-size:14.5px}
+.tl{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 14px;background:var(--panel);border-radius:8px}
+.tl span:first-child{font-family:var(--mono);color:var(--muted)}
+.yes{color:var(--ok);font-weight:700}.no{color:var(--warn);font-weight:700}
+.check li{list-style:none;position:relative;padding-left:4px}
+.check{padding-left:1.4em}
+.check li::before{content:"";position:absolute;left:-1.3em;top:.45em;width:12px;height:12px;border:1.5px solid var(--accent);border-radius:3px}
+.memo{font-family:var(--sans);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;white-space:pre-wrap;font-size:14px;margin:0}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;font-size:13.5px;min-width:900px;width:100%}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--panel);font-weight:500;color:var(--muted);white-space:nowrap}
+tr.first td{background:color-mix(in srgb,var(--tint) 45%,transparent)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.muted{color:var(--muted);font-size:13.5px}
+code{font-family:var(--mono);font-size:.9em}
+a{color:var(--accent)}
+@media (max-width:520px){.tl{grid-template-columns:1fr;gap:2px}h1{font-size:24px}}
+</style>
+
+<main>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <div class="eyebrow">Toffee(토피) · 사업화 1단계 · 2026-10-12 작성</div>
+    <h1>법인 설립 전에 쓴 돈, 나중에 비용처리 될까?</h1>
+    <p class="lead">경쟁 서비스 조사로 결제한 버블 구독(5,000원)을 예로, 조건과 한계, 지금부터 챙겨 둘 증빙, 앞으로 쓸 기록 양식을 정리했습니다.</p>
+  </header>
+
+  <section>
+    <div class="verdict">
+      <p><strong>짧은 답: 조건부로 됩니다.</strong> 사업 준비에 쓴 돈이고 증빙이 있으면, 법인을 세운 뒤 첫 사업연도 비용(손금)으로 넣을 수 있습니다.</p>
+      <p>다만 <strong>“첫 사업연도가 1년을 넘으면 안 된다”</strong>는 기간 제한이 있어서, 언제 설립하고 결산월을 몇 월로 하느냐에 따라 버블 10월분은 들어갈 수도, 빠질 수도 있습니다.</p>
+    </div>
+    <p class="note"><b>세무사 확인 필요.</b> 이 페이지는 일반적인 기준을 정리한 것이고 세무 자문이 아닙니다. 실제로 어디까지 넣을지는 설립 후 세무사 첫 상담에서 확정합니다(아래 “세무사에게 물을 것”).</p>
+  </section>
+
+  <section>
+    <h2>왜 되는지</h2>
+    <p>법인세법 시행령 제4조는 법인 설립 전에 생긴 비용이라도 <b>사실상 그 법인의 것</b>으로 귀속시키면, 첫 사업연도 손익에 넣을 수 있게 합니다. 이때 첫 사업연도의 시작일은 그 비용이 처음 생긴 날로 당겨지고, 대신 <b>첫 사업연도 전체가 1년을 넘을 수 없습니다.</b></p>
+    <p>버블 구독은 “개인이 팬으로 쓴 돈”이 아니라 “경쟁 서비스의 결제·구독·메시지 흐름을 조사한 돈”이라는 걸 보여줄 수 있어야 사업 관련 비용으로 인정됩니다. 그래서 영수증만큼 <b>목적 메모와 결과물</b>이 중요합니다.</p>
+  </section>
+
+  <section>
+    <h2>기간 제한이 실제로 뜻하는 것</h2>
+    <p>첫 지출일부터 첫 결산일까지가 1년 이내여야 합니다. 로드맵상 설립은 2027년 봄 예정이라, 결산월에 따라 이렇게 갈립니다.</p>
+    <div class="timeline">
+      <div class="tl"><span>12월 결산</span><span>첫 사업연도가 2027-12-31에 끝나므로 <b>2027-01-01 이후 지출만</b> 넣을 수 있음. 버블(2026-10-12)·도메인(10/1) 등 올해 지출은 <span class="no">빠짐</span></span></div>
+      <div class="tl"><span>9월 결산</span><span>2027-09-30에 끝나므로 <b>2026-10-01 이후 지출</b>까지 가능. 버블·도메인·데모 서버 모두 <span class="yes">들어감</span></span></div>
+      <div class="tl"><span>설립이 늦어지면</span><span>2027년 10월 이후 설립이면 결산월과 상관없이 올해 10월 지출은 1년을 넘어 빠짐</span></div>
+    </div>
+    <p class="muted">결산월은 정관에서 정하고, 12월이 아니어도 됩니다. 다만 결산월은 세무 일정 전체에 영향을 주니 설립 전 지출 금액만 보고 고르진 말고 세무사와 같이 정하세요. 설립 전 지출이 커질수록(노트북, 법무사, 외주 등) 이 선택이 중요해집니다.</p>
+  </section>
+
+  <section>
+    <h2>한계</h2>
+    <ul>
+      <li><b>부가세는 돌려받기 어렵습니다.</b> 5,000원 안에 부가세(약 455원)가 들어 있지만, 앱마켓 결제는 세금계산서가 나오지 않고, 사업자등록 전 매입세액 공제는 등록 기한 조건까지 맞아야 합니다. 예비창업패키지 때문에 사업자등록을 미루기로 했으니 부가세 공제는 기대하지 않고 금액 전체를 비용으로만 넣는다고 보면 됩니다.</li>
+      <li><b>당장 줄어드는 세금은 작습니다.</b> 5,000원이 비용으로 들어가면 법인세(최저 구간 9%, 지방소득세 별도) 기준 약 450원 효과입니다. 첫해는 적자일 가능성이 커서 세금이 바로 줄기보다 결손금으로 넘어가 나중 이익에서 빠집니다. 금액보다 <b>기록 습관</b>을 지금 잡아 두는 게 목적입니다.</li>
+      <li><b>정부 지원금 정산과는 별개입니다.</b> 예비창업패키지 등은 협약 전 지출을 보통 인정하지 않습니다. 이 지출은 법인세 비용처리용이고, 지원금으로 돌려받는 돈이 아닙니다.</li>
+      <li><b>개인 돈으로 낸 것이라 정산 처리가 필요합니다.</b> 설립 후 법인이 대표에게 갚을 돈(가수금 등)으로 잡거나 돌려주는 방식이 됩니다. 처리 방법은 세무사가 정합니다.</li>
+      <li><b>개인 소비와 섞이면 인정받기 어렵습니다.</b> 조사 기간이 끝나도 계속 구독한다면 그 뒤 결제분은 개인 소비로 보는 게 안전합니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>지금 챙겨 둘 것</h2>
+    <ul class="check">
+      <li><b>App Store 영수증 저장</b>: 애플 결제 메일의 영수증 또는 reportaproblem.apple.com 구매 내역을 PDF나 스크린샷으로 저장(다음 결제일은 아이폰 설정 → Apple ID → 구독). 나중에 구글 Play로 결제한 건 Google Play → 결제 및 구독 → 예산 및 내역</li>
+      <li><b>카드 명세서 해당 줄</b>: 다음 달 명세서가 나오면 이 결제 줄을 캡처(해외 결제는 원화 금액도 여기서 확인)</li>
+      <li><b>목적 메모</b>: 아래 예시처럼 왜 샀고 무엇을 봤는지 몇 줄</li>
+      <li><b>결과물 연결</b>: 이 구독으로 만든 “버블 대비 기능 격차 정리” 문서와 조사 스크린샷 위치를 기록</li>
+      <li><b>갱신일·해지 계획</b>: 정기결제라 다음 달에 또 빠집니다. 벤치마킹(약 2개월)이 끝나면 해지하고, 해지일도 적기</li>
+      <li><b>파일 이름 규칙</b>: <code>설립전비용/2026-10/2026-10-12_버블_5000원.pdf</code> 식으로 날짜·항목·금액</li>
+      <li><b>앞으로는 카드 하나로</b>: 사업 준비 지출은 정한 카드 하나로만 결제하면 나중에 명세서 정리가 쉬워집니다. 3만 원이 넘는 지출은 간이영수증 말고 카드 결제로 남기세요</li>
+    </ul>
+    <p class="muted">목적 메모 예시(그대로 복사해 쓰면 됩니다)</p>
+<pre class="memo">2026-10-12 버블 구독 1개월 5,000원 (애플 App Store 정기결제, 개인 카드)
+목적: Toffee(토피) 개발을 위한 경쟁 서비스 조사.
+  팬 구독 가입·결제·해지 흐름, 메시지·답장 규칙, 가격 표시 방식을 실제 사용자 입장에서 확인.
+기간: 2026-10 ~ 2026-11 (벤치마킹 끝나면 해지)
+결과물: 버블 대비 기능 격차 정리 문서, 화면 스크린샷
+결제자: 대표 개인 → 법인 설립 후 정산 예정</pre>
+  </section>
+
+  <section>
+    <h2>지출 기록 양식</h2>
+    <p>앞으로 사업 관련 지출은 이 칸대로 한 줄씩 적습니다. 엑셀 파일(<code>toffee-business/설립전_지출기록.xlsx</code>)에 같은 양식과 “작성 방법” 시트가 있고, 설립 후 세무사에게 이 파일과 영수증 폴더를 그대로 넘기면 됩니다. 결제했다고 말해 주시면 사업화 장부와 이 표에 같이 적어 둡니다.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>결제일</th><th>항목</th><th>금액</th><th>결제 수단·결제자</th><th>사업 목적</th><th>결과물·근거</th><th>증빙</th><th>정기결제</th></tr></thead>
+        <tbody>
+          <tr class="first"><td class="num">1</td><td class="num">2026-10-12</td><td>버블 구독 1개월<br><span class="muted">애플 App Store 결제, 운영사 디어유</span></td><td class="num">₩5,000</td><td>개인 카드 · 대표 개인</td><td>경쟁 서비스 조사: 구독·결제·해지 흐름, 메시지 기능 비교</td><td>버블 대비 기능 격차 정리 문서</td><td>앱마켓 영수증, 카드 명세서 <span class="no">받을 것</span></td><td>월간, 다음 결제 2026-11-12(추정), 조사 끝나면 해지</td></tr>
+          <tr><td class="num">2</td><td class="num">2026-10-01</td><td>도메인 toffeechat.app</td><td class="num">$8.20</td><td>개인 카드 · 대표 개인</td><td>서비스 주소·회사 메일</td><td>도메인 등록</td><td>Cloudflare 인보이스 <span class="no">받을 것</span></td><td>연간, 2027-10-01</td></tr>
+          <tr><td class="num">3</td><td class="num">2026-10-01</td><td>Railway Hobby(데모 서버·DB)</td><td class="num">$5.00</td><td>개인 카드 · 대표 개인</td><td>소속사 시연용 데모 서버</td><td>demo.toffeechat.app</td><td>Railway 인보이스 <span class="no">받을 것</span></td><td>월간, 2026-11-01</td></tr>
+          <tr><td class="num">4</td><td class="num">2026-10-02</td><td>Anthropic API 크레딧</td><td class="num">$5.50</td><td>개인 카드 · 대표 개인</td><td>데모 메시지 번역 테스트</td><td>번역 기능</td><td>Console 인보이스 <span class="no">받을 것</span></td><td>충전식</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">2~4번은 사업화 장부에 이미 있던 설립 전 지출을 같은 양식으로 옮긴 것입니다. 엑셀에는 거래처, 원화 청구액, 다음 결제일, 해지일, 증빙 파일 위치, 사업화 단계, 세무사 확인 메모 칸도 있습니다.</p>
+  </section>
+
+  <section>
+    <h2>세무사에게 물을 것</h2>
+    <ol>
+      <li>설립 전 지출을 첫 사업연도에 넣으려면 결산월을 몇 월로 하는 게 좋은지, 1년 범위 밖 지출은 어떻게 되는지</li>
+      <li>대표 개인 카드로 낸 돈을 법인이 어떻게 정산하는지(가수금 처리, 돌려받을 때 필요한 서류)</li>
+      <li>앱마켓·해외 서비스(달러 결제) 영수증과 카드 명세서만으로 증빙이 충분한지</li>
+      <li>이 표와 영수증 폴더를 그대로 넘기면 되는지, 더 적어야 할 칸이 있는지</li>
+    </ol>
+    <p class="muted">이 질문들은 사업화 일정 5단계 “세무사 기장 계약” 상담 목록에도 들어 있습니다.</p>
+  </section>
+</main>
+
+</body></html>
