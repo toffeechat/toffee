@@ -222,6 +222,7 @@ table.t tr.hl td{background:var(--accent-soft)}
 .links2 .lt{font-weight:600}
 .links2 .ld{font-size:13px;color:var(--muted);text-align:right}
 .tag.found{background:var(--bench-soft);color:var(--danger)}
+.st.new{background:var(--money-soft);color:var(--money)}
 #lpPhases .t-title,#lpPhases .t-detail,.issue,.issue code{overflow-wrap:anywhere;min-width:0}
 .lp-path{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .lp-path .step{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:13.5px}
@@ -264,6 +265,7 @@ table.t tr.hl td{background:var(--accent-soft)}
     <button class="tab" role="tab" data-tab="tasks" aria-controls="tab-tasks">할 일</button>
     <button class="tab" role="tab" data-tab="launch" aria-controls="tab-launch">운영 전환</button>
     <button class="tab" role="tab" data-tab="decide" aria-controls="tab-decide">정할 것</button>
+    <button class="tab" role="tab" data-tab="ideas" aria-controls="tab-ideas">아이디어</button>
     <button class="tab" role="tab" data-tab="money" aria-controls="tab-money">돈</button>
     <button class="tab" role="tab" data-tab="server" aria-controls="tab-server">서버</button>
     <button class="tab" role="tab" data-tab="biz" aria-controls="tab-biz">사업 요약</button>
@@ -496,6 +498,50 @@ table.t tr.hl td{background:var(--accent-soft)}
         <tr><td class="num">09-21</td><td>사업자 형태: 법인(주식회사)</td></tr>
       </tbody>
     </table></div>
+  </section>
+  </div>
+
+  <div class="tabpanel" id="tab-ideas" role="tabpanel" hidden>
+  <section class="panel" aria-labelledby="h-inbox" style="background:var(--bg);border:1px solid var(--line)">
+    <div class="sec-head"><h2 id="h-inbox">떠오른 아이디어 적어 두기</h2><p class="muted">폰에서 생각날 때 한 줄만 적어 두세요. 다음 세션에서 Claude가 저장소 <code>STATUS.md</code> 아이디어 보관함으로 옮기고, 1차·2차·보류 중 어디에 넣을지 같이 정해요.</p></div>
+    <form class="notes-form" id="ideaForm" style="grid-template-columns:1fr auto">
+      <textarea id="ideaText" placeholder="예: 아티스트별 LINE 스티커를 만들어 팔기" aria-label="아이디어"></textarea>
+      <button class="btn" id="ideaAdd" type="submit">적어 두기</button>
+    </form>
+    <ul class="notes" id="ideaList"><li class="empty">아직 적어 둔 아이디어가 없어요.</li></ul>
+  </section>
+
+  <section aria-labelledby="h-open">
+    <div class="sec-head"><h2 id="h-open">아직 정하지 않은 아이디어</h2><p class="muted">원본은 저장소 <code>STATUS.md</code> "아이디어 보관함" — Claude가 아이디어를 다룰 때마다 이 표도 같이 고쳐요(2026-10-22). 1차로 정해서 만든 것은 여기서 빠지고 STATUS 기능 표로 가요.</p></div>
+    <div class="tw"><table class="t">
+      <thead><tr><th>아이디어</th><th>나온 날</th><th>추천·상태</th></tr></thead>
+      <tbody>
+        <tr><td><b>아티스트별 LINE 스티커 판매</b> — 부가수익 + 팬이 일상에서 쓰며 홍보. 앱 밖(LINE)에서 파는 디지털 굿즈라 앱 결제·배송 문제 없음. 초상권 동의·소속사 배분·일러스트 제작비 필요</td><td class="num">10-22</td><td>추천 2차(굿즈와 같은 줄). 소속사 계약서에 "디지털 굿즈는 따로 협의" 한 줄 <span class="st new">확인 전</span></td></tr>
+        <tr><td><b>장기 구독 혜택</b> — 오래 구독한 팬에게(버블처럼). 기준인 "이어진 구독 시작일"은 이미 기록 중</td><td class="num">10-15</td><td>2차 — 미래 기능 ②, 오픈 1~2개월 안</td></tr>
+        <tr><td><b>답장 화면 "언어별로 보기" + "오늘 답장 요약"</b>(예: "태국 팬 120명이 라이브 기대") — 수천 개 답장을 다 번역해 읽지 않아도 분위기를 알게</td><td class="num">10-16</td><td>2차 후보</td></tr>
+        <tr><td><b>아티스트 상태메시지·프로필 배경사진</b>(카톡처럼, 토피룸 프로필 카드)</td><td class="num">10-02</td><td>2차 후보 <span class="st new">확인 전</span></td></tr>
+        <tr><td><b>그룹방(3명 이상)</b> — 아이돌 그룹 입점 때. 데이터 구조는 N명 가능, 만들기 검사·양식·문구가 2명 고정</td><td class="num">10-20</td><td>그룹 아티스트가 들어올 때 <span class="st new">미정</span></td></tr>
+        <tr><td><b>선택형 이용권</b> — 그룹 중 N명 골라 받기 + 아티스트 변경 1회 제한</td><td class="num">10-12</td><td>그룹 아티스트가 들어올 때</td></tr>
+        <tr><td><b>같은 CP 묶음을 스토어 같은 구독 그룹에</b> — 묶음끼리 갈아탈 때 중복 결제 방지 + 갈아타기 안내</td><td class="num">10-15</td><td>상품 등록 전에 확인 <span class="st new">미정</span></td></tr>
+        <tr><td><b>운영자: 모든 방 팬 답장 한 줄 피드</b>(금칙어에 걸릴 뻔한 답장·신고 많은 팬 표시)</td><td class="num">10-20</td><td><span class="st new">미정</span></td></tr>
+        <tr><td><b>운영자: 팬 한 명 기준 보기</b>(구독 방·최근 답장·신고/차단 이력)</td><td class="num">10-20</td><td><span class="st new">미정</span></td></tr>
+        <tr><td><b>운영자 할 일에 "환불 처리 대기"</b> — 애플 환불 미확인 건이 생기면</td><td class="num">10-20</td><td>필요해지면</td></tr>
+        <tr><td><b>운영자 화면에서 오류 내역 보기</b> — 서버 Sentry 키부터, 화면엔 "최근 오류 N건 → Sentry 열기" 정도</td><td class="num">10-14</td><td>2차 후보</td></tr>
+        <tr><td><b>로그인 화면 언어 선택</b>(지금은 로그인 후 설정에서만, 웹은 <code>?lang=th</code>)</td><td class="num">10-14</td><td>보류 — 출시 전 필요하면 1차</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="h-future">
+    <div class="sec-head"><h2 id="h-future">미래 기능 순서 (2026-10-19 결정)</h2></div>
+    <ol class="pnote" style="color:var(--fg);font-size:14px">
+      <li><b>스토리</b> — 파일럿 오픈 직후(서버는 이미 있음)</li>
+      <li><b>장기 구독 혜택</b> — 오픈 1~2개월 안(30일 넘는 구독자가 생기기 전)</li>
+      <li><b>팬 라이브</b> — 구독 수천 건·소속사 요청 시(외부 송출 서비스)</li>
+      <li><b>굿즈</b> — 소속사 2~3곳 안정 후. 실물은 앱 결제 불가라 결제대행·배송 필요(LINE 스티커 같은 디지털 굿즈는 더 가벼움)</li>
+      <li><b>공식 라이브·유료 중계</b> — 판권 계약</li>
+      <li><b>예매·양도</b> — 별도 플랫폼(양도는 정가 이하 상한·안전거래·소유 기록)</li>
+    </ol>
   </section>
   </div>
 
@@ -1167,7 +1213,7 @@ function renderLaunch(){
   document.getElementById("lpStats").innerHTML = `<span>전체 ${f("all")}</span><span>직접 ${f("me")}</span><span>Claude ${f("claude")}</span><span>외부 ${f("ext")}</span>`;
 }
 
-const state = {tasks:{}, launch:{}, notes:[], expenses:[], filter:"all", openMemo:null, confirmDel:null, confirmEx:null};
+const state = {tasks:{}, launch:{}, ideas:[], confirmIdea:null, notes:[], expenses:[], filter:"all", openMemo:null, confirmDel:null, confirmEx:null};
 let db = null, canWrite = false;
 try { const f = localStorage.getItem("toffee-filter"); if (f) state.filter = f; } catch(e) {}
 
@@ -1301,7 +1347,7 @@ function renderExpenses(){
 
 function renderAll(){
   document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.f === state.filter)));
-  renderSummary(); renderStages(); renderLaunch(); renderNotes(); renderExpenses();
+  renderSummary(); renderStages(); renderLaunch(); renderIdeas(); renderNotes(); renderExpenses();
   $("#noteAdd").disabled = !canWrite; $("#noteText").disabled = !canWrite; $("#noteKind").disabled = !canWrite;
 }
 
@@ -1406,6 +1452,37 @@ document.getElementById("exForm") && $("#exForm").addEventListener("submit", asy
 });
 if (document.getElementById("exDate")) $("#exDate").value = today();
 
+
+function renderIdeas(){
+  const ul = document.getElementById("ideaList"); if (!ul) return;
+  const f = document.getElementById("ideaAdd"); if (f) { f.disabled = !canWrite; document.getElementById("ideaText").disabled = !canWrite; }
+  if (!state.ideas.length) { ul.innerHTML = `<li class="empty">아직 적어 둔 아이디어가 없어요.</li>`; return; }
+  ul.innerHTML = state.ideas.map(n => {
+    const d = n.data(); const c = state.confirmIdea === n.id;
+    return `<li class="note"><div class="note-head">
+      <span class="st ${d.status === "moved" ? "ok" : "new"}">${d.status === "moved" ? "보관함으로 옮김" : "새로 적음"}</span>
+      <span class="num">${d.createdAt ? d.createdAt.slice(0,10) : ""}</span>
+      ${canWrite ? (c ? `<span class="confirm"><span>지울까요?</span><button class="linkbtn danger" data-ideadel="${n.id}">지우기</button><button class="linkbtn" data-ideacancel="1">취소</button></span>` : `<button class="linkbtn" data-ideaask="${n.id}" style="margin-left:auto">삭제</button>`) : ""}
+    </div><div class="note-text">${esc(d.text || "")}</div>${d.memo ? `<div class="saved">${esc(d.memo)}</div>` : ""}</li>`;
+  }).join("");
+}
+document.addEventListener("click", async e => {
+  const t = e.target;
+  if (t.dataset.ideaask) { state.confirmIdea = t.dataset.ideaask; renderIdeas(); return; }
+  if (t.dataset.ideacancel) { state.confirmIdea = null; renderIdeas(); return; }
+  if (t.dataset.ideadel && db) { const id = t.dataset.ideadel; state.confirmIdea = null;
+    try { await db.doc("ideas/" + id).delete(); } catch(err) { showBanner("아이디어를 지우지 못했어요. 다시 시도해 주세요."); renderIdeas(); } }
+});
+document.getElementById("ideaForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const text = document.getElementById("ideaText").value.trim();
+  if (!text || !db) return;
+  const b = document.getElementById("ideaAdd"); b.disabled = true;
+  try { await db.collection("ideas").add({text, status: "new", createdAt: new Date().toISOString()}); document.getElementById("ideaText").value = ""; }
+  catch(err) { showBanner("아이디어를 저장하지 못했어요. 다시 시도해 주세요."); }
+  b.disabled = !canWrite;
+});
+
 function showBanner(msg){ const b = $("#banner"); b.textContent = msg; b.hidden = false; }
 
 renderAll();
@@ -1428,13 +1505,16 @@ renderAll();
     const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); });
     state.launch = m; renderLaunch();
   }, err => showBanner("운영 전환 체크 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+  db.collection("ideas").orderBy("createdAt", "desc").onSnapshot(snap => {
+    state.ideas = snap.docs; renderIdeas();
+  }, err => showBanner("아이디어 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
   db.collection("notes").orderBy("createdAt", "desc").onSnapshot(snap => {
     state.notes = snap.docs; renderNotes();
   }, err => showBanner("메모 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
 })();
 
 // 탭
-const TABS = ["now","tasks","launch","decide","money","server","biz","links"];
+const TABS = ["now","tasks","launch","decide","ideas","money","server","biz","links"];
 function showTab(t){
   if (!TABS.includes(t)) t = "now";
   document.querySelectorAll("[role=tab]").forEach(b => { const on = b.dataset.tab === t; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; });
@@ -1453,7 +1533,7 @@ document.addEventListener("click", e => { const g = e.target.closest && e.target
 { let t0 = (location.hash || "").slice(1); if (!TABS.includes(t0)) { try { t0 = localStorage.getItem("toffee-tab") || ""; } catch(e) { t0 = ""; } } showTab(t0); }
 
 // 검색 — 모든 탭(할 일·메모 포함)에서 글자를 찾아 결과를 누르면 그 탭·위치로
-const TABNAME = {now:"지금", tasks:"할 일", launch:"운영 전환", decide:"정할 것", money:"돈", server:"서버", biz:"사업 요약", links:"다른 페이지"};
+const TABNAME = {now:"지금", tasks:"할 일", launch:"운영 전환", decide:"정할 것", ideas:"아이디어", money:"돈", server:"서버", biz:"사업 요약", links:"다른 페이지"};
 const SEL = ".tabpanel tr, .tabpanel li, .tabpanel .task, .tabpanel .issue, .tabpanel .kpi, .tabpanel .price, .tabpanel .phase, .tabpanel p, .tabpanel h2, .tabpanel h3, .tabpanel .st-note, .tabpanel .memo-view, .tabpanel .box > b";
 let hits = [];
 const norm = t => t.replace(/\s+/g, " ").trim();
