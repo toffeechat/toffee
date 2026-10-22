@@ -515,28 +515,28 @@ table.t tr.hl td{background:var(--accent-soft)}
   </section>
 
   <section aria-labelledby="h-open">
-    <div class="sec-head"><h2 id="h-open">아이디어 한눈에</h2><p class="muted">정하지 않은 아이디어와 순서를 정해 둔 미래 기능을 한 표로(2026-10-22). 위에서부터 추천 시기 순. 원본은 저장소 <code>STATUS.md</code> "아이디어 보관함" — Claude가 아이디어를 다룰 때마다 이 표도 같이 고치고, 1차로 만든 건 빠져요.</p></div>
+    <div class="sec-head"><h2 id="h-open">아이디어 한눈에 — 우선순위 순</h2><p class="muted">작고 지금 하면 좋은 것이 위, 크고 나중에 할 것이 아래(2026-10-22, 중요도는 Claude 추천 — 바꾸고 싶으면 말해 주세요). 중요도 기준: 돈이 새거나 팬·소속사가 바로 불편한 것 &gt; 해지율·매출 &gt; 편의. "조건부"는 그 상황이 오면 바로 필요. 원본은 저장소 <code>STATUS.md</code> "아이디어 보관함" — Claude가 아이디어를 다룰 때마다 이 표도 같이 고치고, 1차로 만든 건 빠져요.</p></div>
     <div class="legend" style="gap:6px 14px"><span><span class="sz s">작은 개발</span> 며칠, 지금 구조 그대로</span><span><span class="sz b">큰 개발</span> 1~2주 이상, 새 화면·규칙</span><span><span class="sz x">외부·계약</span> 다른 서비스나 판권·결제대행이 필요</span><span><span class="sz p">별도 플랫폼</span> 토피 앱과 따로</span></div>
     <div class="tw"><table class="t">
-      <thead><tr><th>아이디어</th><th>크기</th><th>언제(추천)</th><th>상태</th></tr></thead>
+      <thead><tr><th>#</th><th>아이디어</th><th>크기</th><th>중요도</th><th>언제(추천)</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td><b>같은 CP 묶음을 스토어 같은 구독 그룹에</b> — 묶음끼리 갈아탈 때 중복 결제 방지 + 갈아타기 안내</td><td><span class="sz s">작은 개발</span></td><td>상품 등록 전(2027-01)</td><td>미정</td></tr>
-        <tr><td><b>로그인 화면 언어 선택</b> — 지금은 로그인 후 설정에서만(웹은 <code>?lang=th</code>)</td><td><span class="sz s">작은 개발</span></td><td>출시 전 필요하면</td><td>보류</td></tr>
-        <tr><td><b>스토리</b> — 24시간 사진·글(서버는 이미 있음, 앱 화면만)</td><td><span class="sz b">큰 개발</span></td><td>파일럿 오픈 직후</td><td>순서 정함 ①</td></tr>
-        <tr><td><b>운영자 화면에서 오류 내역 보기</b> — Sentry에 모인 오류 목록을 운영자 화면으로 끌어와 보기(자세한 건 Sentry로)</td><td><span class="sz s">작은 개발</span></td><td>오픈 직후(서버 Sentry 키 먼저)</td><td>2차 후보</td></tr>
-        <tr><td><b>운영자: 모든 방 팬 답장 한 줄 피드</b> — 금칙어에 걸릴 뻔한 답장·신고 많은 팬 표시</td><td><span class="sz s">작은 개발</span></td><td>오픈 뒤 답장이 많아지면</td><td>미정</td></tr>
-        <tr><td><b>운영자: 팬 한 명 기준 보기</b> — 구독·결제는 이미 있음, 최근 답장·신고/차단 이력 추가</td><td><span class="sz s">작은 개발</span></td><td>오픈 뒤 문의가 생기면</td><td>미정</td></tr>
-        <tr><td><b>운영자 할 일에 "환불 처리 대기"</b> — 애플 환불 미확인 건이 생기면</td><td><span class="sz s">작은 개발</span></td><td>필요해지면</td><td>미정</td></tr>
-        <tr><td><b>장기 구독 혜택</b> — 오래 구독한 팬에게(기준인 "이어진 구독 시작일"은 이미 기록 중). 혜택 내용부터 정해야 함</td><td><span class="sz b">큰 개발</span></td><td>오픈 1~2개월 안</td><td>순서 정함 ②</td></tr>
-        <tr><td><b>아티스트 상태메시지·프로필 배경사진</b>(카톡처럼, 토피룸 프로필 카드)</td><td><span class="sz s">작은 개발</span></td><td>2차</td><td>확인 전</td></tr>
-        <tr><td><b>답장 화면 "언어별로 보기" + "오늘 답장 요약"</b>(예: "태국 팬 120명이 라이브 기대") — 요약은 하루 한 번 AI</td><td><span class="sz b">큰 개발</span></td><td>2차 — 답장이 하루 수천 개가 되면</td><td>2차 후보</td></tr>
-        <tr><td><b>아티스트 전용 스티커(앱 안)</b> — 아티스트 얼굴·말투 스티커를 토피 안에서 사서 답장에 씀(버블에도 있음). 부가수익 + 팬이 자주 씀. 앱 안 판매라 스토어 결제(수수료)·소속사 배분·초상권 동의·스티커 제작비 필요</td><td><span class="sz b">큰 개발</span></td><td>2차 — 시범 운영 뒤</td><td>확인 전</td></tr>
-        <tr><td><b>그룹방(3명 이상)</b> — 아이돌 그룹 입점 때. 데이터 구조는 이미 N명 가능, 만들기 검사·등록 양식·문구만 2명 고정</td><td><span class="sz s">작은 개발</span></td><td>그룹 아티스트가 들어올 때</td><td>미정</td></tr>
-        <tr><td><b>선택형 이용권</b> — 그룹 중 N명 골라 구독 + 아티스트 변경 1회 제한</td><td><span class="sz b">큰 개발</span></td><td>그룹 아티스트가 들어올 때</td><td>미정</td></tr>
-        <tr><td><b>팬 라이브</b> — 아티스트가 구독 팬에게 라이브</td><td><span class="sz x">외부·계약</span></td><td>구독 수천 건·소속사 요청 시</td><td>순서 정함 ③</td></tr>
-        <tr><td><b>굿즈(실물)</b> — 앱 결제 불가라 결제대행·배송 필요</td><td><span class="sz x">외부·계약</span></td><td>소속사 2~3곳 안정 후</td><td>순서 정함 ④</td></tr>
-        <tr><td><b>공식 라이브·유료 중계</b> — 판권 계약</td><td><span class="sz x">외부·계약</span></td><td>그 뒤</td><td>순서 정함 ⑤</td></tr>
-        <tr><td><b>예매·양도</b> — 양도는 정가 이하 상한·안전거래·소유 기록</td><td><span class="sz p">별도 플랫폼</span></td><td>맨 나중</td><td>순서 정함 ⑥</td></tr>
+        <tr><td class="num">1</td><td><b>같은 CP 묶음을 스토어 같은 구독 그룹에</b> — 묶음끼리 갈아탈 때 중복 결제를 막고 갈아타기 안내. 안 하면 팬이 돈을 두 번 냄</td><td><span class="sz s">작은 개발</span></td><td><b>높음</b></td><td>상품 등록 전(2027-01)</td><td>미정</td></tr>
+        <tr><td class="num">2</td><td><b>운영자: 모든 방 팬 답장 한 줄 피드</b> — 금칙어에 걸릴 뻔한 답장·신고 많은 팬 표시. 소속사가 가장 걱정하는 악성 팬을 빨리 잡음</td><td><span class="sz s">작은 개발</span></td><td><b>높음</b></td><td>오픈 전후</td><td>미정</td></tr>
+        <tr><td class="num">3</td><td><b>운영자 화면에서 오류 내역 보기</b> — Sentry에 모인 오류 목록을 운영자 화면으로 끌어와 보기(자세한 건 Sentry로). 오픈 직후 문제를 빨리 발견</td><td><span class="sz s">작은 개발</span></td><td>보통</td><td>오픈 직후(서버 Sentry 키 먼저)</td><td>2차 후보</td></tr>
+        <tr><td class="num">4</td><td><b>운영자: 팬 한 명 기준 보기</b> — 구독·결제는 이미 있음, 최근 답장·신고/차단 이력 추가 — 문의 응대가 빨라짐</td><td><span class="sz s">작은 개발</span></td><td>보통</td><td>오픈 뒤 문의가 생기면</td><td>미정</td></tr>
+        <tr><td class="num">5</td><td><b>스토리</b> — 24시간 사진·글(서버는 이미 있음, 앱 화면만). 매일 들어올 이유 = 해지율</td><td><span class="sz b">큰 개발</span></td><td><b>높음</b></td><td>파일럿 오픈 직후</td><td>순서 정함 ①</td></tr>
+        <tr><td class="num">6</td><td><b>장기 구독 혜택</b> — 오래 구독한 팬에게(기준인 &#x27;이어진 구독 시작일&#x27;은 이미 기록 중). 해지율에 직접 영향, 혜택 내용부터 정해야 함</td><td><span class="sz b">큰 개발</span></td><td><b>높음</b></td><td>오픈 1~2개월 안</td><td>순서 정함 ②</td></tr>
+        <tr><td class="num">7</td><td><b>아티스트 상태메시지·프로필 배경사진</b> — 카톡처럼 토피룸 프로필 카드에</td><td><span class="sz s">작은 개발</span></td><td>낮음</td><td>2차</td><td>확인 전</td></tr>
+        <tr><td class="num">8</td><td><b>로그인 화면 언어 선택</b> — 지금은 로그인 후 설정에서만(앱은 폰 언어를 따라가고, 웹은 ?lang=th)</td><td><span class="sz s">작은 개발</span></td><td>낮음</td><td>출시 전 필요하면</td><td>보류</td></tr>
+        <tr><td class="num">9</td><td><b>운영자 할 일에 &#x27;환불 처리 대기&#x27;</b> — 애플 환불 미확인 건이 생기면</td><td><span class="sz s">작은 개발</span></td><td>낮음</td><td>필요해지면</td><td>미정</td></tr>
+        <tr><td class="num">10</td><td><b>그룹방(3명 이상)</b> — 데이터 구조는 이미 N명 가능, 만들기 검사·등록 양식·문구만 2명 고정</td><td><span class="sz s">작은 개발</span></td><td>조건부</td><td>그룹 아티스트가 들어올 때</td><td>미정</td></tr>
+        <tr><td class="num">11</td><td><b>아티스트 전용 스티커(앱 안)</b> — 아티스트 얼굴·말투 스티커를 토피 안에서 사서 답장에 씀(버블에도 있음). 부가수익 + 팬이 자주 씀. 스토어 결제 수수료·소속사 배분·초상권 동의·제작비</td><td><span class="sz b">큰 개발</span></td><td>보통</td><td>2차 — 시범 운영 뒤</td><td>확인 전</td></tr>
+        <tr><td class="num">12</td><td><b>답장 화면 &#x27;언어별로 보기&#x27; + &#x27;오늘 답장 요약&#x27;</b> — 예: &#x27;태국 팬 120명이 라이브 기대&#x27; — 요약은 하루 한 번 AI</td><td><span class="sz b">큰 개발</span></td><td>보통</td><td>2차 — 답장이 하루 수천 개가 되면</td><td>2차 후보</td></tr>
+        <tr><td class="num">13</td><td><b>선택형 이용권</b> — 그룹 중 N명 골라 구독 + 아티스트 변경 1회 제한</td><td><span class="sz b">큰 개발</span></td><td>조건부</td><td>그룹 아티스트가 들어올 때</td><td>미정</td></tr>
+        <tr><td class="num">14</td><td><b>팬 라이브</b> — 아티스트가 구독 팬에게 라이브(외부 송출 서비스)</td><td><span class="sz x">외부·계약</span></td><td>보통</td><td>구독 수천 건·소속사 요청 시</td><td>순서 정함 ③</td></tr>
+        <tr><td class="num">15</td><td><b>굿즈(실물)</b> — 앱 결제 불가라 결제대행·배송 필요</td><td><span class="sz x">외부·계약</span></td><td>낮음</td><td>소속사 2~3곳 안정 후</td><td>순서 정함 ④</td></tr>
+        <tr><td class="num">16</td><td><b>공식 라이브·유료 중계</b> — 판권 계약</td><td><span class="sz x">외부·계약</span></td><td>낮음</td><td>그 뒤</td><td>순서 정함 ⑤</td></tr>
+        <tr><td class="num">17</td><td><b>예매·양도</b> — 양도는 정가 이하 상한·안전거래·소유 기록</td><td><span class="sz p">별도 플랫폼</span></td><td>낮음</td><td>맨 나중</td><td>순서 정함 ⑥</td></tr>
       </tbody>
     </table></div>
   </section>
