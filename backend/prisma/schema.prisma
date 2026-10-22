@@ -410,7 +410,7 @@ model Agency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 정산 배분율(스토어 수수료 뺀 금액 중 소속사 몫, %) — null이면 기본값(AGENCY_REVENUE_SHARE_PERCENT, 잠정 70). 계약마다 다를 수 있음
+  // 정산 배분율(스토어 수수료 뺀 금액 중 소속사 몫, %) — null이면 기본값(AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 70). 계약마다 다를 수 있음
   revenueSharePercent Int?
 
   actors       Actor[]

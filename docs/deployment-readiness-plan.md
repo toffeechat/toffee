@@ -22,6 +22,24 @@
 
 ---
 
+## 2026-10-22 (이어서) — 남은 작업 브랜치 main 반영 점검 + 정산 기본 60% 누락 수정
+
+- 사용자 요청: 세션마다 따로 작업한 브랜치가 main에 다 들어갔는지 확인. 원격 브랜치 61개를 main과 비교(PR 목록 + 실제 내용 대조).
+- main에 없던 최근 4개를 사용자 요청으로 반영: `fervent-pasteur-ioi0yb`(처리방침 국외 이전·해외 법적 준비·상표 FAQ),
+  `compassionate-mccarthy-j9n5ma`(나라별 가격 조정·CP 묶음 ฿289/฿349), `upbeat-franklin-5rwp6j`(운영 전환 계획·운영 주소),
+  `subscription-management-process-kkqs5v`(활동 종료 환불 B안, `Actor.retireNoticedAt` 마이그레이션). 충돌은 작업 로그·STATUS의
+  같은 자리에 각자 항목을 넣은 것뿐이라 양쪽을 다 살림. 로컬 Postgres로 마이그레이션 드리프트 없음 확인.
+- 예전 브랜치 판단: `claude/funding-plan`(10-12)과 `claude/project-thread-fu4ppb`(10-12)는 **통째로 합치지 않음** — 문서는 그 뒤
+  사업 계획 아티팩트("토피 사업 본부", 10-21)와 10-20 사업 전략 정리로 대체됐고(가격 4,900원·출시 5개국 등 옛 숫자도 섞여 있음),
+  아티팩트 백업 HTML도 `artifacts/toffee-business-plan-until-2026-10-21.html`로 새로 있음. **단 `funding-plan`에만 있던
+  "정산 기본 60% / 창립 파트너 70%"(10-12 사용자 확정)가 코드·문서에 빠져 있던 걸 발견** → 이 부분만 옮김: 서버 기본값
+  `AGENCY_REVENUE_SHARE_PERCENT` 70 → 60(`settlements.service.ts`, `.env.example`, 스키마·앱 주석), `feature-decisions.md`
+  "소속사 계약/정산 조건"을 확정 내용 + 계약 기간 잠정안으로, STATUS 정산 줄.
+- 남은 일: 데모·운영 서버(Railway)에 `AGENCY_REVENUE_SHARE_PERCENT`를 따로 넣어 뒀다면 60으로 바꾸거나 지울 것. 창립 파트너는
+  계약 때 운영자 화면에서 소속사별 70% 입력. 반영 끝난 옛 브랜치 정리(삭제)는 사용자 확인 후.
+
+---
+
 ## 2026-10-22 (이어서) — 개인정보처리방침 국외 이전 업체 목록 정리
 
 - 사용자 요청: 처리방침에 해외 업체 목록 반영. 4조(국외 이전)는 이미 있었지만 빠진 게 있어 다시 씀 — 업체별로 **받는 자(회사·소재 국가) — 이전 항목 —
