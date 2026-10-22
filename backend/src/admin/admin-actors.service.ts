@@ -72,8 +72,11 @@ export class AdminActorsService {
   async setRetired(adminId: string, id: string, retired: boolean) {
     const actor = await this.ensureActor(id);
     const wasRetired = !!actor.retiredAt;
-    // 바로 종료·재개하면 예정은 지움
-    await this.prisma.actor.update({ where: { id }, data: { retiredAt: retired ? new Date() : null, retireAt: null } });
+    // 바로 종료·재개하면 예정은 지움. 예정 알림 시각은 종료면 남기고(그 뒤 결제는 활동 종료 환불 대상 아님), 재개면 지움
+    await this.prisma.actor.update({
+      where: { id },
+      data: { retiredAt: retired ? new Date() : null, retireAt: null, ...(retired ? {} : { retireNoticedAt: null }) },
+    });
     await this.audit.record(adminId, retired ? 'ACTOR_RETIRE' : 'ACTOR_RESTORE', 'ACTOR', id);
     if (retired && !wasRetired) await this.notifyRetired(id, actor.chatDisplayName);
     return this.findOne(id);
@@ -82,13 +85,17 @@ export class AdminActorsService {
   /**
    * 활동 종료 예정(2026-10-20 사용자 결정) — 정하는 즉시 새 구독·묶음 판매가 막히고(subscriptions.service), 그 시각에 retireDue가 실제로 종료.
    * 새로 정하거나 날짜를 바꾸면 구독 팬에게 "N월 N일에 활동을 마칠 예정" 알림. null이면 예정 취소(다시 구독 가능).
+   * 처음 정한 시각을 retireNoticedAt으로 남김(2026-10-21 B안) — 그 뒤 결제는 활동 종료 14일 환불 대상이 아님(RefundService). 날짜를 바꿔도 유지.
    */
   async setRetireAt(adminId: string, id: string, retireAt: Date | null) {
     const actor = await this.ensureActor(id);
     if (actor.retiredAt) throw new BadRequestException(appError('ACTOR_RETIRED'));
     if (retireAt && retireAt.getTime() <= Date.now()) throw new BadRequestException(appError('RETIRE_AT_INVALID'));
-    const before = await this.prisma.actor.findUniqueOrThrow({ where: { id }, select: { retireAt: true } });
-    await this.prisma.actor.update({ where: { id }, data: { retireAt } });
+    const before = await this.prisma.actor.findUniqueOrThrow({ where: { id }, select: { retireAt: true, retireNoticedAt: true } });
+    await this.prisma.actor.update({
+      where: { id },
+      data: { retireAt, retireNoticedAt: retireAt ? (before.retireNoticedAt ?? new Date()) : null },
+    });
     await this.audit.record(adminId, 'ACTOR_RETIRE_SCHEDULE', 'ACTOR', id, { retireAt: retireAt?.toISOString() ?? null });
     if (retireAt && before.retireAt?.getTime() !== retireAt.getTime()) {
       await this.pushToRoomFans(id, (t, locale) => ({

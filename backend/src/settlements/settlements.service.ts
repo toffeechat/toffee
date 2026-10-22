@@ -92,7 +92,7 @@ type AllocationLine = Prisma.ChargeAllocationGetPayload<{ select: typeof ALLOCAT
 
 /**
  * 월 정산(2026-09-29) — 결제 기록(PurchaseCharge)의 배우별 몫(ChargeAllocation)을 결제 순간의 소속사별로 모아
- * 스토어 수수료(STORE_FEE_PERCENT, 잠정 15) → 소속사 몫(소속사별 revenueSharePercent, 없으면 AGENCY_REVENUE_SHARE_PERCENT, 잠정 70)
+ * 스토어 수수료(STORE_FEE_PERCENT, 잠정 15) → 소속사 몫(소속사별 revenueSharePercent, 없으면 AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 소속사별로 70)
  * / 토피 몫으로 나눔. 무소속 배우는 배우 본인에게 같은 비율. 환불된 결제는 빼고 따로 보여 줌.
  * 마감(SettlementClose): 마감한 달은 저장해 둔 표를 그대로 보여 주고, 마감 뒤에 생긴 일(환불·늦게 기록된 결제)은 그 일이 생긴 열린 달의
  * "조정"으로. 금액은 표시 가격(바트) 기준 추정 — 실제 입금액은 스토어 정산 보고서로 맞춰 봐야 함.
@@ -110,7 +110,7 @@ export class SettlementsService {
   }
 
   get defaultSharePercent() {
-    return percentFrom(this.config.get<string>('AGENCY_REVENUE_SHARE_PERCENT'), 70);
+    return percentFrom(this.config.get<string>('AGENCY_REVENUE_SHARE_PERCENT'), 60);
   }
 
   // 샌드박스 구독이 켜진 환경(개발·데모)에선 기본으로 테스트 결제도 보여 줌 — 운영에선 꺼져 있으니 기본 제외

@@ -21,7 +21,7 @@ function AgencyRow({ agency }: { agency: AdminAgency }) {
   const updateAgency = useUpdateAgency();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(agency.name);
-  // 정산 배분율 — 비우면 기본값(서버 AGENCY_REVENUE_SHARE_PERCENT, 잠정 70%)
+  // 정산 배분율 — 비우면 기본값(서버 AGENCY_REVENUE_SHARE_PERCENT, 잠정 60% — 창립 파트너는 70%)
   const [editingShare, setEditingShare] = useState(false);
   const [share, setShare] = useState(agency.revenueSharePercent?.toString() ?? '');
   const [busy, setBusy] = useState(false);

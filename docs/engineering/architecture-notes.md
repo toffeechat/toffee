@@ -1126,7 +1126,7 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 - API: `GET /settlements?month=YYYY-MM[&agencyId&includeSandbox]`, `GET /settlements/export?...&detail=true`(text/csv) — ADMIN·AGENCY_STAFF,
   `scopeFor`가 직원이면 자기 agencyId로 강제(요청의 agencyId 무시). `PATCH /admin/agencies/:id`에 `revenueSharePercent`(0~100, null = 기본값),
   변경 시 감사 기록 `AGENCY_SHARE`(targetType AGENCY, 이름 해석 추가). 운영자 작업 기록 화면에 빠져 있던 ACTOR_PRICE·BUNDLE_*·COUPLE_CREATE 라벨도 추가.
-- 설정: `STORE_FEE_PERCENT`(15), `AGENCY_REVENUE_SHARE_PERCENT`(70).
+- 설정: `STORE_FEE_PERCENT`(15), `AGENCY_REVENUE_SHARE_PERCENT`(60, 2026-10-12 — 창립 파트너 3곳은 소속사별 70으로 12개월).
 - 앱: `hooks/use-settlements.ts`(`apiClient.getText`로 CSV → Blob 다운로드, 웹에서만 enabled), `components/settlement-report.tsx`(i18n 6개
   언어 — 소속사 콘솔이 태국어일 수 있어서), `admin/settlements`, `console/settlements`. `components/wide-shell.tsx`: 웹 && 폭 ≥ 1024 && 경로가
   /admin·/console이면 루트 Stack을 왼쪽 메뉴(248px) + 내용으로 감쌈(라우트 구조는 그대로). 운영자 메뉴는 `constants/admin-menu.ts`로 분리해
@@ -1811,3 +1811,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 로컬에서 고친 웹을 데모 서버에 붙여 볼 땐 `EXPO_PUBLIC_API_URL=https://api-demo.toffeechat.app npx expo export -p web` 후 SPA로 서빙.
   localhost 출처에선 구글 로그인 버튼 iframe이 `gis is not defined`를 던짐(구글 쪽, 허용 출처가 아니라서) — e2e 마지막 화면 오류 검사에 걸리니
   e2e는 배포된 데모 주소로 돌리거나 이 오류를 무시할 것. R2 업로드도 localhost 출처는 CORS로 막힘.
+
+## 활동 종료 환불 — 예정 알림 뒤 결제 제외 (2026-10-21)
+
+- `Actor.retireNoticedAt`: `AdminActorsService.setRetireAt`이 `retireAt`을 처음 넣을 때 `now`, 바꿀 땐 기존 값 유지, `null`(취소) 땐 지움.
+  `setRetired(false)`(재개)도 지움, `setRetired(true)`·`retireDue`는 유지(환불 판단에 필요).
+- `RefundService.roomsEnded()`가 `{ at, noticedAt }` 반환 — 방마다 먼저 끝난 행(방 자체 또는 CP 멤버)의 `retiredAt`/`retireNoticedAt`, 묶음은 그중 가장 늦게
+  끝난 방. `noticedAt <= chargedAt < at`이면 `ACTOR_RETIRED` 후보에서 빠지고 `STAR_IDLE` 판단으로 넘어감. 종료 뒤 결제(`chargedAt >= at`)는 알림과 무관하게 후보.
+- 문구: `push-messages.ts` `retiringFanBody`·`retiredFanBody`, 앱 `actorProfile.retiringHint`, `legal-texts.ts` 3조 ③, `faq-texts.ts` 환불 답변(9개 언어).
+  `LEGAL_VERSION`은 출시 전 초안이라 안 올림(10-14 방침과 같음).
+

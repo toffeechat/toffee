@@ -397,7 +397,7 @@
     "retired": "該藝人已停止活動",
     "retiringOn": "{{date}}結束活動",
     "retiringNoNew": "暫停新訂閱",
-    "retiringHint": "在那之前訂閱者仍會照常收到訊息，之後也能查看以往的訊息。"
+    "retiringHint": "在那之前訂閱者仍會照常收到訊息，之後也能查看以往的訊息。此通知之後的付款不適用活動結束退款。如不希望再次扣款，請在商店關閉自動續訂。"
   },
   "subscribeFlow": {
     "subscribeTo": "訂閱",

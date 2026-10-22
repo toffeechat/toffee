@@ -26,7 +26,7 @@ interface Msg {
 }
 
 /** 결제·메시지만 있는 메모리 DB — 판정·요청 규칙 확인용 */
-function setup(charges: Charge[], messages: Msg[], options: { googleFails?: boolean; retired?: Record<string, Date> } = {}) {
+function setup(charges: Charge[], messages: Msg[], options: { googleFails?: boolean; retired?: Record<string, Date>; noticed?: Record<string, Date> } = {}) {
   const requests: { chargeId: string; reason: string; status: string }[] = [];
   const googleRefunds: string[] = [];
   const db = {
@@ -50,7 +50,7 @@ function setup(charges: Charge[], messages: Msg[], options: { googleFails?: bool
     },
     actor: {
       findMany: async ({ where }: { where: { id: { in: string[] } } }) =>
-        where.id.in.map((id) => ({ retiredAt: options.retired?.[id] ?? null, coupleMembers: [] })),
+        where.id.in.map((id) => ({ retiredAt: options.retired?.[id] ?? null, retireNoticedAt: options.noticed?.[id] ?? null, coupleMembers: [] })),
     },
     message: {
       count: async ({ where }: { where: { actorId: { in: string[] }; createdAt: { gte: Date; lt: Date } } }) =>
@@ -194,6 +194,28 @@ describe('환불 — 활동 종료·입대', () => {
       retired: { a1: at('2026-08-01T00:00:00Z') },
     });
     expect((await renewed.service.candidates('fan', now))[0]).toMatchObject({ reason: 'ACTOR_RETIRED' });
+  });
+
+  it('종료 예정 알림 뒤 종료 전에 된 결제는 대상 아님(B안), 알림 전 결제·종료 뒤 갱신 결제는 대상', async () => {
+    const retired = { a1: at('2026-09-02T00:00:00Z') };
+    const afterNotice = setup([charge('p1', { chargedAt: at('2026-08-25T00:00:00Z'), periodEnd: at('2026-09-25T00:00:00Z') })], [], {
+      retired,
+      noticed: { a1: at('2026-08-01T00:00:00Z') },
+    });
+    // 메시지도 없었지만 이용 기간 중이라 미발송 환불도 아직 아님
+    expect(await afterNotice.service.candidates('fan', now)).toEqual([]);
+
+    const beforeNotice = setup([charge('p2', { chargedAt: at('2026-08-25T00:00:00Z'), periodEnd: at('2026-09-25T00:00:00Z') })], [], {
+      retired,
+      noticed: { a1: at('2026-08-26T00:00:00Z') },
+    });
+    expect((await beforeNotice.service.candidates('fan', now))[0]).toMatchObject({ reason: 'ACTOR_RETIRED' });
+
+    const renewedAfterEnd = setup([charge('p3', { chargedAt: at('2026-08-20T00:00:00Z'), periodEnd: at('2026-09-20T00:00:00Z') })], [], {
+      retired: { a1: at('2026-08-01T00:00:00Z') },
+      noticed: { a1: at('2026-07-01T00:00:00Z') },
+    });
+    expect((await renewedAfterEnd.service.candidates('fan', now))[0]).toMatchObject({ reason: 'ACTOR_RETIRED' });
   });
 
   it('묶음은 들어 있는 방이 모두 끝났을 때만', async () => {

@@ -397,7 +397,7 @@
     "retired": "This artist is no longer active",
     "retiringOn": "Activity ends {{date}}",
     "retiringNoNew": "Not accepting new subscriptions",
-    "retiringHint": "Subscribers keep getting messages until then and can still read past messages afterwards."
+    "retiringHint": "Subscribers keep getting messages until then and can still read past messages afterwards. Payments made after this notice aren’t eligible for the activity-end refund. To avoid the next charge, turn off auto-renewal in your store."
   },
   "subscribeFlow": {
     "subscribeTo": "Subscribe to",

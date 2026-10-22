@@ -365,6 +365,9 @@ model Actor {
   // 활동 종료 예정(2026-10-20 사용자 결정) — 넣는 순간 신규 구독을 막고(팬 화면 "N월 N일 활동 종료 예정"), 그 시각이 되면 RetireScheduler가
   // retiredAt을 채움(그때 기존 종료와 같은 알림·환불 규칙). retiredAt이 있으면 의미 없음. 예정을 지우면 다시 구독 가능
   retireAt                DateTime?
+  // 활동 종료 예정을 처음 잡아 팬에게 알린 시각(2026-10-21 사용자 결정 B안) — 이 시각 뒤에 된 결제(갱신 포함)는 활동 종료 14일 환불 대상이
+  // 아님(알림을 받고도 결제한 것, 7일 청약철회는 그대로). 날짜를 바꿔도 처음 시각 유지, 예정 취소·활동 재개하면 지움, 실제 종료 뒤에도 남김(환불 판단용)
+  retireNoticedAt         DateTime?
   // 애플 스토어 상품 판매 중지를 운영자가 했다고 표시한 시각(2026-10-20) — 애플은 개발자가 팬 구독을 끊는 API가 없어서 종료(예정) 방의 상품은
   // 운영자가 App Store Connect에서 판매 중지 → 여기 표시. 구글은 서버가 구독마다 자동 해지(store-renewal.service)
   storeSaleStoppedAt      DateTime?
@@ -407,7 +410,7 @@ model Agency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 정산 배분율(스토어 수수료 뺀 금액 중 소속사 몫, %) — null이면 기본값(AGENCY_REVENUE_SHARE_PERCENT, 잠정 70). 계약마다 다를 수 있음
+  // 정산 배분율(스토어 수수료 뺀 금액 중 소속사 몫, %) — null이면 기본값(AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 70). 계약마다 다를 수 있음
   revenueSharePercent Int?
 
   actors       Actor[]
