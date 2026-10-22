@@ -1,0 +1,525 @@
+<title>토피 운영 전환 계획</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 한 줄 세로 문서 — 요약(진행률·핵심 경로·일정 막대) → 지금 vs 운영 표 → 발견한 문제 → 단계별 체크리스트 → 결정·비용 */
+:root {
+  --bg: #F6F6F9;
+  --surface: #FFFFFF;
+  --fg: #15171C;
+  --muted: #5E6270;
+  --line: #E1E2EA;
+  --accent: #5B6BEF;
+  --accent-soft: #ECEEFF;
+  --charcoal: #0F1115;
+  --ok: #1F8A5B;
+  --ok-soft: #E3F4EC;
+  --warn: #B4610E;
+  --warn-soft: #FDF0E1;
+  --crit: #C2334A;
+  --crit-soft: #FBE7EA;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1115; --surface: #181A21; --fg: #E9EAF0; --muted: #9A9EAD; --line: #2A2D37;
+    --accent: #8F9BFF; --accent-soft: #23264A; --charcoal: #E9EAF0;
+    --ok: #4CC08A; --ok-soft: #15301F; --warn: #E9A25A; --warn-soft: #36260F; --crit: #F07489; --crit-soft: #3A1820;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1115; --surface: #181A21; --fg: #E9EAF0; --muted: #9A9EAD; --line: #2A2D37;
+  --accent: #8F9BFF; --accent-soft: #23264A; --charcoal: #E9EAF0;
+  --ok: #4CC08A; --ok-soft: #15301F; --warn: #E9A25A; --warn-soft: #36260F; --crit: #F07489; --crit-soft: #3A1820;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 44px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 21px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+.lede { max-width: 68ch; color: var(--muted); }
+
+/* 요약 */
+.head { display: grid; gap: 12px; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; }
+.tile .num { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile .lbl { font-size: 13px; color: var(--muted); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.syncnote { font-size: 13px; color: var(--muted); }
+
+/* 핵심 경로 */
+.path { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.path span.step { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13.5px; }
+.path span.step.long { border-color: var(--warn); background: var(--warn-soft); }
+.path span.arrow { color: var(--muted); font-size: 13px; }
+
+/* 일정 막대 */
+.gantt-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.gantt { min-width: 760px; display: grid; grid-template-columns: 200px 1fr; font-size: 13px; }
+.gantt .g-label { padding: 7px 12px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gantt .g-track { position: relative; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.gantt .g-head { border-top: none; color: var(--muted); font-size: 12px; }
+.gantt .g-bar { position: absolute; top: 7px; bottom: 7px; border-radius: 4px; background: var(--accent); opacity: .85; }
+.gantt .g-bar.dday { background: var(--crit); opacity: 1; }
+.gantt .g-month { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--line); padding-left: 4px; }
+.gantt .g-today { position: absolute; top: 0; bottom: 0; border-left: 2px solid var(--warn); }
+
+/* 표 */
+.table-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-top: 1px solid var(--line); }
+thead th { border-top: none; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.compare td:nth-child(2) { color: var(--muted); }
+
+/* 발견한 문제 */
+.issues { display: grid; gap: 8px; }
+.issue { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.issue .sev { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; height: fit-content; white-space: nowrap; }
+.sev.crit { background: var(--crit-soft); color: var(--crit); }
+.sev.warn { background: var(--warn-soft); color: var(--warn); }
+.sev.ok { background: var(--ok-soft); color: var(--ok); }
+.issue p { min-width: 0; }
+.issue .where { grid-column: 2; font-size: 12.5px; color: var(--muted); }
+
+/* 필터 */
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters button { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--charcoal); color: var(--bg); border-color: var(--charcoal); }
+.filters button:focus-visible, .item input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filters label { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; margin-left: 6px; color: var(--muted); }
+
+/* 단계 */
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.phase-head { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px; align-items: start; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.phase-no { font-family: var(--font-mono); font-weight: 500; font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 3px 8px; }
+.phase-title { display: grid; gap: 2px; min-width: 0; }
+.phase-when { font-size: 13px; color: var(--muted); }
+.phase-why { grid-column: 2 / 4; font-size: 13.5px; color: var(--muted); max-width: 72ch; }
+.phase-count { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.phase-count.done { color: var(--ok); font-weight: 600; }
+.items { list-style: none; margin: 0; padding: 0; }
+.item { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; padding: 11px 18px; border-top: 1px solid var(--line); }
+.item:first-child { border-top: none; }
+.item input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent); cursor: pointer; }
+.item input:disabled { cursor: default; }
+.item .txt { min-width: 0; display: grid; gap: 3px; }
+.item .t { font-weight: 500; }
+.item .d { font-size: 13.5px; color: var(--muted); }
+.item.done .t { text-decoration: line-through; color: var(--muted); }
+.item .meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.chip { border-radius: 999px; padding: 1px 8px; font-weight: 600; font-size: 11.5px; white-space: nowrap; height: fit-content; }
+.chip.me { background: var(--warn-soft); color: var(--warn); }
+.chip.claude { background: var(--accent-soft); color: var(--accent); }
+.chip.ext { background: var(--ok-soft); color: var(--ok); }
+.chip.found { background: var(--crit-soft); color: var(--crit); }
+.item .doneat { font-size: 12px; color: var(--ok); }
+
+/* 결정·비용 */
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.card li b { font-weight: 600; }
+.foot { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+@media (max-width: 560px) {
+  .item { grid-template-columns: 22px 1fr; }
+  .item .chip.owner { grid-column: 2; justify-self: start; }
+  .phase-head { grid-template-columns: 1fr auto; }
+  .phase-no { grid-column: 1 / 3; justify-self: start; }
+  .phase-why { grid-column: 1 / 3; }
+}
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">2026-10-21 저장소 전수조사 기준 · 내부용</div>
+    <h1>토피 운영 전환 계획</h1>
+    <p class="lede">소속사 계약이 되면 2027년 2월 파일럿을 여는 데까지, 지금 데모(개발)로 돌고 있는 것을 전부 운영으로 바꾸고 앱을 스토어에 내는 순서입니다.
+      기능 개발은 1차 기준으로 거의 끝났고(남은 개발은 정산 1개 + 이번 조사에서 찾은 것들), 병목은 <b>법인 → D-U-N-S → 애플 법인 전환</b> 줄입니다.
+      항목을 체크하면 저장됩니다.</p>
+  </header>
+
+  <section aria-label="진행 요약">
+    <div class="summary">
+      <div class="tile"><span class="num" id="sum-all">0 / 0</span><span class="lbl">전체 할 일</span><div class="bar"><i id="bar-all"></i></div></div>
+      <div class="tile"><span class="num" id="sum-me">0 / 0</span><span class="lbl">직접 할 일(계정·콘솔·서명)</span><div class="bar"><i id="bar-me"></i></div></div>
+      <div class="tile"><span class="num" id="sum-claude">0 / 0</span><span class="lbl">Claude 개발·설정 문서</span><div class="bar"><i id="bar-claude"></i></div></div>
+      <div class="tile"><span class="num" id="sum-ext">0 / 0</span><span class="lbl">외부(변호사·세무사·소속사)</span><div class="bar"><i id="bar-ext"></i></div></div>
+    </div>
+    <p class="syncnote" id="sync">체크 저장소에 연결하는 중…</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">가장 오래 걸리는 줄</div>
+    <h2>핵심 경로</h2>
+    <p class="lede">이 줄의 어느 칸이든 밀리면 오픈일이 같이 밀립니다. 노란 칸은 내가 빨리 해도 줄일 수 없는 대기 시간이라 <b>법인 등록 당일 신청</b>이 원칙입니다.</p>
+    <div class="path">
+      <span class="step">소속사 의향(11/30 판단)</span><span class="arrow">→</span>
+      <span class="step">법인 설립 1~2주</span><span class="arrow">→</span>
+      <span class="step long">D-U-N-S 발급 수 주</span><span class="arrow">→</span>
+      <span class="step long">애플 개인→법인 전환 1~2주</span><span class="arrow">→</span>
+      <span class="step">운영 번들 ID 등록</span><span class="arrow">→</span>
+      <span class="step">Firebase·소셜 로그인 운영 앱</span><span class="arrow">→</span>
+      <span class="step">운영 빌드</span><span class="arrow">→</span>
+      <span class="step">구독 상품 등록·샌드박스</span><span class="arrow">→</span>
+      <span class="step long">스토어 심사(반려 대비 1주)</span><span class="arrow">→</span>
+      <span class="step">2월 오픈</span>
+    </div>
+    <p class="muted" style="font-size:13.5px">구글은 법인 조직 계정을 새로 만드는데 이것도 D-U-N-S가 필요합니다. 운영 서버·DB·파일 저장소는 법인과 상관없이 12월 초부터 만들 수 있어서 이 줄 옆에서 같이 갑니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">목표 일정</div>
+    <h2>단계별 기간</h2>
+    <div class="gantt-scroll"><div class="gantt" id="gantt"></div></div>
+    <p class="muted" style="font-size:13.5px">주 15시간 기준 목표치. 오픈일은 2월 둘째~셋째 주 중 하루로 소속사와 정합니다(그림은 2/15 주 기준). 11/15까지 1차 5곳 발송을 못 하면 전체를 3월로 한 달 미룹니다(사업화 일정 판단 지점).</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">지금 → 운영</div>
+    <h2>무엇이 데모이고, 운영에선 어떻게 바뀌나</h2>
+    <p class="lede">원칙(10-02 결정): 소셜 로그인·Firebase는 <b>새로 만들지 않고</b> 지금 앱·채널에 운영 정보만 추가합니다(새로 만들면 회원 ID가 달라짐). 서버·DB·파일 저장소는 데모와 <b>완전히 분리</b>합니다. 데모 서버는 영업용으로 계속 둡니다.</p>
+    <div class="table-scroll"><table class="compare">
+      <thead><tr><th>구성</th><th>지금(데모)</th><th>운영</th></tr></thead>
+      <tbody>
+        <tr><td>API 서버</td><td>Railway <code>toffee-demo</code>, <code>NODE_ENV=development</code>, 입장 코드 로그인·결제 없는 구독 켜짐, 매일 새벽 초기화</td><td>Railway 새 프로젝트(싱가포르), <code>NODE_ENV=production</code> — 테스트 로그인·샌드박스 구독을 켜 두면 서버가 아예 안 켜짐(설정 점검). 메모리 1GB 이상</td></tr>
+        <tr><td>주소</td><td><code>api-demo.toffeechat.app</code> / <code>demo.toffeechat.app</code></td><td><code>api.toffeechat.app</code> / <code>app.toffeechat.app</code>(소속사·운영자 PC 웹) — 10-21 확정</td></tr>
+        <tr><td>DB</td><td>데모 Postgres, 가상 아티스트·팬 데이터</td><td>새 Postgres, 자동 백업 켜고 복구 한 번 해 보기. <code>DEMO_*</code> 비움</td></tr>
+        <tr><td>파일 저장소</td><td>R2 버킷 <code>toffee-demo</code></td><td>새 비공개 버킷(예: <code>toffee-media</code>) + 새 토큰, CORS는 운영 웹 주소</td></tr>
+        <tr><td>웹 화면</td><td>Cloudflare Pages <code>toffee-demo</code></td><td>새 Pages 프로젝트, 빌드 때 운영 API 주소</td></tr>
+        <tr><td>앱</td><td>"Toffee Dev" <code>com.toffeechat.app.dev</code>, <code>preview</code> 프로필, 등록한 아이폰에만</td><td>"Toffee" <code>com.toffeechat.app</code>, <code>production</code> 프로필, 앱스토어·플레이스토어, OTA 채널 <code>production</code></td></tr>
+        <tr><td>애플 계정</td><td>개인 개발자 계정(젤리 공용)</td><td>같은 계정을 법인으로 전환 후 운영 번들 ID 등록</td></tr>
+        <tr><td>구글 플레이</td><td>없음(안드로이드 미테스트)</td><td>법인 조직 계정 새로($25)</td></tr>
+        <tr><td>로그인</td><td>5곳 모두 개발용 번들 ID·데모 웹 주소만 등록</td><td>같은 앱·채널에 운영 번들 ID·패키지·키 해시·웹 돌아올 주소 추가</td></tr>
+        <tr><td>푸시</td><td>Firebase <code>toffee-c6cba</code> 개발 앱, 실제 수신은 아직 🔶</td><td>같은 프로젝트에 운영 iOS·안드로이드 앱 + 설정 파일 2개</td></tr>
+        <tr><td>결제</td><td>결제 없는 테스트 구독</td><td>스토어 구독(방·묶음마다 상품), <code>APPLE_IAP_ENVIRONMENT=PRODUCTION</code>, 서버 알림 주소</td></tr>
+        <tr><td>메일·번역·오류</td><td>Resend·Anthropic 데모 키, Sentry는 앱만</td><td>운영용 키 따로, 번역 월 한도, 서버 Sentry DSN + 환경 이름 구분</td></tr>
+        <tr><td>약관·사업자 정보</td><td>초안(버전 2026-10-12), 사업자 정보 칸 비어 있음</td><td>변호사 최종본 + 버전 올려 전원 재동의, <code>BUSINESS_*</code> 6개</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">전수조사에서 찾은 것</div>
+    <h2>운영 전에 고쳐야 하는 것</h2>
+    <p class="lede">코드·설정 파일을 직접 확인한 결과입니다. 아래 체크리스트에 <span class="chip found">조사 발견</span> 표시로 들어가 있습니다.</p>
+    <div class="issues">
+      <div class="issue"><span class="sev ok">고침</span><p>운영 빌드 프로필에 서버 주소가 없어서, 그대로 빌드했다면 스토어 앱이 <code>localhost:3000</code>에 붙었을 것 — 운영 주소(<code>api.toffeechat.app</code>·<code>app.toffeechat.app</code>, 10-21 확정)를 넣음</p><span class="where">app/eas.json production · app/src/lib/env.ts</span></div>
+      <div class="issue"><span class="sev crit">필수</span><p>운영 빌드가 찾는 Firebase 설정 파일(<code>GoogleService-Info.plist</code>, <code>google-services.json</code>)이 없음 — 없으면 운영 빌드 자체가 실패</p><span class="where">app/app.config.ts googleServicesFile</span></div>
+      <div class="issue"><span class="sev crit">필수</span><p>운영 빌드의 카카오·네이버·LINE·구글 iOS 키(<code>_PROD</code>)가 전부 비어 있음 — 비면 그 로그인 버튼이 안 보임(애플만 남음)</p><span class="where">app/eas.json · app/.env.example</span></div>
+      <div class="issue"><span class="sev crit">필수</span><p>첫 운영자를 만들 방법이 없음 — 운영 서버엔 입장 코드 로그인이 없고, 역할 변경은 운영자만 할 수 있음. 소셜 로그인으로 가입한 내 계정을 운영자로 올리는 1회용 명령이 필요</p><span class="where">backend/scripts (없음)</span></div>
+      <div class="issue"><span class="sev crit">필수</span><p>정산이 아직 태국 정가 기준 — 나라별 가격을 쓰면 소속사에 실제보다 많이 지급. STATUS 1차에서 유일하게 ⬜인 개발</p><span class="where">STATUS.md 운영자 표 · PurchaseCharge.storeAmountMilli</span></div>
+      <div class="issue"><span class="sev warn">권장</span><p>안드로이드는 한 번도 빌드·설치해 본 적 없음 — 테스트 기기가 없어서. 서명 SHA-1·키 해시를 각 로그인 콘솔에 넣어야 로그인이 됨</p><span class="where">docs/engineering/device-build.md 안드로이드</span></div>
+      <div class="issue"><span class="sev warn">권장</span><p>DB 백업 복구 훈련·개인정보 유출 대응 절차(72시간 통지)가 문서로 없음</p><span class="where">architecture-notes.md 백업/보안</span></div>
+      <div class="issue"><span class="sev warn">권장</span><p>서버 CORS가 모든 출처 허용 — 토큰 방식이라 위험은 낮지만 보안 체크리스트의 미완 항목. 운영 웹 주소로 좁히기</p><span class="where">backend/src/main.ts enableCors()</span></div>
+      <div class="issue"><span class="sev warn">권장</span><p>운영자 2단계 인증이 선택이고 비밀 키를 DB에 그대로 저장 — 운영에선 의무 + 암호화 저장 추천</p><span class="where">User.totpSecret · STATUS 정책 표</span></div>
+      <div class="issue"><span class="sev warn">권장</span><p>데모 주소가 박힌 곳: 랜딩 페이지 약관·개인정보 링크(<code>api-demo</code>), 앱에서 만든 아티스트 연결 링크의 대체 주소(<code>EXPO_PUBLIC_WEB_URL</code> 없을 때 데모 주소 — 이번에 production 프로필에 넣음)</p><span class="where">landing/index.html · app/src/lib/actor-link.ts</span></div>
+      <div class="issue"><span class="sev warn">권장</span><p>구독료 참고 환율표가 10월 임시값 — 나라별 가격 확정 후 맞추기</p><span class="where">app/src/utils/price.ts</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">순서대로</div>
+    <h2>단계별 체크리스트</h2>
+    <div class="filters" role="group" aria-label="담당 필터">
+      <button type="button" data-f="all" aria-pressed="true">전체</button>
+      <button type="button" data-f="me" aria-pressed="false">직접</button>
+      <button type="button" data-f="claude" aria-pressed="false">Claude</button>
+      <button type="button" data-f="ext" aria-pressed="false">외부</button>
+      <label><input type="checkbox" id="hide-done"> 끝난 것 숨기기</label>
+    </div>
+    <p class="muted" style="font-size:13.5px">Claude 항목은 세션에서 "운영 전환 계획 0단계 Claude 항목 해 줘"처럼 말하면 됩니다. 계정 가입·결제가 생기면 사업화 장부도 같이 갱신됩니다.</p>
+    <div id="phases" style="display:grid;gap:16px"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">미리 정해 둘 것</div>
+    <h2>결정과 비용</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>내가 정해야 하는 것(추천안)</h3>
+        <ul>
+          <li><b>운영 주소</b> — <code>api.</code>·<code>app.toffeechat.app</code> <b>확정(10-21)</b>, 앱 운영 빌드 설정에 넣어 둠</li>
+          <li><b>오픈 날짜</b> — 2월 둘째~셋째 주 평일, 소속사 홍보 일정에 맞춤</li>
+          <li><b>나라별 가격</b> — 상품 등록 전에. 한국은 버블·위버스보다 낮게, 필리핀 등은 약 40% 낮게</li>
+          <li><b>소속사 배분율</b> — 계약서와 운영자 화면 값이 같아야 함</li>
+          <li><b>파일럿 규모</b> — 1차 4~6커플로 시작, 4주 뒤 확대(10-19 결정)</li>
+          <li><b>운영자 2단계 인증</b> — 운영 서버는 의무(추천)</li>
+          <li><b>데모 서버</b> — 유지(영업용, 월 약 $5~10), 운영 데이터와 절대 섞지 않음</li>
+          <li><b>구독 유예 기간</b> — 애플 Billing Grace Period·구글 유예 기간 켜기(추천: 켬)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>돈이 나가는 시점</h3>
+        <ul>
+          <li><b>12월</b> 법인 설립 30만~50만 원(법무사 시), 세무 기장 월 10만~20만 원 시작</li>
+          <li><b>12월</b> 운영 서버·DB 월 2만~8만 원(Railway), R2·Resend·Sentry는 무료 구간</li>
+          <li><b>12~1월</b> 구글 법인 계정 $25, 애플은 기존 계정 전환이라 추가 없음</li>
+          <li><b>1월</b> 변호사(약관·정책 표·계약서 한 번에) — 견적은 11월에 미리</li>
+          <li><b>오픈 후</b> 번역 API — 한 달 보고 자동 번역 기본값 다시 판단</li>
+          <li><b>오픈 후 1~2개월</b> 첫 스토어 입금 — 그 전 소속사 지급은 법인 자금에서</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>근거 문서: <code>STATUS.md</code> · <code>docs/product/launch-roadmap.md</code> · <code>ops-infra-backlog.md</code> · <code>store-submission.md</code> · <code>docs/engineering/device-build.md</code> · <code>backend/.env.example</code> · <code>app/eas.json</code>. 이 페이지 원본은 저장소 <code>docs/handover/artifacts/toffee-prod-launch-plan.html</code>.</p>
+    <p>관련 페이지: <a href="https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6">사업화 일정</a> · <a href="https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR">사업화 장부</a> · <a href="https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc">실기기 테스트 체크리스트</a> · <a href="https://claude.ai/artifact/8rQJbh86tZ4zRZxbhQ2tgR">토피 사업 계획</a></p>
+  </footer>
+</div>
+
+<script>
+const PHASES = [
+  { no: '0', title: '계약 전에 미리', when: '지금 ~ 11월 말', start: '2026-10-21', end: '2026-11-30',
+    why: '법인 없이도 되는 것. 여기서 줄여 두면 12~1월의 빡빡한 구간이 가벼워진다. 돈은 거의 안 든다.',
+    items: [
+      ['p0-admin-cli', 'claude', '첫 운영자 지정 명령 만들기', '운영 서버엔 테스트 로그인이 없어 운영자를 만들 길이 없음 → 소셜 로그인으로 가입한 계정을 이메일로 찾아 운영자(전체 권한)로 올리는 1회용 명령', true],
+      ['p0-cors', 'claude', 'CORS를 운영 웹 주소로 좁히기', '환경변수로 허용 출처를 받게(데모·로컬은 지금처럼)', true],
+      ['p0-mfa', 'claude', '운영자 2단계 인증 — 운영에선 의무, 비밀 키 암호화 저장', '정책 표 "운영자 2단계 인증" 확정', true],
+      ['p0-runbook', 'claude', '운영 매뉴얼 문서', '서버 장애·점검 모드·OTA 순서, DB 복구 절차, 개인정보 유출 72시간 통지, 환불·미성년자 확인·신고 처리, 애플 판매 중지 할 일', true],
+      ['p0-env-sheet', 'claude', '운영 환경변수 표 만들기', '넣을 값 / 비워야 할 값(ENABLE_DEV_LOGIN·ENABLE_SANDBOX_SUBSCRIBE·DEV_LOGIN_*·DEMO_*) / 새로 발급할 비밀값을 한 장에. 값 자체는 적지 않음', false],
+      ['p0-android', 'me', '안드로이드 테스트 기기 마련 → preview APK 설치', '서명 SHA-1·키 해시를 구글·카카오·네이버·LINE 개발 앱에 등록하고 로그인·푸시 확인. 한 번도 안 해 봄', true],
+      ['p0-device', 'me', '실기기 체크리스트의 아이폰 항목 끝내기', '특히 푸시 수신(아직 🔶), 카메라·녹음, 사진 제스처, 화면 꺼도 음성. 실기기 테스트 체크리스트 페이지 기준', false],
+      ['p0-quotes', 'me', '법무사·변호사·세무사 견적 받아 두기', '변호사는 약관·정책 표·소속사 계약서 한 번에. 비밀유지 의무가 있는 곳에만 사업 내용 공개', false],
+      ['p0-contract-draft', 'claude', '소속사 계약서 틀(변호사 검토 전 초안)', '정산 비율·주기·통화, CP·묶음 배분, 환불 차감, 최소 발송 빈도, 30일 전 알림 중단, 계약 종료 시 콘텐츠 처리, 초상권', false],
+      ['p0-card', 'me', '토피 전용 카드·지출 기록 시작', '설립 전 비용을 법인 비용으로 넣으려면 영수증이 필요(사업화 일정 1단계 미완)', false],
+      ['p0-translate-limit', 'me', 'Anthropic 콘솔 월 사용 한도 걸기', '데모 키에도. 운영 키는 2단계에서 따로', false],
+    ] },
+  { no: '1', title: '법인 설립', when: '12월 1~3주 (11/30 의향 확인 직후)', start: '2026-12-01', end: '2026-12-26',
+    why: 'D-U-N-S가 핵심 경로의 첫 대기 시간. 법인 등록번호가 나오는 날 바로 신청한다.',
+    items: [
+      ['p1-corp', 'me', '법인 설립', '온라인법인설립시스템 셀프 또는 법무사. 자본금은 개인 돈으로 작게(100만~500만 원). 지원금은 자본금으로 못 씀', false],
+      ['p1-duns', 'me', 'D-U-N-S 번호 신청(설립 당일)', '무료, 발급 수 주. 애플 법인 전환·구글 조직 계정 둘 다 필요', false],
+      ['p1-bizreg', 'me', '사업자등록 → 통신판매업 신고 → 법인 계좌', '통신판매업 번호는 앱 사업자 정보 표시에 필요', false],
+      ['p1-tax', 'ext', '세무사 기장 계약 + 첫 상담', '태국 소속사 지급 원천징수·해외 송금, 청년창업 세액감면, 무보수 대표, 설립 전 비용·결산월, 코드·도메인을 개인→법인으로 넘기는 방법', false],
+      ['p1-transfer', 'me', '자산·계정 법인으로 넘기기', '코드 양도 계약, 도메인 등록자 변경, GitHub·Railway·Cloudflare·Expo·Sentry 결제 정보만 법인으로(계정은 새로 만들지 않음)', false],
+    ] },
+  { no: '2', title: '운영 인프라 만들기', when: '12월 (법인과 병행)', start: '2026-12-01', end: '2026-12-31',
+    why: '법인이 없어도 만들 수 있다. 앱이 붙을 서버·웹이 먼저 떠 있어야 소셜 로그인 돌아올 주소·약관 주소를 등록할 수 있다.',
+    items: [
+      ['p2-railway', 'me', 'Railway 운영 프로젝트 + Postgres', '싱가포르, 메모리 1GB 이상, 헬스체크 /health/ready, 백엔드 Dockerfile 그대로. 서버 1대로 시작(정기 작업은 여러 대여도 안전하게 만들어져 있음)', false],
+      ['p2-backup', 'me', 'DB 자동 백업 켜고 복구 한 번 해 보기', '보관: 일 단위 30일 + 주 단위 90일 권장', false],
+      ['p2-domain', 'me', '운영 주소 연결', 'api.toffeechat.app → Railway, app.toffeechat.app → 새 Cloudflare Pages(소속사·운영자 PC 웹)', false],
+      ['p2-env', 'me', '운영 환경변수 넣기', 'NODE_ENV=production, JWT_SECRET 새로(32자+), API_PUBLIC_URL, TRUST_PROXY=1, SUPPORT_EMAIL, ADMIN_ALERT_EMAIL, ADULTS_ONLY=true. 0단계 표대로', false],
+      ['p2-r2', 'me', 'R2 운영 버킷·토큰', '비공개 버킷 + 이 버킷만 읽기/쓰기 토큰 → STORAGE_* 6개, CORS는 운영 웹 주소', false],
+      ['p2-keys', 'me', '메일·번역·오류 수집 운영 키', 'Resend 운영 키(같은 계정), Anthropic 운영 키 + 월 한도, Sentry 서버 DSN + SENTRY_ENVIRONMENT=production(데모는 demo)', false],
+      ['p2-web', 'me', '운영 웹 배포', 'EXPO_PUBLIC_API_URL=운영 주소로 웹 빌드, 팬이 웹에서 구독 버튼을 누르면 "앱에서 구독" 안내가 나오는지 확인', false],
+      ['p2-admin', 'me', '내 계정 가입 → 운영자 지정 → 2단계 인증 켜기', '0단계 운영자 지정 명령 사용', false],
+      ['p2-smoke', 'claude', '운영 서버 시작 로그 경고 0개 확인', '설정 점검이 빠진 값을 다 알려 줌. 결제·사업자 정보 경고는 4~6단계까지 남는 게 정상', false],
+      ['p2-landing', 'claude', '랜딩 페이지 약관 링크를 운영 주소로', 'api-demo → api', true],
+    ] },
+  { no: '3', title: '스토어 계정 법인으로', when: 'D-U-N-S 나오는 대로 (12월 말 ~ 1월 초)', start: '2026-12-22', end: '2027-01-09',
+    why: '운영 번들 ID는 법인 전환이 끝난 뒤에만 등록한다. 개인 상태에서 올리면 판매자 이름이 개인으로 나간다.',
+    items: [
+      ['p3-apple', 'me', '애플 개인 → 법인(Organization) 전환', '같은 팀이라 젤리·애플 로그인 회원 ID 그대로, 판매자 이름만 법인명', false],
+      ['p3-apple-paid', 'me', '애플 유료 앱 계약·세금·은행 정보', '이게 없으면 구독 상품을 팔 수 없음', false],
+      ['p3-apple-sbp', 'me', '애플 소규모 사업자 프로그램 신청', '수수료 30% → 15%. 정산의 STORE_FEE_PERCENT=15 전제', false],
+      ['p3-google', 'me', '구글 플레이 법인 조직 계정 + 판매자(결제) 프로필·은행', '$25. 구독 수수료 요율 가입 때 확인. 젤리는 나중에 앱 이전', false],
+      ['p3-bundle', 'me', '운영 번들 ID 등록', 'com.toffeechat.app + 알림 확장 com.toffeechat.app.NotificationService, Sign in with Apple·푸시·Communication Notifications 켜기', false],
+      ['p3-apple-web', 'me', '애플 웹 로그인 운영 Services ID', 'Primary App ID = 운영 앱, Return URL https://app.toffeechat.app/oauth/apple', false],
+    ] },
+  { no: '4', title: '운영 키 연결 · 운영 빌드', when: '1월 1~2주', start: '2027-01-05', end: '2027-01-16',
+    why: '로그인·푸시는 네이티브라 웹에선 확인이 안 된다. 운영 빌드를 TestFlight·구글 내부 테스트로 먼저 깔아 본다.',
+    items: [
+      ['p4-firebase', 'me', 'Firebase 운영 iOS·안드로이드 앱 등록 → 설정 파일 2개', 'GoogleService-Info.plist, google-services.json을 app/에. APNs 키를 운영 iOS 앱에도', true],
+      ['p4-social', 'me', '소셜 로그인 5곳에 운영 정보 추가(새로 만들지 않기)', '구글: 운영 iOS·안드로이드 클라이언트, 웹 원본 / 카카오: 번들 ID·패키지·키 해시·웹 Callback / 네이버: 운영 iOS·안드로이드·Callback·검수 요청 / LINE: 번들·패키지·Callback / 애플: 3단계', false],
+      ['p4-google-consent', 'me', '구글 OAuth 동의 화면 검증 신청', '로고·운영 도메인·개인정보처리방침 최종본. 며칠~몇 주라 일찍', false],
+      ['p4-eas', 'claude', 'production 프로필에 운영 키 채우기', '_PROD 값(구글 iOS·카카오·네이버·LINE), EAS 비밀 변수(네이버 Secret·SENTRY_AUTH_TOKEN), 소스맵 업로드 켜기', true],
+      ['p4-server', 'me', '서버 로그인 값', 'APPLE_CLIENT_ID에 운영 번들 ID·Services ID, KAKAO_APP_ID, LINE_*, WEB_LOGIN_ORIGINS=운영 웹, 시크릿은 데모와 다르게 새로 발급 권장', false],
+      ['p4-build', 'me', '운영 빌드 → TestFlight 내부 테스트 · 구글 내부 테스트', 'eas build --profile production (iOS·안드로이드)', false],
+      ['p4-check', 'me', '운영 빌드로 확인', '로그인 5곳, 푸시(아티스트 사진 대화 알림), 개발용 이메일 로그인이 안 보이는지, 앱 이름 "Toffee"·새 아이콘', false],
+      ['p4-business', 'me', '사업자 정보 넣기', 'BUSINESS_* 6개 → 약관·고객센터·마이페이지 아래에 표시(전자상거래법)', false],
+    ] },
+  { no: '5', title: '계약 · 법무 · 가격', when: '12월 ~ 1월 중순 (병행)', start: '2026-12-08', end: '2027-01-15',
+    why: '스토어 심사에서 실존 인물 콘텐츠 권리 증빙으로 소속사 계약서를 낸다. 가격과 정산 기준은 상품 등록 전에 끝나야 한다.',
+    items: [
+      ['p5-sign', 'ext', '소속사 계약 서명', '1월 초 목표. 아티스트 자료(영문 이름·닉네임·성별·CP 짝·사진)도 같이 받기', false],
+      ['p5-lawyer', 'ext', '변호사: 약관·개인정보처리방침 최종 + 정책 표 확정', 'STATUS "출시 전 확정할 정책" 표 전체, 태국 PDPA, 청약철회·미발송 환불·성인만 가입 근거', false],
+      ['p5-terms', 'claude', '최종 약관 반영 → 약관 버전 올리기', 'CURRENT_TERMS_VERSION 변경 = 전원 다시 동의. FAQ·결제 안내 문구도 맞춤', false],
+      ['p5-price', 'me', '나라별 가격 확정', '한국은 버블·위버스보다 낮게, 필리핀 등 약 40% 낮게, 나머지는 스토어 자동 변환', false],
+      ['p5-settle', 'claude', '정산을 실제 결제 금액 기준으로 개발', '스토어 입금액(없으면 결제 금액 × 환율)을 바트로 환산해 정산, 소속사·운영자 화면 함께. 상품 등록 전에', true],
+      ['p5-rate', 'claude', '참고 환율표를 확정 가격에 맞추기', 'app/src/utils/price.ts', true],
+      ['p5-share', 'me', '소속사별 배분율 운영자 화면에 입력', '계약서 숫자와 같게', false],
+    ] },
+  { no: '6', title: '상품 등록 · 결제 확인 · 스토어 제출', when: '1월 2~4주', start: '2027-01-12', end: '2027-01-30',
+    why: '첫 구독 상품은 앱 버전과 함께 심사받는다. 반려를 한 번 받을 수 있다고 보고 1주 여유를 둔다.',
+    items: [
+      ['p6-records', 'me', '스토어에 앱 만들기', 'App Store Connect·Play Console, 연령 등급 18+, 개인정보·데이터 보안은 store-submission.md 그대로, 지원·약관·개인정보 주소는 운영 서버', false],
+      ['p6-products', 'me', '방·CP방·묶음마다 구독 상품 등록', '애플은 방·묶음마다 구독 그룹 따로(같은 그룹이면 동시 구독 불가) → 운영자 화면에 상품 ID. 홈 할 일 "상품 ID 없는 방" 0개', false],
+      ['p6-notify', 'me', '스토어 서버 알림 연결', '애플 서버 알림 V2 → /iap/apple/notifications(운영·샌드박스), 구글 실시간 개발자 알림 Pub/Sub 푸시(인증) → /iap/google/notifications', false],
+      ['p6-iap-env', 'me', '서버 결제 값', 'APPLE_BUNDLE_ID, APPLE_APP_ID, APPLE_IAP_ENVIRONMENT=PRODUCTION, GOOGLE_PLAY_PACKAGE_NAME, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON(재무 보기·주문 관리·구독 관리 권한), GOOGLE_RTDN_*', false],
+      ['p6-sandbox', 'me', '샌드박스 결제 끝까지', '구독·복원·갱신·해지·환불, 묶음, 미발송 환불, 활동 종료 → 구글 자동 해지, 애플 판매 중지가 기존 구독 갱신을 멈추는지', false],
+      ['p6-shots', 'me', '스크린샷(실제 아티스트 사진)', '둘러보기·프로필·토피룸(사진·음성)·크게 보기·구독 확인·묶음. 애플 6.9"·6.5", 구글 휴대폰', false],
+      ['p6-review', 'me', '심사용 계정·심사 메모', '성인 생년월일 소셜 계정, 팬은 미디어를 못 보냄·아티스트 계정은 운영자가 만듦 메모', false],
+      ['p6-submit', 'me', '제출 → 승인 후 "수동 출시"로 대기', '오픈일에 직접 공개', false],
+      ['p6-storeid', 'claude', '앱스토어 앱 ID 넣기', 'EXPO_PUBLIC_IOS_APP_STORE_ID — 강제 업데이트 화면이 바로 앱 페이지로', false],
+    ] },
+  { no: '7', title: '아티스트 온보딩 · 리허설', when: '1월 3주 ~ 2월 1주', start: '2027-01-19', end: '2027-02-12',
+    why: '연결 링크는 14일이면 만료되니 오픈 2주 안쪽에 보낸다. 환영·생일 메시지가 없으면 아티스트 보내기 화면이 안 열린다.',
+    items: [
+      ['p7-bulk', 'me', '아티스트·CP 일괄 등록 + 사진 묶어 올리기', '공개 시각 = 오픈 시각(예약 오픈), 계약 끝나는 날도 입력', false],
+      ['p7-link', 'me', '1회용 연결 링크 보내기 → 아티스트가 소셜 로그인으로 연결', '운영 웹에서 만들어야 링크가 운영 주소로 나감', false],
+      ['p7-greet', 'ext', '아티스트별 환영·생일 메시지, 토피룸 사진', '소속사 직원이 대신 써도 됨', false],
+      ['p7-staff', 'me', '소속사 직원 계정 지정 + 사용법 안내', '대시보드·모니터링·기록은 앱/웹, 정산은 PC 웹', false],
+      ['p7-banned', 'me', '금칙어 기본 목록 넣기, 공지 첫 글', '운영 DB는 비어서 시작', false],
+      ['p7-rehearsal', 'me', '리허설: 운영 서버에서 실제 결제 1건', '내 계정 구독 → 아티스트 메시지 → 푸시 → 답장 → 환불 요청까지, 소속사 화면 숫자 확인', false],
+      ['p7-promo', 'ext', '소속사 오픈 홍보 일정·스토어 링크 공유', '정각 오픈 알림 받기 버튼을 홍보 문구에', false],
+    ] },
+  { no: '8', title: '오픈 주', when: '2월 둘째~셋째 주', start: '2027-02-15', end: '2027-02-19', dday: true,
+    why: '앱 공개와 예약 오픈 정각을 맞추고, 첫 72시간은 오류·문의를 바로 본다.',
+    items: [
+      ['p8-release', 'me', '앱 공개(수동 출시) → 예약 오픈 정각에 방 열림·알림 푸시', '', false],
+      ['p8-watch', 'me', '첫 72시간 지켜보기', 'Sentry, Railway 로그, 운영자 홈 할 일·1:1 문의·환불 요청', false],
+      ['p8-hotfix', 'claude', '급한 수정은 OTA, 서버 문제면 점검 모드', '네이티브 수정은 새 빌드 + 최소 버전. OTA는 서버 배포가 끝난 뒤', false],
+    ] },
+  { no: '9', title: '오픈 후 첫 두 달', when: '오픈 ~ 4월', start: '2027-02-15', end: '2027-04-15',
+    why: '이 숫자가 다음 소속사 영업 자료이자 투자 유치 근거가 된다.',
+    items: [
+      ['p9-weekly', 'me', '매주 숫자 기록', '구독 전환율, 월 해지율(가장 중요), 아티스트 발송 빈도, 환불·신고·문의 건수, 토피에 쓴 시간', false],
+      ['p9-close', 'me', '첫 달 정산 마감 → 스토어 보고서와 대조 → 지급 기록', '태국 시간 말일 기준. 스토어 입금은 1~2개월 뒤', false],
+      ['p9-expand', 'me', '4주 뒤 나머지 아티스트 추가', '단계적 확대(GMMTV 12커플·채널3 약 10명 목표)', false],
+      ['p9-story', 'claude', '스토리 화면 만들기', '미래 기능 ① — 서버는 이미 있음', false],
+      ['p9-benefit', 'claude', '장기 구독 혜택', '미래 기능 ② — 30일 넘는 구독자가 생기기 전', false],
+      ['p9-cost', 'me', '번역 비용 한 달 보고 자동 번역 기본값 판단', '', false],
+    ] },
+];
+const OWNER = { me: '직접', claude: 'Claude', ext: '외부' };
+
+let checks = {};
+let db = null;
+let filter = 'all';
+let hideDone = false;
+try { const s = JSON.parse(localStorage.getItem('toffee-plan-view') || '{}'); filter = s.filter || 'all'; hideDone = !!s.hideDone; } catch (e) {}
+
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const k in attrs || {}) { if (k === 'class') n.className = attrs[k]; else if (k === 'text') n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]); }
+  for (const c of kids) if (c) n.append(c);
+  return n;
+}
+
+function fmtDate(iso) { const d = new Date(iso); return (d.getMonth() + 1) + '/' + d.getDate(); }
+
+function renderGantt() {
+  const g = document.getElementById('gantt');
+  g.textContent = '';
+  const start = new Date('2026-10-19').getTime(), end = new Date('2027-04-19').getTime();
+  const pct = (iso) => Math.max(0, Math.min(100, (new Date(iso).getTime() - start) / (end - start) * 100));
+  const months = ['2026-11-01', '2026-12-01', '2027-01-01', '2027-02-01', '2027-03-01', '2027-04-01'];
+  const head = el('div', { class: 'g-track g-head', style: 'height:28px' });
+  months.forEach((m) => head.append(el('div', { class: 'g-month', style: 'left:' + pct(m) + '%', text: (new Date(m).getMonth() + 1) + '월' })));
+  g.append(el('div', { class: 'g-label g-head', text: '단계' }), head);
+  const today = new Date().toISOString().slice(0, 10);
+  PHASES.forEach((p) => {
+    const tr = el('div', { class: 'g-track', style: 'height:34px' });
+    months.forEach((m) => tr.append(el('div', { class: 'g-month', style: 'left:' + pct(m) + '%' })));
+    const l = pct(p.start), r = pct(p.end);
+    tr.append(el('div', { class: 'g-bar' + (p.dday ? ' dday' : ''), style: 'left:' + l + '%;width:' + Math.max(0.8, r - l) + '%', title: fmtDate(p.start) + ' ~ ' + fmtDate(p.end) }));
+    if (today >= '2026-10-19' && today <= '2027-04-19') tr.append(el('div', { class: 'g-today', style: 'left:' + pct(today) + '%', title: '오늘' }));
+    g.append(el('div', { class: 'g-label', text: p.no + '. ' + p.title }), tr);
+  });
+}
+
+function renderPhases() {
+  const box = document.getElementById('phases');
+  box.textContent = '';
+  const totals = { all: [0, 0], me: [0, 0], claude: [0, 0], ext: [0, 0] };
+  PHASES.forEach((p) => {
+    let done = 0;
+    const list = el('ul', { class: 'items' });
+    p.items.forEach(([id, owner, title, desc, found]) => {
+      const c = checks[id];
+      const isDone = !!(c && c.done);
+      if (isDone) done++;
+      totals.all[1]++; totals[owner][1]++;
+      if (isDone) { totals.all[0]++; totals[owner][0]++; }
+      if (filter !== 'all' && filter !== owner) return;
+      if (hideDone && isDone) return;
+      const box = el('input', { type: 'checkbox', id: 'c-' + id, 'aria-label': title });
+      box.checked = isDone;
+      if (!db) box.disabled = true;
+      box.addEventListener('change', () => toggle(id, box.checked));
+      const meta = el('div', { class: 'meta' });
+      if (found) meta.append(el('span', { class: 'chip found', text: '조사 발견' }));
+      if (isDone && c.at) meta.append(el('span', { class: 'doneat', text: fmtDate(c.at) + ' 완료' }));
+      const txt = el('div', { class: 'txt' }, el('label', { class: 't', for: 'c-' + id, text: title }), desc ? el('span', { class: 'd', text: desc }) : null, meta.childNodes.length ? meta : null);
+      list.append(el('li', { class: 'item' + (isDone ? ' done' : '') }, box, txt, el('span', { class: 'chip owner ' + owner, text: OWNER[owner] })));
+    });
+    const count = el('span', { class: 'phase-count' + (done === p.items.length ? ' done' : ''), text: done + ' / ' + p.items.length });
+    const head = el('div', { class: 'phase-head' },
+      el('span', { class: 'phase-no', text: p.no + '단계' }),
+      el('div', { class: 'phase-title' }, el('h3', { text: p.title }), el('span', { class: 'phase-when', text: p.when })),
+      count,
+      el('p', { class: 'phase-why', text: p.why }));
+    const sec = el('article', { class: 'phase' }, head);
+    if (list.childNodes.length) sec.append(list);
+    else sec.append(el('p', { class: 'muted', style: 'padding:12px 18px;font-size:13.5px', text: '이 필터에 해당하는 남은 일이 없어요.' }));
+    box.append(sec);
+  });
+  for (const k of Object.keys(totals)) {
+    const [d, t] = totals[k];
+    document.getElementById('sum-' + k).textContent = d + ' / ' + t;
+    document.getElementById('bar-' + k).style.width = (t ? d / t * 100 : 0) + '%';
+  }
+}
+
+async function toggle(id, done) {
+  if (!db) return;
+  const prev = checks[id];
+  checks = { ...checks, [id]: { done, at: done ? new Date().toISOString() : null } };
+  renderPhases();
+  try { await db.doc('checks/' + id).set({ done, at: done ? new Date().toISOString() : null }); }
+  catch (e) {
+    checks = { ...checks, [id]: prev };
+    renderPhases();
+    document.getElementById('sync').textContent = '저장하지 못했어요 — 편집 권한이 있는 계정으로 열었는지 확인해 주세요.';
+  }
+}
+
+document.querySelectorAll('.filters button').forEach((b) => {
+  b.setAttribute('aria-pressed', String(b.dataset.f === filter));
+  b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.filters button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    saveView(); renderPhases();
+  });
+});
+const hd = document.getElementById('hide-done');
+hd.checked = hideDone;
+hd.addEventListener('change', () => { hideDone = hd.checked; saveView(); renderPhases(); });
+function saveView() { try { localStorage.setItem('toffee-plan-view', JSON.stringify({ filter, hideDone })); } catch (e) {} }
+
+renderGantt();
+renderPhases();
+
+(async () => {
+  const sync = document.getElementById('sync');
+  try { db = window.claude ? await window.claude.use('db') : null; } catch (e) { db = null; }
+  if (!db) { sync.textContent = '체크 저장소에 연결되지 않았어요 — 읽기 전용으로 보여요.'; renderPhases(); return; }
+  sync.textContent = '체크하면 바로 저장돼요(이 페이지를 여는 모든 곳에 같이 보임).';
+  db.collection('checks').onSnapshot((snap) => {
+    const next = {};
+    snap.docs.forEach((d) => { if (d.exists) next[d.id] = d.data(); });
+    checks = next;
+    renderPhases();
+  }, () => { sync.textContent = '체크 저장소를 읽지 못했어요 — 새로고침해 주세요.'; });
+  renderPhases();
+})();
+</script>

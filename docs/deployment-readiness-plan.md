@@ -160,6 +160,24 @@ CP 묶음 가격 정리: 10-15에 묶음을 "A + AB", "B + AB", "전체" 3개로
 웹에서 언어만 오면 fil/tl → 필리핀, id → 인도네시아로 짐작. 같은 날 기준 가격 통화는 **바트 유지**로 안내(집중 시장 태국 ฿149가
 환율이 바뀌어도 그대로 유지되는 기준 나라가 되고, 소속사 계약·정산도 바트). 남은 일: 스토어 가격표를 정하면 환율표를 그 가격에 맞추기.
 
+---
+
+## 2026-10-21 — 운영 전환 계획 아티팩트(소속사 계약 → 2월 파일럿)
+
+사용자 요청: 계약이 되면 2월 파일럿을 여는데, 지금 전부 dev(데모)라 운영 전환·앱 출시·운영 준비를 한 페이지에 순서대로.
+→ STATUS·사업화 일정·ops-infra-backlog·store-submission·device-build·`backend/.env.example`·`env-check.ts`·`app/eas.json`·`app.config.ts`를
+전수조사해 **[토피 운영 전환 계획](https://claude.ai/artifact/J5AfcyX1PPQJsAvHBGkmmq)**(0~9단계 체크리스트, 체크는 아티팩트 DB `checks/<id>`에 저장,
+원본 `docs/handover/artifacts/toffee-prod-launch-plan.html`)으로 정리. 핵심 경로 = 법인 → D-U-N-S → 애플 법인 전환 → 운영 번들 ID → 운영 빌드 → 상품·심사.
+
+**조사에서 찾은 것**
+- `eas.json` production 프로필에 `EXPO_PUBLIC_API_URL`이 없어 운영 빌드가 `localhost:3000`에 붙을 뻔함 → 추천 주소 `https://api.toffeechat.app`·
+  `EXPO_PUBLIC_WEB_URL=https://app.toffeechat.app`을 잠정 적용(주소를 바꾸면 이 두 줄). 운영 서버는 아직 없음.
+- 운영 빌드용 Firebase 설정 파일 2개·`_PROD` 로그인 키 전부 없음(4단계에서), **첫 운영자를 만들 방법이 없음**(운영엔 테스트 로그인이 없고 역할 변경은
+  운영자만 — 1회용 명령 필요, 0단계 Claude 항목), CORS 전체 허용, 운영자 TOTP 비밀키 평문, 백업 복구·유출 대응 절차 문서 없음, 안드로이드 미테스트,
+  랜딩 약관 링크가 `api-demo`. 정산 실제 결제 금액 기준(⬜)은 그대로 5단계.
+
+**같은 날 사용자 결정**: 운영 주소는 추천안대로 확정(`api.`·`app.toffeechat.app`, `ops-infra-backlog.md` 인프라 표). 0단계 Claude 항목(운영자 지정 명령·CORS·2단계 인증 의무/암호화·운영 매뉴얼·환경변수 표·계약서 틀)은 **나중에** — 요청하면 진행.
+
 ## 2026-10-20 (이어서) — "발견한 오류는 바로 수정" 방침 + 남겨 뒀던 개선 후보 전부 수정
 
 사용자 지시: 에러는 발견되면 바로 수정(CLAUDE.md에 방침으로 추가 — 기획 판단이 필요하면 먼저 정한 결정을 찾아보고, 없으면 추천안으로).
