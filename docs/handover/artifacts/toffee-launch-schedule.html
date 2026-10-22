@@ -221,6 +221,26 @@ table.t tr.hl td{background:var(--accent-soft)}
 .links2 a:hover .lt{color:var(--accent-strong)}
 .links2 .lt{font-weight:600}
 .links2 .ld{font-size:13px;color:var(--muted);text-align:right}
+.tag.found{background:var(--bench-soft);color:var(--danger)}
+#lpPhases .t-title,#lpPhases .t-detail,.issue,.issue code{overflow-wrap:anywhere;min-width:0}
+.lp-path{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lp-path .step{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:13.5px}
+.lp-path .step.long{border-color:var(--bench);background:var(--bench-soft)}
+.lp-path .arrow{color:var(--muted);font-size:13px}
+.issues{display:flex;flex-direction:column;gap:8px}
+.issue{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;font-size:14px}
+.issue .where{grid-column:2;font-size:12.5px;color:var(--muted)}
+.sev{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;height:fit-content;white-space:nowrap}
+.sev.crit{color:var(--danger);border:1px solid var(--danger)}
+.sev.warn{background:var(--bench-soft);color:var(--bench)}
+.sev.ok{background:var(--advisor-soft);color:var(--advisor)}
+.lp-stats{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.lp-stats b{color:var(--fg)}
+.timeline{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.tl{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 14px;background:var(--surface);border-radius:8px}
+.tl>span:first-child{font-weight:600}
+@media (max-width:520px){.tl{grid-template-columns:1fr;gap:2px}}
+.memo-ex{white-space:pre-wrap;font-family:var(--font);font-size:13.5px;background:var(--surface);border-radius:8px;padding:12px 14px;margin:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -228,7 +248,7 @@ table.t tr.hl td{background:var(--accent-soft)}
   <header>
     <div class="eyebrow">Toffee · 사업의 모든 것 한곳에</div>
     <h1>토피 사업 본부</h1>
-    <p class="sub"><b style="color:var(--fg)">태국 배우와 팬이 1:1 채팅처럼 소통하는 유료 구독 앱 · 2027년 2월 출시 목표.</b> 예전 "토피 사업 계획"(숫자)과 "토피 사업화 일정"(할 일)을 합친 페이지예요(2026-10-21). 체크·메모는 바로 저장되고 Claude도 읽어요. 원본 문서는 저장소 <code>docs/product/launch-roadmap.md</code>.</p>
+    <p class="sub"><b style="color:var(--fg)">태국 배우와 팬이 1:1 채팅처럼 소통하는 유료 구독 앱 · 2027년 2월 출시 목표.</b> 예전 "토피 사업 계획"(숫자)과 "토피 사업화 일정"(할 일)을 합친 페이지예요(2026-10-21). 10-22에 "운영 전환 계획"·"설립 전 지출 처리"·소속사 제안의 가격 근거도 이 페이지로 옮겼어요. 체크·메모는 바로 저장되고 Claude도 읽어요. 원본 문서는 저장소 <code>docs/product/launch-roadmap.md</code>.</p>
   </header>
 
   <div id="banner" class="banner" hidden></div>
@@ -242,6 +262,7 @@ table.t tr.hl td{background:var(--accent-soft)}
   <nav class="tabs" role="tablist" aria-label="보기">
     <button class="tab" role="tab" data-tab="now" aria-controls="tab-now">지금</button>
     <button class="tab" role="tab" data-tab="tasks" aria-controls="tab-tasks">할 일</button>
+    <button class="tab" role="tab" data-tab="launch" aria-controls="tab-launch">운영 전환</button>
     <button class="tab" role="tab" data-tab="decide" aria-controls="tab-decide">정할 것</button>
     <button class="tab" role="tab" data-tab="money" aria-controls="tab-money">돈</button>
     <button class="tab" role="tab" data-tab="server" aria-controls="tab-server">서버</button>
@@ -313,7 +334,7 @@ table.t tr.hl td{background:var(--accent-soft)}
       <li><span class="q">언제 회사 그만두지?</span><button class="go" data-goto="money">돈 →</button>
         <span class="a"><b>매출이 주 경로</b>(2026-10-21): 토피 몫 월 550만 원 3개월 연속 + 최근 6개월 평균, 소속사 2곳 이상(한 곳 60% 미만), 생활비·고정비 6개월치. 투자(월급 포함 18개월치)는 보조.</span></li>
       <li><span class="q">가격·정산 비율이 얼마였지?</span><button class="go" data-goto="biz">사업 요약 →</button>
-        <span class="a">태국 ฿149/월(첫 달 ฿99), CP방 ฿199, 묶음 ฿349. 정산 60/40, 처음 3곳은 첫 12개월 70/30 — <b>내부용</b>. 외부 자료엔 가격 범위만, 비율은 미팅에서.</span></li>
+        <span class="a">태국 ฿149/월(첫 달 ฿99), CP방 ฿199, 묶음 배우 1명 + CP ฿289 · 배우 2명 + CP ฿349. 정산 60/40, 처음 3곳은 첫 12개월 70/30 — <b>내부용</b>. 외부 자료엔 가격 범위만, 비율은 미팅에서.</span></li>
     </ul>
   </section>
   </div>
@@ -335,7 +356,7 @@ table.t tr.hl td{background:var(--accent-soft)}
   <section class="panel" aria-label="메모장" style="background:var(--bg);border:1px solid var(--line)">
     <div>
       <h2>메모장</h2>
-      <p class="sub">벤치마킹하면서 느낀 점, 소속사 반응을 날짜와 함께 쌓아 두세요. 4단계 사업계획서의 근거가 돼요.</p>
+      <p class="sub">벤치마킹하면서 느낀 점, 소속사 반응을 날짜와 함께 쌓아 두세요. IR 자료·지원사업 계획서의 근거가 돼요.</p>
     </div>
     <form class="notes-form" id="noteForm">
       <select id="noteKind" aria-label="분류">
@@ -353,6 +374,88 @@ table.t tr.hl td{background:var(--accent-soft)}
   
   </div>
 
+  <div class="tabpanel" id="tab-launch" role="tabpanel" hidden>
+  <section aria-labelledby="h-lp">
+    <div class="sec-head"><h2 id="h-lp">운영 전환 — 데모에서 2월 오픈까지</h2><p class="muted">소속사 계약이 되면 지금 데모(개발)로 돌고 있는 것을 전부 운영으로 바꾸고 앱을 스토어에 내는 순서예요. 2026-10-21 저장소 전수조사 기준, 예전 "토피 운영 전환 계획" 페이지를 10-22에 이 탭으로 옮겼어요. 법인 설립·계약 서명처럼 "할 일" 탭 4단계에 있는 일은 여기서 빼고 그쪽에서 체크해요. Claude 항목은 "운영 전환 0단계 Claude 항목 해 줘"처럼 말하면 돼요.</p></div>
+    <div class="lp-stats" id="lpStats"></div>
+  </section>
+
+  <section aria-labelledby="h-lp-path">
+    <div class="sec-head"><h2 id="h-lp-path">핵심 경로 — 가장 오래 걸리는 줄</h2><p class="muted">이 줄의 어느 칸이든 밀리면 오픈일이 같이 밀려요. 노란 칸은 빨리 해도 줄일 수 없는 대기 시간이라 <b>법인 등록 당일 신청</b>이 원칙이에요. 운영 서버·DB·파일 저장소는 법인과 상관없이 12월 초부터 만들 수 있어서 옆에서 같이 가요.</p></div>
+    <div class="lp-path">
+      <span class="step">소속사 의향(11/30 판단)</span><span class="arrow">→</span>
+      <span class="step">법인 설립 1~2주</span><span class="arrow">→</span>
+      <span class="step long">D-U-N-S 발급 수 주</span><span class="arrow">→</span>
+      <span class="step long">애플 개인→법인 전환 1~2주</span><span class="arrow">→</span>
+      <span class="step">운영 번들 ID 등록</span><span class="arrow">→</span>
+      <span class="step">Firebase·소셜 로그인 운영 앱</span><span class="arrow">→</span>
+      <span class="step">운영 빌드</span><span class="arrow">→</span>
+      <span class="step">구독 상품 등록·샌드박스</span><span class="arrow">→</span>
+      <span class="step long">스토어 심사(반려 대비 1주)</span><span class="arrow">→</span>
+      <span class="step">2월 오픈</span>
+    </div>
+    <p class="pnote" style="padding-left:0">오픈일은 2월 둘째~셋째 주 평일 중 하루로 소속사와 정해요. 11/15까지 1차 7곳 발송을 못 하면 전체를 3월로 한 달 미뤄요. 구글도 법인 조직 계정을 새로 만드는데 D-U-N-S가 필요해요.</p>
+  </section>
+
+  <section aria-labelledby="h-lp-cmp">
+    <div class="sec-head"><h2 id="h-lp-cmp">무엇이 데모이고, 운영에선 어떻게 바뀌나</h2><p class="muted">원칙(10-02 결정): 소셜 로그인·Firebase는 <b>새로 만들지 않고</b> 지금 앱·채널에 운영 정보만 추가해요(새로 만들면 회원 ID가 달라짐). 서버·DB·파일 저장소는 데모와 <b>완전히 분리</b>. 데모 서버는 영업용으로 계속 둬요.</p></div>
+    <div class="tw"><table class="t">
+      <thead><tr><th>구성</th><th>지금(데모)</th><th>운영</th></tr></thead>
+      <tbody>
+        <tr><td>API 서버</td><td>Railway <code>toffee-demo</code>, <code>NODE_ENV=development</code>, 입장 코드 로그인·결제 없는 구독 켜짐, 매일 새벽 초기화</td><td>Railway 새 프로젝트(싱가포르), <code>NODE_ENV=production</code> — 테스트 로그인·샌드박스 구독을 켜 두면 서버가 아예 안 켜짐(설정 점검). 메모리 1GB 이상</td></tr>
+        <tr><td>주소</td><td><code>api-demo.toffeechat.app</code> / <code>demo.toffeechat.app</code></td><td><code>api.toffeechat.app</code> / <code>app.toffeechat.app</code>(소속사·운영자 PC 웹) — 10-21 확정</td></tr>
+        <tr><td>DB</td><td>데모 Postgres, 가상 아티스트·팬 데이터</td><td>새 Postgres, 자동 백업 켜고 복구 한 번 해 보기. <code>DEMO_*</code> 비움</td></tr>
+        <tr><td>파일 저장소</td><td>R2 버킷 <code>toffee-demo</code></td><td>새 비공개 버킷(예: <code>toffee-media</code>) + 새 토큰, CORS는 운영 웹 주소</td></tr>
+        <tr><td>웹 화면</td><td>Cloudflare Pages <code>toffee-demo</code></td><td>새 Pages 프로젝트, 빌드 때 운영 API 주소</td></tr>
+        <tr><td>앱</td><td>"Toffee Dev" <code>com.toffeechat.app.dev</code>, <code>preview</code> 프로필, 등록한 아이폰에만</td><td>"Toffee" <code>com.toffeechat.app</code>, <code>production</code> 프로필, 앱스토어·플레이스토어, OTA 채널 <code>production</code></td></tr>
+        <tr><td>애플 계정</td><td>개인 개발자 계정(젤리 공용)</td><td>같은 계정을 법인으로 전환 후 운영 번들 ID 등록</td></tr>
+        <tr><td>구글 플레이</td><td>없음(안드로이드 미테스트)</td><td>법인 조직 계정 새로($25)</td></tr>
+        <tr><td>로그인</td><td>5곳 모두 개발용 번들 ID·데모 웹 주소만 등록</td><td>같은 앱·채널에 운영 번들 ID·패키지·키 해시·웹 돌아올 주소 추가</td></tr>
+        <tr><td>푸시</td><td>Firebase <code>toffee-c6cba</code> 개발 앱</td><td>같은 프로젝트에 운영 iOS·안드로이드 앱 + 설정 파일 2개</td></tr>
+        <tr><td>결제</td><td>결제 없는 테스트 구독</td><td>스토어 구독(방·묶음마다 상품), <code>APPLE_IAP_ENVIRONMENT=PRODUCTION</code>, 서버 알림 주소</td></tr>
+        <tr><td>메일·번역·오류</td><td>Resend·Anthropic 데모 키, Sentry는 앱만</td><td>운영용 키 따로, 번역 월 한도, 서버 Sentry DSN + 환경 이름 구분</td></tr>
+        <tr><td>약관·사업자 정보</td><td>초안(버전 2026-10-12), 사업자 정보 칸 비어 있음</td><td>변호사 최종본 + 버전 올려 전원 재동의, <code>BUSINESS_*</code> 6개</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="h-lp-issues">
+    <div class="sec-head"><h2 id="h-lp-issues">운영 전에 고쳐야 하는 것 (전수조사에서 찾음)</h2><p class="muted">코드·설정 파일을 직접 확인한 결과예요. 아래 체크리스트에 "조사 발견" 표시로 들어가 있어요.</p></div>
+    <div class="issues">
+      <div class="issue"><span class="sev ok">고침</span><span>운영 빌드 프로필에 서버 주소가 없어서 그대로 빌드했다면 스토어 앱이 <code>localhost:3000</code>에 붙었을 것 — 운영 주소를 넣음</span><span class="where">app/eas.json production · app/src/lib/env.ts</span></div>
+      <div class="issue"><span class="sev crit">필수</span><span>운영 빌드가 찾는 Firebase 설정 파일(<code>GoogleService-Info.plist</code>, <code>google-services.json</code>)이 없음 — 없으면 운영 빌드 자체가 실패</span><span class="where">app/app.config.ts googleServicesFile</span></div>
+      <div class="issue"><span class="sev crit">필수</span><span>운영 빌드의 카카오·네이버·LINE·구글 iOS 키(<code>_PROD</code>)가 전부 비어 있음 — 비면 그 로그인 버튼이 안 보임(애플만 남음)</span><span class="where">app/eas.json · app/.env.example</span></div>
+      <div class="issue"><span class="sev crit">필수</span><span>첫 운영자를 만들 방법이 없음 — 운영 서버엔 입장 코드 로그인이 없고, 역할 변경은 운영자만 가능. 소셜 로그인으로 가입한 내 계정을 운영자로 올리는 1회용 명령이 필요</span><span class="where">backend/scripts (없음)</span></div>
+      <div class="issue"><span class="sev crit">필수</span><span>정산이 아직 태국 정가 기준 — 나라별 가격을 쓰면 소속사에 실제보다 많이 지급. STATUS 1차에서 유일하게 ⬜인 개발</span><span class="where">STATUS.md 운영자 표 · PurchaseCharge.storeAmountMilli</span></div>
+      <div class="issue"><span class="sev warn">권장</span><span>안드로이드는 한 번도 빌드·설치해 본 적 없음 — 서명 SHA-1·키 해시를 각 로그인 콘솔에 넣어야 로그인이 됨</span><span class="where">docs/engineering/device-build.md 안드로이드</span></div>
+      <div class="issue"><span class="sev warn">권장</span><span>DB 백업 복구 훈련·개인정보 유출 대응 절차(72시간 통지)가 문서로 없음</span><span class="where">architecture-notes.md 백업/보안</span></div>
+      <div class="issue"><span class="sev warn">권장</span><span>서버 CORS가 모든 출처 허용 — 운영 웹 주소로 좁히기</span><span class="where">backend/src/main.ts enableCors()</span></div>
+      <div class="issue"><span class="sev warn">권장</span><span>운영자 2단계 인증이 선택이고 비밀 키를 DB에 그대로 저장 — 운영에선 의무 + 암호화 저장 추천</span><span class="where">User.totpSecret · STATUS 정책 표</span></div>
+      <div class="issue"><span class="sev warn">권장</span><span>데모 주소가 박힌 곳: 랜딩 페이지 약관·개인정보 링크(<code>api-demo</code>), 아티스트 연결 링크의 대체 주소</span><span class="where">landing/index.html · app/src/lib/actor-link.ts</span></div>
+      <div class="issue"><span class="sev warn">권장</span><span>구독료 참고 환율표가 10월 임시값 — 나라별 가격(10-22 확정)에 맞추기</span><span class="where">app/src/utils/price.ts</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-lp-list" style="display:flex;flex-direction:column;gap:14px">
+    <div class="sec-head"><h2 id="h-lp-list">단계별 체크리스트</h2><p class="muted">담당: <span class="tag bench">직접</span> 계정·콘솔·서명 · <span class="tag money">Claude</span> 개발·설정 문서 · <span class="tag advisor">외부</span> 변호사·세무사·소속사. 계정 가입·결제가 생기면 사업화 장부도 같이 갱신돼요.</p></div>
+    <div class="stages" id="lpPhases"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-lp-decide">
+    <h2 id="h-lp-decide">운영 전환 때 정해 둘 것</h2>
+    <ul class="pnote" style="color:var(--fg);font-size:14px">
+      <li><b>운영 주소</b> — <code>api.</code>·<code>app.toffeechat.app</code> 확정(10-21), 앱 운영 빌드 설정에 넣어 둠</li>
+      <li><b>오픈 날짜</b> — 2월 둘째~셋째 주 평일, 소속사 홍보 일정에 맞춤</li>
+      <li><b>나라별 가격</b> — 10-22 확정(사업 요약 탭). 남은 건 정산 개발(5단계)</li>
+      <li><b>소속사 배분율</b> — 기본 60/40, 처음 3곳은 첫 12개월 70/30. 계약서와 운영자 화면 값이 같아야 함</li>
+      <li><b>파일럿 규모</b> — 1차 4~6커플로 시작, 4주 뒤 확대(10-19 결정)</li>
+      <li><b>운영자 2단계 인증</b> — 운영 서버는 의무(추천) · <b>구독 유예 기간</b> — 애플·구글 둘 다 켬(추천)</li>
+      <li><b>데모 서버</b> — 유지(영업용, 월 약 $5~10), 운영 데이터와 절대 섞지 않음</li>
+      <li>돈이 나가는 시점은 "돈" 탭 하나로 봐요.</li>
+    </ul>
+  </section>
+  </div>
+
   <div class="tabpanel" id="tab-decide" role="tabpanel" hidden>
   <section aria-labelledby="h-pending">
     <div class="sec-head"><h2 id="h-pending">언제까지 무엇을 정하나</h2><p class="muted">날짜순. 정하면 Claude에게 말해 주세요 — 아래 "정한 것"으로 옮기고 문서도 같이 고쳐요. 정책(차단·환불·제재 등)은 잠정안으로 개발해 두고 변호사 검토 때 한 번에 확정해요(저장소 <code>STATUS.md</code> "출시 전 확정할 정책").</p></div>
@@ -368,7 +471,7 @@ table.t tr.hl td{background:var(--accent-soft)}
         <tr><td class="num">설립 때</td><td>자본금·결산월·사업 목적</td><td>자본금 100만~150만 원 + 가수금, 1주 100원, 결산월은 세무사와(설립 전 비용 인정 범위)</td></tr>
         <tr><td class="num">미팅 때·1월 계약 전</td><td>해외 거래 체크</td><td>소속사에 받을 서류(태국 회사 증명·계좌·거주자증명서·아티스트 동의서), 계약서의 준거법·통화·세금 부담, 한국 원천징수(사용료인지), 송금 증빙, 개인정보 국외 이전 고지 — 저장소 business-compliance-checklist.md 7번이 변호사·세무사 질문 목록</td></tr>
         <tr><td class="num">1월 계약 전</td><td>소속사 계약 조건</td><td>정산 비율·주기·통화, 중단 알림 기간(잠정 30일), 계약 끝난 아티스트 콘텐츠 처리, 환불 책임</td></tr>
-        <tr><td class="num">상품 등록 전(1월)</td><td>나라별 가격 → "실제 결제 금액 기준 정산" 개발</td><td>한국은 버블·위버스보다 낮게(4,400~4,900원), 필리핀·인니·베트남·중남미 약 40% 낮게</td></tr>
+        <tr><td class="num">상품 등록 전(1월)</td><td>나라별 가격 → "실제 결제 금액 기준 정산" 개발</td><td>가격은 10-22 확정(사업 요약 탭 표) — 남은 건 1월 상품 등록 전 버블 태국·필리핀 결제창 가격 확인과 정산 개발</td></tr>
         <tr><td class="num">1월</td><td>약관·개인정보처리방침 + 정책 표 확정</td><td>변호사 한 번에(최소안 100만 원). 태국 PDPA 포함</td></tr>
         <tr><td class="num">시범 운영 전</td><td>태국 출장(+150만)·팬 모으기 광고(150만)</td><td>미팅이 대면으로 잡히면 출장, 광고는 엔젤 뒤</td></tr>
         <tr><td class="num">상황 따라</td><td>태국어 파트타임(월 +70만) · Claude Max 올리기 · 서버 증설</td><td>과부하 신호 2개 이상 4주 연속 · 사용량 부족 · 구독 약 1만 명</td></tr>
@@ -382,6 +485,8 @@ table.t tr.hl td{background:var(--accent-soft)}
     <div class="tw"><table class="t">
       <thead><tr><th>날짜</th><th>정한 것</th></tr></thead>
       <tbody>
+        <tr><td class="num">10-22</td><td>아티팩트 정리: 운영 전환 계획·설립 전 지출 처리·가격 근거를 이 페이지로 합침, 소속사 제안 + 연락처 → "토피 소속사" 한 페이지, 영어·태국어 제안서는 지움(한국어판 확정 뒤 다시 만듦), 멘토용 A4 페이지는 두지 않음 · 벤치마킹은 버블 1명만(위버스 DM은 결제 안 함)</td></tr>
+        <tr><td class="num">10-22</td><td>나라별 가격: 한국 4,400원(버블 5,000원보다 싸게), 필리핀 ₱179(₱149에서 올림), 인니 Rp39,000·베트남 59,000₫ 유지, 중남미 40% 할인 뺌(자동 변환) · 기준 통화는 바트 유지</td></tr>
         <tr><td class="num">10-21</td><td>구독 목표 사다리(잠정): 300건 본전(3월) → 1,000건(4월) → 약 3,100건 지금 월급만큼 → 약 4,000건 × 3개월 전업. 세는 단위는 유료 구독 건수(한 사람 3개면 3건) · 법인 설립부터 장부까지 세무사에게 · 전업은 매출 경로가 주, 투자는 보조(1인 회사 유지 우선) · 회사 이름 후보 3개 · 이 페이지로 사업 계획 합침</td></tr>
         <tr><td class="num">10-20</td><td>비용 12개월 필수 760만 + 광고 150만, 최소 기본안 약 280만(내 돈) · 스토어 전 세계 공개(중국 본토 제외), 앱 언어 9개 · 유료 원어민 검수 안 함 · 10~11월 주 20시간 · 직장 겸업 금지 조항 없음 · 나라별 가격, 정산은 실제 입금액 기준</td></tr>
         <tr><td class="num">10-19</td><td>출시 2027년 2월 목표 · 외부 자료엔 가격 범위만, 정산 비율은 미팅에서 · 파일럿 단계적 확대 · 구독 중 사진·영상 만료 없음 · 소속사별 데모 입장 코드</td></tr>
@@ -417,10 +522,11 @@ table.t tr.hl td{background:var(--accent-soft)}
     <div class="tw"><table class="t">
       <thead><tr><th>언제</th><th>무엇</th></tr></thead>
       <tbody>
-        <tr><td class="num">지금~11월</td><td>Claude, 데모 서버 월 약 1만, 버블·위버스 벤치마킹 약 2만~5만</td></tr>
+        <tr><td class="num">지금~11월</td><td>Claude, 데모 서버 월 약 1만, 버블 구독(벤치마킹) 월 5,000원</td></tr>
         <tr><td class="num">12월(법인)</td><td>설립 실비 약 20만 + 대행 0~40만, 자본금 100만~150만(회사 운영비로 씀), 구글 법인 계정 $25, 상표 출원 류당 약 6만 원(토피 2~3류, 등록료 류당 약 21만 원은 약 1년 뒤), 세무 기장 월 약 16.5만 시작</td></tr>
-        <tr><td class="num">2027-01</td><td>변호사(최소안 100만), 운영 서버 Railway Pro 월 $20, 애플 개발자 갱신 $99</td></tr>
+        <tr><td class="num">2027-01</td><td>변호사(최소안 100만), 운영 서버 Railway Pro 월 $20</td></tr>
         <tr><td class="num">2027-02~</td><td>번역 API 월 약 5만, 광고 150만(엔젤 뒤) — 스토어 매출은 1~2개월 뒤 입금</td></tr>
+        <tr><td class="num">2027-08</td><td>애플 개발자 계정 갱신 $99(젤리와 같이 쓰는 계정, 법인 전환 뒤에도 같은 갱신일)</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -463,10 +569,10 @@ table.t tr.hl td{background:var(--accent-soft)}
       <tbody>
         <tr><td>법무</td><td>변호사(약관·개인정보처리방침·소속사 계약서)</td><td class="r">200만</td><td>한 번에 묶어 맡김, 견적 받으면 교체</td></tr>
         <tr><td>회사 운영</td><td>법인 설립</td><td class="r">40만</td><td>법무사 이용</td></tr>
-        <tr><td>출시</td><td>애플 개발자 계정 갱신</td><td class="r">14만</td><td>연 $99</td></tr>
+        <tr><td>출시</td><td>애플 개발자 계정 갱신</td><td class="r">14만</td><td>연 $99, 2027-08</td></tr>
         <tr><td>출시</td><td>구글 플레이 법인 계정</td><td class="r">3.5만</td><td>$25</td></tr>
         <tr><td>인프라</td><td>도메인 toffeechat.app 갱신</td><td class="r">2만</td><td>2027-10, 연 $14.20</td></tr>
-        <tr><td>출시</td><td>버블·위버스 벤치마킹</td><td class="r">5만</td><td></td></tr>
+        <tr><td>출시</td><td>벤치마킹(버블 구독)</td><td class="r">5만</td><td>월 5,000원, 해지 시기 미정</td></tr>
         <tr class="sum"><td></td><td>소계</td><td class="r">약 265만</td><td></td></tr>
       </tbody>
     </table></div>
@@ -510,7 +616,7 @@ table.t tr.hl td{background:var(--accent-soft)}
         <tr><td>아쉬움</td><td>5명 × 50명</td><td class="r">약 150만 원</td><td class="r">약 83만 원</td><td class="r">약 36만 원</td></tr>
       </tbody>
     </table></div>
-    <p class="pnote" style="padding-left:0">애플 소규모 사업자 프로그램에 가입하지 않으면 첫해 수수료가 30%예요(6단계 할 일).</p>
+    <p class="pnote" style="padding-left:0">애플 소규모 사업자 프로그램에 가입하지 않으면 첫해 수수료가 30%예요("운영 전환" 탭 3단계).</p>
     <h3>일이 넘친다는 신호 — 2개 이상이 4주 연속이면</h3>
     <div class="tw"><table class="t">
       <thead><tr><th>신호</th><th>기준</th></tr></thead>
@@ -523,9 +629,56 @@ table.t tr.hl td{background:var(--accent-soft)}
       </tbody>
     </table></div>
     <p class="pnote" style="padding-left:0">그러면 자동화 → 태국어 파트타임(월 약 70만 원) 순서로 줄이고, 그래도 넘치면 전업을 서둘러요. 돈이 모자라면 이 상태를 근거로 투자를 받아요("수요가 운영 능력보다 많다"). 출시 때부터 주간 기록에 "토피에 쓴 시간"·"문의 답변까지 걸린 시간"을 넣어요.</p>
-  </section><section class="panel" aria-label="돈 기록" style="background:var(--bg);border:1px solid var(--line)">
+  </section><section aria-labelledby="h-pre">
+    <div class="sec-head"><h2 id="h-pre">설립 전에 쓴 돈의 비용처리</h2><p class="muted">예전 "설립 전 지출 처리" 페이지(10-12)를 옮기고, 설립 시기가 2026년 12월로 당겨진 걸 반영해 고쳤어요(2026-10-22). 일반 기준을 정리한 것이지 세무 자문이 아니에요 — 실제 범위는 세무사 첫 상담에서 확정해요.</p></div>
+    <div class="box">
+      <b>짧은 답: 조건부로 돼요</b>
+      <ul>
+        <li>사업 준비에 쓴 돈이고 증빙이 있으면, 법인을 세운 뒤 <b>첫 사업연도 비용(손금)</b>으로 넣을 수 있어요(법인세법 시행령 제4조 — 설립 전 손익을 법인 것으로 귀속시키면 첫 사업연도 시작일이 그 비용이 처음 생긴 날로 당겨짐).</li>
+        <li>대신 <b>첫 사업연도 전체가 1년을 넘으면 안 돼요.</b> 첫 지출(2026-10-01 도메인·Railway)부터 첫 결산일까지 1년 이내여야 해요.</li>
+        <li>버블 구독은 "팬으로 쓴 돈"이 아니라 "경쟁 서비스의 결제·구독·메시지 흐름을 조사한 돈"이라는 걸 보여 줘야 해서, 영수증만큼 <b>목적 메모와 결과물</b>이 중요해요.</li>
+      </ul>
+    </div>
+    <h3>기간 제한이 실제로 뜻하는 것</h3>
+    <div class="timeline">
+      <div class="tl"><span>2026년 12월 설립(지금 계획)</span><span>12월 결산이면 첫 사업연도가 2026-12-31에 끝나서 10월 지출부터 <b>모두 들어갈 가능성이 커요</b>. 9월 결산(2027-09-30)이어도 1년 안이에요.</span></div>
+      <div class="tl"><span>설립이 2027년으로 밀리면</span><span>12월 결산이면 첫 사업연도가 2027-12-31에 끝나 1년을 넘음 → 2026년 10~12월 지출은 빠져요. 이때는 결산월을 세무사와 다시 봐요.</span></div>
+      <div class="tl"><span>2027년 10월 이후 설립</span><span>결산월과 상관없이 2026년 10월 지출은 빠져요.</span></div>
+    </div>
+    <h3>한계</h3>
+    <ul class="pnote" style="max-width:none">
+      <li><b>부가세는 돌려받기 어려워요.</b> 앱마켓 결제는 세금계산서가 안 나오고, 사업자등록 전 매입세액 공제는 등록 기한 조건까지 맞아야 해요. 금액 전체를 비용으로만 넣는다고 보면 돼요.</li>
+      <li><b>당장 줄어드는 세금은 작아요.</b> 첫해는 적자일 가능성이 커서 결손금으로 넘어가 나중 이익에서 빠져요. 금액보다 기록 습관이 목적이에요.</li>
+      <li><b>정부 지원금 정산과는 별개예요.</b> 예비창업패키지 등은 협약 전 지출을 보통 인정하지 않아요.</li>
+      <li><b>개인 돈으로 낸 것이라 정산 처리가 필요해요.</b> 설립 후 법인이 대표에게 갚을 돈(가수금 등)으로 잡는 방식 — 세무사가 정해요.</li>
+      <li><b>개인 소비와 섞이면 인정받기 어려워요.</b> 조사가 끝났는데 계속 구독하면 그 뒤 결제분은 개인 소비로 보는 게 안전해요.</li>
+    </ul>
+    <h3>지금 챙겨 둘 것</h3>
+    <ul class="pnote" style="max-width:none">
+      <li><b>영수증</b>: 애플 결제 메일 영수증 또는 reportaproblem.apple.com 구매 내역을 PDF로, 해외 서비스는 각 콘솔의 인보이스. 장부의 "영수증" 칸이 "확인 필요"인 것부터</li>
+      <li><b>카드 명세서 해당 줄</b> 캡처(해외 결제는 원화 금액도 여기서)</li>
+      <li><b>목적 메모</b>와 <b>결과물 위치</b>(예: 버블 대비 기능 정리 문서, 조사 스크린샷)</li>
+      <li><b>파일 이름</b>: <code>설립전비용/2026-10/2026-10-12_버블_5000원.pdf</code>처럼 날짜·항목·금액</li>
+      <li>사업 준비 지출은 정한 카드 하나로만(1단계에서 정함). 3만 원이 넘는 지출은 간이영수증 말고 카드로</li>
+    </ul>
+    <p class="muted" style="font-size:13.5px">목적 메모 예시(그대로 복사해 쓰면 돼요). 지출 목록 자체는 <a href="https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR">사업화 장부</a> "비용" 탭과 개인 엑셀(<code>toffee-business/설립전_지출기록.xlsx</code>)에 있어요.</p>
+<pre class="memo-ex">2026-10-12 버블 구독 1개월 5,000원 (애플 App Store 정기결제, 개인 카드)
+목적: Toffee(토피) 개발을 위한 경쟁 서비스 조사.
+  팬 구독 가입·결제·해지 흐름, 메시지·답장 규칙, 가격 표시 방식을 실제 사용자 입장에서 확인.
+기간: 2026-10 ~ (해지 시기 미정)
+결과물: 버블 대비 기능 정리, 화면 스크린샷
+결제자: 대표 개인 → 법인 설립 후 정산 예정</pre>
+    <h3>세무사에게 물을 것</h3>
+    <ol class="pnote" style="max-width:none">
+      <li>12월 설립·결산월에 따라 설립 전 지출(2026-10-01부터)이 첫 사업연도에 다 들어가는지, 1년 범위 밖 지출은 어떻게 되는지</li>
+      <li>대표 개인 카드로 낸 돈을 법인이 어떻게 정산하는지(가수금 처리, 돌려받을 때 필요한 서류)</li>
+      <li>앱마켓·해외 서비스(달러 결제) 영수증과 카드 명세서만으로 증빙이 충분한지</li>
+      <li>장부·엑셀과 영수증 폴더를 그대로 넘기면 되는지, 더 적어야 할 칸이 있는지</li>
+    </ol>
+  </section>
+<section class="panel" aria-label="돈 기록" style="background:var(--bg);border:1px solid var(--line)">
     <h2>돈 기록은 한곳에</h2>
-    <p class="sub" style="margin:0">결제·계정은 <a href="https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR">Toffee 사업화 장부</a>에, 법인 전 지출의 비용처리는 <a href="https://claude.ai/artifact/GSj89sPKMn6mQVSHZ3GPtz">설립 전 지출 처리</a>에 모아요. 결제했다고 Claude에게 말하면 장부에 적어요.</p>
+    <p class="sub" style="margin:0">결제·계정은 <a href="https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR">Toffee 사업화 장부</a>에 모아요(영수증 상태도 거기). 결제했다고 Claude에게 말하면 장부에 적어요. 법인 전 지출의 비용처리는 바로 위 구역.</p>
   </section>
 
   
@@ -578,7 +731,7 @@ table.t tr.hl td{background:var(--accent-soft)}
 
   <div class="tabpanel" id="tab-biz" role="tabpanel" hidden>
 <section aria-labelledby="h-country">
-    <div class="sec-head"><h2 id="h-country">출시 국가와 집중 시장</h2><p class="muted"><b>전 세계 출시(중국 본토 제외), 앱 언어 9개</b>(한·태·영·일·중 간체·번체·베트남어·스페인어·포르투갈어). 나라는 "어디에 출시하나"가 아니라 <b>광고비·소속사 설득을 어디에 집중하나</b>로 정합니다(2026-10-20). 가격은 모든 나라에 3단계(높음·태국 기준·약 40% 낮음)로. 근거는 저장소 문서 2026-10-20 출시국 조사.</p></div>
+    <div class="sec-head"><h2 id="h-country">출시 국가와 집중 시장</h2><p class="muted"><b>전 세계 출시(중국 본토 제외), 앱 언어 9개</b>(한·태·영·일·중 간체·번체·베트남어·스페인어·포르투갈어). 나라는 "어디에 출시하나"가 아니라 <b>광고비·소속사 설득을 어디에 집중하나</b>로 정합니다(2026-10-20). 가격은 아래 "가격·정산"의 나라별 표대로(2026-10-22). 근거는 저장소 문서 2026-10-20 출시국 조사.</p></div>
     <div class="phases">
       <div class="phase now">
         <div class="phase-top"><b>1순위</b><span class="num muted">2027.02 출시부터</span></div>
@@ -597,13 +750,27 @@ table.t tr.hl td{background:var(--accent-soft)}
       </div>
     </div>
   </section><section aria-labelledby="h-price">
-    <div class="sec-head"><h2 id="h-price">가격·정산</h2><p class="muted">태국 기준, 한 달. 버블(월 $3.99)·위버스 DM(월 $4.59)과 비슷한 수준으로 2026-10-12에 확정했습니다. 비교 근거와 정산 비율 선택지는 "토피 소속사 제안" 페이지에 있습니다.</p></div>
+    <div class="sec-head"><h2 id="h-price">가격·정산</h2><p class="muted">태국 기준, 한 달. 버블(월 $4.49, 2025-07 인상)·위버스 DM(월 $4.59, 2026-01 인상)과 비슷한 수준으로 2026-10-12에 확정했습니다. 비교 근거와 정산 비율 선택지는 아래 "가격·정산 근거"에 있습니다.</p></div>
     <div class="prices">
       <div class="price"><span class="label">배우 1명</span><span class="p num">฿149</span><span class="krw">약 6,000원 · 첫 달 ฿99(약 4,000원)</span></div>
       <div class="price"><span class="label">CP방 (배우 2명)</span><span class="p num">฿199</span><span class="krw">약 8,000원</span></div>
-      <div class="price"><span class="label">묶음 (배우 2명 + CP방)</span><span class="p num">฿349</span><span class="krw">약 14,000원 · 따로 사면 ฿497</span></div>
+      <div class="price"><span class="label">묶음 (배우 1명 + CP방)</span><span class="p num">฿289</span><span class="krw">약 11,600원 · 따로 사면 ฿348(약 17% 할인)</span></div>
+      <div class="price"><span class="label">묶음 (배우 2명 + CP방)</span><span class="p num">฿349</span><span class="krw">약 14,000원 · 따로 사면 ฿497(약 30% 할인)</span></div>
     </div>
-    <p class="pnote">다른 나라는 태국 가격 하나를 넣으면 스토어가 자동으로 바꿔 주고, 직접 바꾸는 건 10~20개 나라뿐입니다. <b>한국은 버블·위버스보다 낮게(월 4,400~4,900원 선)</b>, 필리핀·인도네시아·베트남·중남미는 약 40% 낮게. 정산은 나라와 상관없이 <b>스토어가 실제로 입금한 금액의 비율</b>로(2026-10-20 확정 — 출시 전 정산 계산 개발 필요).</p>
+    <h3>나라별 가격 (배우 1명, 한 달 · 2026-10-22 확정)</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>나라</th><th class="r">가격</th><th class="r">원화(어림)</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>태국</b> (기준)</td><td class="r">฿149 · 첫 달 ฿99</td><td class="r">약 6,000원</td><td>버블($4.49 ≈ ฿148)·태국 Spotify(฿149)와 같은 선</td></tr>
+        <tr><td>한국</td><td class="r">4,400원</td><td class="r">4,400원</td><td>버블 5,000원·위버스 약 5,100원보다 약 12% 싸게. 집중 시장이 아니라 매출 영향 작음</td></tr>
+        <tr class="hl"><td><b>필리핀</b></td><td class="r">₱179</td><td class="r">약 4,300원</td><td>1순위 시장, 팬 지출이 커서(팬미팅 표 ₱4,000~15,900) 약 30%만 낮게. Spotify ₱169와 비슷</td></tr>
+        <tr><td>인도네시아</td><td class="r">Rp39,000</td><td class="r">약 3,300원</td><td>소득에 맞춰 약 45% 낮게</td></tr>
+        <tr><td>베트남</td><td class="r">59,000₫</td><td class="r">약 3,200원</td><td>같은 이유, 현지 Spotify(65,000₫)보다 조금 싸게</td></tr>
+        <tr><td>일본·대만·홍콩·싱가포르·말레이시아</td><td class="r">¥600 · NT$120 · HK$30 · S$5.48 · RM16.90</td><td class="r">약 5,200~5,800원</td><td>태국과 비슷한 수준</td></tr>
+        <tr><td>중남미·그 밖</td><td class="r">자동 변환</td><td class="r">약 6,000원 안팎</td><td>멕시코·브라질은 소득이 태국보다 높아 할인 안 함</td></tr>
+      </tbody>
+    </table></div>
+    <p class="pnote">CP방·묶음도 같은 비율로. 정산은 나라와 상관없이 <b>스토어가 실제로 입금한 금액의 비율</b>로(2026-10-20 확정 — 출시 전 정산 계산 개발 필요). 가격은 내리기는 쉽고 올리기는 기존 구독자 동의가 필요해서 낮게 시작하지 않아요.</p>
     <div class="split">
       <div class="row">
         <div class="row-head"><b>기본 · 소속사 60 / 토피 40</b><span class="muted">소속사 약 2,800원 · 토피 약 1,900원</span></div>
@@ -617,10 +784,57 @@ table.t tr.hl td{background:var(--accent-soft)}
           <span class="s-tax" style="flex:10">세</span><span class="s-store" style="flex:21">스토어</span><span class="s-agency" style="flex:83">소속사 ฿83</span><span class="s-toffee" style="flex:35">토피 ฿35</span>
         </div>
       </div>
-      <div class="legend"><span><i style="background:var(--tax)"></i>태국 부가세 7%</span><span><i style="background:var(--store)"></i>스토어 수수료 15%</span><span><i style="background:var(--agency)"></i>소속사</span><span><i style="background:var(--toffee)"></i>토피</span></div>
+      <div class="legend"><span><i class="s-tax"></i>태국 부가세 7%</span><span><i class="s-store"></i>스토어 수수료 15%</span><span><i class="s-agency"></i>소속사</span><span><i class="s-toffee"></i>토피</span></div>
     </div>
     <div class="terms"><span>계약금 없음</span><span>소속사 비용 없음</span><span>비독점</span><span>3개월 파일럿 후 재협의</span><span>매달 정산</span></div>
-  </section><section aria-labelledby="h-fund">
+  </section><section aria-labelledby="h-why">
+    <div class="sec-head"><h2 id="h-why">가격·정산 근거</h2><p class="muted">예전 "토피 소속사 제안" 페이지에 있던 비교·이유를 옮겼어요(2026-10-22). <b>내부용</b> — 외부 자료엔 가격 범위만, 비율은 미팅에서.</p></div>
+    <h3>비교 대상</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>서비스</th><th>가격</th><th>창작자·소속사 몫</th><th>메모</th></tr></thead>
+      <tbody>
+        <tr><td>버블(디어유)</td><td>월 $4.49, 한국 5,000원(2025-07 인상, 그 전 $3.99·4,500원), 태국 후기 ฿149</td><td>스토어 수수료를 뺀 금액의 약 40%</td><td>증권사 추정(2021~22): 스토어 25%, 디어유 45%, 소속사 30%</td></tr>
+        <tr><td>위버스 DM</td><td>월 $4.59(2026년 1월 $4.09에서 인상)</td><td>공개 자료 없음</td><td></td></tr>
+        <tr><td>유튜브 채널 멤버십</td><td>창작자가 정함</td><td>70%</td><td>창작자가 콘텐츠·홍보를 직접</td></tr>
+        <tr><td>OnlyFans</td><td>창작자가 정함</td><td>80%</td><td>같음</td></tr>
+        <tr><td>Twitch 구독</td><td>고정</td><td>기본 50%, 큰 채널 70%</td><td>규모에 따라 올라감</td></tr>
+        <tr><td>(참고) 태국 구독</td><td>Spotify 개인 ฿149, Netflix 모바일 ฿99·기본 ฿169, Disney+ ฿199</td><td></td><td></td></tr>
+      </tbody>
+    </table></div>
+    <p class="pnote" style="padding-left:0">팬 메시지 서비스는 번역·운영·서버를 플랫폼이 맡아서 플랫폼 몫이 커요. 토피도 같은 일을 하므로 60/40이어도 버블(약 40/60)보다 소속사에 훨씬 유리해요.</p>
+    <div class="box">
+      <b>왜 60/40에서 시작하나</b>
+      <ul>
+        <li>고정비(출시 후 월 약 38만 원)만 보면 어느 비율이든 구독 수백 건이면 본전이에요. 하지만 전업하려면 토피 몫이 월 약 550만 원 필요하고, 70/30이면 약 4,000건, 60/40이면 약 3,000건이에요("지금" 탭 구독 목표).</li>
+        <li>소속사 몫은 나중에 올려 주기는 쉽지만, 70%를 준 뒤 60%로 내리면 관계가 깨져요. 가격도 내리기는 자유롭지만 올릴 때는 기존 구독자 동의가 필요할 수 있어요.</li>
+        <li>그래서 시작점은 토피가 버틸 수 있는 쪽으로 잡고, 첫 파트너에게는 기간을 정한 혜택(첫 12개월 70/30)을 줘요.</li>
+      </ul>
+    </div>
+    <h3>정산 비율 선택지</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>안</th><th>내용</th><th>장점</th><th>단점</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>C. 60/40 + 창립 70/30 (확정)</b></td><td>기본 60/40, 첫 3곳은 첫 12개월 70/30</td><td>"지금 하면 더 준다"는 이유가 생김</td><td>설명이 한 줄 늘어남</td></tr>
+        <tr><td>A. 70/30 고정</td><td></td><td>설명이 쉽고 소속사가 반김</td><td>토피 몫이 가장 작고 나중에 못 내림</td></tr>
+        <tr><td>B. 60/40 고정</td><td></td><td>버블보다 여전히 소속사에 유리</td><td>첫 파트너를 끌 매력이 약함</td></tr>
+        <tr><td>D. 구독자 수에 따라</td><td>배우별 1,000명까지 60%, 넘는 부분 70%</td><td>소속사가 홍보할 동기</td><td>계산·설명이 복잡, 파일럿 뒤에 검토</td></tr>
+      </tbody>
+    </table></div>
+    <h3>상품별 가격 이유 (태국 기준)</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>상품</th><th class="r">가격</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td>개인방</td><td class="r">฿149</td><td>버블 태국 가격·Spotify 개인과 같은 선</td></tr>
+        <tr><td>첫 달 할인</td><td class="r">฿99</td><td>첫 결제 장벽을 낮춤. 스토어 첫 구독 할인이 앱에서 보이는지 확인 필요</td></tr>
+        <tr><td>CP방</td><td class="r">฿199</td><td>배우 두 명이 함께 보냄</td></tr>
+        <tr><td>묶음(배우 A + CP방, B + CP방)</td><td class="r">฿289</td><td>따로 사면 ฿348, 약 17% 할인. 한 배우만 좋아하는 CP 팬용(10-15 묶음 3개 구성, 10-22 가격)</td></tr>
+        <tr><td>묶음(배우 A + B + CP방)</td><td class="r">฿349</td><td>따로 사면 ฿497, 약 30% 할인. CP 팬이 가장 많이 살 상품</td></tr>
+        <tr><td>연간 구독</td><td class="r">나중에</td><td>환불 처리가 복잡해서 파일럿 뒤</td></tr>
+      </tbody>
+    </table></div>
+    <p class="pnote" style="padding-left:0">가격 확인 방법: 미팅에서 "팬이 한 달에 얼마까지 낼까"를 묻고, 태국 팬 커뮤니티에 ฿99/149/199 중 하나를 고르는 설문을 앱 이름·화면 없이 올리고, 출시 후 첫 달 ฿99에서 ฿149로 넘어가는 비율을 봐요. 해외 소속사에 주는 돈의 원천징수·송금 수수료는 세무사에게. 스토어는 매출을 토피 계좌 통화로 바꿔 보내므로 계약서에 "어느 날 환율로 바꾸는지"를 적어요.</p>
+  </section>
+<section aria-labelledby="h-fund">
     <div class="sec-head"><h2 id="h-fund">돈 마련 순서</h2><p class="muted">창업 경험이 있는 친구(법인 대표, 예비창업패키지·엔젤투자 경험)의 조언입니다. 핵심은 내 돈으로 빨리 시작하라는 것입니다.</p></div>
     <ol class="order" aria-label="돈 마련 순서">
       <li>내 돈으로 시작. 지분을 안 나눠 주고 간섭 없이 빠르게</li>
@@ -698,15 +912,13 @@ table.t tr.hl td{background:var(--accent-soft)}
 
   <div class="tabpanel" id="tab-links" role="tabpanel" hidden>
   <section aria-labelledby="h-links2">
-    <div class="sec-head"><h2 id="h-links2">따로 두는 페이지</h2><p class="muted">성격이 달라서 따로 둬요 — 장부는 개인정보, 제안·연락처는 소속사용, 실기기 테스트는 개발용.</p></div>
+    <div class="sec-head"><h2 id="h-links2">따로 두는 페이지</h2><p class="muted">성격이 달라서 따로 둬요 — 장부는 계정 정보, 소속사 페이지는 연락처, 제안서는 외부용, 실기기 테스트는 개발용(2026-10-22 정리 — 11개 → 6개).</p></div>
     <nav class="links2">
       <a href="https://claude.ai/artifact/RinLbRwEas5gqHdZ7PzzHR"><span class="lt">Toffee 사업화 장부</span><span class="ld">만든 계정과 결제 기록</span></a>
-      <a href="https://claude.ai/artifact/GZbpqSonTvDbY6vRbhzAkE"><span class="lt">토피 소속사 제안</span><span class="ld">반응 단계, 미팅 질문, 나라별 가격</span></a>
-      <a href="https://claude.ai/artifact/LGkCkGRdmGSF2xdvKXQqwp"><span class="lt">토피 소속사 연락처</span><span class="ld">1차 7곳·2차 후보, 메일 문구 기준본</span></a>
-      <a href="https://claude.ai/artifact/GSj89sPKMn6mQVSHZ3GPtz"><span class="lt">설립 전 지출 처리</span><span class="ld">법인 전에 쓴 돈의 비용처리</span></a>
-      <a href="https://claude.ai/artifact/BLYi5jU21RPAiwr87eBWWc"><span class="lt">세 서비스 운영비</span><span class="ld">토피·젤리·KNOU CBT 월별 지출</span></a>
+      <a href="https://claude.ai/artifact/LGkCkGRdmGSF2xdvKXQqwp"><span class="lt">토피 소속사</span><span class="ld">연락처·메일 문구, 반응 단계·미팅 질문, 제안 조건</span></a>
+      <a href="https://claude.ai/artifact/PL7ENDwuzCHg2YiYv9zgNg"><span class="lt">토피 소속사 제안서 (한국어)</span><span class="ld">외부용 기준본 — 확정 뒤 태국어·영어판을 새로 만듦</span></a>
       <a href="https://claude.ai/artifact/7yFZj5kvHj1rCtfjQ7GrUc"><span class="lt">토피 실기기 테스트</span><span class="ld">폰에서 확인할 항목과 결과</span></a>
-      <a href="https://claude.ai/artifact/DgQq55RmakjDMfpt5c3HMa"><span class="lt">사업 요약(멘토용 A4)</span><span class="ld">외부용 — 비율·소속사 이름 없음</span></a>
+      <a href="https://claude.ai/artifact/BLYi5jU21RPAiwr87eBWWc"><span class="lt">세 서비스 운영비</span><span class="ld">토피·젤리·KNOU CBT 월별 지출(젤리와 같이 씀)</span></a>
     </nav>
   </section>
   </div>
@@ -730,12 +942,12 @@ const STAGES = [
     ["s1-anthropic","Anthropic API 키 발급","scripts/translation-sample.mjs로 태국어 등 예문 번역 품질 확인"],
     ["s1-keys","소셜 로그인 키 넣고 실제 로그인 확인","버튼 코드는 완료, 키가 들어간 버튼만 보여요"],
     ["s1-device","실기기 테스트 빌드","TestFlight·구글 내부 테스트로 푸시 수신, 카메라·녹음, 사진 확대 제스처, 영상 썸네일, 화면 꺼도 음성 재생 확인. 진행 중 — 항목별 결과는 '토피 실기기 테스트' 페이지"],
-    ["s1-bench","버블·위버스 DM 직접 결제 시작","각각 아티스트 1~2명(태국 배우 우선), 폰 앱 스토어 결제로. 해지 시기는 정하지 않고 계속 구독하며 살펴봄","bench","2026-10-15"],
+    ["s1-bench","버블 직접 결제 시작","버블 아티스트 1명, 폰 앱 스토어 결제(월 5,000원). 위버스 DM은 결제하지 않음(10-22 확인). 해지 시기는 정하지 않고 계속 구독하며 살펴봄","bench","2026-10-15"],
    ]},
   {n:2, title:"제안 자료 + 벤치마킹", range:"10-13 ~ 10-25", start:"2026-10-13", end:"2026-10-25", biz:"사업자 없음",
    note:"압축 일정(2026-10-12 확정): 첫 출시 <strong>2027년 2월</strong>. 벤치마킹과 제안 자료를 동시에 준비해요. 가격은 범위로만 쓰고, <strong>정산 비율은 메일·제안서에 숫자로 쓰지 않고 미팅에서</strong> 제안해요(10-19). 현지 대표님 조언은 아이디어 보호를 위해 보류.",
    tasks:[
-    ["s2-terms","제안 조건 잠정안 확정(가격·정산 비율)","토피 소속사 제안 페이지의 확정안 → 메일에 넣을 숫자 결정","money","2026-10-24"],
+    ["s2-terms","제안 조건 잠정안 확정(가격·정산 비율)","사업 요약 탭의 확정안 → 메일에 넣을 숫자 결정","money","2026-10-24"],
     ["s2-qa","실기기 테스트 결과 버그 수정","실기기 테스트와 함께 계속(진행 중). 1차 발송(11/15) 전에 소속사가 볼 화면부터"],
     ["s2-demo","소속사 체험 계정 + 데모 점검","소속사별 입장 코드(링크 하나로 소속사·아티스트·팬 화면), 첫 접속 메일 알림, 매일 새벽 자동 초기화"],
     ["s2-proposal","제안서(한국어 기준본 → 태국어·영어) + 메일","한국어판 14장을 확정한 뒤(멘토링 뒤) 태국어·영어판과 메일을 한 번에 맞춰요. 비용 없음·독점 없음·수익 배분(비율은 미팅에서)·3개월 파일럿·기술/번역/운영은 우리가","","2026-11-12"],
@@ -750,8 +962,8 @@ const STAGES = [
     ["s3-first","1차 7곳 연락(태국어 제안서·메일)","11/15까지 못 보내면 오픈을 3월로. 반응을 보고 문구·조건 다듬기","","2026-11-15"],
     ["s3-second","2차 후보 연락","1차 반응으로 고친 문구로","","2026-11-22"],
     ["s3-log","연락 기록","소속사 · 날짜 · 단계(답장/미팅/검토/파일럿 의사/계약) · 한 줄 메모 (아래 메모장)"],
-    ["s3-ir","IR 자료 초안","토피 사업 계획 페이지 + 소속사 반응 숫자로. 정리되면 지민님께 보여 드리고 엔젤투자자 소개 부탁","money","2026-11-20"],
-    ["s3-prep","법인 없이 미리 할 준비","변호사 견적·약관 검토 의뢰, 소속사 계약서 초안. 태국어는 유료 원어민 검수 안 함(10-20)"],
+    ["s3-ir","IR 자료 초안","이 페이지(돈 탭 'IR 자료와 투자') + 소속사 반응 숫자로. 정리되면 지민님께 보여 드리고 엔젤투자자 소개 부탁","money","2026-11-20"],
+    ["s3-prep","법인 없이 미리 할 준비","변호사·세무사 견적(비밀유지 의무 있는 곳에만 사업 내용 공개), 소속사 계약서 초안(Claude). 개발 쪽 준비는 '운영 전환' 탭 0단계. 태국어는 유료 원어민 검수 안 함(10-20)"],
     ["s3-thai","태국 현지 창구 연락","태국 Y콘텐츠진흥협회(소속사·제작사와 DITP를 잇는 곳), KOCCA 태국 비즈니스센터(한·태 K-콘텐츠 비즈위크), KOTRA 방콕 — DITP Y-Economy 행사·2027 Thailand Content Market 참가 문의"],
     ["s3-load","실제 서버에서 부하 테스트","내 컴퓨터에서만 했던 테스트를 Railway에서 한 번 더"],
     ["s3-dev","개발은 피드백 반영만","소속사가 공통으로 원하는 게 있을 때만"],
@@ -765,13 +977,13 @@ const STAGES = [
    note:"가장 오래 기다리는 건 <strong>D-U-N-S 번호</strong>(몇 주)와 <strong>애플 계정 법인 전환</strong>이에요. 설립 당일 신청해요. 12월 법인이면 2027년 초기창업패키지(업력 3년 이내)에 신청할 수 있어요.",
    tasks:[
     ["s5-corp","법인 설립 → 사업자등록 → 통신판매업 신고 → 법인 계좌","세무사에게 맡김(2026-10-21 결정). 실비 약 20만 원(대전 등록면허세 약 13.5만 + 등기 수수료·인감) + 대행 0~40만 원","","2026-12-07"],
-    ["s5-articles","정관·설립 내용 확인","자본금 100만~300만 원(지분 100% 내 것), 1주 100원, 발행 예정 주식 넉넉히(예: 1,000만 주), 사업 목적 넉넉히(앱·소프트웨어, 통신판매업, 통신판매중개업, 플랫폼 운영, 콘텐츠 유통, 광고 등), 투자 대비 조항(제3자 신주 배정·종류주식(우선주)·스톡옵션), 대표 1명, 결산월은 세무사와"],
+    ["s5-articles","정관·설립 내용 확인","자본금 100만~150만 원 + 모자라면 대표 가수금(지분 100% 내 것), 1주 100원, 발행 예정 주식 넉넉히(예: 1,000만 주), 사업 목적 넉넉히(앱·소프트웨어, 통신판매업, 통신판매중개업, 플랫폼 운영, 콘텐츠 유통, 광고 등), 투자 대비 조항(제3자 신주 배정·종류주식(우선주)·스톡옵션), 대표 1명, 결산월은 세무사와"],
     ["s5-capital","자본금 넣기 + 돈 분리 규칙","개인 통장에 자본금 → 잔고증명 → 설립 후 법인 통장으로. 이후 회사 비용은 회사 통장·카드로만. 모자라면 개인 → 회사 이체(메모 '대표 가수금')로 빌려주고 나중에 돌려받기. 회사 돈을 생활비로 꺼내면 가지급금(세금·실사 감점)","money"],
     ["s5-ip","코드·자산을 개인 → 법인으로 넘기기","토피·젤리 코드, 디자인, 도메인, 앱·서비스 계정. 엑시트·투자 실사의 기본 — 세무사·변호사에게 계약서 형태 확인"],
     ["s5-tm","상표 출원(토피·젤리)","회사 이름 등기는 상표가 아님. 법인 명의로 설립 직후. 먼저 KIPRIS에서 토피·TOFFEE·토피챗·TOFFEECHAT, 젤리·JELLY 검색(흔한 말이라 이미 있으면 'TOFFEECHAT'처럼 묶은 이름으로). 토피 핵심 2~3류(9류 앱·38류 메시지·41류 콘텐츠), 젤리는 여유 생기면. 출원 때 류당 약 6만 원, 등록료 류당 약 21만 원은 심사 통과 뒤(약 1년 뒤). 변리사는 류당 수십만 원 더. 태국은 운영이 자리 잡히면","money"],
     ["s5-duns","D-U-N-S 번호 바로 신청","무료, 몇 주 걸림. 애플·구글 법인 계정의 선행 조건"],
     ["s5-tax","세무사 기장 계약","창업 세액감면(청년 감면은 나이로 어려울 가능성 — 일반·소규모 감면 확인), 무보수 대표이사, 태국 지급 원천징수, 코드·자산 법인 이전"],
-    ["s5-taxpre","세무사에게 설립 전 비용 묻기","결산월에 따라 설립 전 비용을 어디까지 넣을 수 있는지(첫 사업연도 1년 제한), 사업화 장부·설립 전 지출 기록을 그대로 넘기면 되는지, 장비를 법인으로 넘기는 방법","money"],
+    ["s5-taxpre","세무사에게 설립 전 비용 묻기","돈 탭 '설립 전에 쓴 돈의 비용처리'의 질문 4개 그대로. 12월 안에 설립하면 10월 지출도 첫 사업연도에 들어가는지 확인","money"],
     ["s4-contract","소속사 계약서 서명","정산 비율·주기·통화, CP방·묶음 배분, 초상권, 최소 발송 빈도, 종료 처리, 환불 책임(변호사 검토)"],
     ["s4-angel","엔젤투자 협상(필요하면)","투자는 법인이 있어야 받을 수 있어요. 자기자본으로 충분하면 건너뛰기","money"],
     ["s4-grant","2027 초기창업패키지 공고 확인","보통 연초 공고. K-Startup·기업마당"],
@@ -781,15 +993,11 @@ const STAGES = [
     ["s5-owners","기존 서비스 계정은 소유자 정보만 변경","새로 만들면 기존 로그인 회원 식별값이 달라져요"],
     ["s5-job","직장 겸업금지 조항 다시 확인","무보수 대표면 4대보험으로 드러날 일은 거의 없음(세무사 확인)"],
   ]},
-  {n:5, title:"출시 준비", range:"2027-01", start:"2027-01-01", end:"2027-01-31", biz:"법인", tasks:[
-    ["s6-legal","약관·개인정보처리방침 + 정책 표 확정","STATUS.md \"출시 전 확정할 정책\"을 한 번에(태국 PDPA 포함)"],
+  {n:5, title:"출시 준비", range:"2027-01", start:"2027-01-01", end:"2027-01-31", biz:"법인",
+   note:"출시 준비의 세부 순서(운영 서버·키·약관·나라별 가격과 정산 개발·상품 등록·샌드박스·스토어 제출·아티스트 온보딩)는 <strong>'운영 전환' 탭</strong>에서 체크해요(2026-10-22 합침). 여기엔 그 탭에 없는 것만 남겼어요.",
+   tasks:[
     ["s6-i18n","결제·구독 화면 무료 확인 부탁","유료 원어민 검수는 안 함(10-20 결정, 9개 언어 기계 번역). 파일럿 소속사 담당자·태국인 지인에게 결제·구독 화면만 봐 달라고 부탁"],
-    ["s6-pricing","나라별 가격 확정 + 정산을 실제 결제 금액 기준으로(개발)","상품 등록 전에. 지금 정산은 태국 정가 기준이라 나라별 가격을 쓰면 소속사에 더 줌. 한국은 버블·위버스보다 낮게, 필리핀·인니·베트남·중남미 약 40% 낮게, 나머지 스토어 자동 변환 (STATUS 1차)","money"],
-    ["s6-products","스토어 구독 상품 등록","배우별·묶음별, 나라별 가격, 운영자 화면에 상품 ID 입력"],
-    ["s6-sandbox","샌드박스 결제로 끝까지 확인","구독·복원·갱신·해지·환불"],
-    ["s6-smb","애플 소규모 사업자 프로그램 신청","수수료 30% → 15%"],
-    ["s6-prod","운영 서버·DB + 모든 키 입력","데모와 분리, 실제 배우 사진으로 스토어 스크린샷"],
-    ["s6-submit","스토어 제출","store-submission.md + 심사용 계정 + 실존 인물 콘텐츠 권리 증빙. 반려 대비 2주 여유","","2027-01-20"],
+    ["s6-submit","스토어 제출(목표일)","세부 할 일은 운영 전환 탭 6단계. 반려 대비 여유를 두고 이날까지","","2027-01-20"],
   ]},
   {n:6, title:"출시·파일럿", range:"2027-02 ~ 04", start:"2027-02-01", end:"2027-04-30", biz:"법인",
    note:"매주 볼 숫자: 구독 전환율, <strong>월 해지율(가장 중요)</strong>, 배우 발송 빈도, 환불·신고 건수, 문의 건수. 스토어 매출은 약 1~2개월 뒤(3~4월)에 들어와요.",
@@ -801,10 +1009,10 @@ const STAGES = [
   {n:7, title:"확장·채용·퇴사 판단", range:"2027-05 이후", biz:"법인", tasks:[
     ["s8-expand","같은 소속사의 다른 배우 → 다른 소속사로","젤리는 GL 팬 유입 창구로"],
     ["s8-raise","시드·엔젤 투자 유치(보조 경로)","매출이 늦거나 과부하일 때만. 시범 운영 숫자로 대표 월급 포함 18개월치(약 8,600만~1.2억 원). 크게 받으면 투자자의 5~8년 회수 기대가 생겨 1인·장기 운영과 부딪힘","money","2027-05-01"],
-    ["s8-hire","채용·퇴사 기준 점검","전업 = 주 경로 ② 토피 몫 월 550만 원 3개월 연속(+ 소속사 2곳·생활비 6개월치), 보조 ① 투자로 월급 포함 18개월치, ③ 과부하는 서두를 신호 — 2026-10-21 1인 회사 유지 우선으로 순서 변경(토피 사업 계획 '전업 기준')"],
+    ["s8-hire","채용·퇴사 기준 점검","전업 = 주 경로 ② 토피 몫 월 550만 원 3개월 연속(+ 소속사 2곳·생활비 6개월치), 보조 ① 투자로 월급 포함 18개월치, ③ 과부하는 서두를 신호 — 2026-10-21 1인 회사 유지 우선으로 순서 변경(지금 탭 '구독 목표')"],
   ]},
 ];
-const BENCH = {n:"B", title:"벤치마킹 — 볼 것", range:"버블·위버스 DM, 2026-10-12부터 · 해지 시기 미정", biz:"약 2~5만 원",
+const BENCH = {n:"B", title:"벤치마킹 — 볼 것", range:"버블(아티스트 1명), 2026-10-12부터 · 해지 시기 미정", biz:"월 5,000원",
   note:"<strong>체크 = 이 부분을 보고, 토피에 어떻게 할지(따라 함·더 낫게·일부러 다르게)까지 정했다는 뜻</strong>이에요. 구현까지 끝났는지는 STATUS.md에서 봐요. 기능 목록은 이미 알아요. 문서로는 모르는 <strong>느낌·빈도·결제 경험</strong>을 보세요. 스크린샷은 개인 폴더에만(경쟁사 화면은 공개 자료에 쓰지 않아요).",
   tasks:[
     ["b-signup","가입~첫 메시지","몇 단계·몇 분인지, 결제 화면의 가격 표시·안내 문구","bench"],
@@ -825,7 +1033,141 @@ const PROJNAME = {toffee:"토피", gelly:"젤리", both:"공통"};
 const METHODNAME = {card:"토피 카드", personal:"개인 카드", other:"현금·기타"};
 const KINDNAME = {bench:"벤치마킹", advisor:"현지 조언", agency:"소속사 반응", etc:"기타"};
 
-const state = {tasks:{}, notes:[], expenses:[], filter:"all", openMemo:null, confirmDel:null, confirmEx:null};
+// 운영 전환 탭 — [id, 담당(me/claude/ext), 제목, 설명, 조사 발견?]
+const LAUNCH = [
+  {no:"0", title:"계약 전에 미리", when:"지금 ~ 11월 말",
+   why:"법인 없이도 되는 개발·설정. 여기서 줄여 두면 12~1월이 가벼워져요. 견적·계약서 초안은 할 일 3단계 '법인 없이 미리 할 준비'.",
+   items:[
+    ["p0-admin-cli","claude","첫 운영자 지정 명령 만들기","운영 서버엔 테스트 로그인이 없어 운영자를 만들 길이 없음 → 소셜 로그인으로 가입한 계정을 이메일로 찾아 운영자(전체 권한)로 올리는 1회용 명령",true],
+    ["p0-cors","claude","CORS를 운영 웹 주소로 좁히기","환경변수로 허용 출처를 받게(데모·로컬은 지금처럼)",true],
+    ["p0-mfa","claude","운영자 2단계 인증 — 운영에선 의무, 비밀 키 암호화 저장","정책 표 '운영자 2단계 인증' 확정",true],
+    ["p0-runbook","claude","운영 매뉴얼 문서","서버 장애·점검 모드·OTA 순서, DB 복구 절차, 개인정보 유출 72시간 통지, 환불·미성년자 확인·신고 처리, 애플 판매 중지 할 일",true],
+    ["p0-env-sheet","claude","운영 환경변수 표 만들기","넣을 값 / 비워야 할 값(ENABLE_DEV_LOGIN·ENABLE_SANDBOX_SUBSCRIBE·DEV_LOGIN_*·DEMO_*) / 새로 발급할 비밀값을 한 장에. 값 자체는 적지 않음",false],
+    ["p0-android","me","안드로이드 테스트 기기 마련 → preview APK 설치","서명 SHA-1·키 해시를 구글·카카오·네이버·LINE 개발 앱에 등록하고 로그인·푸시 확인. 한 번도 안 해 봄",true],
+    ["p0-translate-limit","me","Anthropic 콘솔 월 사용 한도 걸기","데모 키에도. 운영 키는 2단계에서 따로",false],
+  ]},
+  {no:"1", title:"법인 설립", when:"12월 1~3주 (11/30 의향 확인 직후)",
+   why:"법인 설립·사업자등록·D-U-N-S·세무사·자산 이전은 '할 일' 탭 4단계에서 체크해요. D-U-N-S는 핵심 경로의 첫 대기 시간이라 등록번호가 나오는 날 바로 신청.",
+   items:[]},
+  {no:"2", title:"운영 인프라 만들기", when:"12월 (법인과 병행)",
+   why:"법인이 없어도 만들 수 있어요. 앱이 붙을 서버·웹이 먼저 떠 있어야 소셜 로그인 돌아올 주소·약관 주소를 등록할 수 있어요.",
+   items:[
+    ["p2-railway","me","Railway 운영 프로젝트 + Postgres","싱가포르, 메모리 1GB 이상, 헬스체크 /health/ready, 백엔드 Dockerfile 그대로. 서버 1대로 시작",false],
+    ["p2-backup","me","DB 자동 백업 켜고 복구 한 번 해 보기","보관: 일 단위 30일 + 주 단위 90일 권장",false],
+    ["p2-domain","me","운영 주소 연결","api.toffeechat.app → Railway, app.toffeechat.app → 새 Cloudflare Pages(소속사·운영자 PC 웹)",false],
+    ["p2-env","me","운영 환경변수 넣기","NODE_ENV=production, JWT_SECRET 새로(32자+), API_PUBLIC_URL, TRUST_PROXY=1, SUPPORT_EMAIL, ADMIN_ALERT_EMAIL, ADULTS_ONLY=true. 0단계 표대로",false],
+    ["p2-r2","me","R2 운영 버킷·토큰","비공개 버킷 + 이 버킷만 읽기/쓰기 토큰 → STORAGE_* 6개, CORS는 운영 웹 주소",false],
+    ["p2-keys","me","메일·번역·오류 수집 운영 키","Resend 운영 키(같은 계정), Anthropic 운영 키 + 월 한도, Sentry 서버 DSN + SENTRY_ENVIRONMENT=production(데모는 demo)",false],
+    ["p2-web","me","운영 웹 배포","EXPO_PUBLIC_API_URL=운영 주소로 웹 빌드, 팬이 웹에서 구독 버튼을 누르면 '앱에서 구독' 안내가 나오는지 확인",false],
+    ["p2-admin","me","내 계정 가입 → 운영자 지정 → 2단계 인증 켜기","0단계 운영자 지정 명령 사용",false],
+    ["p2-smoke","claude","운영 서버 시작 로그 경고 0개 확인","설정 점검이 빠진 값을 다 알려 줌. 결제·사업자 정보 경고는 4~6단계까지 남는 게 정상",false],
+    ["p2-landing","claude","랜딩 페이지 약관 링크를 운영 주소로","api-demo → api",true],
+  ]},
+  {no:"3", title:"스토어 계정 법인으로", when:"D-U-N-S 나오는 대로 (12월 말 ~ 1월 초)",
+   why:"애플 개인→법인 전환과 구글 법인 조직 계정 만들기는 '할 일' 탭 4단계. 운영 번들 ID는 법인 전환이 끝난 뒤에만 등록해요(개인 상태로 올리면 판매자 이름이 개인으로 나감).",
+   items:[
+    ["p3-apple-paid","me","애플 유료 앱 계약·세금·은행 정보","이게 없으면 구독 상품을 팔 수 없음",false],
+    ["p3-apple-sbp","me","애플 소규모 사업자 프로그램 신청","수수료 30% → 15%. 정산의 STORE_FEE_PERCENT=15 전제",false],
+    ["p3-google-pay","me","구글 판매자(결제) 프로필·은행","구독 수수료 요율 가입 때 확인. 젤리는 나중에 앱 이전",false],
+    ["p3-bundle","me","운영 번들 ID 등록","com.toffeechat.app + 알림 확장 com.toffeechat.app.NotificationService, Sign in with Apple·푸시·Communication Notifications 켜기",false],
+    ["p3-apple-web","me","애플 웹 로그인 운영 Services ID","Primary App ID = 운영 앱, Return URL https://app.toffeechat.app/oauth/apple",false],
+  ]},
+  {no:"4", title:"운영 키 연결 · 운영 빌드", when:"1월 1~2주",
+   why:"로그인·푸시는 네이티브라 웹에선 확인이 안 돼요. 운영 빌드를 TestFlight·구글 내부 테스트로 먼저 깔아 봐요.",
+   items:[
+    ["p4-firebase","me","Firebase 운영 iOS·안드로이드 앱 등록 → 설정 파일 2개","GoogleService-Info.plist, google-services.json을 app/에. APNs 키를 운영 iOS 앱에도",true],
+    ["p4-social","me","소셜 로그인 5곳에 운영 정보 추가(새로 만들지 않기)","구글: 운영 iOS·안드로이드 클라이언트, 웹 원본 / 카카오: 번들 ID·패키지·키 해시·웹 Callback / 네이버: 운영 iOS·안드로이드·Callback·검수 요청 / LINE: 번들·패키지·Callback / 애플: 3단계",false],
+    ["p4-google-consent","me","구글 OAuth 동의 화면 검증 신청","로고·운영 도메인·개인정보처리방침 최종본. 며칠~몇 주라 일찍",false],
+    ["p4-eas","claude","production 프로필에 운영 키 채우기","_PROD 값(구글 iOS·카카오·네이버·LINE), EAS 비밀 변수(네이버 Secret·SENTRY_AUTH_TOKEN), 소스맵 업로드 켜기",true],
+    ["p4-server","me","서버 로그인 값","APPLE_CLIENT_ID에 운영 번들 ID·Services ID, KAKAO_APP_ID, LINE_*, WEB_LOGIN_ORIGINS=운영 웹, 시크릿은 데모와 다르게 새로 발급 권장",false],
+    ["p4-build","me","운영 빌드 → TestFlight 내부 테스트 · 구글 내부 테스트","eas build --profile production (iOS·안드로이드)",false],
+    ["p4-check","me","운영 빌드로 확인","로그인 5곳, 푸시(아티스트 사진 대화 알림), 개발용 이메일 로그인이 안 보이는지, 앱 이름 'Toffee'·새 아이콘",false],
+    ["p4-business","me","사업자 정보 넣기","BUSINESS_* 6개 → 약관·고객센터·마이페이지 아래에 표시(전자상거래법)",false],
+  ]},
+  {no:"5", title:"법무 · 가격 · 정산 개발", when:"12월 ~ 1월 중순 (병행)",
+   why:"소속사 계약 서명은 '할 일' 탭 4단계. 스토어 심사에서 실존 인물 콘텐츠 권리 증빙으로 계약서를 내요. 가격과 정산 기준은 상품 등록 전에 끝나야 해요.",
+   items:[
+    ["p5-lawyer","ext","변호사: 약관·개인정보처리방침 최종 + 정책 표 확정","STATUS '출시 전 확정할 정책' 표 전체, 태국 PDPA, 청약철회·미발송 환불·성인만 가입 근거. 최소안 100만 원",false],
+    ["p5-terms","claude","최종 약관 반영 → 약관 버전 올리기","CURRENT_TERMS_VERSION 변경 = 전원 다시 동의. FAQ·결제 안내 문구도 맞춤",false],
+    ["p5-price","me","나라별 가격 확정","10-22 확정 — 한국 4,400원, 필리핀 ₱179(약 30% 낮게), 인니 Rp39,000·베트남 59,000₫(약 45% 낮게), 나머지는 스토어 자동 변환(사업 요약 탭)",false],
+    ["p5-settle","claude","정산을 실제 결제 금액 기준으로 개발","스토어 입금액(없으면 결제 금액 × 환율)을 바트로 환산해 정산, 소속사·운영자 화면 함께. 상품 등록 전에",true],
+    ["p5-rate","claude","참고 환율표를 확정 가격에 맞추기","app/src/utils/price.ts",true],
+    ["p5-share","me","소속사별 배분율 운영자 화면에 입력","계약서 숫자와 같게(기본 60%, 창립 파트너 첫 12개월 70%)",false],
+  ]},
+  {no:"6", title:"상품 등록 · 결제 확인 · 스토어 제출", when:"1월 2~4주",
+   why:"첫 구독 상품은 앱 버전과 함께 심사받아요. 반려를 한 번 받을 수 있다고 보고 1주 여유를 둬요.",
+   items:[
+    ["p6-records","me","스토어에 앱 만들기","App Store Connect·Play Console, 연령 등급 18+, 개인정보·데이터 보안은 store-submission.md 그대로, 지원·약관·개인정보 주소는 운영 서버",false],
+    ["p6-products","me","방·CP방·묶음마다 구독 상품 등록","애플은 방·묶음마다 구독 그룹 따로(같은 그룹이면 동시 구독 불가) → 운영자 화면에 상품 ID. 홈 할 일 '상품 ID 없는 방' 0개",false],
+    ["p6-notify","me","스토어 서버 알림 연결","애플 서버 알림 V2 → /iap/apple/notifications(운영·샌드박스), 구글 실시간 개발자 알림 Pub/Sub 푸시(인증) → /iap/google/notifications",false],
+    ["p6-iap-env","me","서버 결제 값","APPLE_BUNDLE_ID, APPLE_APP_ID, APPLE_IAP_ENVIRONMENT=PRODUCTION, GOOGLE_PLAY_PACKAGE_NAME, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON(재무 보기·주문 관리·구독 관리 권한), GOOGLE_RTDN_*",false],
+    ["p6-sandbox","me","샌드박스 결제 끝까지","구독·복원·갱신·해지·환불, 묶음, 미발송 환불, 활동 종료 → 구글 자동 해지, 애플 판매 중지가 기존 구독 갱신을 멈추는지",false],
+    ["p6-shots","me","스크린샷(실제 아티스트 사진)","둘러보기·프로필·토피룸(사진·음성)·크게 보기·구독 확인·묶음. 애플 6.9\"·6.5\", 구글 휴대폰",false],
+    ["p6-review","me","심사용 계정·심사 메모","성인 생년월일 소셜 계정, 팬은 미디어를 못 보냄·아티스트 계정은 운영자가 만듦 메모",false],
+    ["p6-submit","me","제출 → 승인 후 '수동 출시'로 대기","오픈일에 직접 공개. 목표는 할 일 5단계 '스토어 제출(목표일)'",false],
+    ["p6-storeid","claude","앱스토어 앱 ID 넣기","EXPO_PUBLIC_IOS_APP_STORE_ID — 강제 업데이트 화면이 바로 앱 페이지로",false],
+  ]},
+  {no:"7", title:"아티스트 온보딩 · 리허설", when:"1월 3주 ~ 2월 1주",
+   why:"연결 링크는 14일이면 만료되니 오픈 2주 안쪽에 보내요. 환영·생일 메시지가 없으면 아티스트 보내기 화면이 안 열려요.",
+   items:[
+    ["p7-bulk","me","아티스트·CP 일괄 등록 + 사진 묶어 올리기","공개 시각 = 오픈 시각(예약 오픈), 계약 끝나는 날도 입력",false],
+    ["p7-link","me","1회용 연결 링크 보내기 → 아티스트가 소셜 로그인으로 연결","운영 웹에서 만들어야 링크가 운영 주소로 나감",false],
+    ["p7-greet","ext","아티스트별 환영·생일 메시지, 토피룸 사진","소속사 직원이 대신 써도 됨",false],
+    ["p7-staff","me","소속사 직원 계정 지정 + 사용법 안내","대시보드·모니터링·기록은 앱/웹, 정산은 PC 웹",false],
+    ["p7-banned","me","금칙어 기본 목록 넣기, 공지 첫 글","운영 DB는 비어서 시작",false],
+    ["p7-rehearsal","me","리허설: 운영 서버에서 실제 결제 1건","내 계정 구독 → 아티스트 메시지 → 푸시 → 답장 → 환불 요청까지, 소속사 화면 숫자 확인",false],
+    ["p7-promo","ext","소속사 오픈 홍보 일정·스토어 링크 공유","정각 오픈 알림 받기 버튼을 홍보 문구에",false],
+  ]},
+  {no:"8", title:"오픈 주", when:"2월 둘째~셋째 주",
+   why:"앱 공개와 예약 오픈 정각을 맞추고, 첫 72시간은 오류·문의를 바로 봐요.",
+   items:[
+    ["p8-release","me","앱 공개(수동 출시) → 예약 오픈 정각에 방 열림·알림 푸시","",false],
+    ["p8-watch","me","첫 72시간 지켜보기","Sentry, Railway 로그, 운영자 홈 할 일·1:1 문의·환불 요청",false],
+    ["p8-hotfix","claude","급한 수정은 OTA, 서버 문제면 점검 모드","네이티브 수정은 새 빌드 + 최소 버전. OTA는 서버 배포가 끝난 뒤",false],
+  ]},
+  {no:"9", title:"오픈 후 첫 두 달", when:"오픈 ~ 4월",
+   why:"주간 숫자 기록은 '할 일' 탭 6단계. 이 숫자가 다음 소속사 영업 자료이자 투자 근거가 돼요.",
+   items:[
+    ["p9-close","me","첫 달 정산 마감 → 스토어 보고서와 대조 → 지급 기록","태국 시간 말일 기준. 스토어 입금은 1~2개월 뒤 — 그 전 소속사 지급은 법인 자금에서",false],
+    ["p9-expand","me","4주 뒤 나머지 아티스트 추가","단계적 확대(10-19 결정)",false],
+    ["p9-story","claude","스토리 화면 만들기","미래 기능 ① — 서버는 이미 있음",false],
+    ["p9-benefit","claude","장기 구독 혜택","미래 기능 ② — 30일 넘는 구독자가 생기기 전",false],
+    ["p9-cost","me","번역 비용 한 달 보고 자동 번역 기본값 판단","",false],
+  ]},
+];
+const OWNER = {me:["직접","bench"], claude:["Claude","money"], ext:["외부","advisor"]};
+function renderLaunch(){
+  const box = document.getElementById("lpPhases"); if (!box) return;
+  const L = (state && state.launch) || {};
+  const tot = {all:[0,0], me:[0,0], claude:[0,0], ext:[0,0]};
+  const openNow = new Set([...box.querySelectorAll("details.stage[open]")].map(d => d.dataset.n));
+  const first = !box.querySelector("details.stage");
+  box.innerHTML = LAUNCH.map(p => {
+    let done = 0;
+    const rows = p.items.map(([id, own, title, desc, found]) => {
+      const d = L[id] || {}; if (d.done) done++;
+      tot.all[1]++; tot[own][1]++; if (d.done) { tot.all[0]++; tot[own][0]++; }
+      return `<div class="task ${d.done ? "done" : ""}">
+        <input type="checkbox" id="lp-${id}" data-lid="${id}" ${d.done ? "checked" : ""} ${canWrite ? "" : "disabled"} aria-label="${esc(title)}">
+        <div class="t-main"><label class="t-title" for="lp-${id}">${esc(title)}</label>
+          ${desc ? `<div class="t-detail">${esc(desc)}</div>` : ""}
+          <div class="t-row"><span class="tag ${OWNER[own][1]}">${OWNER[own][0]}</span>${found ? `<span class="tag found">조사 발견</span>` : ""}${d.done && d.doneAt ? `<span class="doneat num">${fmtDate(d.doneAt)} 완료</span>` : ""}</div>
+        </div></div>`;
+    }).join("");
+    const n = p.items.length;
+    const open = first ? (p.no === "0") : openNow.has(p.no);
+    return `<details class="stage ${n && done === n ? "complete" : ""}" data-n="${p.no}" ${open ? "open" : ""}>
+      <summary><span class="sn num">${p.no}</span>
+        <span><div class="st-title">${p.no}단계. ${esc(p.title)}</div><div class="st-meta"><span>${esc(p.when)}</span></div></span>
+        <span class="st-count">${n ? `<span class="num">${done}/${n}</span><div class="mini"><i style="width:${done/n*100}%"></i></div>` : `<span>할 일 탭</span>`}</span></summary>
+      <div class="st-body"><div class="st-note">${esc(p.why)}</div>${rows}</div>
+    </details>`;
+  }).join("");
+  const f = k => `<b class="num">${tot[k][0]} / ${tot[k][1]}</b>`;
+  document.getElementById("lpStats").innerHTML = `<span>전체 ${f("all")}</span><span>직접 ${f("me")}</span><span>Claude ${f("claude")}</span><span>외부 ${f("ext")}</span>`;
+}
+
+const state = {tasks:{}, launch:{}, notes:[], expenses:[], filter:"all", openMemo:null, confirmDel:null, confirmEx:null};
 let db = null, canWrite = false;
 try { const f = localStorage.getItem("toffee-filter"); if (f) state.filter = f; } catch(e) {}
 
@@ -959,12 +1301,21 @@ function renderExpenses(){
 
 function renderAll(){
   document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.f === state.filter)));
-  renderSummary(); renderStages(); renderNotes(); renderExpenses();
+  renderSummary(); renderStages(); renderLaunch(); renderNotes(); renderExpenses();
   $("#noteAdd").disabled = !canWrite; $("#noteText").disabled = !canWrite; $("#noteKind").disabled = !canWrite;
 }
 
 // 입력
 document.addEventListener("change", async e => {
+  const lid = e.target.dataset && e.target.dataset.lid;
+  if (lid && db) {
+    const prev = state.launch[lid] || {};
+    const next = {...prev, done: e.target.checked, doneAt: e.target.checked ? new Date().toISOString() : null};
+    state.launch[lid] = next; renderLaunch();
+    try { await db.doc("launch/" + lid).set(next); }
+    catch(err) { state.launch[lid] = prev; renderLaunch(); showBanner("체크를 저장하지 못했어요. 잠시 뒤 다시 눌러 주세요."); }
+    return;
+  }
   const inv = e.target.dataset && e.target.dataset.inv;
   if (inv && db) {
     try { await db.doc("expenses/" + inv).update({invoice: e.target.checked}); }
@@ -1073,13 +1424,17 @@ renderAll();
     state.tasks = m;
     if (!state.openMemo) renderAll(); else { renderSummary(); }
   }, err => showBanner("체크 상태 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+  db.collection("launch").onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); });
+    state.launch = m; renderLaunch();
+  }, err => showBanner("운영 전환 체크 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
   db.collection("notes").orderBy("createdAt", "desc").onSnapshot(snap => {
     state.notes = snap.docs; renderNotes();
   }, err => showBanner("메모 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
 })();
 
 // 탭
-const TABS = ["now","tasks","decide","money","server","biz","links"];
+const TABS = ["now","tasks","launch","decide","money","server","biz","links"];
 function showTab(t){
   if (!TABS.includes(t)) t = "now";
   document.querySelectorAll("[role=tab]").forEach(b => { const on = b.dataset.tab === t; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; });
@@ -1098,8 +1453,8 @@ document.addEventListener("click", e => { const g = e.target.closest && e.target
 { let t0 = (location.hash || "").slice(1); if (!TABS.includes(t0)) { try { t0 = localStorage.getItem("toffee-tab") || ""; } catch(e) { t0 = ""; } } showTab(t0); }
 
 // 검색 — 모든 탭(할 일·메모 포함)에서 글자를 찾아 결과를 누르면 그 탭·위치로
-const TABNAME = {now:"지금", tasks:"할 일", decide:"정할 것", money:"돈", server:"서버", biz:"사업 요약", links:"다른 페이지"};
-const SEL = ".tabpanel tr, .tabpanel li, .tabpanel .task, .tabpanel .kpi, .tabpanel .price, .tabpanel .phase, .tabpanel p, .tabpanel h2, .tabpanel h3, .tabpanel .st-note, .tabpanel .memo-view, .tabpanel .box > b";
+const TABNAME = {now:"지금", tasks:"할 일", launch:"운영 전환", decide:"정할 것", money:"돈", server:"서버", biz:"사업 요약", links:"다른 페이지"};
+const SEL = ".tabpanel tr, .tabpanel li, .tabpanel .task, .tabpanel .issue, .tabpanel .kpi, .tabpanel .price, .tabpanel .phase, .tabpanel p, .tabpanel h2, .tabpanel h3, .tabpanel .st-note, .tabpanel .memo-view, .tabpanel .box > b";
 let hits = [];
 const norm = t => t.replace(/\s+/g, " ").trim();
 // 표 칸·줄바꿈 사이에 띄어쓰기를 넣어 글자가 붙지 않게
