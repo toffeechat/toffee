@@ -122,7 +122,7 @@ export class AdminUsersService {
         where: { purchase: { userId } },
         orderBy: { chargedAt: 'desc' },
         take: 100,
-        select: { id: true, productName: true, amountCents: true, chargedAt: true, periodEnd: true, source: true, refundedAt: true, storeAmountMilli: true, storeCurrency: true },
+        select: { id: true, productName: true, amountCents: true, chargedAt: true, periodEnd: true, source: true, refundedAt: true, storeAmountMilli: true, storeCurrency: true, kind: true },
       }),
       this.prisma.refundRequest.findMany({
         where: { userId },

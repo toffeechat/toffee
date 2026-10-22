@@ -523,7 +523,18 @@
     "cancelFromActor": "此藝人包含在你的 {{name}} 組合中。取消後組合內其他 Toffee Room 也會關閉，重新訂閱也看不到之前的聊天。",
     "cancelFailed": "取消失敗，請再試一次。",
     "viaShort": "透過組合使用",
-    "replacesSingleStore": "單獨訂閱的 {{names}} 的商店訂閱不會自動結束——購買套裝後請在商店訂閱管理中取消（聊天會繼續）。"
+    "replacesSingleStore": "單獨訂閱的 {{names}} 的商店訂閱不會自動結束——購買套裝後請在商店訂閱管理中取消（聊天會繼續）。",
+    "switchTitle": "更換組合",
+    "switchFrom": "目前訂閱：{{name}}",
+    "switchCta": "改成這個組合",
+    "switchNow": "立即更換。保留的 Toffee 房間對話照常繼續，只有新組合中沒有的房間會關閉。",
+    "switchNowApple": "立即更換。目前組合未使用部分的金額由 Apple 退還，新組合從今天開始新的一個月。保留房間的對話照常繼續。",
+    "switchNowGoogle": "立即更換。今天不會額外扣款，目前組合的剩餘時間會換算為新組合的使用時間。保留房間的對話照常繼續。",
+    "switchNextRenewal": "將從下一個扣款日（{{date}}）起更換。在此之前繼續使用目前組合（Apple 規定）。",
+    "switchOtherStore": "目前組合是在 {{store}} 訂閱的。請在那台裝置的 {{store}} 訂閱管理中更換（在這裡購買會重複扣款）。",
+    "switchNoPurchase": "在此裝置的 Google Play 帳號中找不到目前組合的訂閱。請確認已登入訂閱時使用的 Google 帳號。",
+    "switchDone": "已改成 {{name}}。請在 Toffee 房間分頁中查看。",
+    "switchDoneLater": "將從下一個扣款日起改成 {{name}}。在此之前繼續使用目前組合。"
   },
   "gallery": {
     "title": "照片和影片",

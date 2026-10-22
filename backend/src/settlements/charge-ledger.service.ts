@@ -1,9 +1,10 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ActorKind, ChargeSource, IapPlatform } from '../generated/prisma/enums.js';
+import { ActorKind, ChargeKind, ChargeSource, IapPlatform } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { addMonths, allocateCharge, type ChargeRoom } from './allocate-charge.js';
+import { allocateBundlePrice } from '../subscriptions/allocate-price.js';
 
 type Db = Prisma.TransactionClient | PrismaService;
 
@@ -33,6 +34,21 @@ export interface ChargeInput {
   // 스토어가 실제로 청구한 금액(1/1000 단위)·통화 — 대조용
   storeAmountMilli?: number;
   storeCurrency?: string;
+  // 묶음 갈아타기 이월 줄(2026-10-22) — 기본은 실제 결제(PAYMENT)
+  kind?: ChargeKind;
+  switchOfChargeId?: string;
+  // 상품 이름 뒤에 붙일 설명(예: "(묶음 변경 — 이월)")
+  productNote?: string;
+}
+
+/** 묶음 갈아타기로 뺀 안 쓴 기간 몫(creditUnused 결과) */
+export interface SwitchCredit {
+  /** 뺀 합계(양수) — 구글·테스트 구독은 이만큼을 새 묶음으로 이월 */
+  totalCents: number;
+  /** 뺀 결제 중 첫 번째(이월 줄이 가리킴) */
+  fromChargeId: string | null;
+  /** 뺀 결제들의 이용 기간 끝 중 가장 늦은 것 */
+  periodEnd: Date | null;
 }
 
 export function sourceOf(platform: IapPlatform | null): ChargeSource {
@@ -91,7 +107,7 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
           purchaseId: purchase.id,
           actorId: purchase.actorId,
           bundleId: purchase.bundleId,
-          productName: purchase.bundle?.name ?? purchase.actor?.legalName ?? '',
+          productName: `${purchase.bundle?.name ?? purchase.actor?.legalName ?? ''}${input.productNote ? ` ${input.productNote}` : ''}`,
           amountCents,
           currency: input.currency ?? 'THB',
           chargedAt: input.chargedAt,
@@ -100,6 +116,8 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
           storeTransactionId: input.storeTransactionId,
           storeAmountMilli: input.storeAmountMilli,
           storeCurrency: input.storeCurrency,
+          kind: input.kind,
+          switchOfChargeId: input.switchOfChargeId,
           allocations: { create: lines.map((line) => ({ ...line, agencyId: agencies.get(line.actorId) ?? null })) },
         },
       });
@@ -117,6 +135,73 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
       }
       throw error;
     }
+  }
+
+  /**
+   * 같은 CP 묶음 갈아타기(2026-10-22) — 기간 중간(at)에 묶음이 바뀌면, 그때 이용 중이던 결제(실제 결제·이월, 환불 안 됨)마다 안 쓴 기간 몫
+   * (금액 × 남은 시간 / 전체 기간)을 예전 묶음 아티스트에게서 빼는 줄(SWITCH_CREDIT, 음수)을 만듦. 몫은 그 결제의 원래 배분(방·배우·소속사) 비율대로.
+   * 과거 줄은 고치지 않아서 마감한 달 숫자는 그대로. 같은 결제는 한 번만 뺌(switchOfChargeId). 결제일에 바뀌면(애플 내리기) 뺄 게 없음.
+   * 차감 줄의 chargedAt은 같은 구매·같은 시각 고유 제약을 피하려고 at보다 1ms씩 앞.
+   */
+  async creditUnused(db: Db, purchaseId: string, at: Date): Promise<SwitchCredit> {
+    const covering = await db.purchaseCharge.findMany({
+      where: {
+        purchaseId,
+        kind: { in: [ChargeKind.PAYMENT, ChargeKind.SWITCH_CARRY] },
+        refundedAt: null,
+        chargedAt: { lt: at },
+        periodEnd: { gt: at },
+      },
+      orderBy: { chargedAt: 'asc' },
+      select: {
+        id: true,
+        actorId: true,
+        bundleId: true,
+        productName: true,
+        amountCents: true,
+        currency: true,
+        chargedAt: true,
+        periodEnd: true,
+        source: true,
+        allocations: { select: { roomId: true, actorId: true, agencyId: true, amountCents: true } },
+      },
+    });
+    const done = new Set(
+      (await db.purchaseCharge.findMany({ where: { switchOfChargeId: { in: covering.map((charge) => charge.id) }, kind: ChargeKind.SWITCH_CREDIT }, select: { switchOfChargeId: true } })).map(
+        (row) => row.switchOfChargeId,
+      ),
+    );
+    const result: SwitchCredit = { totalCents: 0, fromChargeId: null, periodEnd: null };
+    let offset = 0;
+    for (const charge of covering) {
+      if (done.has(charge.id) || charge.amountCents <= 0) continue;
+      const unused = Math.round((charge.amountCents * (charge.periodEnd.getTime() - at.getTime())) / (charge.periodEnd.getTime() - charge.chargedAt.getTime()));
+      if (unused <= 0) continue;
+      const split = allocateBundlePrice(unused, charge.allocations.map((line, index) => ({ id: String(index), monthlyPriceCents: line.amountCents })));
+      offset += 1;
+      await db.purchaseCharge.create({
+        data: {
+          purchaseId,
+          actorId: charge.actorId,
+          bundleId: charge.bundleId,
+          productName: `${charge.productName} (묶음 변경 — 안 쓴 기간 차감)`,
+          amountCents: -unused,
+          currency: charge.currency,
+          chargedAt: new Date(at.getTime() - offset),
+          periodEnd: charge.periodEnd,
+          source: charge.source,
+          kind: ChargeKind.SWITCH_CREDIT,
+          switchOfChargeId: charge.id,
+          allocations: {
+            create: charge.allocations.map((line, index) => ({ roomId: line.roomId, actorId: line.actorId, agencyId: line.agencyId, amountCents: -(split.get(String(index)) ?? 0) })),
+          },
+        },
+      });
+      result.totalCents += unused;
+      result.fromChargeId ??= charge.id;
+      if (!result.periodEnd || charge.periodEnd > result.periodEnd) result.periodEnd = charge.periodEnd;
+    }
+    return result;
   }
 
   /** 스토어 환불 — 그 결제를 정산에서 빼고 환불 칸으로(이미 환불 표시된 건 그대로). 몇 건 바뀌었는지 */

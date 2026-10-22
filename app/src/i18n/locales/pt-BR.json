@@ -523,7 +523,18 @@
     "cancelFromActor": "Este artista faz parte do seu pacote {{name}}. Ao cancelar, as outras Toffee Rooms do pacote também serão fechadas. As conversas anteriores não aparecerão se você assinar de novo.",
     "cancelFailed": "Não foi possível cancelar. Tente novamente.",
     "viaShort": "Incluído em um pacote",
-    "replacesSingleStore": "Suas assinaturas individuais na loja para {{names}} não vão terminar automaticamente — cancele-as nas configurações de assinaturas da loja depois de comprar o pacote (suas conversas continuam)."
+    "replacesSingleStore": "Suas assinaturas individuais na loja para {{names}} não vão terminar automaticamente — cancele-as nas configurações de assinaturas da loja depois de comprar o pacote (suas conversas continuam).",
+    "switchTitle": "Mudar de pacote",
+    "switchFrom": "Assinatura atual: {{name}}",
+    "switchCta": "Mudar para este pacote",
+    "switchNow": "A mudança é imediata. As conversas das salas que você mantém continuam; só fecham as salas que não estão no novo pacote.",
+    "switchNowApple": "A mudança é imediata. A Apple reembolsa a parte não usada do seu pacote atual e um novo mês deste pacote começa hoje. As conversas das salas que você mantém continuam.",
+    "switchNowGoogle": "A mudança é imediata. Não há cobrança extra hoje — o tempo restante do pacote atual vira tempo de uso do novo pacote. As conversas das salas que você mantém continuam.",
+    "switchNextRenewal": "A mudança começa na sua próxima data de cobrança ({{date}}). Até lá você continua com o pacote atual (regra da Apple).",
+    "switchOtherStore": "Seu pacote atual foi comprado na {{store}}. Mude nas assinaturas da {{store}} naquele aparelho (comprar aqui cobraria duas vezes).",
+    "switchNoPurchase": "Não encontramos a assinatura do seu pacote atual na conta Google Play deste aparelho. Verifique se você entrou com a conta Google usada na assinatura.",
+    "switchDone": "Você mudou para {{name}}. Veja na aba Toffee Rooms.",
+    "switchDoneLater": "Você vai mudar para {{name}} na próxima data de cobrança. Até lá continua com o pacote atual."
   },
   "gallery": {
     "title": "Fotos e vídeos",

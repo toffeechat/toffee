@@ -401,7 +401,7 @@ export function BillingSection({ userId }: { userId: string }) {
             { title: '금액', flex: 1.4 },
             { title: '결제한 곳', flex: 0.8 },
             { title: '이용 기간 끝', flex: 1 },
-            { title: '환불', flex: 1 },
+            { title: '환불·변경', flex: 1.1 },
           ]}
           rows={data.charges.slice(0, 30).map((charge) => ({
             key: charge.id,
@@ -414,7 +414,15 @@ export function BillingSection({ userId }: { userId: string }) {
               </View>,
               PLATFORM[charge.source] ?? charge.source,
               day(charge.periodEnd),
-              charge.refundedAt ? <AdminBadge label={`${day(charge.refundedAt)} 환불`} tone="danger" /> : '',
+              charge.refundedAt ? (
+                <AdminBadge label={`${day(charge.refundedAt)} 환불`} tone="danger" />
+              ) : charge.kind === 'SWITCH_CREDIT' ? (
+                <AdminBadge label="묶음 변경 차감" tone="warn" />
+              ) : charge.kind === 'SWITCH_CARRY' ? (
+                <AdminBadge label="묶음 변경 이월" tone="muted" />
+              ) : (
+                ''
+              ),
             ],
           }))}
         />

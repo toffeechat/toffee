@@ -533,6 +533,18 @@ export const ERROR_MESSAGES = {
     es: (p) => `Este artista forma parte de tu paquete (${p.name}). Para cancelar, cancela el paquete.`,
     'pt-BR': (p) => `Este artista faz parte do seu pacote (${p.name}). Para cancelar, cancele o pacote.`,
   },
+  // 같은 CP 묶음 갈아타기(2026-10-22) — 같은 그룹 묶음을 하나 더 사지 않고 바꾸기로
+  BUNDLE_SWITCH_INSTEAD: {
+    ko: (p) => `이미 같은 CP의 묶음(${p.name})을 구독 중이에요. 새로 구독하지 말고 [이 묶음으로 바꾸기]를 눌러 주세요.`,
+    en: (p) => `You already subscribe to a bundle for this pair (${p.name}). Tap [Switch to this bundle] instead of subscribing again.`,
+    th: (p) => `คุณสมัครแพ็กเกจของคู่นี้อยู่แล้ว (${p.name}) กรุณากด [เปลี่ยนเป็นแพ็กเกจนี้] แทนการสมัครใหม่`,
+    ja: (p) => `すでに同じCPのセット（${p.name}）を購読中です。新しく購読せず［このセットに変更］を押してください。`,
+    'zh-Hans': (p) => `你已订阅了同一 CP 的套餐（${p.name}）。请点击［切换到此套餐］，无需重新订阅。`,
+    'zh-Hant': (p) => `你已訂閱同一 CP 的組合（${p.name}）。請點選［改成這個組合］，不需重新訂閱。`,
+    vi: (p) => `Bạn đã đăng ký gói combo của cặp này (${p.name}). Hãy nhấn [Đổi sang gói này] thay vì đăng ký mới.`,
+    es: (p) => `Ya tienes un paquete de esta pareja (${p.name}). Toca [Cambiar a este paquete] en lugar de suscribirte de nuevo.`,
+    'pt-BR': (p) => `Você já assina um pacote deste casal (${p.name}). Toque em [Mudar para este pacote] em vez de assinar de novo.`,
+  },
   PURCHASE_NOT_FOUND: {
     ko: '해지할 구독을 찾을 수 없어요.',
     en: "We couldn't find that subscription.",

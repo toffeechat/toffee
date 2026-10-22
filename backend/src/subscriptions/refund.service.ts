@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ChargeSource, MessageSenderType, RefundRequestStatus } from '../generated/prisma/enums.js';
+import { ChargeKind, ChargeSource, MessageSenderType, RefundRequestStatus } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AdminAlertService } from '../notifications/admin-alert.service.js';
@@ -82,11 +82,11 @@ export class RefundService {
     return this.days('RETIRE_REFUND_DAYS', 14);
   }
 
-  /** 지금 환불을 요청할 수 있는 내 결제들(결제 하나에 사유 하나 — 둘 다 맞으면 활동 종료) */
+  /** 지금 환불을 요청할 수 있는 내 결제들(결제 하나에 사유 하나 — 둘 다 맞으면 활동 종료). 묶음 갈아타기의 차감·이월 줄은 실제 결제가 아니라 빼고(2026-10-22) */
   async candidates(userId: string, now = new Date()): Promise<RefundCandidate[]> {
     const requestMs = this.requestDays * DAY_MS;
     const charges = await this.prisma.purchaseCharge.findMany({
-      where: { refundedAt: null, purchase: { userId }, periodEnd: { gt: new Date(now.getTime() - requestMs) }, chargedAt: { lte: now } },
+      where: { refundedAt: null, kind: ChargeKind.PAYMENT, purchase: { userId }, periodEnd: { gt: new Date(now.getTime() - requestMs) }, chargedAt: { lte: now } },
       select: CHARGE_SELECT,
       orderBy: { periodEnd: 'desc' },
     });

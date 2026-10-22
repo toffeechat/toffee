@@ -523,7 +523,18 @@
     "cancelFromActor": "该艺人包含在你的 {{name}} 套餐中。取消后套餐内其他 Toffee Room 也会关闭，重新订阅也看不到之前的聊天。",
     "cancelFailed": "取消失败，请重试。",
     "viaShort": "通过套餐使用",
-    "replacesSingleStore": "单独订阅的 {{names}} 的商店订阅不会自动结束——购买套餐后请在商店订阅管理中取消（聊天会继续）。"
+    "replacesSingleStore": "单独订阅的 {{names}} 的商店订阅不会自动结束——购买套餐后请在商店订阅管理中取消（聊天会继续）。",
+    "switchTitle": "切换套餐",
+    "switchFrom": "当前订阅：{{name}}",
+    "switchCta": "切换到此套餐",
+    "switchNow": "立即切换。保留的 Toffee 房间对话照常继续，只有新套餐中没有的房间会关闭。",
+    "switchNowApple": "立即切换。当前套餐未使用部分的金额由 Apple 退还，新套餐从今天开始新的一个月。保留房间的对话照常继续。",
+    "switchNowGoogle": "立即切换。今天不会额外扣费，当前套餐的剩余时间会换算为新套餐的使用时间。保留房间的对话照常继续。",
+    "switchNextRenewal": "将从下一个扣费日（{{date}}）起切换。在此之前继续使用当前套餐（Apple 规定）。",
+    "switchOtherStore": "当前套餐是在 {{store}} 订阅的。请在那台设备的 {{store}} 订阅管理中切换（在这里购买会重复扣费）。",
+    "switchNoPurchase": "在此设备的 Google Play 账号中找不到当前套餐的订阅。请确认已登录订阅时使用的 Google 账号。",
+    "switchDone": "已切换到 {{name}}。请在 Toffee 房间标签中查看。",
+    "switchDoneLater": "将从下一个扣费日起切换到 {{name}}。在此之前继续使用当前套餐。"
   },
   "gallery": {
     "title": "照片和视频",

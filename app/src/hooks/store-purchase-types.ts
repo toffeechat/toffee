@@ -4,8 +4,11 @@ export type StoreTarget = { kind: 'actor' | 'bundle'; id: string; sku: string | 
 export interface StoreCheckout {
   /** 이 기기에서 실제 스토어 결제를 쓸 수 있는지(앱 + 스토어 연결됨 + 상품 ID 있음). 아니면 화면이 결제 없는 테스트 구독으로 */
   available: boolean;
-  /** 스토어 결제창 → 서버 확인까지. 사용자가 닫으면 null */
-  buy: () => Promise<unknown>;
+  /**
+   * 스토어 결제창 → 서버 확인까지. 사용자가 닫으면 null. replaceSku: 같은 CP 묶음 갈아타기(2026-10-22) — 지금 가진 묶음의 스토어 상품 ID.
+   * 애플은 같은 구독 그룹이라 그냥 사면 스토어가 "바꾸기"로 처리, 구글은 예전 구매 토큰 + 교체 방식(with-time-proration)을 같이 넘김
+   */
+  buy: (options?: { replaceSku?: string | null }) => Promise<unknown>;
   /** 스토어가 이 기기 나라 통화로 준 가격(예: "₩4,400") — 실제 청구 금액이라 결제 화면에선 이걸 우선 표시. 아직 못 받았거나 웹이면 null */
   displayPrice: string | null;
   /** 구매 복원 — 복원된 개수 */

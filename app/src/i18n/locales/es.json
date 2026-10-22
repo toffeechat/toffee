@@ -523,7 +523,18 @@
     "cancelFromActor": "Este artista forma parte de tu paquete {{name}}. Al cancelar también se cierran las demás Toffee Rooms del paquete. Los chats anteriores no se verán si te vuelves a suscribir.",
     "cancelFailed": "No se pudo cancelar. Inténtalo de nuevo.",
     "viaShort": "Incluido en un paquete",
-    "replacesSingleStore": "Tus suscripciones individuales en la tienda para {{names}} no terminarán automáticamente: cancélalas en los ajustes de suscripciones de la tienda después de comprar el paquete (tus chats continúan)."
+    "replacesSingleStore": "Tus suscripciones individuales en la tienda para {{names}} no terminarán automáticamente: cancélalas en los ajustes de suscripciones de la tienda después de comprar el paquete (tus chats continúan).",
+    "switchTitle": "Cambiar de paquete",
+    "switchFrom": "Suscripción actual: {{name}}",
+    "switchCta": "Cambiar a este paquete",
+    "switchNow": "El cambio es inmediato. Los chats de las salas que conservas siguen igual; solo se cierran las salas que no están en el nuevo paquete.",
+    "switchNowApple": "El cambio es inmediato. Apple te reembolsa la parte no usada de tu paquete actual y hoy empieza un nuevo mes de este paquete. Los chats de las salas que conservas siguen.",
+    "switchNowGoogle": "El cambio es inmediato. Hoy no hay cargo extra: el tiempo restante de tu paquete actual se convierte en tiempo del nuevo paquete. Los chats de las salas que conservas siguen.",
+    "switchNextRenewal": "El cambio empieza en tu próxima fecha de cobro ({{date}}). Hasta entonces mantienes tu paquete actual (norma de Apple).",
+    "switchOtherStore": "Tu paquete actual se compró en {{store}}. Cámbialo en la gestión de suscripciones de {{store}} en ese dispositivo (comprar aquí te cobraría dos veces).",
+    "switchNoPurchase": "No encontramos la suscripción de tu paquete actual en la cuenta de Google Play de este dispositivo. Comprueba que has iniciado sesión con la cuenta de Google con la que te suscribiste.",
+    "switchDone": "Cambiado a {{name}}. Revisa la pestaña de Toffee Rooms.",
+    "switchDoneLater": "Cambiarás a {{name}} en tu próxima fecha de cobro. Hasta entonces mantienes tu paquete actual."
   },
   "gallery": {
     "title": "Fotos y videos",

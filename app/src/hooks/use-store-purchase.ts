@@ -9,6 +9,9 @@ import type { StoreCheckout, StoreTarget } from './store-purchase-types';
 
 export type { StoreCheckout, StoreTarget } from './store-purchase-types';
 
+/** 구글 묶음 갈아타기 — 이 기기에서 예전 구독을 못 찾음(화면이 안내 문구로 바꿈) */
+export const STORE_REPLACE_NOT_FOUND = 'STORE_REPLACE_NOT_FOUND';
+
 // 스토어 영수증 → 서버 확인 요청 본문(iOS는 StoreKit2 서명 트랜잭션, 안드로이드는 purchaseToken + 상품 ID)
 function receiptOf(purchase: Purchase) {
   return Platform.OS === 'ios'
@@ -30,6 +33,7 @@ export function useStorePurchase(target: StoreTarget): StoreCheckout {
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
     void queryClient.invalidateQueries({ queryKey: ['my-bundles'] });
+    void queryClient.invalidateQueries({ queryKey: ['bundle-switch'] });
   };
 
   const { connected, requestPurchase, finishTransaction, subscriptions, fetchProducts } = useIAP({
@@ -67,13 +71,21 @@ export function useStorePurchase(target: StoreTarget): StoreCheckout {
   const displayPrice = (sku && subscriptions.find((product) => product.id === sku)?.displayPrice) || null;
 
   const userId = me?.id;
-  const buy = () => {
+  const buy = async (options?: { replaceSku?: string | null }) => {
     const sku = target.sku;
-    if (!sku || !userId) return Promise.resolve(null);
+    if (!sku || !userId) return null;
+    // 구글 묶음 갈아타기(2026-10-22) — 이 기기의 예전 구독 토큰을 넘겨야 새 구매가 예전 구매를 대신함(안 넘기면 두 번 결제). 남은 기간은 새 묶음
+    // 날수로 환산(with-time-proration — 서버 정산도 이 방식을 전제). 이 기기에 예전 구매가 없으면(다른 구글 계정 등) 진행하지 않음
+    let replace: { purchaseToken: string; subscriptionProductReplacementParams: { oldProductId: string; replacementMode: 'with-time-proration' } } | undefined;
+    if (options?.replaceSku && Platform.OS === 'android') {
+      const owned = (await getAvailablePurchases()).find((purchase) => purchase.productId === options.replaceSku && purchase.purchaseToken);
+      if (!owned) throw new Error(STORE_REPLACE_NOT_FOUND);
+      replace = { purchaseToken: owned.purchaseToken!, subscriptionProductReplacementParams: { oldProductId: options.replaceSku, replacementMode: 'with-time-proration' } };
+    }
     return new Promise((resolve, reject) => {
       pending.current = { resolve, reject };
       requestPurchase({
-        request: { apple: { sku, appAccountToken: userId }, google: { skus: [sku], obfuscatedAccountId: userId } },
+        request: { apple: { sku, appAccountToken: userId }, google: { skus: [sku], obfuscatedAccountId: userId, ...replace } },
         type: 'subs',
       }).catch((error: unknown) => {
         pending.current = null;

@@ -25,6 +25,11 @@ export interface StoreTransaction {
   storeCurrency?: string;
   // 스토어 자동 갱신 상태(2026-10-02) — 구글 API의 autoRenewing, 애플 알림의 갱신 정보(autoRenewStatus). 모르면 비움(앱의 영수증 확인 등)
   willRenew?: boolean;
+  // 같은 CP 묶음 갈아타기(2026-10-22) — 구글은 바꾸면 새 구매(새 purchaseToken)가 생기고 예전 구매를 가리킴(linkedPurchaseToken). 애플은 같은
+  // originalTransactionId에서 상품만 바뀌어서 없음
+  replacesTransactionId?: string;
+  // 구글: 이 구매가 다른 구매로 교체돼 끝남(cancelReason 2) — 이 토큰의 만료 알림으로 방을 닫으면 안 됨(새 구매가 이어받음)
+  replaced?: boolean;
 }
 
 /** 애플 서버 알림(App Store Server Notifications V2)을 검증·해석한 결과 */
@@ -44,6 +49,9 @@ interface GooglePlaySubscriptionResponse {
   priceCurrencyCode?: string;
   obfuscatedExternalAccountId?: string;
   autoRenewing?: boolean;
+  linkedPurchaseToken?: string;
+  // 0 팬 해지, 1 시스템(결제 실패 등), 2 다른 구독으로 교체, 3 개발자 해지
+  cancelReason?: number;
 }
 
 /**
@@ -232,5 +240,7 @@ export function googleTransaction(purchaseToken: string, productId: string, body
     storeAmountMilli: body.priceAmountMicros ? Math.round(Number(body.priceAmountMicros) / 1000) : undefined,
     storeCurrency: body.priceCurrencyCode,
     willRenew: body.autoRenewing,
+    replacesTransactionId: body.linkedPurchaseToken || undefined,
+    replaced: body.cancelReason === 2 || undefined,
   };
 }

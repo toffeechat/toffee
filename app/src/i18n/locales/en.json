@@ -523,7 +523,18 @@
     "cancelFromActor": "This artist is part of your {{name}} bundle. Cancelling closes the other Toffee Rooms in the bundle too. Previous chats won't be visible if you subscribe again.",
     "cancelFailed": "Couldn't cancel. Please try again.",
     "viaShort": "Included in a bundle",
-    "replacesSingleStore": "Your separate store subscriptions for {{names}} won't end automatically — cancel them in store subscription settings after buying the bundle (your chats continue)."
+    "replacesSingleStore": "Your separate store subscriptions for {{names}} won't end automatically — cancel them in store subscription settings after buying the bundle (your chats continue).",
+    "switchTitle": "Switch bundle",
+    "switchFrom": "Current subscription: {{name}}",
+    "switchCta": "Switch to this bundle",
+    "switchNow": "The change happens right away. Chats in rooms you keep continue as they are; only rooms not in the new bundle close.",
+    "switchNowApple": "The change happens right away. Apple refunds the unused part of your current bundle, and a new month of this bundle starts today. Chats in rooms you keep continue.",
+    "switchNowGoogle": "The change happens right away. There is no extra charge today — the unused time of your current bundle is converted into time on the new bundle. Chats in rooms you keep continue.",
+    "switchNextRenewal": "The change starts on your next billing date ({{date}}). Until then you keep your current bundle (Apple rule).",
+    "switchOtherStore": "Your current bundle was purchased on {{store}}. Please switch it in {{store}} subscription settings on that device (buying here would charge you twice).",
+    "switchNoPurchase": "We couldn't find your current bundle subscription in this device's Google Play account. Please check you're signed in with the Google account you subscribed with.",
+    "switchDone": "Switched to {{name}}. Check your Toffee Rooms tab.",
+    "switchDoneLater": "You'll switch to {{name}} on your next billing date. Until then you keep your current bundle."
   },
   "gallery": {
     "title": "Photos & videos",

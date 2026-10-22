@@ -523,7 +523,18 @@
     "cancelFromActor": "Nghệ sĩ này nằm trong gói combo {{name}} của bạn. Hủy sẽ đóng cả các Toffee Room khác trong gói. Cuộc trò chuyện trước đó sẽ không hiển thị nếu bạn đăng ký lại.",
     "cancelFailed": "Không hủy được. Vui lòng thử lại.",
     "viaShort": "Thuộc gói combo",
-    "replacesSingleStore": "Các gói đăng ký riêng trên cửa hàng cho {{names}} sẽ không tự kết thúc — hãy hủy chúng trong cài đặt đăng ký của cửa hàng sau khi mua gói combo (các cuộc trò chuyện vẫn tiếp tục)."
+    "replacesSingleStore": "Các gói đăng ký riêng trên cửa hàng cho {{names}} sẽ không tự kết thúc — hãy hủy chúng trong cài đặt đăng ký của cửa hàng sau khi mua gói combo (các cuộc trò chuyện vẫn tiếp tục).",
+    "switchTitle": "Đổi gói combo",
+    "switchFrom": "Đang đăng ký: {{name}}",
+    "switchCta": "Đổi sang gói này",
+    "switchNow": "Đổi ngay. Cuộc trò chuyện ở các phòng được giữ lại vẫn tiếp tục; chỉ các phòng không có trong gói mới bị đóng.",
+    "switchNowApple": "Đổi ngay. Apple hoàn lại phần chưa dùng của gói hiện tại và tháng mới của gói này bắt đầu từ hôm nay. Cuộc trò chuyện ở các phòng được giữ lại vẫn tiếp tục.",
+    "switchNowGoogle": "Đổi ngay. Hôm nay không bị trừ thêm tiền — thời gian còn lại của gói hiện tại được quy đổi thành thời gian dùng gói mới. Cuộc trò chuyện ở các phòng được giữ lại vẫn tiếp tục.",
+    "switchNextRenewal": "Sẽ đổi từ ngày thanh toán tiếp theo ({{date}}). Trước đó bạn vẫn dùng gói hiện tại (quy định của Apple).",
+    "switchOtherStore": "Gói hiện tại được đăng ký qua {{store}}. Vui lòng đổi trong phần quản lý gói đăng ký {{store}} trên thiết bị đó (mua ở đây sẽ bị trừ tiền hai lần).",
+    "switchNoPurchase": "Không tìm thấy gói đăng ký hiện tại trong tài khoản Google Play của thiết bị này. Hãy kiểm tra bạn đã đăng nhập bằng tài khoản Google đã dùng để đăng ký.",
+    "switchDone": "Đã đổi sang {{name}}. Hãy xem ở tab Toffee Room.",
+    "switchDoneLater": "Sẽ đổi sang {{name}} từ ngày thanh toán tiếp theo. Trước đó bạn vẫn dùng gói hiện tại."
   },
   "gallery": {
     "title": "Ảnh & video",

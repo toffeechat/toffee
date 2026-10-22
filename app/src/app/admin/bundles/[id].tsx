@@ -2,10 +2,11 @@ import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
+import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AdminBundleForm } from '@/components/admin-bundle-form';
 import { AdminChip, AdminSection } from '@/components/admin-ui';
-import { useAdminBundle, useUpdateBundle } from '@/hooks/use-admin';
+import { storeGroupText, useAdminBundle, useUpdateBundle } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
@@ -35,6 +36,13 @@ export default function AdminBundleScreen() {
           <ThemedView style={styles.chips}>
             <AdminChip label={bundle.active ? '판매 중' : '판매 중지됨'} selected={bundle.active} disabled={update.isPending} onPress={() => void toggleActive()} />
           </ThemedView>
+        </AdminSection>
+        {/* 같은 CP 묶음 갈아타기(2026-10-22) — 스토어에 상품을 만들 때 이 그룹·단계 그대로(docs/product/store-submission.md) */}
+        <AdminSection
+          title="스토어 구독 그룹"
+          hint="같은 CP의 묶음 3개는 애플·구글에 한 구독 그룹으로 등록해야 팬이 묶음을 바꿀 때 두 번 결제되지 않아요. 애플 단계: 전체(A+B+CP) 1단계, A+CP·B+CP 2단계(같은 높이)."
+        >
+          <ThemedText type="small">{storeGroupText(bundle.storeGroup)}</ThemedText>
         </AdminSection>
         {/* 예약 오픈(2026-10-19) — 묶음은 이 시각과 든 방들의 공개 시각 중 가장 늦을 때 열림 */}
         <ReleaseSection

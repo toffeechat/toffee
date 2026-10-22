@@ -595,6 +595,13 @@ export interface AdminBundle extends Bundle {
   /** 묶음 자체의 공개 시각(2026-10-19) — 실제로 열리는 시각은 opensAt(든 방 중 더 늦은 게 있으면 그것) */
   releaseAt: string | null;
   releaseWatchCount: number;
+  /** 스토어 구독 그룹(2026-10-22 같은 CP 묶음 갈아타기) — 같은 CP방이 든 묶음끼리 한 그룹. 1단계 = 전체(위), 2단계 = 일부. 없으면 그룹 없음 */
+  storeGroup: { roomId: string; roomName: string; level: 1 | 2 } | null;
+}
+
+/** 묶음 목록·상세에 보이는 스토어 구독 그룹 한 줄 */
+export function storeGroupText(group: AdminBundle['storeGroup']): string {
+  return group ? `스토어 구독 그룹 "${group.roomName}" · ${group.level}단계${group.level === 1 ? '(위 — 전체)' : '(일부)'}` : '스토어 구독 그룹 없음(CP방이 든 묶음이 아님)';
 }
 
 export interface BundleInput {
@@ -821,6 +828,8 @@ export interface AdminUserBilling {
     refundedAt: string | null;
     storeAmountMilli: number | null;
     storeCurrency: string | null;
+    /** 2026-10-22 묶음 갈아타기 — 차감(음수)·이월 줄 */
+    kind: 'PAYMENT' | 'SWITCH_CREDIT' | 'SWITCH_CARRY';
   }[];
   refunds: { id: string; reason: string; status: string; source: string; createdAt: string; charge: { productName: string; amountCents: number; refundedAt: string | null } }[];
 }

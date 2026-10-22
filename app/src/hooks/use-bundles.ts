@@ -66,6 +66,38 @@ export function useSubscribeBundle(bundleId: string) {
   });
 }
 
+/** 같은 CP 묶음 갈아타기(2026-10-22) — 이 묶음과 같은 CP의 묶음을 이미 갖고 있으면 그 묶음과 바뀌는 시점(없으면 null) */
+export interface BundleSwitchInfo {
+  purchaseId: string;
+  bundle: { id: string; name: string; storeProductId: string | null };
+  /** 지금 묶음을 산 곳 — null이면 결제 없는 테스트 구독 */
+  platform: 'IOS' | 'ANDROID' | null;
+  timing: 'now' | 'next-renewal';
+  renewsAt: string | null;
+}
+
+export function useBundleSwitchInfo(bundleId: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['bundle-switch', bundleId],
+    queryFn: () => apiClient.get<BundleSwitchInfo | null>(`/bundles/${bundleId}/switch-from`),
+    enabled: !!token && !!bundleId,
+  });
+}
+
+/** 테스트 구독 묶음 바꾸기(결제 없음) — 스토어 구독은 스토어 결제창으로 */
+export function useSwitchBundle(bundleId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.post(`/bundles/${bundleId}/switch`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-bundles'] });
+      void queryClient.invalidateQueries({ queryKey: ['bundle-switch'] });
+    },
+  });
+}
+
 /** 구매 하나 해지 — 묶음 해지(포함된 방 중 다른 구독이 없는 방이 닫힘) */
 export function useCancelPurchase() {
   const queryClient = useQueryClient();

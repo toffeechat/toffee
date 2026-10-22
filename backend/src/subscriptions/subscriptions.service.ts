@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { IapVerificationService } from './iap-verification.service.js';
-import { ChargeSource, MessageSenderType, ParentalConsentStatus, SubscriptionEventType } from '../generated/prisma/enums.js';
+import { ChargeKind, ChargeSource, IapPlatform, MessageSenderType, ParentalConsentStatus, SubscriptionEventType } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import type { VerifyPurchaseDto } from './dto/verify-purchase.dto.js';
 import { MediaService } from '../storage/media.service.js';
@@ -15,6 +15,7 @@ import { ChargeLedgerService, sourceOf } from '../settlements/charge-ledger.serv
 import type { StoreTransaction } from './iap-verification.service.js';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
+import { storeGroupOf, switchTiming, type GroupActor } from '../bundles/switch-group.js';
 
 const LAST_MESSAGE_PREVIEW = 80;
 
@@ -46,6 +47,15 @@ const PURCHASE_INCLUDE = {
   bundle: { select: { id: true, name: true, priceCents: true, actors: { select: { actorId: true } } } },
 } as const;
 type PurchaseRow = Prisma.PurchaseGetPayload<{ include: typeof PURCHASE_INCLUDE }>;
+
+// 묶음의 구독 그룹(같은 CP 묶음 갈아타기, 2026-10-22)을 알려고 든 방의 종류·CP 멤버까지
+const GROUP_BUNDLE_SELECT = {
+  id: true,
+  name: true,
+  storeProductId: true,
+  actors: { select: { actor: { select: { id: true, kind: true, coupleMembers: { select: { memberId: true } } } } } },
+} as const;
+const groupActors = (bundle: { actors: { actor: GroupActor }[] }) => bundle.actors.map((item) => item.actor);
 
 // 구독 관리의 "지난 구독"은 최근 이만큼만
 const PAST_SUBSCRIPTIONS_LIMIT = 50;
@@ -259,6 +269,9 @@ export class SubscriptionsService {
     const replacedActorIds = await this.prisma.$transaction(async (tx) => {
       const same = await tx.purchase.findFirst({ where: { userId, bundleId, cancelledAt: null }, select: { id: true } });
       if (same) throw new BadRequestException(appError('ALREADY_SUBSCRIBED_BUNDLE'));
+      // 같은 CP 묶음을 이미 갖고 있으면 하나 더 사지 않고 "바꾸기"로(2026-10-22 — 두 번 결제 방지)
+      const sibling = await this.sameGroupPurchase(tx, userId, bundleId);
+      if (sibling) throw new ConflictException(appError('BUNDLE_SWITCH_INSTEAD', { name: sibling.bundle.name }));
       const solos = await tx.purchase.findMany({
         where: { userId, cancelledAt: null, actorId: { in: actorIds } },
         select: { id: true, actorId: true, iapPlatform: true },
@@ -352,14 +365,33 @@ export class SubscriptionsService {
   /**
    * 스토어 구매를 우리 구매로 — 같은 구독 인스턴스(originalTransactionId)가 있으면 만료일만 늘리고(갱신·복원), 없으면 새로(새 상품이면
    * 판매 중인지 확인). 결제 기록은 스토어 결제 id로 한 번만. 다른 계정에 이미 연결된 영수증이면 409.
+   * 같은 CP 묶음 갈아타기(2026-10-22): 같은 구독인데 상품이 다르면(애플 — 같은 originalTransactionId, 구글 — 새 토큰이 예전 토큰을
+   * linkedPurchaseToken으로 가리킴) 그 구매의 묶음을 새것으로 바꾸고 방·정산을 새 묶음 기준으로(switchStorePurchase). 그 구독의 최근 결제보다
+   * 오래된 결제(늦게 온 옛 알림)면 바꾸지 않음.
    */
   private async upsertStorePurchase(
     userId: string,
     verified: StoreTransaction,
     target: StoreTargetInfo,
+    retried = false,
   ): Promise<{ purchaseId: string; actorIds: string[]; target: StoreTargetInfo }> {
-    const existing = await this.prisma.purchase.findUnique({ where: { iapTransactionId: verified.originalTransactionId } });
+    let existing = await this.prisma.purchase.findUnique({ where: { iapTransactionId: verified.originalTransactionId } });
     if (existing && existing.userId !== userId) throw new ConflictException(appError('IAP_RECEIPT_IN_USE'));
+    // 구글 갈아타기 — 새 토큰이 처음 오면 예전 토큰의 구매를 이어받음(다른 계정의 구매면 잇지 않음)
+    if (!existing && verified.replacesTransactionId) {
+      const replaced = await this.prisma.purchase.findUnique({ where: { iapTransactionId: verified.replacesTransactionId } });
+      if (replaced && replaced.userId === userId) existing = replaced;
+    }
+    const switching = !!existing && ((existing.actorId ?? undefined) !== target.actorId || (existing.bundleId ?? undefined) !== target.bundleId);
+    if (existing && switching) {
+      const latest = await this.prisma.purchaseCharge.findFirst({
+        where: { purchaseId: existing.id, kind: { in: [ChargeKind.PAYMENT, ChargeKind.SWITCH_CARRY] } },
+        orderBy: { chargedAt: 'desc' },
+        select: { chargedAt: true },
+      });
+      // 늦게 온 옛 알림(예전 묶음의 갱신) — 이미 새 묶음으로 바뀐 구매를 되돌리지 않음
+      if (latest && verified.purchasedAt < latest.chargedAt) return { purchaseId: existing.id, actorIds: [], target };
+    }
     if (!existing) {
       if (target.actorId) await this.ensureActorAvailable(target.actorId);
       if (target.bundleId) await this.ensureBundleAvailable(target.bundleId);
@@ -381,11 +413,14 @@ export class SubscriptionsService {
     };
     let purchaseId: string;
     try {
-      purchaseId = await this.writeStorePurchase(userId, verified, target, existing, iap, charge);
+      purchaseId =
+        existing && switching
+          ? await this.switchStorePurchase(userId, verified, target, existing, iap, charge)
+          : await this.writeStorePurchase(userId, verified, target, existing, iap, charge);
     } catch (error) {
       // 같은 영수증 확인이 동시에 두 번 오면(앱 재시도·스토어 알림과 겹침) 한쪽이 고유 제약에 걸림 — 예전엔 500. 이미 생긴 구매로 다시 처리
-      if (!existing && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return this.upsertStorePurchase(userId, verified, target);
+      if (!retried && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return this.upsertStorePurchase(userId, verified, target, true);
       }
       throw error;
     }
@@ -421,6 +456,45 @@ export class SubscriptionsService {
   }
 
   /**
+   * 스토어에서 묶음이 바뀜(같은 CP 묶음 갈아타기, 2026-10-22) — 구매 하나는 그대로 두고 상품만 새 묶음으로. 방은 예전·새 묶음 방을 함께 다시
+   * 계산(겹치는 방은 대화 그대로, 빠진 방만 닫힘). 정산: 바뀐 시각에 남은 기간 몫을 예전 묶음에서 빼고(creditUnused) —
+   * 애플: 남은 돈은 애플이 팬에게 돌려주므로 새 묶음은 이번 결제(정가 새 한 달)만 기록. 구글: 앱이 with-time-proration으로 바꿔서 새로 받는 돈이 없고
+   * 남은 몫이 새 묶음 기간으로 넘어가므로 그만큼을 새 묶음 이월(SWITCH_CARRY)로. 애플 내리기는 갱신 결제 때 바뀌어 뺄 게 없음.
+   */
+  private async switchStorePurchase(
+    userId: string,
+    verified: StoreTransaction,
+    target: StoreTargetInfo,
+    existing: { id: string; actorId: string | null; bundleId: string | null },
+    iap: { iapPlatform: 'IOS' | 'ANDROID'; iapTransactionId: string; iapExpiresAt: Date; willRenew?: boolean },
+    charge: Parameters<ChargeLedgerService['record']>[2],
+  ): Promise<string> {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await tx.purchase.findUniqueOrThrow({ where: { id: existing.id }, include: PURCHASE_INCLUDE });
+      const credit = await this.ledger.creditUnused(tx, existing.id, verified.purchasedAt);
+      await tx.purchase.update({
+        where: { id: existing.id },
+        data: { ...iap, cancelledAt: null, actorId: target.actorId ?? null, bundleId: target.bundleId ?? null, priceCents: target.priceCents },
+      });
+      if (verified.platform === IapPlatform.ANDROID) {
+        if (credit.totalCents > 0) {
+          await this.ledger.record(tx, existing.id, {
+            ...charge,
+            amountCents: credit.totalCents,
+            kind: ChargeKind.SWITCH_CARRY,
+            switchOfChargeId: credit.fromChargeId ?? undefined,
+            productNote: '(묶음 변경 — 남은 기간 이월)',
+          });
+        }
+      } else {
+        await this.ledger.record(tx, existing.id, charge);
+      }
+      await this.syncAccess(tx, userId, [...actorIdsOf(before), ...target.actorIds], target.prices);
+      return existing.id;
+    });
+  }
+
+  /**
    * 스토어 서버 알림 반영(애플 서버 알림 V2·구글 RTDN, StoreNotificationsService가 해석해서 넘김).
    * - PAID: 결제됨(첫 결제·갱신·재구독) → 만료일 늘리고 결제 기록. 우리 구매가 아직 없으면 결제에 심어 둔 사용자 id로 만듦(앱이
    *   결제 직후 꺼져 확인 요청을 못 보낸 경우).
@@ -431,7 +505,10 @@ export class SubscriptionsService {
   async applyStoreEvent(event: StoreEvent) {
     if (event.kind === 'IGNORED') return { applied: false };
     if (event.kind === 'PAID') {
-      const existing = await this.prisma.purchase.findUnique({ where: { iapTransactionId: event.transaction.originalTransactionId } });
+      const existing =
+        (await this.prisma.purchase.findUnique({ where: { iapTransactionId: event.transaction.originalTransactionId } })) ??
+        // 구글 묶음 갈아타기 — 새 토큰의 첫 알림이면 예전 토큰의 구매로 누구 것인지 앎
+        (event.transaction.replacesTransactionId ? await this.prisma.purchase.findUnique({ where: { iapTransactionId: event.transaction.replacesTransactionId } }) : null);
       const userId = existing?.userId ?? event.transaction.accountToken;
       if (!userId) return { applied: false };
       if (!existing && !(await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }))) return { applied: false };
@@ -494,6 +571,77 @@ export class SubscriptionsService {
     });
     for (const purchase of expired) await this.closePurchase(purchase);
     return expired.length;
+  }
+
+  /**
+   * 같은 CP 묶음 갈아타기 안내(2026-10-22) — 이 묶음과 같은 구독 그룹(같은 CP방)의 다른 묶음을 이미 갖고 있으면 그 구매와 바뀌는 시점.
+   * 앱의 묶음 구독 화면이 [구독하기] 대신 [이 묶음으로 바꾸기]를 보여 줌. 없으면 null.
+   */
+  async switchInfo(userId: string, bundleId: string) {
+    const from = await this.sameGroupPurchase(this.prisma, userId, bundleId);
+    if (!from) return null;
+    return {
+      purchaseId: from.purchase.id,
+      bundle: { id: from.bundle.id, name: from.bundle.name, storeProductId: from.bundle.storeProductId },
+      platform: from.purchase.iapPlatform,
+      timing: switchTiming(from.fromGroup, from.toGroup, from.purchase.iapPlatform),
+      // 애플 내리기면 이때 바뀜(다음 갱신)
+      renewsAt: from.purchase.iapExpiresAt,
+    };
+  }
+
+  /**
+   * 테스트 구독(결제 없음) 묶음 바꾸기(2026-10-22) — 스토어 결제는 스토어 결제창에서 바꾸고 결제 확인이 처리함. 바로 바뀌고, 남은 기간 몫은 새 묶음으로 이월
+   * (구글과 같은 방식). 스토어 구독이면 409(스토어에서 바꿔야 함).
+   */
+  async switchBundle(userId: string, bundleId: string) {
+    await this.ensureCanSubscribe(userId);
+    const bundle = await this.ensureBundleAvailable(bundleId);
+    const actorIds = bundle.actors.map((item) => item.actor.id);
+    const shares = allocateBundlePrice(bundle.priceCents, bundle.actors.map((item) => item.actor));
+    const result = await this.prisma.$transaction(async (tx) => {
+      const from = await this.sameGroupPurchase(tx, userId, bundleId);
+      if (!from) throw new NotFoundException(appError('PURCHASE_NOT_FOUND'));
+      if (from.purchase.iapPlatform) throw new ConflictException(appError('IAP_MANAGE_IN_STORE'));
+      const before = await tx.purchase.findUniqueOrThrow({ where: { id: from.purchase.id }, include: PURCHASE_INCLUDE });
+      const now = new Date();
+      const credit = await this.ledger.creditUnused(tx, before.id, now);
+      await tx.purchase.update({ where: { id: before.id }, data: { bundleId, actorId: null, priceCents: bundle.priceCents } });
+      if (credit.totalCents > 0) {
+        await this.ledger.record(tx, before.id, {
+          chargedAt: now,
+          periodEnd: credit.periodEnd ?? undefined,
+          source: ChargeSource.SANDBOX,
+          amountCents: credit.totalCents,
+          kind: ChargeKind.SWITCH_CARRY,
+          switchOfChargeId: credit.fromChargeId ?? undefined,
+          productNote: '(묶음 변경 — 남은 기간 이월)',
+        });
+      }
+      await this.syncAccess(tx, userId, [...actorIdsOf(before), ...actorIds], shares);
+      return { purchaseId: before.id, fromBundleId: from.bundle.id };
+    });
+    this.accessChanged(userId);
+    return { ...result, bundleId, actorIds };
+  }
+
+  /** 이 묶음과 같은 구독 그룹(같은 CP방)인 다른 묶음의 유효한 구매(있으면 하나) */
+  private async sameGroupPurchase(db: Db, userId: string, bundleId: string) {
+    const target = await db.bundle.findUnique({ where: { id: bundleId }, select: GROUP_BUNDLE_SELECT });
+    const toGroup = target && storeGroupOf(groupActors(target));
+    if (!toGroup) return null;
+    const purchases = await db.purchase.findMany({
+      where: { userId, cancelledAt: null, bundleId: { not: null } },
+      select: { id: true, bundleId: true, iapPlatform: true, iapExpiresAt: true, bundle: { select: GROUP_BUNDLE_SELECT } },
+      orderBy: { startedAt: 'asc' },
+    });
+    // 이 묶음 자체를 이미 가졌으면 바꿀 게 없음
+    if (purchases.some((purchase) => purchase.bundleId === bundleId)) return null;
+    for (const purchase of purchases) {
+      const fromGroup = purchase.bundle && storeGroupOf(groupActors(purchase.bundle));
+      if (fromGroup && fromGroup.roomId === toGroup.roomId) return { purchase, bundle: purchase.bundle!, fromGroup, toGroup };
+    }
+    return null;
   }
 
   /**

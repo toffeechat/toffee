@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AdminButton, AdminButtonRow, AdminSection, formatBaht } from '@/components/admin-ui';
-import { useAdminBundles } from '@/hooks/use-admin';
+import { storeGroupText, useAdminBundles } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 
@@ -46,6 +46,9 @@ export default function AdminBundlesScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               {formatBaht(bundle.priceCents)}/월 (개인 합계 {formatBaht(bundle.regularPriceCents)}) · 구독 {bundle.activePurchaseCount}명 ·{' '}
               {bundle.storeProductId ?? '스토어 상품 미등록'}
+            </ThemedText>
+            <ThemedText type="caption" themeColor="textTertiary">
+              {storeGroupText(bundle.storeGroup)}
             </ThemedText>
           </Pressable>
         ))}

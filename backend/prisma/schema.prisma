@@ -75,6 +75,15 @@ enum IapPlatform {
 }
 
 // 결제 1건이 어디서 왔는지 — SANDBOX는 결제 없는 테스트 구독(ENABLE_SANDBOX_SUBSCRIBE), 정산에선 기본으로 뺌
+// 결제 기록 종류(2026-10-22 같은 CP 묶음 갈아타기) — PAYMENT 실제 결제, SWITCH_CREDIT 기간 중간에 묶음을 바꿔 안 쓴 남은 기간 몫을 예전 묶음
+// 아티스트에게서 뺀 줄(음수), SWITCH_CARRY 그 남은 몫을 새 묶음 아티스트에게 옮긴 줄(구글·테스트 구독 — 애플은 남은 돈을 팬에게 돌려줘서 없음).
+// 정산은 셋 다 더함, 환불 요청 대상은 PAYMENT만
+enum ChargeKind {
+  PAYMENT
+  SWITCH_CREDIT
+  SWITCH_CARRY
+}
+
 enum ChargeSource {
   SANDBOX
   APPLE
@@ -788,6 +797,9 @@ model PurchaseCharge {
   storeAmountMilli   Int?
   storeCurrency      String?
   refundedAt         DateTime?
+  kind               ChargeKind   @default(PAYMENT)
+  // SWITCH_CREDIT·SWITCH_CARRY가 가리키는 예전 결제 — 같은 예전 결제를 두 번 빼지 않게(묶음 갈아타기 알림이 겹쳐 와도)
+  switchOfChargeId   String?
   createdAt          DateTime     @default(now())
 
   purchase       Purchase?          @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
@@ -796,6 +808,7 @@ model PurchaseCharge {
 
   // 같은 구매의 같은 시각 결제는 한 번만(샌드박스 갱신·빈 기록 채우기가 여러 서버에서 동시에 돌아도 안전)
   @@unique([purchaseId, chargedAt])
+  @@unique([switchOfChargeId, kind])
   @@index([chargedAt])
 }
 

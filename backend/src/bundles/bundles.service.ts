@@ -6,6 +6,7 @@ import { appError } from '../common/i18n/app-error.js';
 import { ensureStoreProductIdFree } from '../common/store/store-product.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { bundleOpensAt } from '../common/release/release.js';
+import { storeGroupOf } from './switch-group.js';
 import { ReleaseService } from '../releases/release.service.js';
 import type { CreateBundleDto, UpdateBundleDto } from './dto/upsert-bundle.dto.js';
 
@@ -20,7 +21,19 @@ const BUNDLE_SELECT = {
   actors: {
     select: {
       actor: {
-        select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, monthlyPriceCents: true, retiredAt: true, releaseAt: true },
+        select: {
+          id: true,
+          legalName: true,
+          chatDisplayName: true,
+          officialProfileImageUrl: true,
+          chatProfileImageUrl: true,
+          monthlyPriceCents: true,
+          retiredAt: true,
+          releaseAt: true,
+          // 같은 CP 묶음 구독 그룹(2026-10-22) 계산용
+          kind: true,
+          coupleMembers: { select: { memberId: true } },
+        },
       },
     },
   },
@@ -173,6 +186,9 @@ export class BundlesService {
     const regularPriceCents = actors.reduce((sum, actor) => sum + actor.monthlyPriceCents, 0);
     // 실제로 열리는 시각 — 묶음 자체와 든 방 중 가장 늦은 공개 시각(앱은 이 값이 미래면 "곧 공개")
     const opensAt = bundleOpensAt(row.releaseAt, row.actors.map(({ actor }) => actor.releaseAt));
-    return { ...row, actors, regularPriceCents, opensAt };
+    // 스토어 구독 그룹(2026-10-22) — 같은 CP방이 든 묶음끼리 한 그룹, 운영자가 스토어에 그대로 등록(단계 1 = 전체, 2 = 일부)
+    const group = storeGroupOf(row.actors.map(({ actor }) => actor));
+    const storeGroup = group ? { ...group, roomName: row.actors.find(({ actor }) => actor.id === group.roomId)!.actor.legalName } : null;
+    return { ...row, actors, regularPriceCents, opensAt, storeGroup };
   }
 }

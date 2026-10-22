@@ -1830,3 +1830,26 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 운영자 표·배지 공용 조각 `components/admin-table.tsx` — `AdminTable`(PC 넓은 화면 `useWideLayout`이면 표, 아니면 줄마다 카드), `AdminTableBlock`(제목+건수, 0이면 "없음"),
   `AdminBadge`(tone danger=`danger`, warn=`chart2`, ok=`chart1`, muted=`textSecondary`, 바탕은 그 색 12% 투명), `AdminSummaryCard`. 다른 운영자 화면을 표로 바꿀 때 재사용.
 - 애플 환불 "처리 대기"(RefundRequest.checked* 칸·`/admin/refunds/waiting-count`)는 같은 날 만들었다가 사용자 결정으로 되돌림 — 마이그레이션은 main에 나가기 전이라 파일째 지움.
+
+## 같은 CP 묶음 갈아타기 (2026-10-22)
+
+- 그룹: `bundles/switch-group.ts` `storeGroupOf(actors)` — COUPLE 방이 정확히 하나 든 묶음만, `roomId` = 그 CP방, `level` 1(CP 멤버 전원 포함)/2. `switchTiming(from,to,platform)` —
+  IOS이고 level이 커지면(내리기) `next-renewal`, 나머지 `now`. 묶음 응답(`BundlesService.toPublic`)에 `storeGroup {roomId, roomName, level}`.
+- 스키마: `PurchaseCharge.kind`(`ChargeKind` PAYMENT/SWITCH_CREDIT/SWITCH_CARRY, 기본 PAYMENT) + `switchOfChargeId`, `@@unique([switchOfChargeId, kind])`
+  (마이그레이션 `20261022120000_charge_kind_bundle_switch`). 환불 후보(`RefundService.candidates`)는 PAYMENT만.
+- `ChargeLedgerService.creditUnused(db, purchaseId, at)` — at에 기간이 걸친 PAYMENT·CARRY(환불 안 됨, 아직 차감 안 됨)마다 `round(amount × (periodEnd−at)/(periodEnd−chargedAt))`를
+  음수 SWITCH_CREDIT 줄로(원래 allocations 비율·agencyId 그대로, chargedAt = at − n ms — `@@unique([purchaseId, chargedAt])` 회피). 반환 `{totalCents, fromChargeId, periodEnd}`.
+  `ChargeInput`에 `kind`·`switchOfChargeId`·`productNote`.
+- `SubscriptionsService.upsertStorePurchase` — 구글 새 토큰이 처음 오면 `replacesTransactionId`(= v1 API `linkedPurchaseToken`)로 예전 구매를 찾아 이어받음(같은 사용자만).
+  같은 구매인데 상품(actorId/bundleId)이 다르면 `switchStorePurchase`: creditUnused → 구매의 actorId/bundleId/priceCents·iap* 교체(구글은 iapTransactionId가 새 토큰으로) →
+  IOS면 새 PAYMENT, ANDROID면 credit 합계만큼 SWITCH_CARRY(periodEnd = 새 만료) → `syncAccess(예전+새 방)`. 그 구매의 최근 PAYMENT/CARRY보다 오래된 결제면 아무것도 안 함(늦은 옛 알림).
+  P2002 재시도는 한 번(`retried`). `applyStoreEvent` PAID도 replaced 토큰으로 사용자를 찾음.
+- 구글 `googleTransaction` — `linkedPurchaseToken` → `replacesTransactionId`, `cancelReason === 2` → `replaced`. `googleStoreEvent` 5/13(만료·보류)에서 replaced면 IGNORED.
+- API: `GET /bundles/:id/switch-from`(`switchInfo` — 같은 그룹 다른 묶음의 유효 구매·platform·timing·renewsAt, 이 묶음을 이미 가졌으면 null),
+  `POST /bundles/:id/switch`(SandboxSubscribeGuard, 테스트 구독만 — 스토어 구독은 409 IAP_MANAGE_IN_STORE, 차감 + CARRY periodEnd = 예전 기간 끝).
+  `POST /bundles/:id/subscribe`(테스트)는 같은 그룹 묶음이 있으면 409 `BUNDLE_SWITCH_INSTEAD`(9개 언어).
+- 앱: `StoreCheckout.buy({ replaceSku })` — 안드로이드는 `getAvailablePurchases()`에서 그 상품의 토큰을 찾아 `google.purchaseToken` +
+  `subscriptionProductReplacementParams {oldProductId, replacementMode: 'with-time-proration'}`(expo-iap 5.6, Play Billing 8.1+). 못 찾으면 `STORE_REPLACE_NOT_FOUND`.
+  애플은 같은 그룹이라 그냥 `requestPurchase`. 화면 `subscribe/bundle/[bundleId].tsx`, 훅 `useBundleSwitchInfo`·`useSwitchBundle`.
+- 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
+  실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.

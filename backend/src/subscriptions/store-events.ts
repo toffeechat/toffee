@@ -74,6 +74,8 @@ export async function googleStoreEvent(
   // 만료·보류도 최신 상태를 다시 받아서 — 늦게 온 옛 알림이면 만료일이 아직 미래라 닫지 않음
   if (notificationType === 5 || notificationType === 13) {
     const transaction = await fetchTransaction(purchaseToken, subscriptionId);
+    // 묶음 갈아타기로 교체된 예전 구매(2026-10-22) — 새 구매가 방을 이어받으니 닫지 않음(새 구매 알림이 늦게 와도 대화가 끊기지 않게)
+    if (transaction.replaced) return { kind: 'IGNORED', reason: 'replaced by another subscription' };
     return { kind: 'EXPIRED', originalTransactionId: purchaseToken, expiresAt: transaction.expiresAt };
   }
   if (notificationType === 12) return { kind: 'REFUNDED', originalTransactionId: purchaseToken };

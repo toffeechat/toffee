@@ -39,6 +39,19 @@ export class SubscriptionsController {
     return this.subscriptionsService.subscribeBundle(user.id, bundleId);
   }
 
+  // 같은 CP 묶음 갈아타기(2026-10-22) — 이 묶음과 같은 그룹의 묶음을 이미 가졌는지·바뀌는 시점
+  @Get('bundles/:bundleId/switch-from')
+  switchInfo(@CurrentUser() user: AuthenticatedUser, @Param('bundleId') bundleId: string) {
+    return this.subscriptionsService.switchInfo(user.id, bundleId);
+  }
+
+  // 테스트 구독 묶음 바꾸기(결제 없음) — 스토어 구독은 스토어 결제창에서 바꿈
+  @UseGuards(SandboxSubscribeGuard)
+  @Post('bundles/:bundleId/switch')
+  switchBundle(@CurrentUser() user: AuthenticatedUser, @Param('bundleId') bundleId: string) {
+    return this.subscriptionsService.switchBundle(user.id, bundleId);
+  }
+
   // 내가 구독 중인 묶음(구독 관리 화면)
   @Get('me/bundles')
   listMyBundles(@CurrentUser() user: AuthenticatedUser) {
