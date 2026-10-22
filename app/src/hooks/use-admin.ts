@@ -653,30 +653,12 @@ export interface AdminRefundEntry {
   refundedAt: string | null;
   actors: string[];
   agencies: (string | null)[];
-  /** 환불 처리 대기(2026-10-22) — 애플 안내 뒤 며칠이 지나도 환불이 안 됐고 운영자가 아직 "확인함"을 안 누름 */
-  waiting: boolean;
-  checkedAt: string | null;
-  checkedNote: string | null;
-  checkedBy: string | null;
 }
 
 export function useAdminRefunds(reason?: AdminRefundEntry['reason']) {
   return useQuery({
     queryKey: ['admin', 'refunds', reason ?? null],
     queryFn: () => apiClient.get<AdminRefundEntry[]>(`/admin/refunds${reason ? `?reason=${reason}` : ''}`),
-  });
-}
-
-/** 운영자 홈 "환불 처리 대기" 카드 — 개수와 기준 날 수(서버 설정, 기본 3일) */
-export function useRefundWaitingCount() {
-  return useQuery({ queryKey: ['admin', 'refunds', 'waiting-count'], queryFn: () => apiClient.get<{ count: number; days: number }>('/admin/refunds/waiting-count') });
-}
-
-export function useCheckRefund() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, note }: { id: string; note?: string }) => apiClient.patch(`/admin/refunds/${id}/checked`, { note }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'refunds'] }),
   });
 }
 

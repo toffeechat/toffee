@@ -47,7 +47,6 @@ const ACTION_LABELS: Record<string, string> = {
   ADMIN_LEVEL: '운영자 권한 단계 변경',
   ADMIN_MFA: '2단계 인증 켜기·끄기·초기화',
   USER_EXPORT: '개인정보 파일 받기',
-  REFUND_CHECK: '환불 처리 대기 확인함',
 };
 
 function detailText(entry: AdminActionEntry): string {

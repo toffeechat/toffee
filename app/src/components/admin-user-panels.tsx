@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminButtonRow, AdminChip, AdminMessage, AdminSection } from '@/components/admin-ui';
+import { AdminBadge, AdminBadgeRow, AdminSummaryCard, AdminTable, AdminTableBlock, type BadgeTone } from '@/components/admin-table';
 import {
   useAdminAgencies,
   useAdminUserAccessLogs,
@@ -296,158 +297,320 @@ const styles = StyleSheet.create({
 const PLATFORM: Record<string, string> = { IOS: '애플', ANDROID: '구글', SANDBOX: '테스트', APPLE: '애플', GOOGLE: '구글' };
 const REFUND_REASON: Record<string, string> = { STAR_IDLE: '아티스트 미발송', ACTOR_RETIRED: '활동 종료' };
 const day = (iso: string) => new Date(iso).toLocaleDateString('ko-KR');
+const at = (iso: string) => new Date(iso).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
+const baht = (cents: number) => `฿${(cents / 100).toLocaleString('ko-KR')}`;
+const short = (text: string | null, max = 60) => (!text ? '' : text.length > max ? `${text.slice(0, max)}…` : text);
+const roomName = (actor: { legalName: string; kind?: 'SOLO' | 'COUPLE' }) => `${actor.legalName}${actor.kind === 'COUPLE' ? ' [CP]' : ''}`;
 
-/** 구독·결제·환불 내역(2026-10-20) — "결제했는데 안 열려요"·환불 문의 대응. 금액은 정산 기준(태국 정가 ฿), 스토어 실제 청구액은 따로 */
+/** 표 칸 안의 보조 글(작고 흐리게) */
+function Sub({ children }: { children: ReactNode }) {
+  return (
+    <ThemedText type="caption" themeColor="textTertiary">
+      {children}
+    </ThemedText>
+  );
+}
+
+// ── 상태 요약(2026-10-22) — 회원 상세(팬) 맨 위. 답장을 못 보내는 이유가 있으면 빨간 카드 ──
+export function FanSummaryCard({ user }: { user: AdminUser }) {
+  const { data: activity } = useAdminUserActivity(user.id);
+  const { data: billing } = useAdminUserBilling(user.id);
+  const openRooms = billing?.rooms.filter((room) => !room.cancelledAt).length ?? 0;
+  const pendingReports = activity?.reportsReceived.filter((report) => report.status === 'PENDING').length ?? 0;
+  const blocks = activity?.blocks ?? [];
+  const sanctioned = user.status !== 'ACTIVE';
+  const reasons = [
+    user.status === 'SUSPENDED' ? `계정 정지 중${user.suspendedUntil ? `(~${day(user.suspendedUntil)})` : ''} — 모든 방에서 답장 불가` : null,
+    user.status === 'BANNED' ? '영구차단 — 모든 방에서 답장 불가' : null,
+    ...blocks.map((block) => `${block.actor.legalName} 방에서 차단됨(${day(block.createdAt)}) — 그 방만 답장 불가, 보기는 됨`),
+  ].filter((reason): reason is string => !!reason);
+  return (
+    <AdminSummaryCard alert={reasons.length > 0} title={reasons.length ? '답장을 못 보내는 이유가 있어요' : '답장 막힘 없음'}>
+      <AdminBadgeRow>
+        <AdminBadge label={statusText(user)} tone={sanctioned || user.deletedAt ? 'danger' : 'ok'} />
+        <AdminBadge label={`열린 방 ${openRooms}`} tone={openRooms ? 'ok' : 'muted'} />
+        <AdminBadge label={`방 차단 ${blocks.length}`} tone={blocks.length ? 'danger' : 'muted'} />
+        <AdminBadge label={`받은 신고 ${activity?.reportsReceived.length ?? 0}${pendingReports ? `(대기 ${pendingReports})` : ''}`} tone={pendingReports ? 'danger' : 'muted'} />
+        <AdminBadge label={`제재 기록 ${activity?.actions.length ?? 0}`} tone={activity?.actions.length ? 'warn' : 'muted'} />
+      </AdminBadgeRow>
+      {reasons.length ? (
+        reasons.map((reason) => (
+          <ThemedText key={reason} type="smallBold" themeColor="danger">
+            • {reason}
+          </ThemedText>
+        ))
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          제재·차단이 없어요. 그래도 답장이 안 된다면 그 방에 아직 아티스트 메시지가 없거나, 최근 메시지에 보낼 수 있는 답장 개수를 다 썼거나, 금칙어에 걸린 경우예요(앱이 팬에게 바로 안내해요).
+        </ThemedText>
+      )}
+    </AdminSummaryCard>
+  );
+}
+
+/** 구독·결제·환불 내역(2026-10-20, 2026-10-22 표로) — "결제했는데 안 열려요"·환불 문의 대응. 금액은 정산 기준(태국 정가 ฿), 스토어 실제 청구액은 따로 */
 export function BillingSection({ userId }: { userId: string }) {
   const { data, isLoading } = useAdminUserBilling(userId);
-  if (isLoading || !data) return <AdminSection title="구독·결제">{isLoading ? <ActivityIndicator style={styles.loading} /> : null}</AdminSection>;
+  if (isLoading || !data) return <AdminSection title="구독·결제·환불">{isLoading ? <ActivityIndicator style={styles.loading} /> : null}</AdminSection>;
   const active = data.rooms.filter((room) => !room.cancelledAt);
+  const livePurchases = data.purchases.filter((purchase) => !purchase.cancelledAt).length;
   return (
-    <AdminSection title="구독·결제·환불" hint="방 이용권 → 구매(개인·묶음) → 결제 건 → 환불 요청 순서. 금액은 정산 기준(바트 정가)이에요.">
-      <ThemedText type="smallBold">지금 열린 방 {active.length}개</ThemedText>
-      {active.length ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {active.map((room) => `${room.actor.chatDisplayName}${room.actor.kind === 'COUPLE' ? '[CP]' : ''}(${day(room.startedAt)}~)`).join(', ')}
-        </ThemedText>
-      ) : null}
-      <ThemedText type="smallBold">구매 {data.purchases.length}건</ThemedText>
-      {data.purchases.map((purchase) => (
-        <ThemedText key={purchase.id} type="small" themeColor={purchase.cancelledAt ? 'textTertiary' : 'text'}>
-          {purchase.bundle ? `묶음 ${purchase.bundle.name}` : (purchase.actor?.legalName ?? '-')} · {purchase.iapPlatform ? PLATFORM[purchase.iapPlatform] : '테스트'}
-          {purchase.priceCents !== null ? ` · ฿${(purchase.priceCents / 100).toLocaleString('ko-KR')}/월` : ''} · {day(purchase.startedAt)} 시작
-          {purchase.cancelledAt
-            ? ` · ${day(purchase.cancelledAt)} 끝남`
-            : purchase.iapExpiresAt
-              ? ` · ${day(purchase.iapExpiresAt)}까지${purchase.willRenew ? '(자동 갱신)' : '(갱신 안 함)'}`
-              : ''}
-        </ThemedText>
-      ))}
-      <ThemedText type="smallBold">결제 {data.charges.length}건</ThemedText>
-      {data.charges.slice(0, 30).map((charge) => (
-        <ThemedText key={charge.id} type="small" themeColor={charge.refundedAt ? 'danger' : 'textSecondary'}>
-          {day(charge.chargedAt)} · {charge.productName} · ฿{(charge.amountCents / 100).toLocaleString('ko-KR')} · {PLATFORM[charge.source] ?? charge.source}
-          {charge.storeAmountMilli !== null && charge.storeCurrency ? ` (스토어 ${(charge.storeAmountMilli / 1000).toLocaleString('ko-KR')} ${charge.storeCurrency})` : ''} · ~
-          {day(charge.periodEnd)}
-          {charge.refundedAt ? ` · ${day(charge.refundedAt)} 환불됨` : ''}
-        </ThemedText>
-      ))}
-      <ThemedText type="smallBold">환불 요청 {data.refunds.length}건</ThemedText>
-      {data.refunds.map((refund) => (
-        <ThemedText key={refund.id} type="small" themeColor="textSecondary">
-          {day(refund.createdAt)} · {REFUND_REASON[refund.reason] ?? refund.reason} · {refund.charge.productName} ฿{(refund.charge.amountCents / 100).toLocaleString('ko-KR')} ·{' '}
-          {refund.status === 'REFUNDED' ? '환불 완료' : refund.charge.refundedAt ? '애플 환불 완료' : '애플 안내함'}
-        </ThemedText>
-      ))}
+    <AdminSection title="구독·결제·환불" hint="금액은 정산 기준(바트 정가)이에요. 스토어가 실제로 청구한 금액은 괄호 안.">
+      <AdminTableBlock title="지금 열린 방" count={active.length} tone="ok">
+        <AdminBadgeRow>
+          {active.map((room) => (
+            <AdminBadge key={room.actorId} label={`${room.actor.chatDisplayName}${room.actor.kind === 'COUPLE' ? ' [CP]' : ''} · ${day(room.startedAt)}~`} tone="ok" />
+          ))}
+        </AdminBadgeRow>
+      </AdminTableBlock>
+
+      <AdminTableBlock title="구매" count={data.purchases.length} tone="ok" note={`이용 중 ${livePurchases}`}>
+        <AdminTable
+          columns={[
+            { title: '상품', flex: 2.2 },
+            { title: '결제한 곳', flex: 0.8 },
+            { title: '월 가격', flex: 0.8 },
+            { title: '시작', flex: 1 },
+            { title: '상태', flex: 1.6 },
+          ]}
+          rows={data.purchases.map((purchase) => ({
+            key: purchase.id,
+            faded: !!purchase.cancelledAt,
+            cells: [
+              purchase.bundle ? `묶음 ${purchase.bundle.name}` : (purchase.actor?.legalName ?? '-'),
+              purchase.iapPlatform ? PLATFORM[purchase.iapPlatform] : '테스트',
+              purchase.priceCents !== null ? baht(purchase.priceCents) : '-',
+              day(purchase.startedAt),
+              purchase.cancelledAt ? (
+                <AdminBadge label={`${day(purchase.cancelledAt)} 끝남`} tone="muted" />
+              ) : purchase.iapExpiresAt ? (
+                <AdminBadge label={`${day(purchase.iapExpiresAt)}까지 · ${purchase.willRenew ? '자동 갱신' : '갱신 안 함'}`} tone={purchase.willRenew ? 'ok' : 'warn'} />
+              ) : (
+                <AdminBadge label="이용 중" tone="ok" />
+              ),
+            ],
+          }))}
+        />
+      </AdminTableBlock>
+
+      <AdminTableBlock title="결제" count={data.charges.length} tone="ok" note={data.charges.length > 30 ? '최근 30건만' : undefined}>
+        <AdminTable
+          columns={[
+            { title: '결제일', flex: 1 },
+            { title: '상품', flex: 2 },
+            { title: '금액', flex: 1.4 },
+            { title: '결제한 곳', flex: 0.8 },
+            { title: '이용 기간 끝', flex: 1 },
+            { title: '환불', flex: 1 },
+          ]}
+          rows={data.charges.slice(0, 30).map((charge) => ({
+            key: charge.id,
+            cells: [
+              day(charge.chargedAt),
+              charge.productName,
+              <View key="amount">
+                <ThemedText type="small">{baht(charge.amountCents)}</ThemedText>
+                {charge.storeAmountMilli !== null && charge.storeCurrency ? <Sub>({`${(charge.storeAmountMilli / 1000).toLocaleString('ko-KR')} ${charge.storeCurrency}`})</Sub> : null}
+              </View>,
+              PLATFORM[charge.source] ?? charge.source,
+              day(charge.periodEnd),
+              charge.refundedAt ? <AdminBadge label={`${day(charge.refundedAt)} 환불`} tone="danger" /> : '',
+            ],
+          }))}
+        />
+      </AdminTableBlock>
+
+      <AdminTableBlock title="환불 요청" count={data.refunds.length} tone="warn">
+        <AdminTable
+          columns={[
+            { title: '요청일', flex: 1 },
+            { title: '사유', flex: 1.2 },
+            { title: '결제', flex: 2.4 },
+            { title: '상태', flex: 1.4 },
+          ]}
+          rows={data.refunds.map((refund) => ({
+            key: refund.id,
+            cells: [
+              day(refund.createdAt),
+              REFUND_REASON[refund.reason] ?? refund.reason,
+              `${refund.charge.productName} ${baht(refund.charge.amountCents)}`,
+              refund.status === 'REFUNDED' ? (
+                <AdminBadge label="환불 완료" tone="ok" />
+              ) : refund.charge.refundedAt ? (
+                <AdminBadge label="애플 환불 완료" tone="ok" />
+              ) : (
+                <AdminBadge label="애플 안내함 · 아직 환불 안 됨" tone="warn" />
+              ),
+            ],
+          }))}
+        />
+      </AdminTableBlock>
     </AdminSection>
   );
 }
 
-// ── 팬 한 명 기준 보기(2026-10-22) — "왜 답장이 안 보내져요?" 같은 문의에 한 화면에서 답하려고 ──
+// ── 팬 한 명 기준 보기(2026-10-22) — "왜 답장이 안 보내져요?" 같은 문의에 한 화면에서 답하려고. 맨 위 요약은 FanSummaryCard ──
 const MEDIA_LABELS: Record<AdminUserActivity['replies'][number]['mediaType'], string> = { TEXT: '', PHOTO: '[사진]', AUDIO: '[음성]', VIDEO: '[영상]' };
-const REPORT_STATUS: Record<AdminUserActivity['reportsReceived'][number]['status'], string> = { PENDING: '처리 대기', RESOLVED: '승인(가림)', DISMISSED: '기각' };
+const REPORT_STATUS: Record<AdminUserActivity['reportsReceived'][number]['status'], { label: string; tone: BadgeTone }> = {
+  PENDING: { label: '처리 대기', tone: 'danger' },
+  RESOLVED: { label: '승인(가림)', tone: 'warn' },
+  DISMISSED: { label: '기각', tone: 'muted' },
+};
 // 회원 대상 작업 기록 — 전체 목록은 운영자 "작업 기록" 화면(actions.tsx)
-const USER_ACTION_LABELS: Record<string, string> = {
-  USER_SUSPEND: '정지',
-  USER_BAN: '영구차단',
-  USER_REACTIVATE: '제재 해제',
-  USER_PROFILE_CLEAR: '프로필 지움',
-  USER_ROLE: '역할 변경',
-  USER_EXPORT: '개인정보 파일 받음',
+const USER_ACTIONS: Record<string, { label: string; tone: BadgeTone }> = {
+  USER_SUSPEND: { label: '정지', tone: 'danger' },
+  USER_BAN: { label: '영구차단', tone: 'danger' },
+  USER_REACTIVATE: { label: '제재 해제', tone: 'ok' },
+  USER_PROFILE_CLEAR: { label: '프로필 지움', tone: 'warn' },
+  USER_ROLE: { label: '역할 변경', tone: 'muted' },
+  USER_EXPORT: { label: '개인정보 파일 받음', tone: 'muted' },
 };
 const BLOCKER_ROLE: Partial<Record<AdminUser['role'], string>> = { ACTOR: '아티스트', AGENCY_STAFF: '소속사', ADMIN: '운영자' };
-const short = (text: string | null, max = 60) => (!text ? '' : text.length > max ? `${text.slice(0, max)}…` : text);
-const at = (iso: string) => new Date(iso).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
 
-function replyState(reply: AdminUserActivity['replies'][number]): string | null {
-  if (reply.deletedByAdmin) return '운영자가 가림';
-  if (reply.deletedByStaffId) return '소속사가 삭제';
-  if (reply.deletedAt) return '팬이 회수';
+function replyState(reply: AdminUserActivity['replies'][number]): { label: string; tone: BadgeTone } | null {
+  if (reply.deletedByAdmin) return { label: '운영자가 가림', tone: 'warn' };
+  if (reply.deletedByStaffId) return { label: '소속사가 삭제', tone: 'warn' };
+  if (reply.deletedAt) return { label: '팬이 회수', tone: 'muted' };
   return null;
 }
 
 function actionDetail(entry: AdminUserActivity['actions'][number]): string {
   const d = entry.detail ?? {};
   const parts: string[] = [];
-  if (typeof d.category === 'string') parts.push(`사유 ${SANCTION_LABELS[d.category as SanctionCategory] ?? d.category}`);
+  if (typeof d.category === 'string') parts.push(SANCTION_LABELS[d.category as SanctionCategory] ?? d.category);
   if (typeof d.until === 'string') parts.push(`~${day(d.until)}`);
   if (typeof d.from === 'string' && typeof d.to === 'string') parts.push(`${ROLE_LABELS[d.from as AdminUser['role']] ?? d.from} → ${ROLE_LABELS[d.to as AdminUser['role']] ?? d.to}`);
-  if (typeof d.note === 'string' && d.note) parts.push(`메모: ${d.note}`);
   return parts.join(' · ');
 }
 
-/**
- * 답장·신고·차단·제재(2026-10-22) — 맨 위 "답장을 못 보내는 이유"는 계정 제재·방 차단만 봄. 그 밖의 이유(스타 메시지가 아직 없음,
- * 한 메시지당 답장 개수를 다 씀, 금칙어)는 앱이 팬에게 바로 안내하니 문의가 오면 최근 답장 시각으로 짐작.
- */
+/** 답장·신고·차단·제재(2026-10-22, 표) — 각각 최신 50개까지, 회수·가린 답장도 기록으로 */
 export function ActivitySection({ user }: { user: AdminUser }) {
   const { data, isLoading, isError } = useAdminUserActivity(user.id);
   if (isLoading) return <AdminSection title="답장·신고·차단·제재"><ActivityIndicator style={styles.loading} /></AdminSection>;
   if (isError || !data) return <AdminSection title="답장·신고·차단·제재"><AdminMessage text="불러오지 못했어요." error /></AdminSection>;
-  const reasons = [
-    user.status === 'SUSPENDED' ? `계정 정지 중${user.suspendedUntil ? `(~${day(user.suspendedUntil)})` : ''} — 모든 방에서 답장 불가` : null,
-    user.status === 'BANNED' ? '영구차단 — 모든 방에서 답장 불가' : null,
-    ...data.blocks.map((block) => `${block.actor.legalName} 방에서 차단됨(${day(block.createdAt)}) — 그 방만 답장 불가, 보기는 됨`),
-  ].filter((reason): reason is string => !!reason);
+  const pendingReports = data.reportsReceived.filter((report) => report.status === 'PENDING').length;
   return (
     <AdminSection title="답장·신고·차단·제재" hint="각각 최신 50개까지. 회수·가린 답장도 기록으로 보여요.">
-      <ThemedText type="smallBold">답장을 못 보내는 이유</ThemedText>
-      {reasons.length ? (
-        reasons.map((reason) => (
-          <ThemedText key={reason} type="small" themeColor="danger">
-            {reason}
-          </ThemedText>
-        ))
-      ) : (
-        <ThemedText type="small" themeColor="textSecondary">
-          제재·차단 없음 — 그래도 안 된다면 그 방에 아직 스타 메시지가 없거나, 최근 스타 메시지에 보낼 수 있는 답장 개수를 다 썼거나, 금칙어에 걸린 경우예요(앱에 안내가 떠요).
-        </ThemedText>
-      )}
+      <AdminTableBlock title="최근 답장" count={data.replies.length} tone="ok" note={data.replies.length > 30 ? '최근 30개만' : undefined}>
+        <AdminTable
+          columns={[
+            { title: '보낸 때', flex: 1.1 },
+            { title: '방', flex: 1.3 },
+            { title: '내용', flex: 3 },
+            { title: '상태', flex: 1.1 },
+            { title: '신고', flex: 0.6 },
+          ]}
+          rows={data.replies.slice(0, 30).map((reply) => {
+            const state = replyState(reply);
+            return {
+              key: reply.id,
+              faded: !!state,
+              cells: [
+                at(reply.createdAt),
+                roomName(reply.actor),
+                [MEDIA_LABELS[reply.mediaType], short(reply.body, 80)].filter(Boolean).join(' ') || '(내용 없음)',
+                state ? <AdminBadge label={state.label} tone={state.tone} /> : '',
+                reply.reportCount ? <AdminBadge label={`${reply.reportCount}건`} tone="danger" /> : '',
+              ],
+            };
+          })}
+        />
+      </AdminTableBlock>
 
-      <ThemedText type="smallBold">최근 답장 {data.replies.length}개</ThemedText>
-      {data.replies.slice(0, 30).map((reply) => {
-        const state = replyState(reply);
-        return (
-          <ThemedText key={reply.id} type="small" themeColor={state ? 'textTertiary' : 'textSecondary'}>
-            {at(reply.createdAt)} · {reply.actor.legalName}
-            {reply.actor.kind === 'COUPLE' ? '[CP]' : ''} · {[MEDIA_LABELS[reply.mediaType], short(reply.body)].filter(Boolean).join(' ') || '(내용 없음)'}
-            {state ? ` · ${state}` : ''}
-            {reply.reportCount ? ` · 신고 ${reply.reportCount}건` : ''}
-          </ThemedText>
-        );
-      })}
+      <AdminTableBlock title="이 팬이 받은 신고" count={data.reportsReceived.length} tone="danger" note={pendingReports ? `처리 대기 ${pendingReports}` : undefined}>
+        <AdminTable
+          columns={[
+            { title: '신고일', flex: 1 },
+            { title: '사유', flex: 1.1 },
+            { title: '방', flex: 1.2 },
+            { title: '신고된 답장', flex: 2.6 },
+            { title: '처리', flex: 1 },
+          ]}
+          rows={data.reportsReceived.map((report) => ({
+            key: report.id,
+            cells: [
+              day(report.createdAt),
+              SANCTION_LABELS[report.category],
+              report.message.actor.legalName,
+              <View key="body">
+                <ThemedText type="small">{short(report.message.body, 60) || '(내용 없음)'}</ThemedText>
+                {report.reason ? <Sub>신고 메모: {short(report.reason, 60)}</Sub> : null}
+              </View>,
+              <AdminBadge key="status" label={REPORT_STATUS[report.status].label} tone={REPORT_STATUS[report.status].tone} />,
+            ],
+          }))}
+        />
+      </AdminTableBlock>
 
-      <ThemedText type="smallBold">이 팬이 받은 신고 {data.reportsReceived.length}건</ThemedText>
-      {data.reportsReceived.map((report) => (
-        <ThemedText key={report.id} type="small" themeColor={report.status === 'PENDING' ? 'danger' : 'textSecondary'}>
-          {day(report.createdAt)} · {SANCTION_LABELS[report.category]} · {report.message.actor.legalName} 방 &quot;{short(report.message.body, 40)}&quot; · {REPORT_STATUS[report.status]}
-          {report.reason ? ` · ${short(report.reason, 40)}` : ''}
-        </ThemedText>
-      ))}
+      <AdminTableBlock title="이 팬이 한 신고" count={data.reportsFiled.length}>
+        <AdminTable
+          columns={[
+            { title: '신고일', flex: 1 },
+            { title: '사유', flex: 1.1 },
+            { title: '방', flex: 1.2 },
+            { title: '신고한 메시지', flex: 2.6 },
+            { title: '처리', flex: 1 },
+          ]}
+          rows={data.reportsFiled.map((report) => ({
+            key: report.id,
+            cells: [
+              day(report.createdAt),
+              SANCTION_LABELS[report.category],
+              report.message.actor.legalName,
+              <View key="body">
+                <ThemedText type="small">{short(report.message.body, 60) || '(내용 없음)'}</ThemedText>
+                <Sub>{report.message.senderType === 'ARTIST' ? '아티스트 메시지' : '다른 팬 답장'}</Sub>
+              </View>,
+              <AdminBadge key="status" label={REPORT_STATUS[report.status].label} tone={REPORT_STATUS[report.status].tone} />,
+            ],
+          }))}
+        />
+      </AdminTableBlock>
 
-      <ThemedText type="smallBold">이 팬이 한 신고 {data.reportsFiled.length}건</ThemedText>
-      {data.reportsFiled.map((report) => (
-        <ThemedText key={report.id} type="small" themeColor="textSecondary">
-          {day(report.createdAt)} · {SANCTION_LABELS[report.category]} · {report.message.actor.legalName} 방 {report.message.senderType === 'ARTIST' ? '스타 메시지' : '팬 답장'} &quot;
-          {short(report.message.body, 40)}&quot; · {REPORT_STATUS[report.status]}
-        </ThemedText>
-      ))}
+      <AdminTableBlock title="방 차단" count={data.blocks.length} tone="danger" note="그 방에만 답장 불가(구독·보기는 그대로)">
+        <AdminTable
+          columns={[
+            { title: '차단일', flex: 1 },
+            { title: '방', flex: 1.2 },
+            { title: '차단한 사람', flex: 1.4 },
+            { title: '사유', flex: 1.4 },
+            { title: '계기가 된 답장', flex: 2.2 },
+          ]}
+          rows={data.blocks.map((block) => ({
+            key: block.id,
+            cells: [
+              day(block.createdAt),
+              block.actor.legalName,
+              <View key="by">
+                <ThemedText type="small">{block.blockedBy.displayName}</ThemedText>
+                <Sub>{BLOCKER_ROLE[block.blockedBy.role] ?? ''}</Sub>
+              </View>,
+              block.reason ? short(block.reason, 40) : '',
+              block.message ? short(block.message.body, 60) : '',
+            ],
+          }))}
+        />
+      </AdminTableBlock>
 
-      <ThemedText type="smallBold">방 차단 {data.blocks.length}건</ThemedText>
-      {data.blocks.map((block) => (
-        <ThemedText key={block.id} type="small" themeColor="textSecondary">
-          {day(block.createdAt)} · {block.actor.legalName} 방 · 차단한 사람: {BLOCKER_ROLE[block.blockedBy.role] ?? ''} {block.blockedBy.displayName}
-          {block.reason ? ` · 사유: ${short(block.reason, 40)}` : ''}
-          {block.message ? ` · 계기 답장 "${short(block.message.body, 40)}"` : ''}
-        </ThemedText>
-      ))}
-
-      <ThemedText type="smallBold">운영자 작업 기록 {data.actions.length}건</ThemedText>
-      {data.actions.map((entry) => (
-        <ThemedText key={entry.id} type="small" themeColor="textSecondary">
-          {at(entry.createdAt)} · {USER_ACTION_LABELS[entry.action] ?? entry.action}
-          {actionDetail(entry) ? ` · ${actionDetail(entry)}` : ''} · {entry.admin.displayName}
-        </ThemedText>
-      ))}
+      <AdminTableBlock title="제재·운영자 작업 기록" count={data.actions.length} tone="warn">
+        <AdminTable
+          columns={[
+            { title: '때', flex: 1.1 },
+            { title: '작업', flex: 1 },
+            { title: '사유·기간', flex: 1.6 },
+            { title: '메모', flex: 2 },
+            { title: '운영자', flex: 1 },
+          ]}
+          rows={data.actions.map((entry) => {
+            const action = USER_ACTIONS[entry.action] ?? { label: entry.action, tone: 'muted' as const };
+            const note = entry.detail && typeof entry.detail.note === 'string' ? entry.detail.note : '';
+            return {
+              key: entry.id,
+              cells: [at(entry.createdAt), <AdminBadge key="action" label={action.label} tone={action.tone} />, actionDetail(entry), note, entry.admin.displayName],
+            };
+          })}
+        />
+      </AdminTableBlock>
     </AdminSection>
   );
 }

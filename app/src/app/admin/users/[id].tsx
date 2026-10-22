@@ -5,7 +5,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminButtonRow, AdminMessage, AdminSection } from '@/components/admin-ui';
-import { AccessHistory, ActivitySection, BillingSection, ProfileSection, ROLE_LABELS, RoleSection, SanctionSection, statusText } from '@/components/admin-user-panels';
+import { AccessHistory, ActivitySection, BillingSection, FanSummaryCard, ProfileSection, ROLE_LABELS, RoleSection, SanctionSection, statusText } from '@/components/admin-user-panels';
 import { useAdminUser } from '@/hooks/use-admin';
 import { useMe } from '@/hooks/use-onboarding';
 import { confirm } from '@/lib/confirm';
@@ -43,6 +43,7 @@ export default function AdminUserDetailScreen() {
               상태: {statusText(user)}
             </ThemedText>
           </AdminSection>
+          {user.role === 'USER' ? <FanSummaryCard user={user} /> : null}
           {user.role !== 'ADMIN' && !user.deletedAt && me?.adminLevel !== 'SUPPORT' ? <RoleSection user={user} /> : null}
           {user.role !== 'ADMIN' && !user.deletedAt ? <SanctionSection user={user} /> : null}
           {user.role === 'USER' ? <BillingSection userId={user.id} /> : null}

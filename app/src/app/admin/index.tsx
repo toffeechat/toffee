@@ -16,7 +16,6 @@ import {
   LifeBuoy,
   LogIn,
   PackageX,
-  Receipt,
   Smartphone,
   Store,
   TrendingUp,
@@ -45,7 +44,6 @@ import {
   useAdminStatsSummary,
   useDemoStatus,
   useResetDemo,
-  useRefundWaitingCount,
 } from '@/hooks/use-admin';
 import { selectionParams, useAgencyDashboard, type RoomKindFilter, type StatsSelection } from '@/hooks/use-console';
 import { useManualRefresh } from '@/hooks/use-manual-refresh';
@@ -91,7 +89,6 @@ export default function AdminHomeScreen() {
   const { data: appleTodo } = useAppleStoreTodo();
   const { data: openInquiries } = useAdminInquiries('OPEN');
   const { data: contracts } = useContractsEnding();
-  const { data: refundWaiting } = useRefundWaitingCount();
   const { refreshing, onRefresh } = useManualRefresh(() => Promise.all([refetchSummary(), refetchOverview(), refetchDashboard()]));
 
   // 데모 서버에서만 보이는 "데모 초기화"(2026-10-01) — 데모 계정은 고정 ID라 초기화해도 로그인이 유지됨
@@ -125,15 +122,6 @@ export default function AdminHomeScreen() {
   const todos: { key: string; icon: LucideIcon; count: number; label: string; danger?: boolean; onPress: () => void }[] = [
     { key: 'inquiries', icon: LifeBuoy, count: openInquiries?.counts.OPEN ?? 0, label: '답을 기다리는 1:1 문의', danger: true, onPress: () => router.push('/admin/inquiries') },
     { key: 'reports', icon: Flag, count: summary?.reports.pending ?? 0, label: '대기 중인 신고', danger: true, onPress: () => router.push('/admin/reports') },
-    {
-      // 애플 환불 안내 뒤 며칠이 지나도 환불이 안 된 건(2026-10-22) — 팬에게 확인하고 [확인함]으로 정리
-      key: 'refunds',
-      icon: Receipt,
-      count: refundWaiting?.count ?? 0,
-      label: `환불 처리 대기 — 애플 안내 ${refundWaiting?.days ?? 3}일 지나도 환불 안 됨`,
-      danger: true,
-      onPress: () => router.push({ pathname: '/admin/refunds', params: { filter: 'waiting' } }),
-    },
     {
       key: 'idle',
       icon: Hourglass,

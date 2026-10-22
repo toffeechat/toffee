@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ChargeSource, MessageSenderType, RefundRequestStatus } from '../generated/prisma/enums.js';
@@ -14,19 +14,6 @@ export const APPLE_REFUND_URL = 'https://reportaproblem.apple.com/';
 
 /** 환불 사유 — 스타 미발송(STAR_IDLE), 배우 활동 종료·입대(ACTOR_RETIRED) */
 export type RefundReason = 'STAR_IDLE' | 'ACTOR_RETIRED';
-
-/** 애플 안내 뒤 이만큼(일) 지나도 환불이 안 되면 운영자 "환불 처리 대기"(2026-10-22 잠정 — STATUS 정책 표, APPLE_REFUND_WAIT_DAYS로 바꿈) */
-export const APPLE_REFUND_WAIT_DAYS = 3;
-
-/** 환불 처리 대기 조건 — 애플 안내함 + 결제가 아직 환불로 안 바뀜 + 안내한 지 waitDays 넘음 + 운영자가 아직 "확인함" 안 누름 */
-export function storeRefundWaitingWhere(now: Date, waitDays: number): Prisma.RefundRequestWhereInput {
-  return {
-    status: RefundRequestStatus.STORE_GUIDED,
-    checkedAt: null,
-    createdAt: { lte: new Date(now.getTime() - waitDays * DAY_MS) },
-    charge: { refundedAt: null },
-  };
-}
 
 const CHARGE_SELECT = {
   id: true,
@@ -220,37 +207,9 @@ export class RefundService {
    * 운영자 환불 요청 목록(최근 순) — 누가·어느 방·얼마·어디 결제·상태. 애플 안내 건은 애플이 실제로 환불했는지(결제 기록의 환불 시각)도 같이.
    * 팬·소속사 이름은 지금 기준(팬이 탈퇴했으면 null).
    */
-  /** 애플 안내 후 환불 확인을 기다리는 날 수(서버 설정 APPLE_REFUND_WAIT_DAYS, 기본 3) */
-  get appleWaitDays(): number {
-    return this.days('APPLE_REFUND_WAIT_DAYS', APPLE_REFUND_WAIT_DAYS);
-  }
-
-  /** 운영자 홈 "환불 처리 대기" 개수(2026-10-22) */
-  async waitingCount(now = new Date()): Promise<number> {
-    return this.prisma.refundRequest.count({ where: storeRefundWaitingWhere(now, this.appleWaitDays) });
-  }
-
-  /**
-   * 환불 처리 대기 건을 "확인함"으로 정리(2026-10-22) — 운영자가 팬에게 물어보고(애플에 요청했는지, 거절됐는지) 메모를 남김. 애플이 나중에 환불하면
-   * 결제 기록은 스토어 알림으로 그대로 환불로 바뀜(이 표시와 상관없음). 작업 기록은 호출하는 쪽(컨트롤러)이 남김.
-   */
-  async markChecked(adminId: string, requestId: string, note?: string) {
-    // 확인할 게 있는 건 애플 안내 건뿐(우리가 환불까지 끝낸 건은 대기가 생기지 않음)
-    const row = await this.prisma.refundRequest.findUnique({ where: { id: requestId }, select: { status: true, checkedAt: true } });
-    if (!row || row.status !== RefundRequestStatus.STORE_GUIDED) throw new NotFoundException(appError('NOT_FOUND'));
-    if (row.checkedAt) return { id: requestId, checkedAt: row.checkedAt.toISOString() };
-    const updated = await this.prisma.refundRequest.update({
-      where: { id: requestId },
-      data: { checkedAt: new Date(), checkedById: adminId, checkedNote: note?.trim() || null },
-      select: { id: true, checkedAt: true },
-    });
-    return { id: updated.id, checkedAt: updated.checkedAt!.toISOString() };
-  }
-
-  async adminList(options: { reason?: RefundReason; waiting?: boolean; limit?: number } = {}, now = new Date()) {
-    const waitDays = this.appleWaitDays;
+  async adminList(options: { reason?: RefundReason; limit?: number } = {}) {
     const rows = await this.prisma.refundRequest.findMany({
-      where: { ...(options.reason ? { reason: options.reason } : {}), ...(options.waiting ? storeRefundWaitingWhere(now, waitDays) : {}) },
+      where: options.reason ? { reason: options.reason } : {},
       orderBy: { createdAt: 'desc' },
       take: Math.min(options.limit ?? 200, 500),
       select: {
@@ -260,9 +219,6 @@ export class RefundService {
         source: true,
         status: true,
         createdAt: true,
-        checkedAt: true,
-        checkedById: true,
-        checkedNote: true,
         charge: {
           select: {
             id: true,
@@ -277,7 +233,7 @@ export class RefundService {
       },
     });
     const users = await this.prisma.user.findMany({
-      where: { id: { in: [...new Set([...rows.map((row) => row.userId), ...rows.flatMap((row) => (row.checkedById ? [row.checkedById] : []))])] } },
+      where: { id: { in: [...new Set(rows.map((row) => row.userId))] } },
       select: { id: true, displayName: true, nickname: true, email: true },
     });
     const userById = new Map(users.map((user) => [user.id, user]));
@@ -297,12 +253,6 @@ export class RefundService {
         refundedAt: row.charge.refundedAt?.toISOString() ?? null,
         actors: [...new Set(row.charge.allocations.map((allocation) => allocation.actor.legalName))],
         agencies: [...new Set(row.charge.allocations.map((allocation) => allocation.agency?.name ?? null))],
-        // 환불 처리 대기(2026-10-22) — 애플 안내 뒤 waitDays가 지나도 환불이 안 됐고 운영자가 아직 확인 안 함
-        waiting:
-          row.status === RefundRequestStatus.STORE_GUIDED && !row.charge.refundedAt && !row.checkedAt && row.createdAt.getTime() <= now.getTime() - waitDays * DAY_MS,
-        checkedAt: row.checkedAt?.toISOString() ?? null,
-        checkedNote: row.checkedNote,
-        checkedBy: row.checkedById ? (userById.get(row.checkedById)?.displayName ?? null) : null,
       };
     });
   }

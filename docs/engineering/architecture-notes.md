@@ -1822,12 +1822,11 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `LEGAL_VERSION`은 출시 전 초안이라 안 올림(10-14 방침과 같음).
 
 
-## 팬 한 명 기준 보기·환불 처리 대기 (2026-10-22)
+## 팬 한 명 기준 보기 (2026-10-22)
 
 - `GET /admin/users/:id/activity`(`AdminUsersService.activity`) — 팬 답장(`Message` fanUserId + senderType FAN, `_count.reports`), 그 답장에 대한 신고
   (`Report` where message.fanUserId), 그 팬이 한 신고(reportedById), `ActorFanBlock`(fanUserId, 차단한 사람·계기 답장), `AdminAction`(targetType USER, targetId).
-  각각 최신 50개(`ACTIVITY_PAGE`). 앱: `ActivitySection`(`admin-user-panels.tsx`), 팬(`role USER`) 상세에서만.
-- 환불 처리 대기: `RefundRequest`에 `checkedAt`·`checkedById`·`checkedNote`(마이그레이션 `20261022100000_refund_request_checked`).
-  조건은 `storeRefundWaitingWhere(now, days)` — STORE_GUIDED + checkedAt null + createdAt ≤ now − days + charge.refundedAt null. days = `APPLE_REFUND_WAIT_DAYS`(기본 3).
-  API: `GET /admin/refunds?waiting=true`, `GET /admin/refunds/waiting-count`(`{count, days}`, 운영자 홈 카드), `PATCH /admin/refunds/:id/checked {note?}`
-  (작업 기록 `REFUND_CHECK`, targetType `REFUND`). 목록 행에 `waiting`·`checkedAt`·`checkedNote`·`checkedBy`. 테스트 `refund-waiting.spec.ts`.
+  각각 최신 50개(`ACTIVITY_PAGE`). 앱: `FanSummaryCard`·`BillingSection`·`ActivitySection`(`admin-user-panels.tsx`), 팬(`role USER`) 상세에서만.
+- 운영자 표·배지 공용 조각 `components/admin-table.tsx` — `AdminTable`(PC 넓은 화면 `useWideLayout`이면 표, 아니면 줄마다 카드), `AdminTableBlock`(제목+건수, 0이면 "없음"),
+  `AdminBadge`(tone danger=`danger`, warn=`chart2`, ok=`chart1`, muted=`textSecondary`, 바탕은 그 색 12% 투명), `AdminSummaryCard`. 다른 운영자 화면을 표로 바꿀 때 재사용.
+- 애플 환불 "처리 대기"(RefundRequest.checked* 칸·`/admin/refunds/waiting-count`)는 같은 날 만들었다가 사용자 결정으로 되돌림 — 마이그레이션은 main에 나가기 전이라 파일째 지움.

@@ -874,20 +874,15 @@ enum RefundRequestStatus {
 // 팬의 환불 요청(2026-09-29) — 지금은 "스타 미발송 환불"(결제 기간 동안 스타 메시지 0개면 기간 끝난 뒤 7일 안에 요청)만.
 // 결제 한 건당 한 번(애플 안내는 다시 눌러도 같은 행). 누가 언제 요청했는지 문의·분쟁 대응용 기록
 model RefundRequest {
-  id          String              @id @default(uuid())
-  chargeId    String
+  id        String              @id @default(uuid())
+  chargeId  String
   // 팬(탈퇴해도 기록은 남게 관계 없이 id만)
-  userId      String
+  userId    String
   // 지금은 STAR_IDLE만
-  reason      String
-  source      ChargeSource
-  status      RefundRequestStatus
-  createdAt   DateTime            @default(now())
-  // 애플 안내 뒤 며칠(APPLE_REFUND_WAIT_DAYS, 기본 3)이 지나도 환불이 안 된 건 = 운영자 "환불 처리 대기"(2026-10-22). 운영자가 팬에게 확인하고
-  // "확인함"을 누르면 여기 기록하고 대기에서 빠짐(예: 팬이 애플에 요청 안 함·애플이 거절). 운영자 id는 계정이 지워져도 남게 관계 없이 id만
-  checkedAt   DateTime?
-  checkedById String?
-  checkedNote String?
+  reason    String
+  source    ChargeSource
+  status    RefundRequestStatus
+  createdAt DateTime            @default(now())
 
   charge PurchaseCharge @relation(fields: [chargeId], references: [id], onDelete: Restrict)
 
