@@ -11,7 +11,7 @@ export interface LegalSection {
   body: string;
 }
 
-export const LEGAL_VERSION = '2026-10-14-draft';
+export const LEGAL_VERSION = '2026-10-22-draft';
 
 const TERMS: LegalSection[] = [
   {
@@ -116,17 +116,23 @@ const PRIVACY: LegalSection[] = [
     body:
       '아티스트 본인과 소속사 담당자는 해당 아티스트에게 온 팬의 답장을 닉네임과 함께 열람할 수 있습니다(로그인 이름·이메일은 ' +
       '제공하지 않음). 서비스는 다음 업체에 개인정보 처리를 위탁합니다: 서버·데이터베이스 운영(Railway), 파일 저장(Cloudflare), ' +
-      '결제(Apple, Google), 푸시 알림(Google Firebase), 메시지 번역(Anthropic — 번역을 요청한 메시지 본문만), 오류 기록(Sentry), ' +
-      '이메일 발송(이메일 발송 대행사). 그 외에는 법령에 따른 경우(수사기관의 적법한 요청 등)를 제외하고 제3자에게 제공하지 않습니다.',
+      '웹 화면 제공(Cloudflare), 결제(Apple, Google), 푸시 알림(Google Firebase), 메시지 번역(Anthropic — 아티스트 메시지 본문, 팬 ' +
+      '답장은 번역 버튼을 누른 것만), 오류 기록(Sentry), 이메일 발송(Resend), 앱 업데이트 배포(Expo). 그 외에는 법령에 따른 경우(수사기관의 적법한 요청 등)를 제외하고 제3자에게 제공하지 않습니다.',
   },
   {
     title: '4. 개인정보의 국외 이전',
     body:
-      '서비스 제공을 위해 개인정보가 국외에 저장·처리됩니다. 받는 자(국가): Railway(싱가포르 서버, 회원 정보·메시지 전체), ' +
-      'Cloudflare(미국 등 전 세계, 사진·음성·영상 파일), Google Firebase(미국, 기기 토큰·알림 내용), Anthropic(미국, 번역할 ' +
-      '메시지 본문), Sentry(미국, 오류 기록 — 이름·이메일 등은 담지 않음), Apple·Google(미국, 결제 정보). 이전 시기와 방법: ' +
-      '서비스를 이용할 때마다 암호화된 네트워크로 전송. 보유 기간: 4조의 보유 기간과 같음. 국외 이전을 원하지 않으면 회원 ' +
-      '탈퇴로 거부할 수 있으나, 이 경우 서비스를 이용할 수 없습니다.',
+      '서비스 제공을 위해 개인정보가 국외에 저장·처리됩니다. 받는 자(소재 국가) — 이전 항목 — 목적 — 문의처 순서입니다. ' +
+      '① Railway Corporation(미국 회사, 싱가포르 서버) — 회원 정보·메시지·구독 기록 전체 — 서버·데이터베이스 운영 — railway.com/legal/privacy. ' +
+      '② Cloudflare, Inc.(미국, 전 세계 서버) — 사진·음성·영상 파일, 웹 화면 접속 기록(접속 IP 등) — 파일 저장·웹 화면 제공 — cloudflare.com/privacypolicy. ' +
+      '③ Google LLC(미국) — Firebase: 기기 토큰·알림 내용(푸시 알림), Google Play: 결제 정보(구독 결제), Google 로그인: 이름·이메일 — policies.google.com/privacy. ' +
+      '④ Apple Inc.(미국) — 결제 정보(App Store 구독 결제), Apple 로그인: 이름·이메일 — apple.com/legal/privacy. ' +
+      '⑤ Anthropic, PBC(미국) — 번역할 메시지 본문(이름·이메일 등 회원 정보는 보내지 않음) — 메시지 번역 — anthropic.com/legal/privacy. ' +
+      '⑥ Functional Software, Inc.(Sentry, 미국) — 오류 기록(기기 종류·앱 버전 등, 이름·이메일은 담지 않음) — 오류 확인 — sentry.io/privacy. ' +
+      '⑦ Resend, Inc.(미국 회사, 일본 발송 서버) — 받는 사람 이메일 주소·메일 내용 — 이메일 발송 — resend.com/legal/privacy-policy. ' +
+      '⑧ 650 Industries, Inc.(Expo, 미국) — 앱 업데이트를 확인할 때의 기기 정보·접속 IP — 앱 업데이트 배포 — expo.dev/privacy. ' +
+      '이전 시기와 방법: 서비스를 이용할 때마다 암호화된 네트워크로 전송. 보유 기간: 5조의 보유 기간과 같음(업체는 위탁 목적이 끝나면 ' +
+      '파기). 국외 이전을 원하지 않으면 회원 탈퇴로 거부할 수 있으나, 이 경우 서비스를 이용할 수 없습니다.',
   },
   {
     title: '5. 보유 및 파기',
