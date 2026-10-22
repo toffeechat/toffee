@@ -6,6 +6,7 @@ import { AdminButton, AdminButtonRow, AdminChip, AdminMessage, AdminSection } fr
 import {
   useAdminAgencies,
   useAdminUserAccessLogs,
+  useAdminUserActivity,
   useAdminUserBilling,
   useAssignStaffAgency,
   useBanUser,
@@ -14,6 +15,7 @@ import {
   useReactivateUser,
   useSuspendUser,
   type AccessLog,
+  type AdminUserActivity,
   type AdminUser,
   type AssignableRole,
   type SanctionCategory,
@@ -334,6 +336,116 @@ export function BillingSection({ userId }: { userId: string }) {
         <ThemedText key={refund.id} type="small" themeColor="textSecondary">
           {day(refund.createdAt)} · {REFUND_REASON[refund.reason] ?? refund.reason} · {refund.charge.productName} ฿{(refund.charge.amountCents / 100).toLocaleString('ko-KR')} ·{' '}
           {refund.status === 'REFUNDED' ? '환불 완료' : refund.charge.refundedAt ? '애플 환불 완료' : '애플 안내함'}
+        </ThemedText>
+      ))}
+    </AdminSection>
+  );
+}
+
+// ── 팬 한 명 기준 보기(2026-10-22) — "왜 답장이 안 보내져요?" 같은 문의에 한 화면에서 답하려고 ──
+const MEDIA_LABELS: Record<AdminUserActivity['replies'][number]['mediaType'], string> = { TEXT: '', PHOTO: '[사진]', AUDIO: '[음성]', VIDEO: '[영상]' };
+const REPORT_STATUS: Record<AdminUserActivity['reportsReceived'][number]['status'], string> = { PENDING: '처리 대기', RESOLVED: '승인(가림)', DISMISSED: '기각' };
+// 회원 대상 작업 기록 — 전체 목록은 운영자 "작업 기록" 화면(actions.tsx)
+const USER_ACTION_LABELS: Record<string, string> = {
+  USER_SUSPEND: '정지',
+  USER_BAN: '영구차단',
+  USER_REACTIVATE: '제재 해제',
+  USER_PROFILE_CLEAR: '프로필 지움',
+  USER_ROLE: '역할 변경',
+  USER_EXPORT: '개인정보 파일 받음',
+};
+const BLOCKER_ROLE: Partial<Record<AdminUser['role'], string>> = { ACTOR: '아티스트', AGENCY_STAFF: '소속사', ADMIN: '운영자' };
+const short = (text: string | null, max = 60) => (!text ? '' : text.length > max ? `${text.slice(0, max)}…` : text);
+const at = (iso: string) => new Date(iso).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
+
+function replyState(reply: AdminUserActivity['replies'][number]): string | null {
+  if (reply.deletedByAdmin) return '운영자가 가림';
+  if (reply.deletedByStaffId) return '소속사가 삭제';
+  if (reply.deletedAt) return '팬이 회수';
+  return null;
+}
+
+function actionDetail(entry: AdminUserActivity['actions'][number]): string {
+  const d = entry.detail ?? {};
+  const parts: string[] = [];
+  if (typeof d.category === 'string') parts.push(`사유 ${SANCTION_LABELS[d.category as SanctionCategory] ?? d.category}`);
+  if (typeof d.until === 'string') parts.push(`~${day(d.until)}`);
+  if (typeof d.from === 'string' && typeof d.to === 'string') parts.push(`${ROLE_LABELS[d.from as AdminUser['role']] ?? d.from} → ${ROLE_LABELS[d.to as AdminUser['role']] ?? d.to}`);
+  if (typeof d.note === 'string' && d.note) parts.push(`메모: ${d.note}`);
+  return parts.join(' · ');
+}
+
+/**
+ * 답장·신고·차단·제재(2026-10-22) — 맨 위 "답장을 못 보내는 이유"는 계정 제재·방 차단만 봄. 그 밖의 이유(스타 메시지가 아직 없음,
+ * 한 메시지당 답장 개수를 다 씀, 금칙어)는 앱이 팬에게 바로 안내하니 문의가 오면 최근 답장 시각으로 짐작.
+ */
+export function ActivitySection({ user }: { user: AdminUser }) {
+  const { data, isLoading, isError } = useAdminUserActivity(user.id);
+  if (isLoading) return <AdminSection title="답장·신고·차단·제재"><ActivityIndicator style={styles.loading} /></AdminSection>;
+  if (isError || !data) return <AdminSection title="답장·신고·차단·제재"><AdminMessage text="불러오지 못했어요." error /></AdminSection>;
+  const reasons = [
+    user.status === 'SUSPENDED' ? `계정 정지 중${user.suspendedUntil ? `(~${day(user.suspendedUntil)})` : ''} — 모든 방에서 답장 불가` : null,
+    user.status === 'BANNED' ? '영구차단 — 모든 방에서 답장 불가' : null,
+    ...data.blocks.map((block) => `${block.actor.legalName} 방에서 차단됨(${day(block.createdAt)}) — 그 방만 답장 불가, 보기는 됨`),
+  ].filter((reason): reason is string => !!reason);
+  return (
+    <AdminSection title="답장·신고·차단·제재" hint="각각 최신 50개까지. 회수·가린 답장도 기록으로 보여요.">
+      <ThemedText type="smallBold">답장을 못 보내는 이유</ThemedText>
+      {reasons.length ? (
+        reasons.map((reason) => (
+          <ThemedText key={reason} type="small" themeColor="danger">
+            {reason}
+          </ThemedText>
+        ))
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          제재·차단 없음 — 그래도 안 된다면 그 방에 아직 스타 메시지가 없거나, 최근 스타 메시지에 보낼 수 있는 답장 개수를 다 썼거나, 금칙어에 걸린 경우예요(앱에 안내가 떠요).
+        </ThemedText>
+      )}
+
+      <ThemedText type="smallBold">최근 답장 {data.replies.length}개</ThemedText>
+      {data.replies.slice(0, 30).map((reply) => {
+        const state = replyState(reply);
+        return (
+          <ThemedText key={reply.id} type="small" themeColor={state ? 'textTertiary' : 'textSecondary'}>
+            {at(reply.createdAt)} · {reply.actor.legalName}
+            {reply.actor.kind === 'COUPLE' ? '[CP]' : ''} · {[MEDIA_LABELS[reply.mediaType], short(reply.body)].filter(Boolean).join(' ') || '(내용 없음)'}
+            {state ? ` · ${state}` : ''}
+            {reply.reportCount ? ` · 신고 ${reply.reportCount}건` : ''}
+          </ThemedText>
+        );
+      })}
+
+      <ThemedText type="smallBold">이 팬이 받은 신고 {data.reportsReceived.length}건</ThemedText>
+      {data.reportsReceived.map((report) => (
+        <ThemedText key={report.id} type="small" themeColor={report.status === 'PENDING' ? 'danger' : 'textSecondary'}>
+          {day(report.createdAt)} · {SANCTION_LABELS[report.category]} · {report.message.actor.legalName} 방 &quot;{short(report.message.body, 40)}&quot; · {REPORT_STATUS[report.status]}
+          {report.reason ? ` · ${short(report.reason, 40)}` : ''}
+        </ThemedText>
+      ))}
+
+      <ThemedText type="smallBold">이 팬이 한 신고 {data.reportsFiled.length}건</ThemedText>
+      {data.reportsFiled.map((report) => (
+        <ThemedText key={report.id} type="small" themeColor="textSecondary">
+          {day(report.createdAt)} · {SANCTION_LABELS[report.category]} · {report.message.actor.legalName} 방 {report.message.senderType === 'ARTIST' ? '스타 메시지' : '팬 답장'} &quot;
+          {short(report.message.body, 40)}&quot; · {REPORT_STATUS[report.status]}
+        </ThemedText>
+      ))}
+
+      <ThemedText type="smallBold">방 차단 {data.blocks.length}건</ThemedText>
+      {data.blocks.map((block) => (
+        <ThemedText key={block.id} type="small" themeColor="textSecondary">
+          {day(block.createdAt)} · {block.actor.legalName} 방 · 차단한 사람: {BLOCKER_ROLE[block.blockedBy.role] ?? ''} {block.blockedBy.displayName}
+          {block.reason ? ` · 사유: ${short(block.reason, 40)}` : ''}
+          {block.message ? ` · 계기 답장 "${short(block.message.body, 40)}"` : ''}
+        </ThemedText>
+      ))}
+
+      <ThemedText type="smallBold">운영자 작업 기록 {data.actions.length}건</ThemedText>
+      {data.actions.map((entry) => (
+        <ThemedText key={entry.id} type="small" themeColor="textSecondary">
+          {at(entry.createdAt)} · {USER_ACTION_LABELS[entry.action] ?? entry.action}
+          {actionDetail(entry) ? ` · ${actionDetail(entry)}` : ''} · {entry.admin.displayName}
         </ThemedText>
       ))}
     </AdminSection>

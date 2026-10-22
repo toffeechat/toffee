@@ -653,12 +653,30 @@ export interface AdminRefundEntry {
   refundedAt: string | null;
   actors: string[];
   agencies: (string | null)[];
+  /** 환불 처리 대기(2026-10-22) — 애플 안내 뒤 며칠이 지나도 환불이 안 됐고 운영자가 아직 "확인함"을 안 누름 */
+  waiting: boolean;
+  checkedAt: string | null;
+  checkedNote: string | null;
+  checkedBy: string | null;
 }
 
 export function useAdminRefunds(reason?: AdminRefundEntry['reason']) {
   return useQuery({
     queryKey: ['admin', 'refunds', reason ?? null],
     queryFn: () => apiClient.get<AdminRefundEntry[]>(`/admin/refunds${reason ? `?reason=${reason}` : ''}`),
+  });
+}
+
+/** 운영자 홈 "환불 처리 대기" 카드 — 개수와 기준 날 수(서버 설정, 기본 3일) */
+export function useRefundWaitingCount() {
+  return useQuery({ queryKey: ['admin', 'refunds', 'waiting-count'], queryFn: () => apiClient.get<{ count: number; days: number }>('/admin/refunds/waiting-count') });
+}
+
+export function useCheckRefund() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => apiClient.patch(`/admin/refunds/${id}/checked`, { note }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'refunds'] }),
   });
 }
 
@@ -827,6 +845,52 @@ export interface AdminUserBilling {
 
 export function useAdminUserBilling(id: string) {
   return useQuery({ queryKey: ['admin', 'users', 'one', id, 'billing'], queryFn: () => apiClient.get<AdminUserBilling>(`/admin/users/${id}/billing`), enabled: !!id });
+}
+
+// ── 팬 한 명 기준 보기 — 답장·신고·차단·제재(2026-10-22) ──
+
+export interface AdminUserActivity {
+  replies: {
+    id: string;
+    body: string | null;
+    mediaType: 'TEXT' | 'PHOTO' | 'AUDIO' | 'VIDEO';
+    createdAt: string;
+    deletedAt: string | null;
+    deletedByAdmin: boolean;
+    deletedByStaffId: string | null;
+    actor: { id: string; legalName: string; chatDisplayName: string; kind: 'SOLO' | 'COUPLE' };
+    reportCount: number;
+  }[];
+  reportsReceived: {
+    id: string;
+    category: SanctionCategory;
+    reason: string | null;
+    status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+    createdAt: string;
+    resolvedAt: string | null;
+    message: { id: string; body: string | null; actor: { legalName: string } };
+  }[];
+  reportsFiled: {
+    id: string;
+    category: SanctionCategory;
+    reason: string | null;
+    status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+    createdAt: string;
+    message: { id: string; senderType: 'ARTIST' | 'FAN'; body: string | null; actor: { legalName: string } };
+  }[];
+  blocks: {
+    id: string;
+    reason: string | null;
+    createdAt: string;
+    actor: { id: string; legalName: string };
+    blockedBy: { displayName: string; role: AdminUser['role'] };
+    message: { body: string | null; createdAt: string } | null;
+  }[];
+  actions: { id: string; action: string; detail: Record<string, unknown> | null; createdAt: string; admin: { displayName: string } }[];
+}
+
+export function useAdminUserActivity(id: string) {
+  return useQuery({ queryKey: ['admin', 'users', 'one', id, 'activity'], queryFn: () => apiClient.get<AdminUserActivity>(`/admin/users/${id}/activity`), enabled: !!id });
 }
 
 // ── 앱 설정(점검 모드·최소 버전, 2026-10-20) ──

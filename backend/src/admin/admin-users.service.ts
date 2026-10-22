@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { Role, UserStatus, type ReportCategory } from '../generated/prisma/enums.js';
+import { MessageSenderType, Role, UserStatus, type ReportCategory } from '../generated/prisma/enums.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -39,6 +39,8 @@ const LIST_SELECT = {
 } as const;
 
 const ACCESS_LOG_PAGE = 200;
+/** 팬 한 명 기준 보기 — 답장·신고·작업 기록 각각 최신순 최대 줄 수 */
+const ACTIVITY_PAGE = 50;
 /** 회원 목록 한 쪽 인원 */
 export const USER_PAGE_SIZE = 50;
 
@@ -129,6 +131,83 @@ export class AdminUsersService {
       }),
     ]);
     return { rooms, purchases, charges, refunds };
+  }
+
+  /**
+   * 팬 한 명 기준 보기(2026-10-22) — "왜 답장이 안 보내져요?" 같은 문의에 한 화면에서 답하려고. 최근 답장(어느 방·언제·내용·회수/가림),
+   * 이 팬의 답장이 받은 신고·이 팬이 한 신고, 아티스트·소속사에게 차단당한 방(ActorFanBlock), 운영자 작업 기록(제재·프로필 지움·역할 등).
+   */
+  async activity(userId: string) {
+    const [replies, reportsReceived, reportsFiled, blocks, actions] = await Promise.all([
+      this.prisma.message.findMany({
+        where: { fanUserId: userId, senderType: MessageSenderType.FAN },
+        orderBy: { createdAt: 'desc' },
+        take: ACTIVITY_PAGE,
+        select: {
+          id: true,
+          body: true,
+          mediaType: true,
+          createdAt: true,
+          deletedAt: true,
+          deletedByAdmin: true,
+          deletedByStaffId: true,
+          actor: { select: { id: true, legalName: true, chatDisplayName: true, kind: true } },
+          _count: { select: { reports: true } },
+        },
+      }),
+      this.prisma.report.findMany({
+        where: { message: { fanUserId: userId } },
+        orderBy: { createdAt: 'desc' },
+        take: ACTIVITY_PAGE,
+        select: {
+          id: true,
+          category: true,
+          reason: true,
+          status: true,
+          createdAt: true,
+          resolvedAt: true,
+          message: { select: { id: true, body: true, actor: { select: { legalName: true } } } },
+        },
+      }),
+      this.prisma.report.findMany({
+        where: { reportedById: userId },
+        orderBy: { createdAt: 'desc' },
+        take: ACTIVITY_PAGE,
+        select: {
+          id: true,
+          category: true,
+          reason: true,
+          status: true,
+          createdAt: true,
+          message: { select: { id: true, senderType: true, body: true, actor: { select: { legalName: true } } } },
+        },
+      }),
+      this.prisma.actorFanBlock.findMany({
+        where: { fanUserId: userId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          reason: true,
+          createdAt: true,
+          actor: { select: { id: true, legalName: true } },
+          blockedBy: { select: { displayName: true, role: true } },
+          message: { select: { body: true, createdAt: true } },
+        },
+      }),
+      this.prisma.adminAction.findMany({
+        where: { targetType: 'USER', targetId: userId },
+        orderBy: { createdAt: 'desc' },
+        take: ACTIVITY_PAGE,
+        select: { id: true, action: true, detail: true, createdAt: true, admin: { select: { displayName: true } } },
+      }),
+    ]);
+    return {
+      replies: replies.map(({ _count, ...reply }) => ({ ...reply, reportCount: _count.reports })),
+      reportsReceived,
+      reportsFiled,
+      blocks,
+      actions,
+    };
   }
 
   /** 회원 한 명의 접속 기록(최근 3개월, 최신순 최대 200줄) — 로그인·접속 시각, 기기, 앱 버전, IP */

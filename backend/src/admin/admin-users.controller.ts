@@ -30,6 +30,12 @@ export class AdminUsersController {
     return this.adminUsersService.billing(id);
   }
 
+  // 팬 한 명 기준 보기 — 답장·신고·차단·제재(2026-10-22)
+  @Get(':id/activity')
+  activity(@Param('id') id: string) {
+    return this.adminUsersService.activity(id);
+  }
+
   // 접속 기록(2026-10-14)
   @Get(':id/access-logs')
   accessLogs(@Param('id') id: string) {

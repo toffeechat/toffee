@@ -110,14 +110,14 @@ try {
   });
 
   await step('구독 직후 환영 메시지(이름 자리 → 내 닉네임)', async () => {
-    await page.getByText(`e2e 환영 ${stamp} ${nickname}`).waitFor({ timeout: 20_000 });
+    await page.getByText(`e2e 환영 ${stamp} ${nickname}`, { exact: true }).waitFor({ timeout: 20_000 });
     await page.getByText('환영 메시지', { exact: true }).waitFor({ timeout: 5_000 });
   });
 
   const broadcast = `e2e 인사 ${stamp} {{name}}`;
   await step('배우 메시지가 채팅방에 보임(이름 자리 → 내 닉네임)', async () => {
     broadcastId = (await api(`/actors/${actorId}/messages/broadcast`, { token: actorToken, method: 'POST', body: { mediaType: 'TEXT', body: broadcast } })).id;
-    await page.getByText(`e2e 인사 ${stamp} ${nickname}`).waitFor({ timeout: 40_000 });
+    await page.getByText(`e2e 인사 ${stamp} ${nickname}`, { exact: true }).waitFor({ timeout: 40_000 });
   });
 
   await step('답장 보내기', async () => {

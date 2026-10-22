@@ -5,7 +5,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminButtonRow, AdminMessage, AdminSection } from '@/components/admin-ui';
-import { AccessHistory, BillingSection, ProfileSection, ROLE_LABELS, RoleSection, SanctionSection, statusText } from '@/components/admin-user-panels';
+import { AccessHistory, ActivitySection, BillingSection, ProfileSection, ROLE_LABELS, RoleSection, SanctionSection, statusText } from '@/components/admin-user-panels';
 import { useAdminUser } from '@/hooks/use-admin';
 import { useMe } from '@/hooks/use-onboarding';
 import { confirm } from '@/lib/confirm';
@@ -13,7 +13,7 @@ import { exportMyData } from '@/lib/export-my-data';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 
-/** 회원 상세(2026-10-20 — 목록은 한눈에 보는 표, 바꾸는 일은 여기서: 역할·소속사, 제재, 프로필 지우기, 접속 기록) */
+/** 회원 상세(2026-10-20 — 목록은 한눈에 보는 표, 바꾸는 일은 여기서: 역할·소속사, 제재, 프로필 지우기, 접속 기록. 2026-10-22 팬이면 답장·신고·차단·제재도 한 화면에) */
 export default function AdminUserDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,6 +46,7 @@ export default function AdminUserDetailScreen() {
           {user.role !== 'ADMIN' && !user.deletedAt && me?.adminLevel !== 'SUPPORT' ? <RoleSection user={user} /> : null}
           {user.role !== 'ADMIN' && !user.deletedAt ? <SanctionSection user={user} /> : null}
           {user.role === 'USER' ? <BillingSection userId={user.id} /> : null}
+          {user.role === 'USER' ? <ActivitySection user={user} /> : null}
           <ProfileSection user={user} />
           <AccessHistory user={user} />
           <ExportSection userId={user.id} name={user.nickname ?? user.displayName} />

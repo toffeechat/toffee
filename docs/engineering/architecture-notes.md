@@ -1821,3 +1821,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 문구: `push-messages.ts` `retiringFanBody`·`retiredFanBody`, 앱 `actorProfile.retiringHint`, `legal-texts.ts` 3조 ③, `faq-texts.ts` 환불 답변(9개 언어).
   `LEGAL_VERSION`은 출시 전 초안이라 안 올림(10-14 방침과 같음).
 
+
+## 팬 한 명 기준 보기·환불 처리 대기 (2026-10-22)
+
+- `GET /admin/users/:id/activity`(`AdminUsersService.activity`) — 팬 답장(`Message` fanUserId + senderType FAN, `_count.reports`), 그 답장에 대한 신고
+  (`Report` where message.fanUserId), 그 팬이 한 신고(reportedById), `ActorFanBlock`(fanUserId, 차단한 사람·계기 답장), `AdminAction`(targetType USER, targetId).
+  각각 최신 50개(`ACTIVITY_PAGE`). 앱: `ActivitySection`(`admin-user-panels.tsx`), 팬(`role USER`) 상세에서만.
+- 환불 처리 대기: `RefundRequest`에 `checkedAt`·`checkedById`·`checkedNote`(마이그레이션 `20261022100000_refund_request_checked`).
+  조건은 `storeRefundWaitingWhere(now, days)` — STORE_GUIDED + checkedAt null + createdAt ≤ now − days + charge.refundedAt null. days = `APPLE_REFUND_WAIT_DAYS`(기본 3).
+  API: `GET /admin/refunds?waiting=true`, `GET /admin/refunds/waiting-count`(`{count, days}`, 운영자 홈 카드), `PATCH /admin/refunds/:id/checked {note?}`
+  (작업 기록 `REFUND_CHECK`, targetType `REFUND`). 목록 행에 `waiting`·`checkedAt`·`checkedNote`·`checkedBy`. 테스트 `refund-waiting.spec.ts`.
