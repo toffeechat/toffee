@@ -397,7 +397,7 @@
     "retired": "Nghệ sĩ này không còn hoạt động",
     "retiringOn": "Dừng hoạt động {{date}}",
     "retiringNoNew": "Không nhận đăng ký mới",
-    "retiringHint": "Người đăng ký vẫn nhận tin nhắn đến ngày đó và vẫn xem được tin nhắn cũ sau đó."
+    "retiringHint": "Người đăng ký vẫn nhận tin nhắn đến ngày đó và vẫn xem được tin nhắn cũ sau đó. Các khoản thanh toán sau thông báo này không được hoàn tiền do dừng hoạt động. Nếu không muốn bị trừ tiền lần tới, hãy tắt tự động gia hạn trong cửa hàng."
   },
   "subscribeFlow": {
     "subscribeTo": "Đăng ký",

@@ -329,6 +329,7 @@ function SelfAccountSection({ actor }: { actor: AdminActor }) {
  * 활동 상태(2026-10-20: 종료 예정 추가) — ① 예정일을 정하면 그 순간 새 구독·묶음 판매가 막히고 팬 화면에 "N월 N일 활동 종료 예정", 구독 팬에게 미리 알림,
  * 그 시각에 자동 종료(사용자 결정) ② [지금 바로 종료] ③ 종료된 뒤 [활동 재개].
  * 종료되면: 둘러보기·검색에서 숨김, 새 구독 막힘, 기존 팬은 지난 대화를 계속 봄, 구독 팬에게 종료 알림, 결제 14일 안이면 환불 요청 가능, 든 CP방도 종료 취급.
+ * 2026-10-21 B안: 예정 알림 뒤 종료 전에 된 결제는 14일 환불 대상 아님(서버 retireNoticedAt).
  */
 function RetireSection({ actor }: { actor: AdminActor }) {
   const setRetired = useSetActorRetired(actor.id);
@@ -337,7 +338,7 @@ function RetireSection({ actor }: { actor: AdminActor }) {
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const busy = setRetired.isPending || setRetireAt.isPending;
   const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했어요.'), error: true });
-  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 가요. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요. 구글 구독은 서버가 갱신을 자동으로 끊고, 애플 구독은 운영자 홈 "애플 판매 중지 할 일"에서 상품 판매 중지가 필요해요(종료 31일 전까지 권장).`;
+  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 가요. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요(종료 예정 알림 뒤에 된 결제는 제외 — 14일 넘게 앞서 예정을 잡으면 이 환불은 거의 없어요). 구글 구독은 서버가 갱신을 자동으로 끊고, 애플 구독은 운영자 홈 "애플 판매 중지 할 일"에서 상품 판매 중지가 필요해요(종료 31일 전까지 권장).`;
 
   const retireNow = async () => {
     const ok = await confirm('지금 바로 활동 종료', `${actor.legalName} 아티스트를 지금 둘러보기·검색에서 숨기고 새 구독을 막을까요?\n\n${effects}`, '활동 종료', '취소');

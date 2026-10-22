@@ -53,6 +53,8 @@ export interface RefundCandidate {
  * - ACTOR_RETIRED(활동 종료·입대): 그 결제로 열린 방이 모두 활동 종료됐고(커플방은 멤버 한 명만 종료돼도 방 종료, 묶음은 모든 방), 마지막 종료가
  *   결제 후 RETIRE_REFUND_DAYS(기본 14)일 안(결제 전에 이미 종료된 방에 갱신 결제가 된 경우도 포함) → 종료 때부터 기간이 끝난 뒤 7일까지.
  *   입대는 운영자가 "활동 종료"로 처리하고 전역하면 "재개"(재개하면 대상에서 빠짐).
+ *   단, 종료 예정 알림(retireNoticedAt)이 나간 뒤 종료 전에 된 결제는 대상 아님(2026-10-21 사용자 결정 B안 — 알림을 받고도 결제한 것.
+ *   7일 청약철회는 별도로 그대로). 이미 종료된 뒤 된 갱신 결제는 알림과 상관없이 대상.
  * 환불: 테스트 결제는 바로 기록, 구글은 우리가 API로 그 결제만 환불(지금 이용 중인 기간·자동 갱신은 그대로), 애플은 애플 환불 페이지 안내.
  * 환불된 결제는 정산에서 자동으로 빠짐(마감한 달이면 다음 달 조정).
  */
@@ -94,8 +96,16 @@ export class RefundService {
       // 방 정보가 없는 결제는 판단할 수 없어서 대상 아님
       if (rooms.length === 0) continue;
       const deadline = new Date(charge.periodEnd.getTime() + requestMs);
-      const endedAt = await this.roomsEndedAt(rooms);
-      if (endedAt && endedAt <= now && endedAt.getTime() < charge.chargedAt.getTime() + this.retireRefundDays * DAY_MS && endedAt < charge.periodEnd) {
+      const ended = await this.roomsEnded(rooms);
+      const endedAt = ended?.at;
+      const paidAfterNotice = !!ended?.noticedAt && ended.noticedAt <= charge.chargedAt && charge.chargedAt < ended.at;
+      if (
+        endedAt &&
+        endedAt <= now &&
+        !paidAfterNotice &&
+        endedAt.getTime() < charge.chargedAt.getTime() + this.retireRefundDays * DAY_MS &&
+        endedAt < charge.periodEnd
+      ) {
         result.push(this.toCandidate(charge, 'ACTOR_RETIRED', deadline, endedAt));
         continue;
       }
@@ -104,19 +114,25 @@ export class RefundService {
     return result;
   }
 
-  /** 모든 방이 활동 종료됐으면 마지막으로 종료된 때(커플방은 방이나 멤버 중 먼저 종료된 때), 하나라도 활동 중이면 null */
-  private async roomsEndedAt(roomIds: string[]): Promise<Date | null> {
+  /**
+   * 모든 방이 활동 종료됐으면 마지막으로 종료된 때(커플방은 방이나 멤버 중 먼저 종료된 때)와 그 종료의 예정 알림 시각, 하나라도 활동 중이면 null
+   */
+  private async roomsEnded(roomIds: string[]): Promise<{ at: Date; noticedAt: Date | null } | null> {
     const rooms = await this.prisma.actor.findMany({
       where: { id: { in: roomIds } },
-      select: { retiredAt: true, coupleMembers: { select: { member: { select: { retiredAt: true } } } } },
+      select: {
+        retiredAt: true,
+        retireNoticedAt: true,
+        coupleMembers: { select: { member: { select: { retiredAt: true, retireNoticedAt: true } } } },
+      },
     });
     if (rooms.length < roomIds.length) return null;
-    let last: Date | null = null;
+    let last: { at: Date; noticedAt: Date | null } | null = null;
     for (const room of rooms) {
-      const ends = [room.retiredAt, ...room.coupleMembers.map(({ member }) => member.retiredAt)].filter((date): date is Date => !!date);
+      const ends = [room, ...room.coupleMembers.map(({ member }) => member)].filter((row): row is typeof row & { retiredAt: Date } => !!row.retiredAt);
       if (ends.length === 0) return null;
-      const ended = new Date(Math.min(...ends.map((date) => date.getTime())));
-      if (!last || ended > last) last = ended;
+      const first = ends.reduce((a, b) => (b.retiredAt < a.retiredAt ? b : a));
+      if (!last || first.retiredAt > last.at) last = { at: first.retiredAt, noticedAt: first.retireNoticedAt ?? null };
     }
     return last;
   }

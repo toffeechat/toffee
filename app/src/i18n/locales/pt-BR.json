@@ -397,7 +397,7 @@
     "retired": "Este artista não está mais ativo",
     "retiringOn": "Encerra as atividades em {{date}}",
     "retiringNoNew": "Não aceita novas assinaturas",
-    "retiringHint": "Os assinantes continuam recebendo mensagens até lá e poderão ler as anteriores depois."
+    "retiringHint": "Os assinantes continuam recebendo mensagens até lá e poderão ler as anteriores depois. Pagamentos feitos depois deste aviso não têm reembolso por encerramento das atividades. Para evitar a próxima cobrança, desative a renovação automática na loja."
   },
   "subscribeFlow": {
     "subscribeTo": "Assinar",
