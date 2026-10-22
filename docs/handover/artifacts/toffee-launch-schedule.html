@@ -223,6 +223,9 @@ table.t tr.hl td{background:var(--accent-soft)}
 .links2 .ld{font-size:13px;color:var(--muted);text-align:right}
 .tag.found{background:var(--bench-soft);color:var(--danger)}
 .st.new{background:var(--money-soft);color:var(--money)}
+.sz{display:inline-block;font-size:11.5px;font-weight:600;border-radius:99px;padding:1px 8px;white-space:nowrap}
+.sz.s{background:var(--advisor-soft);color:var(--advisor)}.sz.b{background:var(--money-soft);color:var(--money)}
+.sz.x{background:var(--bench-soft);color:var(--bench)}.sz.p{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
 #lpPhases .t-title,#lpPhases .t-detail,.issue,.issue code{overflow-wrap:anywhere;min-width:0}
 .lp-path{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .lp-path .step{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:13.5px}
@@ -487,7 +490,7 @@ table.t tr.hl td{background:var(--accent-soft)}
     <div class="tw"><table class="t">
       <thead><tr><th>날짜</th><th>정한 것</th></tr></thead>
       <tbody>
-        <tr><td class="num">10-22</td><td>아티팩트 정리: 운영 전환 계획·설립 전 지출 처리·가격 근거를 이 페이지로 합침, 소속사 제안 + 연락처 → "토피 소속사" 한 페이지, 영어·태국어 제안서는 지움(한국어판 확정 뒤 다시 만듦), 멘토용 A4 페이지는 두지 않음 · 벤치마킹은 버블 1명만(위버스 DM은 결제 안 함) · 돈: 4월까지 내 돈이 기본, 소액 엔젤은 받을지·시기 미정, IR 자료는 11월이 아니라 시범 운영 숫자로 2027년 3~4월 · 팬 모으기 광고비(150만 원)는 쓰지 않음 — 소속사가 공지로 알리니 자연스럽게, 시범 운영 반응이 약하면 그때 다시 · 새 아이디어: 아티스트별 LINE 스티커(STATUS 아이디어 보관함)</td></tr>
+        <tr><td class="num">10-22</td><td>아티팩트 정리: 운영 전환 계획·설립 전 지출 처리·가격 근거를 이 페이지로 합침, 소속사 제안 + 연락처 → "토피 소속사" 한 페이지, 영어·태국어 제안서는 지움(한국어판 확정 뒤 다시 만듦), 멘토용 A4 페이지는 두지 않음 · 벤치마킹은 버블 1명만(위버스 DM은 결제 안 함) · 돈: 4월까지 내 돈이 기본, 소액 엔젤은 받을지·시기 미정, IR 자료는 11월이 아니라 시범 운영 숫자로 2027년 3~4월 · 팬 모으기 광고비(150만 원)는 쓰지 않음 — 소속사가 공지로 알리니 자연스럽게, 시범 운영 반응이 약하면 그때 다시 · 새 아이디어: 앱 안에서 쓰는 아티스트 전용 스티커(아이디어 탭)</td></tr>
         <tr><td class="num">10-22</td><td>나라별 가격: 한국 4,400원(버블 5,000원보다 싸게), 필리핀 ₱179(₱149에서 올림), 인니 Rp39,000·베트남 59,000₫ 유지, 중남미 40% 할인 뺌(자동 변환) · 기준 통화는 바트 유지</td></tr>
         <tr><td class="num">10-21</td><td>구독 목표 사다리(잠정): 300건 본전(3월) → 1,000건(4월) → 약 3,100건 지금 월급만큼 → 약 4,000건 × 3개월 전업. 세는 단위는 유료 구독 건수(한 사람 3개면 3건) · 법인 설립부터 장부까지 세무사에게 · 전업은 매출 경로가 주, 투자는 보조(1인 회사 유지 우선) · 회사 이름 후보 3개 · 이 페이지로 사업 계획 합침</td></tr>
         <tr><td class="num">10-20</td><td>비용 12개월 필수 760만 + 광고 150만, 최소 기본안 약 280만(내 돈) · 스토어 전 세계 공개(중국 본토 제외), 앱 언어 9개 · 유료 원어민 검수 안 함 · 10~11월 주 20시간 · 직장 겸업 금지 조항 없음 · 나라별 가격, 정산은 실제 입금액 기준</td></tr>
@@ -512,36 +515,30 @@ table.t tr.hl td{background:var(--accent-soft)}
   </section>
 
   <section aria-labelledby="h-open">
-    <div class="sec-head"><h2 id="h-open">아직 정하지 않은 아이디어</h2><p class="muted">원본은 저장소 <code>STATUS.md</code> "아이디어 보관함" — Claude가 아이디어를 다룰 때마다 이 표도 같이 고쳐요(2026-10-22). 1차로 정해서 만든 것은 여기서 빠지고 STATUS 기능 표로 가요.</p></div>
+    <div class="sec-head"><h2 id="h-open">아이디어 한눈에</h2><p class="muted">정하지 않은 아이디어와 순서를 정해 둔 미래 기능을 한 표로(2026-10-22). 위에서부터 추천 시기 순. 원본은 저장소 <code>STATUS.md</code> "아이디어 보관함" — Claude가 아이디어를 다룰 때마다 이 표도 같이 고치고, 1차로 만든 건 빠져요.</p></div>
+    <div class="legend" style="gap:6px 14px"><span><span class="sz s">작은 개발</span> 며칠, 지금 구조 그대로</span><span><span class="sz b">큰 개발</span> 1~2주 이상, 새 화면·규칙</span><span><span class="sz x">외부·계약</span> 다른 서비스나 판권·결제대행이 필요</span><span><span class="sz p">별도 플랫폼</span> 토피 앱과 따로</span></div>
     <div class="tw"><table class="t">
-      <thead><tr><th>아이디어</th><th>나온 날</th><th>추천·상태</th></tr></thead>
+      <thead><tr><th>아이디어</th><th>크기</th><th>언제(추천)</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td><b>아티스트별 LINE 스티커 판매</b> — 부가수익 + 팬이 일상에서 쓰며 홍보. 앱 밖(LINE)에서 파는 디지털 굿즈라 앱 결제·배송 문제 없음. 초상권 동의·소속사 배분·일러스트 제작비 필요</td><td class="num">10-22</td><td>추천 2차(굿즈와 같은 줄). 소속사 계약서에 "디지털 굿즈는 따로 협의" 한 줄 <span class="st new">확인 전</span></td></tr>
-        <tr><td><b>장기 구독 혜택</b> — 오래 구독한 팬에게(버블처럼). 기준인 "이어진 구독 시작일"은 이미 기록 중</td><td class="num">10-15</td><td>2차 — 미래 기능 ②, 오픈 1~2개월 안</td></tr>
-        <tr><td><b>답장 화면 "언어별로 보기" + "오늘 답장 요약"</b>(예: "태국 팬 120명이 라이브 기대") — 수천 개 답장을 다 번역해 읽지 않아도 분위기를 알게</td><td class="num">10-16</td><td>2차 후보</td></tr>
-        <tr><td><b>아티스트 상태메시지·프로필 배경사진</b>(카톡처럼, 토피룸 프로필 카드)</td><td class="num">10-02</td><td>2차 후보 <span class="st new">확인 전</span></td></tr>
-        <tr><td><b>그룹방(3명 이상)</b> — 아이돌 그룹 입점 때. 데이터 구조는 N명 가능, 만들기 검사·양식·문구가 2명 고정</td><td class="num">10-20</td><td>그룹 아티스트가 들어올 때 <span class="st new">미정</span></td></tr>
-        <tr><td><b>선택형 이용권</b> — 그룹 중 N명 골라 받기 + 아티스트 변경 1회 제한</td><td class="num">10-12</td><td>그룹 아티스트가 들어올 때</td></tr>
-        <tr><td><b>같은 CP 묶음을 스토어 같은 구독 그룹에</b> — 묶음끼리 갈아탈 때 중복 결제 방지 + 갈아타기 안내</td><td class="num">10-15</td><td>상품 등록 전에 확인 <span class="st new">미정</span></td></tr>
-        <tr><td><b>운영자: 모든 방 팬 답장 한 줄 피드</b>(금칙어에 걸릴 뻔한 답장·신고 많은 팬 표시)</td><td class="num">10-20</td><td><span class="st new">미정</span></td></tr>
-        <tr><td><b>운영자: 팬 한 명 기준 보기</b>(구독 방·최근 답장·신고/차단 이력)</td><td class="num">10-20</td><td><span class="st new">미정</span></td></tr>
-        <tr><td><b>운영자 할 일에 "환불 처리 대기"</b> — 애플 환불 미확인 건이 생기면</td><td class="num">10-20</td><td>필요해지면</td></tr>
-        <tr><td><b>운영자 화면에서 오류 내역 보기</b> — 서버 Sentry 키부터, 화면엔 "최근 오류 N건 → Sentry 열기" 정도</td><td class="num">10-14</td><td>2차 후보</td></tr>
-        <tr><td><b>로그인 화면 언어 선택</b>(지금은 로그인 후 설정에서만, 웹은 <code>?lang=th</code>)</td><td class="num">10-14</td><td>보류 — 출시 전 필요하면 1차</td></tr>
+        <tr><td><b>같은 CP 묶음을 스토어 같은 구독 그룹에</b> — 묶음끼리 갈아탈 때 중복 결제 방지 + 갈아타기 안내</td><td><span class="sz s">작은 개발</span></td><td>상품 등록 전(2027-01)</td><td>미정</td></tr>
+        <tr><td><b>로그인 화면 언어 선택</b> — 지금은 로그인 후 설정에서만(웹은 <code>?lang=th</code>)</td><td><span class="sz s">작은 개발</span></td><td>출시 전 필요하면</td><td>보류</td></tr>
+        <tr><td><b>스토리</b> — 24시간 사진·글(서버는 이미 있음, 앱 화면만)</td><td><span class="sz b">큰 개발</span></td><td>파일럿 오픈 직후</td><td>순서 정함 ①</td></tr>
+        <tr><td><b>운영자 화면에서 오류 내역 보기</b> — Sentry에 모인 오류 목록을 운영자 화면으로 끌어와 보기(자세한 건 Sentry로)</td><td><span class="sz s">작은 개발</span></td><td>오픈 직후(서버 Sentry 키 먼저)</td><td>2차 후보</td></tr>
+        <tr><td><b>운영자: 모든 방 팬 답장 한 줄 피드</b> — 금칙어에 걸릴 뻔한 답장·신고 많은 팬 표시</td><td><span class="sz s">작은 개발</span></td><td>오픈 뒤 답장이 많아지면</td><td>미정</td></tr>
+        <tr><td><b>운영자: 팬 한 명 기준 보기</b> — 구독·결제는 이미 있음, 최근 답장·신고/차단 이력 추가</td><td><span class="sz s">작은 개발</span></td><td>오픈 뒤 문의가 생기면</td><td>미정</td></tr>
+        <tr><td><b>운영자 할 일에 "환불 처리 대기"</b> — 애플 환불 미확인 건이 생기면</td><td><span class="sz s">작은 개발</span></td><td>필요해지면</td><td>미정</td></tr>
+        <tr><td><b>장기 구독 혜택</b> — 오래 구독한 팬에게(기준인 "이어진 구독 시작일"은 이미 기록 중). 혜택 내용부터 정해야 함</td><td><span class="sz b">큰 개발</span></td><td>오픈 1~2개월 안</td><td>순서 정함 ②</td></tr>
+        <tr><td><b>아티스트 상태메시지·프로필 배경사진</b>(카톡처럼, 토피룸 프로필 카드)</td><td><span class="sz s">작은 개발</span></td><td>2차</td><td>확인 전</td></tr>
+        <tr><td><b>답장 화면 "언어별로 보기" + "오늘 답장 요약"</b>(예: "태국 팬 120명이 라이브 기대") — 요약은 하루 한 번 AI</td><td><span class="sz b">큰 개발</span></td><td>2차 — 답장이 하루 수천 개가 되면</td><td>2차 후보</td></tr>
+        <tr><td><b>아티스트 전용 스티커(앱 안)</b> — 아티스트 얼굴·말투 스티커를 토피 안에서 사서 답장에 씀(버블에도 있음). 부가수익 + 팬이 자주 씀. 앱 안 판매라 스토어 결제(수수료)·소속사 배분·초상권 동의·스티커 제작비 필요</td><td><span class="sz b">큰 개발</span></td><td>2차 — 시범 운영 뒤</td><td>확인 전</td></tr>
+        <tr><td><b>그룹방(3명 이상)</b> — 아이돌 그룹 입점 때. 데이터 구조는 이미 N명 가능, 만들기 검사·등록 양식·문구만 2명 고정</td><td><span class="sz s">작은 개발</span></td><td>그룹 아티스트가 들어올 때</td><td>미정</td></tr>
+        <tr><td><b>선택형 이용권</b> — 그룹 중 N명 골라 구독 + 아티스트 변경 1회 제한</td><td><span class="sz b">큰 개발</span></td><td>그룹 아티스트가 들어올 때</td><td>미정</td></tr>
+        <tr><td><b>팬 라이브</b> — 아티스트가 구독 팬에게 라이브</td><td><span class="sz x">외부·계약</span></td><td>구독 수천 건·소속사 요청 시</td><td>순서 정함 ③</td></tr>
+        <tr><td><b>굿즈(실물)</b> — 앱 결제 불가라 결제대행·배송 필요</td><td><span class="sz x">외부·계약</span></td><td>소속사 2~3곳 안정 후</td><td>순서 정함 ④</td></tr>
+        <tr><td><b>공식 라이브·유료 중계</b> — 판권 계약</td><td><span class="sz x">외부·계약</span></td><td>그 뒤</td><td>순서 정함 ⑤</td></tr>
+        <tr><td><b>예매·양도</b> — 양도는 정가 이하 상한·안전거래·소유 기록</td><td><span class="sz p">별도 플랫폼</span></td><td>맨 나중</td><td>순서 정함 ⑥</td></tr>
       </tbody>
     </table></div>
-  </section>
-
-  <section aria-labelledby="h-future">
-    <div class="sec-head"><h2 id="h-future">미래 기능 순서 (2026-10-19 결정)</h2></div>
-    <ol class="pnote" style="color:var(--fg);font-size:14px">
-      <li><b>스토리</b> — 파일럿 오픈 직후(서버는 이미 있음)</li>
-      <li><b>장기 구독 혜택</b> — 오픈 1~2개월 안(30일 넘는 구독자가 생기기 전)</li>
-      <li><b>팬 라이브</b> — 구독 수천 건·소속사 요청 시(외부 송출 서비스)</li>
-      <li><b>굿즈</b> — 소속사 2~3곳 안정 후. 실물은 앱 결제 불가라 결제대행·배송 필요(LINE 스티커 같은 디지털 굿즈는 더 가벼움)</li>
-      <li><b>공식 라이브·유료 중계</b> — 판권 계약</li>
-      <li><b>예매·양도</b> — 별도 플랫폼(양도는 정가 이하 상한·안전거래·소유 기록)</li>
-    </ol>
   </section>
   </div>
 
