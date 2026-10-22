@@ -17,8 +17,20 @@ describe('표시 통화(2026-10-12)', () => {
   });
   it('바트는 그대로, 다른 통화는 ≈와 반올림', () => {
     expect(formatPrice(9900, 'THB', 'en-US')).toBe('฿99');
-    expect(formatPrice(9900, 'KRW', 'ko-KR')).toBe('≈ ₩4,100');
-    expect(formatPrice(9900, 'JPY', 'ja-JP')).toBe('≈ ￥450');
+    expect(formatPrice(9900, 'KRW', 'ko-KR')).toBe('≈ ₩2,900');
+    expect(formatPrice(9900, 'JPY', 'ja-JP')).toBe('≈ ￥400');
     expect(formatPrice(9900, 'USD', 'en-US')).toBe('≈ $2.97');
+  });
+  it('필리핀 페소·인도네시아 루피아(2026-10-22)', () => {
+    expect(displayCurrency({ languageCode: 'en', regionCode: 'PH', currencyCode: 'PHP' } as never)).toBe('PHP');
+    expect(displayCurrency({ languageCode: 'id', regionCode: null, currencyCode: null } as never)).toBe('IDR');
+  });
+  it('나라별 가격을 정한 통화는 ฿149가 그 나라 스토어 가격과 같게(2026-10-22)', () => {
+    expect(formatPrice(14900, 'KRW', 'ko-KR')).toBe('≈ ₩4,400');
+    expect(formatPrice(14900, 'PHP', 'en-PH')).toBe('≈ ₱179');
+    expect(formatPrice(14900, 'IDR', 'id-ID')).toMatch(/^≈ Rp\s39\.000$/);
+    expect(formatPrice(14900, 'VND', 'vi-VN')).toMatch(/^≈ 59\.000\s₫$/);
+    expect(formatPrice(14900, 'JPY', 'ja-JP')).toBe('≈ ￥600');
+    expect(formatPrice(14900, 'MYR', 'ms-MY')).toMatch(/^≈ RM\s?16\.90$/);
   });
 });

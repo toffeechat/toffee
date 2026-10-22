@@ -10,9 +10,10 @@ import { useCreateBundle } from '@/hooks/use-admin';
 import { ApiError } from '@/lib/api-client';
 import { Spacing } from '@/constants/theme';
 
-// 기본 할인율 — 2개 묶음(개인방 + CP방) 약 17%, 전체(두 개인방 + CP방) 약 25%. 끝자리는 9바트로(예: 139, 199)
+// 기본 할인율 — 2개 묶음(개인방 + CP방) 약 17%, 전체(두 개인방 + CP방) 약 29%. 끝자리는 9바트로.
+// 확정 가격(개인방 ฿149·CP방 ฿199)이면 2개 묶음 ฿289·전체 ฿349가 나오게(2026-10-22 — 예전 25%는 ฿369가 나와 10-12 확정 ฿349와 달랐음)
 const PAIR_DISCOUNT = 0.17;
-const ALL_DISCOUNT = 0.25;
+const ALL_DISCOUNT = 0.29;
 const suggest = (regularCents: number, discount: number) => {
   const target = Math.round((regularCents * (1 - discount)) / 100);
   const nine = Math.floor(target / 10) * 10 + 9;
@@ -86,7 +87,7 @@ export default function AdminCpBundleSetScreen() {
         </AdminSection>
 
         {room && a && b ? (
-          <AdminSection title="가격" hint="추천 가격(2개 묶음 약 17%, 전체 약 25% 할인)이 미리 들어가 있어요. 소속사와 정한 값으로 바꿔도 돼요.">
+          <AdminSection title="가격" hint="추천 가격(2개 묶음 약 17%, 전체 약 29% 할인)이 미리 들어가 있어요. 소속사와 정한 값으로 바꿔도 돼요.">
             <AdminField label={`2개 묶음 월 가격(바트) — ${a.legalName} + CP, ${b.legalName} + CP`} value={pairValue} onChangeText={setPairPrice} keyboardType="decimal-pad" />
             <ThemedText type="small" themeColor="textSecondary">
               따로 구독하면 {formatBaht(pairRegularA)}
