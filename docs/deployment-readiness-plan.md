@@ -27,7 +27,7 @@
 - 첫 메일의 "[이 소속사에 연락드린 이유 한 문장]"을 소속사별로 씀(사용자 지정: GMMTV = 에미·보니, Channel 3 = 레나·미우(한국에선 "리나미우"지만 메일엔
   공식 표기 LenaMiu), Change2561 = 룩미·소냐 최신작 「Hometown Romance」(2026, ONE31) — 나머지는 GL 배우로). 문장은 토피 소속사 아티팩트 각 카드에.
 - 사용자 결정: **North Star Entertainment를 1차로**(8곳), **One31은 GL 배우가 없어 목록에서 뺌**. North Star 공식 이메일은 못 찾음 — 공식 YouTube·SNS 소개란에서
-  확인 필요. The Air 주연 프린·베키는 각자 회사로 따로 연락하니 North Star엔 소속 배우로 제안(배우 미정).
+  확인 필요. The Air 주연 프린·베키는 각자 회사로 따로 연락하니 North Star엔 소속 배우로 제안 — 사용자: **애플·밈**(The Air, NORTHSTAR 소속인지 보내기 전 확인).
 - 방문 미팅은 답장 뒤 3~4주 뒤로 잡아도 됨(사용자 — PT·휴가·통역 준비), 화상은 1~2주 안 평일 저녁(한국 시간)으로.
 - 반영: 토피 소속사·사업 본부 아티팩트("1차 8곳", `s2-list`), `agency-outreach.md`, `launch-roadmap.md`.
 

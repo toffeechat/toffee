@@ -328,7 +328,7 @@
 | 5 | FAYMAY Entertainment | FayMay(Fay Kunyaphat·May Yada) 직접 세운 회사 | GL, 2026-01 Idol Factory에서 독립 |
 | 6 | Fabel Entertainment | 파이(Faye Peraya) 개인 회사 겸 제작 | GL. FayeYoko(Blank) 뒤 지금은 **FayeAtom** — Atom(전 VIIS)이 2026-02 합류. 2025 Nine Star에서 독립 (2026-10-20 1차로 올림) |
 | 7 | Change2561 | 제작 겸 소속사(GMMTV 자매 회사, One31 방영) | **GL LookmheeSonya**(Affair 2024, Harmony Secret, 최신작 Hometown Romance 2026) + BL Pit Babe — GMMTV와 같은 때 연락 (2026-10-20 1차로 올림) |
-| 8 | North Star Entertainment | GL 전문 제작사 겸 소속사(NORTHSTAR) | GL — The Air(2026, 주연 프린·베키는 각자 회사로 따로), The Fire, 소속 Kan Natcha 등. 공식 이메일 못 찾음 (2026-10-23 1차로 올림) |
+| 8 | North Star Entertainment | GL 전문 제작사 겸 소속사(NORTHSTAR) | GL — The Air(2026, 주연 프린·베키는 각자 회사로 따로), The Fire, 소속 Kan Natcha 등. **제안 배우: 애플·밈(AppleMim, The Air)** — 사용자 2026-10-23, NORTHSTAR 소속인지 보내기 전 확인. 공식 이메일 못 찾음 (2026-10-23 1차로 올림) |
 
 **2차**
 
