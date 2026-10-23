@@ -317,7 +317,7 @@
 
 공식 비즈니스 연락처(이메일·LINE·SNS)와 보내는 순서는 **[토피 소속사](https://claude.ai/artifact/LGkCkGRdmGSF2xdvKXQqwp)** 아티팩트에(2026-10-20).
 
-**1차 (먼저, 7곳)**
+**1차 (먼저, 8곳 — 2026-10-23 North Star를 1차로, One31은 GL 배우가 없어 목록에서 뺌)**
 
 | # | 곳 | 성격 | BL/GL · 대표 배우 |
 |---|---|---|---|
@@ -327,14 +327,13 @@
 | 4 | Solenn Entertainment | 프린 개인 회사 | GL, 2025-10 독립 |
 | 5 | FAYMAY Entertainment | FayMay(Fay Kunyaphat·May Yada) 직접 세운 회사 | GL, 2026-01 Idol Factory에서 독립 |
 | 6 | Fabel Entertainment | 파이(Faye Peraya) 개인 회사 겸 제작 | GL. FayeYoko(Blank) 뒤 지금은 **FayeAtom** — Atom(전 VIIS)이 2026-02 합류. 2025 Nine Star에서 독립 (2026-10-20 1차로 올림) |
-| 7 | Change2561 | 제작 겸 소속사(GMMTV 자매 회사, One31 방영) | **GL LookmheeSonya**(Affair 2024, Harmony Secret) + BL Pit Babe — GMMTV와 같은 때 연락 (2026-10-20 1차로 올림) |
+| 7 | Change2561 | 제작 겸 소속사(GMMTV 자매 회사, One31 방영) | **GL LookmheeSonya**(Affair 2024, Harmony Secret, 최신작 Hometown Romance 2026) + BL Pit Babe — GMMTV와 같은 때 연락 (2026-10-20 1차로 올림) |
+| 8 | North Star Entertainment | GL 전문 제작사 겸 소속사(NORTHSTAR) | GL — The Air(2026, 주연 프린·베키는 각자 회사로 따로), The Fire, 소속 Kan Natcha 등. 공식 이메일 못 찾음 (2026-10-23 1차로 올림) |
 
 **2차**
 
 | 곳 | 성격 | 메모 |
 |---|---|---|
-| One31 | 방송사 | GMMTV 모회사, Change2561 작품 방영 — GMMTV 통해서도 가능 |
-| North Star Entertainment | GL 전문 제작사 | The Air, The Fire(2026) |
 | Domundi TV | BL 전문 제작 겸 소속사 | Cutie Pie, Bed Friend, The Next Prince |
 | Kongthup Production(Artist) | GL 제작 겸 소속(추정) | OrmFolk(Ormsin Supitcha·Folk Sutima) — Apple My Love, My Lady's Bodyguard. Orm 소속은 미확인 |
 | Idol Factory | GL 선구 제작사 | ⚠️ 2025-12 출연료 미지급 보도 — 조심 |
