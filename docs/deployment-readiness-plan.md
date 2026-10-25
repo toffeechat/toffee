@@ -43,6 +43,7 @@
   맨 첫 줄로. ③ 10-25 아침에 내가 고친 CLAUDE.md·STATUS가 "메일엔 숫자 안 씀"으로 남아 소속사 페이지(메일에도 70% 공개, 10-23 확정)와 어긋나서 맞춤.
 - **보내는 주소**(사용자): Gmail(toffeechat.team)에 "다른 주소에서 메일 보내기"로 `support@toffeechat.app` 추가(Resend SMTP) → 테스트 메일 보낸 사람
   `Toffee <support@toffeechat.app>` 확인. 소속사 메일은 이 주소로(서명·제안서와 같은 주소). 사업화 장부 Gmail·Resend 줄에 기록.
+- **1차 8곳 예약 발송**(사용자): 10/27(화) 한국 12:00부터 7분 간격 8통, 받는 사람·본문 코드·첨부 파일 이름·North Star 소속 확인 끝(사용자). 사업 본부 s2-proposal 완료, launch-roadmap 3단계에 기록.
 
 ---
 
