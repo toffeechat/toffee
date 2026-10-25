@@ -819,6 +819,15 @@ export function useUpdateDemoCode() {
   });
 }
 
+/** 코드는 그대로 두고 접속 기록·첫 접속·방문 횟수만 지움(2026-10-25) */
+export function useResetDemoCodeStats() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.post<{ ok: true }>(`/admin/demo-codes/${id}/reset-stats`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'demo-codes'] }),
+  });
+}
+
 /** id 자리에 'common'이면 공용 코드(내부) 기록 */
 export function useDemoCodeEvents(id: string, enabled: boolean) {
   return useQuery({

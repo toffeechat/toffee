@@ -272,12 +272,30 @@ model DemoAccessCode {
   // 목록용 요약 — 기록을 매번 세지 않게. lastSeenAt은 쓰는 동안 5분에 한 번 갱신
   firstSeenAt DateTime?
   lastSeenAt  DateTime?
-  // 30분 넘게 활동이 없다가 새로 들어온 횟수(= 접속 알림 메일 수)
+  // 30분 넘게 활동이 없다가(화면 상관없이) 새로 들어온 횟수 — 알림 메일은 2026-10-25부터 화면별(DemoAccessRoleSeen)
   visitCount  Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   events DemoAccessEvent[]
+  roles  DemoAccessRoleSeen[]
+}
+
+// 데모 화면(소속사·아티스트·팬)별 접속 요약(2026-10-25) — 30분 규칙을 화면마다 따로 세서, 같은 방문 중에 다른 화면을 처음 열어도
+// 알림 메일이 가게(사용자 결정). 코드 전체 요약(DemoAccessCode.visitCount 등)은 그대로 "몇 번 들어왔나"용.
+model DemoAccessRoleSeen {
+  codeId      String
+  // agency / artist / fan / other
+  role        String
+  firstSeenAt DateTime
+  // 쓰는 동안 5분에 한 번 갱신
+  lastSeenAt  DateTime
+  // 30분 넘게 비었다가 이 화면으로 새로 들어온 횟수(= 이 화면 알림 메일 수)
+  visitCount  Int      @default(1)
+
+  code DemoAccessCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+
+  @@id([codeId, role])
 }
 
 // 데모 접속 기록(2026-10-19) — LOGIN은 로그인할 때마다, VISIT는 로그인 유지 중 코드·역할마다 한 시간에 한 줄 + 새로 들어올 때.

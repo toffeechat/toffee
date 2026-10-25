@@ -10,6 +10,7 @@ import {
   useCreateDemoCode,
   useDemoCodeEvents,
   useDemoCodes,
+  useResetDemoCodeStats,
   useUpdateDemoCode,
   type DemoAccessEvent,
   type DemoCode,
@@ -24,7 +25,7 @@ import { Spacing } from '@/constants/theme';
 
 /**
  * 소속사별 데모 입장 코드(2026-10-19 사용자 결정) — 소속사 이름·코드·만료일을 등록하고 링크를 복사해 보냄. 코드 하나로 데모의
- * [소속사][아티스트][팬] 버튼을 다 씀. 30분 넘게 쉬었다가 들어올 때마다 운영자에게 메일(서버 DEMO_ALERT_EMAIL), 여기선 첫·마지막
+ * [소속사][아티스트][팬] 버튼을 다 씀. 화면마다 30분 넘게 쉬었다가 들어올 때 운영자에게 메일(2026-10-25부터 화면별)(서버 DEMO_ALERT_EMAIL), 여기선 첫·마지막
  * 접속·횟수·기록. 코드는 지우지 않고 중지만(기록 보존) — 중지·만료되면 로그인 중이던 사람도 1분 안에 로그아웃.
  */
 
@@ -143,6 +144,7 @@ function EventList({ id }: { id: string }) {
 function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoRoleKey; linkLang: string }) {
   const theme = useTheme();
   const updateCode = useUpdateDemoCode();
+  const resetStats = useResetDemoCodeStats();
   const [showEvents, setShowEvents] = useState(false);
   const [editingExpiry, setEditingExpiry] = useState(false);
   const [expiry, setExpiry] = useState(kstDate(item.expiresAt));
@@ -167,6 +169,24 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
       return;
     }
     updateCode.mutate({ id: item.id, revoked: revoking }, { onError: (e) => setMessage(errorText(e, '저장하지 못했어요.')) });
+  };
+
+  // 보내기 전에 직접 눌러 본 기록 지우기(2026-10-25) — 코드·만료일은 그대로
+  const reset = async () => {
+    if (
+      !(await confirm(
+        '기록 초기화',
+        `${item.agencyName}의 접속 기록·첫 접속·방문 횟수를 지울까요? 입장 코드와 만료일은 그대로이고, 다음 접속이 다시 "첫 접속" 알림 메일로 가요.`,
+        '지우기',
+        '취소',
+      ))
+    ) {
+      return;
+    }
+    resetStats.mutate(item.id, {
+      onSuccess: () => (setShowEvents(false), setMessage(null)),
+      onError: (e) => setMessage(errorText(e, '지우지 못했어요.')),
+    });
   };
 
   const statusText = item.status === 'REVOKED' ? '중지됨' : item.status === 'EXPIRED' ? '만료됨' : '사용 중';
@@ -202,6 +222,12 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
           <AdminChip label="코드 복사" onPress={() => copyText(item.code)} />
           <AdminChip label={showEvents ? '기록 닫기' : '접속 기록'} selected={showEvents} onPress={() => setShowEvents(!showEvents)} />
           <AdminChip label="만료일 변경" onPress={() => setEditingExpiry(true)} />
+          <AdminChip
+            label={resetStats.isPending ? '지우는 중…' : '기록 초기화'}
+            danger
+            disabled={resetStats.isPending || !item.lastSeenAt}
+            onPress={reset}
+          />
           <AdminChip
             label={item.status === 'REVOKED' ? '다시 사용' : '사용 중지'}
             danger={item.status !== 'REVOKED'}
@@ -273,7 +299,7 @@ export default function AdminDemoCodesScreen() {
     <ThemedView style={styles.header}>
       <AdminSection
         title="입장 코드 등록"
-        hint="코드 하나로 데모의 소속사·아티스트·팬 버튼을 다 써요. 30분 넘게 쉬었다가 들어올 때마다 운영자에게 메일이 가요. 코드를 비우면 자동으로 만들어요.">
+        hint="코드 하나로 데모의 소속사·아티스트·팬 버튼을 다 써요. 화면(소속사·아티스트·팬)마다 30분 넘게 쉬었다가 들어올 때 운영자에게 메일이 가요. 보내기 전에 직접 눌러 봤다면 [기록 초기화]. 코드를 비우면 자동으로 만들어요.">
         <AdminField label="소속사 이름" value={agencyName} onChangeText={setAgencyName} maxLength={100} />
         <AdminField
           label="입장 코드(영문 소문자·숫자·하이픈 4~32자, 비우면 자동)"

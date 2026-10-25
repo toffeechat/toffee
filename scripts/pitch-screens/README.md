@@ -16,4 +16,8 @@
 가짜 번역은 저장되지 않으므로, 화면에 나오는 메시지의 번역문을 `MessageTranslation`(`messageId`, `languageCode`, `translatedText`)에
 직접 넣고 서버를 `TRANSLATION_PROVIDER=claude ANTHROPIC_API_KEY=아무값 node dist/main`으로 띄우면 저장된 번역만 쓴다(없는 건 "번역 보기" 버튼).
 한국어판은 카라멜 방 아티스트 메시지 4개 + 답장 화면의 메시지 6개를 넣었다. 언어마다 같은 메시지를 그 언어로 넣으면 된다.
-제안서 소속사 화면은 대시보드 + 아티스트 화면 "답장" 탭(번역이 보여서). 모니터링 탭의 사진 버튼 줄 겹침은 2026-10-19에 고침.
+제안서 소속사 화면은 대시보드(`console-dashboard`) + 소속사 모니터링 "답장" 탭(`console-replies`, 화면에 보이는 "번역 보기"를 눌러 번역을 펼친 채 찍음).
+**받는 사람이 태국 소속사라 한국어판 제안서에도 앱 화면은 모두 `th-TH`로 찍은 것을 쓴다**(2026-10-25 — 팬·아티스트·소속사·표지·데모 안내). 아티스트 `replies`와 `console-replies`는 "번역 보기"를 펼친 채 찍는다. 태국어 화면에서 번역이 보이게 하려면
+외국어 답장(영어·일본어·한국어)의 `languageCode = 'th'` 번역을 `MessageTranslation`에 넣는다. 모니터링 탭의 사진 버튼 줄 겹침은 2026-10-19에 고침.
+태국어판 캡처 전엔 팬 화면 채팅방의 팬 본인 메시지(시드의 한국어 답장, `sampleFanReplyId`)도 로컬 DB에서만 태국어로 바꾼다
+(`update "Message" set body='วันนี้ก็สู้ๆ นะคะ! เป็นกำลังใจให้เสมอ 💜' where body like '오늘도 화이팅%'` + 그 메시지의 `MessageTranslation` 삭제).

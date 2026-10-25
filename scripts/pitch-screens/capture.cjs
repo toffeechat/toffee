@@ -11,15 +11,20 @@ async function token(email) {
   return (await r.json()).accessToken;
 }
 
+// console.tabs.replies / translate.show (app/src/i18n/locales)
+const REPLIES_TAB = { th: 'ข้อความตอบกลับ', ko: '답장', en: 'Replies' };
+const SHOW_TRANSLATION = /^(ดูคำแปล|번역 보기|See translation)$/;
+
 const SHOTS = [
   { name: 'discover', who: 'fan1@toffee.demo', path: '/', mobile: true },
   { name: 'profile', who: 'fan1@toffee.demo', path: `/actor/${CARAMEL}`, mobile: true },
   { name: 'chat', who: 'fan1@toffee.demo', path: `/chat/${CARAMEL}`, mobile: true },
   { name: 'chats', who: 'fan1@toffee.demo', path: '/chats', mobile: true },
-  { name: 'replies', who: 'caramel-self@toffee.demo', path: `/studio/${CARAMEL}/replies/${process.env.REPLY_ID}`, mobile: true },
+  { name: 'replies', who: 'caramel-self@toffee.demo', path: `/studio/${CARAMEL}/replies/${process.env.REPLY_ID}`, mobile: true, expand: true },
   { name: 'studio', who: 'caramel-self@toffee.demo', path: `/studio/${CARAMEL}`, mobile: true },
   { name: 'console-dashboard', who: 'staff@toffee.demo', path: '/console', mobile: false },
   { name: 'console-monitor', who: 'staff@toffee.demo', path: `/console/${CARAMEL}`, mobile: false },
+  { name: 'console-replies', who: 'staff@toffee.demo', path: `/console/${CARAMEL}`, mobile: false, repliesTab: true, expand: true },
 ];
 
 (async () => {
@@ -40,6 +45,20 @@ const SHOTS = [
       await page.goto(WEB + s.path, { waitUntil: 'load', timeout: 90000 });
       await page.waitForTimeout(6000);
       if (s.name === 'discover') { await page.mouse.click(65, 815); await page.waitForTimeout(4000); }
+      if (s.repliesTab) {
+        // 소속사 모니터링의 "답장" 탭
+        await page.getByText(REPLIES_TAB[lang], { exact: true }).first().click();
+        await page.waitForTimeout(5000);
+      }
+      if (s.expand) {
+        // 화면에 보이는 "번역 보기"를 눌러 저장된 번역을 펼친다(README "번역 칸")
+        const [top, bottom] = s.mobile ? [60, 790] : [280, 900];
+        for (const b of (await page.getByText(SHOW_TRANSLATION).all()).reverse()) {
+          const bb = await b.boundingBox().catch(() => null);
+          if (bb && bb.y > top && bb.y < bottom) { await b.click({ timeout: 3000 }).catch(() => {}); await page.waitForTimeout(800); }
+        }
+        await page.waitForTimeout(2000);
+      }
       await page.screenshot({ path: `${OUT}/${lang}-${s.name}.png` });
       console.log('ok', lang, s.name, page.url());
       await ctx.close();

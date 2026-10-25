@@ -5,13 +5,15 @@ import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../notifications/email.service.js';
 import { Role } from '../generated/prisma/enums.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import type { ClientInfo } from '../access-log/client-info.js';
 import { ACCESS_LOG_RETENTION_DAYS } from '../access-log/access-log.service.js';
 
 /** 토큰의 `dac`가 이 값이면 공용 코드(DEV_LOGIN_CODE, 내부 테스트용) — 기록은 남기고 메일은 안 보냄 */
 export const COMMON_DEMO_CODE = 'common';
-// 이만큼 활동이 없다가 다시 들어오면 "새 접속" — 알림 메일 한 통(2026-10-19 사용자 결정: 둘러보는 동안엔 한 통만)
+// 이만큼 활동이 없다가 다시 들어오면 "새 접속" — 알림 메일 한 통(2026-10-19 사용자 결정: 둘러보는 동안엔 한 통만).
+// 2026-10-25부터 화면(소속사·아티스트·팬)마다 따로 셈 — 소속사 화면을 보다가 팬 화면을 처음 열어도 메일이 감(사용자 결정)
 export const NEW_VISIT_GAP_MS = 30 * 60 * 1000;
 // 로그인 유지 중 요청은 코드·역할마다 5분에 한 번만 처리(lastSeenAt 갱신)
 const TOUCH_INTERVAL_MS = 5 * 60 * 1000;
@@ -135,7 +137,10 @@ export class DemoAccessService {
 
   /** 테스트에서 기다릴 수 있게 분리 */
   async record(dac: string, key: string, role: DemoRoleKey, kind: 'LOGIN' | 'VISIT', client: ClientInfo, now: Date): Promise<void> {
-    const { newVisit, first } = await this.markSeen(dac, now);
+    const code = await this.markSeen(dac, now);
+    // 공용 코드는 화면별 요약 없이 코드 전체 기준
+    const seen = dac === COMMON_DEMO_CODE ? { newVisit: code.newVisit, first: false, count: 0 } : await this.markRoleSeen(dac, role, now);
+    const newVisit = seen.newVisit;
     const lastEvent = this.lastEvent.get(key);
     if (kind === 'LOGIN' || newVisit || !lastEvent || now.getTime() - lastEvent >= VISIT_EVENT_INTERVAL_MS) {
       this.lastEvent.set(key, now.getTime());
@@ -143,7 +148,32 @@ export class DemoAccessService {
         data: { codeId: dac === COMMON_DEMO_CODE ? null : dac, role, kind, newVisit, ...client, createdAt: now },
       });
     }
-    if (newVisit && dac !== COMMON_DEMO_CODE) await this.notify(dac, role, first, client, now);
+    if (newVisit && dac !== COMMON_DEMO_CODE) await this.notify(dac, role, { codeFirst: code.first, roleFirst: seen.first, roleCount: seen.count }, client, now);
+  }
+
+  // 화면별 30분 규칙 — 이 화면으로 30분 넘게 안 들어왔으면 새 접속(횟수 +1). 조건부 updateMany라 요청이 겹쳐도 한 번만
+  private async markRoleSeen(codeId: string, role: DemoRoleKey, now: Date): Promise<{ newVisit: boolean; first: boolean; count: number }> {
+    const cutoff = new Date(now.getTime() - NEW_VISIT_GAP_MS);
+    const row = await this.prisma.demoAccessRoleSeen.findUnique({ where: { codeId_role: { codeId, role } } });
+    if (!row) {
+      try {
+        await this.prisma.demoAccessRoleSeen.create({ data: { codeId, role, firstSeenAt: now, lastSeenAt: now } });
+        return { newVisit: true, first: true, count: 1 };
+      } catch (error) {
+        // 같은 순간 다른 요청이 먼저 만들었음 — 그쪽이 새 접속
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) throw error;
+        return { newVisit: false, first: false, count: 1 };
+      }
+    }
+    if (row.lastSeenAt < cutoff) {
+      const { count } = await this.prisma.demoAccessRoleSeen.updateMany({
+        where: { codeId, role, lastSeenAt: { lt: cutoff } },
+        data: { lastSeenAt: now, visitCount: { increment: 1 } },
+      });
+      if (count) return { newVisit: true, first: false, count: row.visitCount + 1 };
+    }
+    await this.prisma.demoAccessRoleSeen.updateMany({ where: { codeId, role }, data: { lastSeenAt: now } });
+    return { newVisit: false, first: false, count: row.visitCount };
   }
 
   // 30분 넘게 비어 있었으면 새 접속(횟수 +1) — 조건부 updateMany라 요청이 겹쳐도 한 번만
@@ -166,10 +196,21 @@ export class DemoAccessService {
     return { newVisit: true, first: first > 0 };
   }
 
-  private async notify(dac: string, role: DemoRoleKey, first: boolean, client: ClientInfo, now: Date): Promise<void> {
+  private async notify(
+    dac: string,
+    role: DemoRoleKey,
+    seen: { codeFirst: boolean; roleFirst: boolean; roleCount: number },
+    client: ClientInfo,
+    now: Date,
+  ): Promise<void> {
     const row = await this.prisma.demoAccessCode.findUnique({ where: { id: dac }, select: { agencyName: true, code: true, visitCount: true } });
     if (!row) return;
-    const subject = first ? `[토피 데모] ${row.agencyName} 첫 접속` : `[토피 데모] ${row.agencyName} 접속 (${row.visitCount}번째)`;
+    const screen = `${DEMO_ROLE_LABELS[role]} 화면`;
+    const subject = seen.codeFirst
+      ? `[토피 데모] ${row.agencyName} 첫 접속 (${screen})`
+      : seen.roleFirst
+        ? `[토피 데모] ${row.agencyName} ${screen} 첫 접속`
+        : `[토피 데모] ${row.agencyName} ${screen} 접속 (${seen.roleCount}번째)`;
     const to = this.configService.get<string>('DEMO_ALERT_EMAIL')?.trim();
     if (!to) {
       this.logger.log(`${subject} — DEMO_ALERT_EMAIL이 비어 있어 메일은 안 보냄`);
@@ -177,14 +218,14 @@ export class DemoAccessService {
     }
     const device = [client.platform === 'web' ? '웹' : client.platform, client.deviceModel].filter(Boolean).join(' · ');
     const html = [
-      `<p><b>${escapeHtml(row.agencyName)}</b>이(가) 토피 데모에 ${first ? '처음 ' : ''}들어왔어요.</p>`,
+      `<p><b>${escapeHtml(row.agencyName)}</b>이(가) 토피 데모 ${screen}에 ${seen.roleFirst ? '처음 ' : ''}들어왔어요.</p>`,
       '<ul>',
-      `<li>화면: ${DEMO_ROLE_LABELS[role]}</li>`,
+      `<li>화면: ${DEMO_ROLE_LABELS[role]} · 이 화면 ${seen.roleCount}번째</li>`,
       `<li>시각: ${formatAt(now, 'Asia/Seoul')} (한국) · ${formatAt(now, 'Asia/Bangkok')} (태국)</li>`,
       device ? `<li>기기: ${escapeHtml(device)}</li>` : '',
-      `<li>입장 코드: ${escapeHtml(row.code)} · 지금까지 ${row.visitCount}번째 접속</li>`,
+      `<li>입장 코드: ${escapeHtml(row.code)} · 코드 전체 ${row.visitCount}번째 접속</li>`,
       '</ul>',
-      '<p>30분 넘게 쉬었다가 다시 들어올 때마다 한 통씩 보내요. 전체 기록은 운영자 화면 › 데모 입장 코드에서 볼 수 있어요.</p>',
+      '<p>화면(소속사·아티스트·팬)마다 30분 넘게 쉬었다가 다시 들어올 때 한 통씩 보내요. 전체 기록은 운영자 화면 › 데모 입장 코드에서 볼 수 있어요.</p>',
     ].join('');
     await this.email.send(to, subject, html);
   }
@@ -270,6 +311,24 @@ export class DemoAccessService {
     // 중지·만료일 변경을 바로 반영(로그인 중인 사람은 다음 요청에서 로그아웃)
     this.statusCache.delete(id);
     return updated;
+  }
+
+  /**
+   * 접속 기록 초기화(2026-10-25 사용자 요청 — 보내기 전에 직접 눌러 본 기록 지우기) — 코드·만료일은 그대로, 첫 접속·방문 횟수·화면별 요약·
+   * 접속 기록만 지움. 다음 접속은 다시 "첫 접속" 메일
+   */
+  async resetStats(id: string): Promise<void> {
+    const existing = await this.prisma.demoAccessCode.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException(appError('DEMO_CODE_NOT_FOUND'));
+    await this.prisma.$transaction([
+      this.prisma.demoAccessEvent.deleteMany({ where: { codeId: id } }),
+      this.prisma.demoAccessRoleSeen.deleteMany({ where: { codeId: id } }),
+      this.prisma.demoAccessCode.update({ where: { id }, data: { firstSeenAt: null, lastSeenAt: null, visitCount: 0 } }),
+    ]);
+    // 로그인 유지 중인 사람이 있으면 다음 요청을 바로 새 접속으로 처리하게
+    for (const map of [this.lastTouch, this.lastEvent]) {
+      for (const key of map.keys()) if (key.startsWith(`${id}:`)) map.delete(key);
+    }
   }
 
   /** 접속 기록 — 코드 id 또는 'common'(공용 코드), 최근 것부터 */
