@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { isStorageKey, profileImagePrefix } from '../storage/media-policy.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ensureCanViewActor, ensureIsActorSelf, viewableActorsWhere } from '../common/authorization/actor-access.js';
@@ -8,6 +8,7 @@ import { ActorKind, ArtistGender, MessageSenderType, Role } from '../generated/p
 import type { Prisma } from '../generated/prisma/client.js';
 import { MediaService } from '../storage/media.service.js';
 import { appError } from '../common/i18n/app-error.js';
+import { cleanStatusMessage } from '../common/status-message/status-message.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 import { withFirstOfficialAsChat } from './profile-images.js';
 import { ReleaseService } from '../releases/release.service.js';
@@ -22,6 +23,8 @@ const LIST_SELECT = {
   chatProfileImageUrl: true,
   // 토피룸 배경 사진(2026-10-14) — 팬 토피룸 뒤에 깔림
   chatBackgroundUrl: true,
+  // 상태메시지(2026-10-25) — 토피룸 프로필 카드 한 줄, 없으면 null
+  statusMessage: true,
   monthlyPriceCents: true,
   // 개인 구독 스토어 상품 ID(없으면 아직 스토어 결제 불가 — 앱은 테스트 구독만)
   storeProductId: true,
@@ -48,6 +51,8 @@ const LIST_SELECT = {
           chatDisplayName: true,
           officialProfileImageUrl: true,
           chatProfileImageUrl: true,
+          // 커플방 카드는 멤버별 상태메시지(2026-10-25)
+          statusMessage: true,
           retiredAt: true,
           retireAt: true,
           // id는 운영자 대시보드의 소속사 필터(CP방은 멤버 소속사로, 2026-10-20)
@@ -305,6 +310,19 @@ export class ActorsService {
     });
     if (clash) throw new ConflictException(appError('ACTOR_NAME_TAKEN'));
     await this.prisma.actor.update({ where: { id: actorId }, data: { chatDisplayName: nickname } });
+    return this.findOne(actorId);
+  }
+
+  /**
+   * 상태메시지(2026-10-25 사용자 결정) — 아티스트 본인만(닉네임과 같은 권한, 소속사는 대신 못 씀). 빈 값이면 지움.
+   * 커플방 id로 부르면 그 방의 "내" 멤버 배우 값을 바꿈(멤버별 상태메시지 — 개인방·다른 CP방 카드에도 같이 보임).
+   * 운영자는 여기서 못 쓰고 운영자 화면에서 지우기만(작업 기록).
+   */
+  async updateStatusMessage(userId: string, actorId: string, raw: string) {
+    const selfId = await ensureIsActorSelf(this.prisma, userId, actorId);
+    if (!selfId) throw new ForbiddenException(appError('ACTOR_SELF_ONLY'));
+    const statusMessage = await cleanStatusMessage(raw, this.moderation);
+    await this.prisma.actor.update({ where: { id: selfId }, data: { statusMessage } });
     return this.findOne(actorId);
   }
 }

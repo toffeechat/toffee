@@ -1056,6 +1056,8 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 
 ## 출시 준비: Docker·설정 점검·공개 약관·부하 테스트 (2026-09-29)
 
+> 2026-10-25: 이 테스트가 다루지 않은 상황(읽기·답장 폭주, 연결 1만+, 큰 DB, 서버 2대)과 출시 전 재테스트 계획은 [`load-test-plan.md`](./load-test-plan.md).
+
 - `backend/Dockerfile`(node:22-slim 2단계, openssl은 Prisma 마이그레이션 엔진용), `docker-entrypoint.sh`(`RUN_MIGRATIONS` 기본 true →
   `prisma migrate deploy` 후 `node --import ./dist/instrument.js dist/main`), `.dockerignore`. 이 세션에선 Debian 패키지 서버가 막혀
   full `node:22` 변형으로 빌드·실행 확인(새 DB에 마이그레이션 25개 적용, `/health/ready`·`/legal/*`·`/support` 200, SIGTERM 즉시 종료).
@@ -1865,9 +1867,21 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 앱: 홈 카드는 `router.push`로 `/admin/users`·`/admin/subscriptions`(새 화면)·`/admin/rooms`에 `from/to`(오늘 = `thaiToday()`) 또는 `days`를 넘기고, 각 화면은
   `useLocalSearchParams` → `selectionFromParams`로 첫 상태를 정함. 기간 안내 문구는 `selectionLabel`(`stats-range-picker.tsx`). 카드 아래 작은 줄은 안쪽 `Pressable`(웹에서 바깥 카드 onPress가 같이 안 불리는 것 확인).
 
+## 아티스트 상태메시지 (2026-10-25)
+
+- `Actor.statusMessage String?`(마이그레이션 `20261025090000_actor_status_message`). COUPLE 행은 안 씀 — 카드는 `coupleMembers.member.statusMessage`.
+  `ActorsService` LIST_SELECT·멤버 select, `ADMIN_ACTOR_SELECT`에 포함(공개 `GET /actors/:id`에도 나감 — 닉네임·대화방 사진과 같은 수준).
+- 검사 공용화: `common/status-message/status-message.ts` `cleanStatusMessage(raw, moderation)`(NFC·공백 정리, 60자 = `STATUS_MESSAGE_MAX_LENGTH`, `\p{Cc}\p{Cf}`, 금칙어 →
+  `STATUS_MESSAGE_*` 오류, 빈 값 null). `AuthService.updateProfile`(팬)도 이걸 씀.
+- `PATCH /actors/:id/status-message`(`@Roles(ACTOR)`) → `ActorsService.updateStatusMessage` — `ensureIsActorSelf` 반환값(SOLO면 그 id, COUPLE이면 내 멤버 id,
+  운영자의 COUPLE이면 null → 403)에 저장, 응답은 요청한 방 `findOne`. 운영자: `PATCH /admin/actors/:id/clear-status-message`(OWNER 아니어도 됨 — 팬 `clear-profile`과 같음),
+  `AdminAction` `ACTOR_STATUS_CLEAR` detail `{statusMessage}`.
+- 앱: `studio/[actorId]/profile.tsx` `StatusMessageForm`(역할 ACTOR일 때만, CP방은 `useMyActors()`의 SOLO id와 겹치는 멤버), `chat-profile/[actorId].tsx` 카드·멤버 줄,
+  `admin/actors/[id].tsx` `StatusMessageSection`(SOLO만, CP는 멤버 줄에 표시), `admin/actions.tsx` detail에 `statusMessage`.
+
 ## 1:1 문의 종류 필터·사진 첨부 (2026-10-25)
 
-- 스키마: `SupportAttachment { messageId → SupportMessage (Cascade), objectKey, sortOrder }` — 마이그레이션 `20261025090000_support_attachments`(손으로 작성, 로컬 Postgres에
+- 스키마: `SupportAttachment { messageId → SupportMessage (Cascade), objectKey, sortOrder }` — 마이그레이션 `20261025100000_support_attachments`(손으로 작성, 로컬 Postgres에
   `migrate deploy` + `migrate diff --exit-code` 통과). 메시지당 `INQUIRY_PHOTO_MAX = 3`(서버 `support.service.ts`, 앱 `use-support.ts` 같은 값).
 - 업로드: `POST /support/uploads {contentType, sizeBytes}`(로그인한 누구나, 20/분) → `MediaService.createUploadAt(supportUploadPrefix(userId), 'PHOTO', …)` =
   `users/<쓴 사람 id>/support/`. 운영자 답변 사진도 **운영자 자신의 경로**. 글 보낼 때 `photoKeys[]` → `verifyAt`(경로·HEAD·매직 넘버, 안 맞으면 저장소에서 지우고 400).

@@ -305,6 +305,12 @@
     "save": "บันทึก",
     "saved": "บันทึกแล้ว",
     "saveFailed": "บันทึกไม่สำเร็จ โปรดลองอีกครั้ง",
+    "statusMessage": "ข้อความสถานะ",
+    "statusMessageHint": "จะแสดงเป็นหนึ่งบรรทัดใต้ชื่อในการ์ดโปรไฟล์ Toffee Room ถ้าเว้นว่างไว้จะไม่แสดง",
+    "statusMessageCoupleHint": "นี่คือข้อความสถานะของคุณเอง จะแสดงในการ์ดโปรไฟล์ทั้ง Toffee Room ของคุณและ Toffee Room แบบ CP",
+    "statusMessagePlaceholder": "ฝากข้อความถึงแฟน ๆ สักหน่อย",
+    "statusMessageClear": "ลบ",
+    "statusMessageCleared": "ลบแล้ว",
     "officialNote": "รูปและชื่อทางการ ({{name}}) ในหน้าค้นหาศิลปินดูแลโดยทีมงาน หากต้องการเปลี่ยนโปรดติดต่อทีมงาน"
   },
   "termsConsent": {

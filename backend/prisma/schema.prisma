@@ -351,6 +351,9 @@ model Actor {
   chatProfileImageUrl     String?
   // 토피룸 배경 사진(2026-10-14 사용자 결정, 1차) — 아티스트 본인·소속사가 정함, 팬 토피룸 뒤에 깔림. null이면 기본 배경
   chatBackgroundUrl       String?
+  // 상태메시지(2026-10-25 사용자 결정, 1차) — 토피룸 프로필 카드에 보이는 한 줄(카톡처럼, 60자). 아티스트 본인만 쓰고 지움, 운영자는 지우기만.
+  // 처음엔 null(기본 문구 없음 — 비어 있으면 카드에 줄이 안 보임). 커플방 행은 안 씀(멤버 배우 각자의 값을 카드에 보여 줌)
+  statusMessage           String?
   gender                  ArtistGender?
   monthlyPriceCents       Int
   // 개인 구독 스토어 상품 ID(애플·구글 공통, 소문자·숫자·_·.) — 등록 전엔 null(샌드박스 구독만). 2026-09-29

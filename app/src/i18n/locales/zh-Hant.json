@@ -305,6 +305,12 @@
     "save": "儲存",
     "saved": "已儲存。",
     "saveFailed": "儲存失敗，請重試。",
+    "statusMessage": "狀態訊息",
+    "statusMessageHint": "會在 Toffee Room 個人資料卡的名字下方顯示一行。留空則不顯示。",
+    "statusMessageCoupleHint": "這是你自己的狀態訊息，會顯示在你的 Toffee Room 和 CP Toffee Room 的個人資料卡上。",
+    "statusMessagePlaceholder": "給粉絲留一句話吧",
+    "statusMessageClear": "清除",
+    "statusMessageCleared": "已清除。",
     "officialNote": "搜尋頁面上的官方照片和官方名稱（{{name}}）由營運團隊管理。如需修改，請聯絡營運團隊。"
   },
   "termsConsent": {

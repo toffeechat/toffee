@@ -305,6 +305,12 @@
     "save": "保存",
     "saved": "保存しました。",
     "saveFailed": "保存できませんでした。もう一度お試しください。",
+    "statusMessage": "ステータスメッセージ",
+    "statusMessageHint": "Toffee Roomのプロフィールカードで名前の下に1行で表示されます。空欄にすると表示されません。",
+    "statusMessageCoupleHint": "あなた自身のステータスメッセージです。あなたのToffee RoomとCPのToffee Roomのプロフィールカードに表示されます。",
+    "statusMessagePlaceholder": "ファンにひとこと残してみましょう",
+    "statusMessageClear": "消去",
+    "statusMessageCleared": "消去しました。",
     "officialNote": "検索画面の公式写真と公式名（{{name}}）は運営が管理しています。変更したい場合は運営にご連絡ください。"
   },
   "termsConsent": {

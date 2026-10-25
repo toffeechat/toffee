@@ -25,6 +25,7 @@ import {
   useAdminAgencies,
   useAdminUsers,
   useAssignActorAgency,
+  useClearActorStatusMessage,
   useIssueActorLinks,
   useLinkActorUser,
   useRevokeActorLink,
@@ -447,6 +448,32 @@ function ContractSection({ actor }: { actor: AdminActor }) {
   );
 }
 
+/** 상태메시지(2026-10-25) — 아티스트 본인이 토피룸 설정에서 씀. 운영자는 신고·민원 대응으로 지우기만(작업 기록에 지운 문구가 남음) */
+function StatusMessageSection({ actor }: { actor: AdminActor }) {
+  const clear = useClearActorStatusMessage(actor.id);
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
+  const onClear = async () => {
+    if (!(await confirm('상태메시지 지우기', `"${actor.statusMessage}"\n\n이 상태메시지를 지울까요? 아티스트는 다시 쓸 수 있어요(쓸 때 금칙어 검사).`, '지우기', '취소'))) return;
+    clear.mutate(undefined, {
+      onSuccess: () => setMessage({ text: '상태메시지를 지웠어요. 작업 기록에 남았어요.' }),
+      onError: (e) => setMessage({ text: errorText(e, '지우지 못했어요.'), error: true }),
+    });
+  };
+  return (
+    <AdminSection title="상태메시지" hint="팬이 보는 토피룸 프로필 카드의 한 줄이에요. 아티스트가 직접 쓰고, 운영자는 지우기만 할 수 있어요(CP방 카드에도 같은 값이 보여요).">
+      <ThemedText type="small" themeColor={actor.statusMessage ? 'text' : 'textTertiary'}>
+        {actor.statusMessage ?? '비어 있음 — 카드에 줄이 안 보여요'}
+      </ThemedText>
+      {actor.statusMessage ? (
+        <AdminButtonRow>
+          <AdminButton secondary label={clear.isPending ? '지우는 중…' : '지우기'} disabled={clear.isPending} onPress={() => void onClear()} />
+        </AdminButtonRow>
+      ) : null}
+      <AdminMessage text={message?.text ?? null} error={message?.error} />
+    </AdminSection>
+  );
+}
+
 function ActorRelease({ actor }: { actor: AdminActor }) {
   const update = useUpdateActor(actor.id);
   return (
@@ -499,6 +526,8 @@ export default function AdminActorDetailScreen() {
               {actor.coupleMembers.map(({ member }) => (
                 <ThemedText key={member.id} type="small">
                   {member.legalName} ({member.chatDisplayName}){member.retiredAt ? ' — 활동 종료' : ''}
+                  {/* 상태메시지는 멤버별(2026-10-25) — 지우기는 그 아티스트 화면에서 */}
+                  {member.statusMessage ? ` · 상태메시지 "${member.statusMessage}"` : ''}
                 </ThemedText>
               ))}
             </AdminSection>
@@ -506,6 +535,7 @@ export default function AdminActorDetailScreen() {
             <>
               <AgencySection actor={actor} />
               <SelfAccountSection actor={actor} />
+              <StatusMessageSection actor={actor} />
             </>
           )}
           <ActorRelease actor={actor} />

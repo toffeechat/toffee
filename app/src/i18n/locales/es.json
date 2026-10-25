@@ -305,6 +305,12 @@
     "save": "Guardar",
     "saved": "Guardado.",
     "saveFailed": "No se pudo guardar. Inténtalo de nuevo.",
+    "statusMessage": "Mensaje de estado",
+    "statusMessageHint": "Se muestra en una línea bajo tu nombre en la tarjeta de perfil de tu Toffee Room. Déjalo vacío para ocultarlo.",
+    "statusMessageCoupleHint": "Es tu propio mensaje de estado. Se muestra en las tarjetas de perfil de tu Toffee Room y de tus Toffee Rooms CP.",
+    "statusMessagePlaceholder": "Deja un mensaje para tus fans",
+    "statusMessageClear": "Borrar",
+    "statusMessageCleared": "Borrado.",
     "officialNote": "Tu foto oficial y tu nombre oficial ({{name}}) en la pantalla Descubrir los gestiona el equipo de Toffee. Contáctanos para cambiarlos."
   },
   "termsConsent": {

@@ -305,6 +305,12 @@
     "save": "Salvar",
     "saved": "Salvo.",
     "saveFailed": "Não foi possível salvar. Tente novamente.",
+    "statusMessage": "Mensagem de status",
+    "statusMessageHint": "Aparece em uma linha abaixo do seu nome no cartão de perfil da sua Toffee Room. Deixe vazio para ocultar.",
+    "statusMessageCoupleHint": "É a sua própria mensagem de status. Aparece nos cartões de perfil da sua Toffee Room e das Toffee Rooms CP.",
+    "statusMessagePlaceholder": "Deixe um recado para seus fãs",
+    "statusMessageClear": "Apagar",
+    "statusMessageCleared": "Apagado.",
     "officialNote": "Sua foto oficial e seu nome oficial ({{name}}) na tela Descobrir são gerenciados pela equipe da Toffee. Fale conosco para alterá-los."
   },
   "termsConsent": {

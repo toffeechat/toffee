@@ -305,6 +305,12 @@
     "save": "Save",
     "saved": "Saved.",
     "saveFailed": "Couldn't save. Please try again.",
+    "statusMessage": "Status message",
+    "statusMessageHint": "Shown as one line under your name on your Toffee Room profile card. Leave it empty to hide it.",
+    "statusMessageCoupleHint": "This is your own status message. It's shown on the profile cards of your Toffee Room and your CP Toffee Rooms.",
+    "statusMessagePlaceholder": "Leave a note for your fans",
+    "statusMessageClear": "Clear",
+    "statusMessageCleared": "Cleared.",
     "officialNote": "Your official photo and official name ({{name}}) on the discover screen are managed by the Toffee team. Contact us to change them."
   },
   "termsConsent": {

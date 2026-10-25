@@ -305,6 +305,12 @@
     "save": "Lưu",
     "saved": "Đã lưu.",
     "saveFailed": "Không lưu được. Vui lòng thử lại.",
+    "statusMessage": "Trạng thái",
+    "statusMessageHint": "Hiển thị thành một dòng dưới tên bạn trên thẻ hồ sơ Toffee Room. Để trống thì sẽ không hiển thị.",
+    "statusMessageCoupleHint": "Đây là trạng thái của riêng bạn. Nó hiển thị trên thẻ hồ sơ của Toffee Room của bạn và các Toffee Room CP.",
+    "statusMessagePlaceholder": "Gửi một lời nhắn đến fan nhé",
+    "statusMessageClear": "Xóa",
+    "statusMessageCleared": "Đã xóa.",
     "officialNote": "Ảnh chính thức và tên chính thức ({{name}}) của bạn trên màn hình khám phá do đội ngũ Toffee quản lý. Liên hệ chúng tôi để thay đổi."
   },
   "termsConsent": {
