@@ -16,7 +16,7 @@ export class AdminUsersController {
 
   @Get()
   findAll(@Query() query: ListUsersQueryDto) {
-    return this.adminUsersService.findAll(query.q, query.role, query.sort, query.page);
+    return this.adminUsersService.findAll(query.q, query.role, query.sort, query.page, query.filter);
   }
 
   @Get(':id')

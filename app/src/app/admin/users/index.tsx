@@ -1,21 +1,40 @@
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminButtonRow, AdminChip } from '@/components/admin-ui';
-import { ROLE_LABELS, statusText, timeAgo } from '@/components/admin-user-panels';
+import { AdminBadge, AdminCompactRow, AdminListRow, AdminSortHeader, AdminStatTiles, type BadgeTone } from '@/components/admin-table';
+import { ROLE_LABELS, timeAgo } from '@/components/admin-user-panels';
 import { useWideLayout } from '@/components/wide-shell';
-import { useAdminUsers, type AdminUser, type AdminUserSort } from '@/hooks/use-admin';
+import { useAdminUsers, type AdminUser, type AdminUserFilter, type AdminUserSort } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 
 const ROLE_FILTERS: (AdminUser['role'] | null)[] = [null, 'USER', 'ACTOR', 'AGENCY_STAFF', 'ADMIN'];
+const TILES: { key: AdminUserFilter | 'all'; label: string; tone: BadgeTone }[] = [
+  { key: 'all', label: '전체', tone: 'ok' },
+  { key: 'today', label: '오늘 가입(태국)', tone: 'ok' },
+  { key: 'subscribed', label: '구독 중', tone: 'ok' },
+  { key: 'sanctioned', label: '제재 중', tone: 'danger' },
+];
+type SortKey = 'created' | 'recent';
+// 정렬은 서버가 함(한 쪽 50명씩) — 가입일·마지막 접속 둘 다 최신순만
+const COLUMNS: { title: string; flex: number; sortKey?: SortKey; firstDir?: 'desc' }[] = [
+  { title: '이름(닉네임)', flex: 2.2 },
+  { title: '역할', flex: 0.9 },
+  { title: '소속', flex: 1.4 },
+  { title: '상태', flex: 1.3 },
+  { title: '구독 방', flex: 0.7 },
+  { title: '마지막 접속', flex: 1, sortKey: 'recent', firstDir: 'desc' },
+  { title: '가입일', flex: 1, sortKey: 'created', firstDir: 'desc' },
+];
 
 /**
- * 회원 관리(2026-10-20 개편: 사용자 피드백 "회원 카드가 한눈에 안 들어옴") — PC는 표(이름·역할·소속·상태·마지막 접속·가입일), 폰은 두 줄 목록.
- * 줄을 누르면 회원 상세(역할·소속사·제재·접속 기록). 역할 탭 옆에 인원수, 한 쪽 50명씩.
+ * 회원 관리(2026-10-20 표, 2026-10-25 개편: "정보가 많아 정신없다" — 회원 상세처럼 요약 카드 + 표 + 색 배지).
+ * 맨 위 요약 카드(전체·오늘 가입·구독 중·제재 중)를 누르면 그 조건으로 거름. PC는 표(가입일·마지막 접속 열 제목으로 정렬), 폰 폭은 한 줄 카드(이름·상태·구독 방).
+ * 이메일·기기 같은 부가 정보는 회원 상세. 역할 칩 옆에 인원수, 한 쪽 50명씩.
  */
 export default function AdminUsersScreen() {
   const theme = useTheme();
@@ -23,9 +42,10 @@ export default function AdminUsersScreen() {
   const wide = useWideLayout();
   const [query, setQuery] = useState('');
   const [role, setRole] = useState<AdminUser['role'] | null>(null);
+  const [filter, setFilter] = useState<AdminUserFilter | null>(null);
   const [sort, setSort] = useState<AdminUserSort | undefined>(undefined);
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching } = useAdminUsers(query.trim(), role ?? undefined, sort, page);
+  const { data, isLoading, isFetching } = useAdminUsers(query.trim(), role ?? undefined, sort, page, filter ?? undefined);
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
   const reset = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
@@ -38,7 +58,7 @@ export default function AdminUsersScreen() {
       <FlatList
         data={data?.items ?? []}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, !wide && styles.listNarrow]}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={styles.header}>
@@ -49,31 +69,31 @@ export default function AdminUsersScreen() {
               placeholderTextColor={theme.textSecondary}
               style={[styles.search, { color: theme.text, backgroundColor: theme.backgroundElement }]}
             />
+            <AdminStatTiles
+              tiles={TILES.map((tile) => ({ ...tile, count: data?.summary[tile.key] }))}
+              selected={filter ?? (data ? 'all' : null)}
+              onSelect={(key) => reset(setFilter)(key === 'all' || key === null ? null : (key as AdminUserFilter))}
+            />
             <View style={styles.chips}>
               {ROLE_FILTERS.map((value) => (
                 <AdminChip
                   key={value ?? 'ALL'}
-                  label={value ? ROLE_LABELS[value] : '전체'}
+                  label={value ? ROLE_LABELS[value] : '모든 역할'}
                   count={data?.counts[value ?? 'ALL']}
                   selected={role === value}
                   onPress={() => reset(setRole)(value)}
                 />
               ))}
-            </View>
-            {/* 예) 소속사 직원 + 최근 접속순으로 데모를 받은 소속사가 들어와 봤는지 확인 */}
-            <View style={styles.chips}>
-              <AdminChip label="가입 최신순" selected={!sort} onPress={() => reset(setSort)(undefined)} />
-              <AdminChip label="최근 접속순" selected={sort === 'recent'} onPress={() => reset(setSort)('recent')} />
+              {/* 폰 폭은 열 제목이 없어서 칩으로. 예) 소속사 직원 + 최근 접속순으로 데모를 받은 소속사가 들어와 봤는지 확인 */}
+              {!wide ? <AdminChip label="최근 접속순" selected={sort === 'recent'} onPress={() => reset(setSort)(sort === 'recent' ? undefined : 'recent')} /> : null}
               {isFetching ? <ActivityIndicator color={theme.tint} /> : null}
             </View>
             {wide ? (
-              <View style={[styles.tableRow, styles.tableHead, { borderBottomColor: theme.backgroundSelected }]}>
-                {['이름(닉네임)', '역할·소속', '상태', '마지막 접속', '가입일'].map((title, i) => (
-                  <ThemedText key={title} type="smallBold" themeColor="textSecondary" style={COLUMNS[i]}>
-                    {title}
-                  </ThemedText>
-                ))}
-              </View>
+              <AdminSortHeader
+                columns={COLUMNS}
+                sort={{ key: sort === 'recent' ? 'recent' : 'created', dir: 'desc' }}
+                onSort={(next) => reset(setSort)(next.key === 'recent' ? 'recent' : undefined)}
+              />
             ) : null}
           </View>
         }
@@ -82,11 +102,44 @@ export default function AdminUsersScreen() {
             <ActivityIndicator style={styles.loading} color={theme.tint} />
           ) : (
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
-              회원이 없어요.
+              {query || role || filter ? '조건에 맞는 회원이 없어요.' : '회원이 없어요.'}
             </ThemedText>
           )
         }
-        renderItem={({ item }) => (wide ? <TableRow user={item} onPress={() => open(item)} /> : <CompactRow user={item} onPress={() => open(item)} />)}
+        renderItem={({ item }) =>
+          wide ? (
+            <AdminListRow
+              columns={COLUMNS}
+              faded={!!item.deletedAt}
+              onPress={() => open(item)}
+              cells={[
+                <NameCell key="name" user={item} />,
+                ROLE_LABELS[item.role],
+                affiliation(item) ?? '-',
+                <StatusBadge key="status" user={item} />,
+                <RoomCount key="rooms" user={item} />,
+                <ThemedText key="active" type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {item.lastActiveAt ? timeAgo(item.lastActiveAt) : '없음'}
+                </ThemedText>,
+                <ThemedText key="created" type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {new Date(item.createdAt).toLocaleDateString('ko-KR')}
+                </ThemedText>,
+              ]}
+            />
+          ) : (
+            <AdminCompactRow
+              faded={!!item.deletedAt}
+              onPress={() => open(item)}
+              left={<NameCell user={item} narrow />}
+              right={
+                <>
+                  <StatusBadge user={item} />
+                  <RoomCount user={item} />
+                </>
+              }
+            />
+          )
+        }
         ListFooterComponent={
           data && pages > 1 ? (
             <View style={styles.pager}>
@@ -105,78 +158,51 @@ export default function AdminUsersScreen() {
   );
 }
 
-const COLUMNS = [{ flex: 2.2 }, { flex: 1.8 }, { flex: 1.2 }, { flex: 1 }, { flex: 1 }] as const;
-const roleText = (user: AdminUser) =>
-  [ROLE_LABELS[user.role], user.agency?.name, user.actorSelf ? `${user.actorSelf.legalName} 본인` : null].filter(Boolean).join(' · ');
-const abnormal = (user: AdminUser) => user.status !== 'ACTIVE' || !!user.deletedAt;
+const affiliation = (user: AdminUser) => user.agency?.name ?? (user.actorSelf ? `${user.actorSelf.legalName} 본인` : null);
 
-function TableRow({ user, onPress }: { user: AdminUser; onPress: () => void }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ hovered }) => [styles.tableRow, { borderBottomColor: theme.backgroundSelected }, hovered && { backgroundColor: theme.backgroundElement }]}>
-      <View style={COLUMNS[0]}>
-        <ThemedText type="smallBold" numberOfLines={1}>
-          {user.nickname ?? user.displayName}
-        </ThemedText>
-        <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
-          {user.displayName}
-          {user.email ? ` · ${user.email}` : ''}
-        </ThemedText>
-      </View>
-      <ThemedText type="small" style={COLUMNS[1]} numberOfLines={2}>
-        {roleText(user)}
-      </ThemedText>
-      <ThemedText type="small" themeColor={abnormal(user) ? 'danger' : 'textSecondary'} style={COLUMNS[2]} numberOfLines={1}>
-        {statusText(user)}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={COLUMNS[3]} numberOfLines={1}>
-        {user.lastActiveAt ? timeAgo(user.lastActiveAt) : '없음'}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={COLUMNS[4]} numberOfLines={1}>
-        {new Date(user.createdAt).toLocaleDateString('ko-KR')}
-      </ThemedText>
-    </Pressable>
-  );
+function statusBadge(user: AdminUser): { label: string; tone: BadgeTone } {
+  if (user.deletedAt) return { label: '탈퇴', tone: 'muted' };
+  if (user.status === 'BANNED') return { label: '영구차단', tone: 'danger' };
+  if (user.status === 'SUSPENDED') return { label: user.suspendedUntil ? `정지 ~${new Date(user.suspendedUntil).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}` : '정지 중', tone: 'danger' };
+  // 목록에선 정상은 회색 — 빨간 제재가 눈에 띄게
+  return { label: '정상', tone: 'muted' };
 }
 
-function CompactRow({ user, onPress }: { user: AdminUser; onPress: () => void }) {
-  const theme = useTheme();
+function StatusBadge({ user }: { user: AdminUser }) {
+  const { label, tone } = statusBadge(user);
+  return <AdminBadge label={label} tone={tone} />;
+}
+
+function RoomCount({ user }: { user: AdminUser }) {
+  const rooms = user.activeRoomCount ?? 0;
+  return <AdminBadge label={`방 ${rooms}`} tone={rooms ? 'ok' : 'muted'} />;
+}
+
+function NameCell({ user, narrow }: { user: AdminUser; narrow?: boolean }) {
+  // 폰 폭은 역할을 이름 밑에(팬이 대부분이라 팬은 생략)
+  const sub = narrow ? [user.role === 'USER' ? null : ROLE_LABELS[user.role], user.nickname ? user.displayName : null].filter(Boolean).join(' · ') : user.nickname ? user.displayName : '';
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.compact, { borderBottomColor: theme.backgroundSelected }]}>
-      <View style={styles.compactTop}>
-        <ThemedText type="smallBold" style={styles.flex} numberOfLines={1}>
-          {user.nickname ?? user.displayName}
-          {user.nickname ? (
-            <ThemedText type="small" themeColor="textTertiary">
-              {`  ${user.displayName}`}
-            </ThemedText>
-          ) : null}
-        </ThemedText>
-        <ThemedText type="small" themeColor={abnormal(user) ? 'danger' : 'textSecondary'}>
-          {statusText(user)}
-        </ThemedText>
-      </View>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-        {roleText(user)} · {user.lastActiveAt ? `접속 ${timeAgo(user.lastActiveAt)}` : '접속 없음'}
+    <View style={styles.flex}>
+      <ThemedText type="smallBold" numberOfLines={1}>
+        {user.nickname ?? user.displayName}
       </ThemedText>
-    </Pressable>
+      {sub ? (
+        <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
+          {sub}
+        </ThemedText>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  flex: { flex: 1 },
+  flex: { flex: 1, minWidth: 0 },
   list: { padding: Spacing.four },
+  listNarrow: { gap: Spacing.two },
   header: { gap: Spacing.two, marginBottom: Spacing.two },
   search: { borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.two },
-  tableHead: { marginTop: Spacing.two },
-  tableRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, borderBottomWidth: StyleSheet.hairlineWidth },
-  compact: { paddingVertical: Spacing.two + 2, gap: 2, borderBottomWidth: StyleSheet.hairlineWidth },
-  compactTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   pager: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.three },
   emptyMessage: { textAlign: 'center', marginTop: Spacing.six },
   loading: { marginTop: Spacing.six },

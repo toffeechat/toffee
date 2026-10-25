@@ -45,3 +45,18 @@ describe('팬 한 명 기준 보기(2026-10-22)', () => {
     expect(result.reportsFiled).toEqual([{ id: 'r-out' }]);
   });
 });
+
+describe('회원 목록 요약 카드(2026-10-25)', () => {
+  it('요약 숫자는 검색어만, 목록·역할 숫자는 고른 카드 조건까지 건다', async () => {
+    const findMany = vi.fn().mockResolvedValue([{ id: 'u1', _count: { subscriptions: 2 } }]);
+    const groupBy = vi.fn().mockResolvedValue([{ role: 'USER', _count: { _all: 3 } }]);
+    const count = vi.fn().mockResolvedValueOnce(1).mockResolvedValueOnce(3).mockResolvedValueOnce(0).mockResolvedValueOnce(10);
+    const service = new AdminUsersService({ user: { findMany, groupBy, count } } as unknown as PrismaService, {} as AuditService);
+    const result = await service.findAll(undefined, undefined, undefined, 1, 'subscribed');
+    expect(findMany.mock.calls[0][0].where).toEqual({ AND: [{}, { subscriptions: { some: { cancelledAt: null } } }] });
+    expect(count.mock.calls[2][0].where).toEqual({ AND: [{}, { status: { in: ['SUSPENDED', 'BANNED'] } }] });
+    expect(result.summary).toEqual({ all: 10, today: 1, subscribed: 3, sanctioned: 0 });
+    expect(result.total).toBe(3);
+    expect(result.items[0]).toEqual({ id: 'u1', activeRoomCount: 2 });
+  });
+});

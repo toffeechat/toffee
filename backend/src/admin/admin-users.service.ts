@@ -5,6 +5,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
+import { startOfTodayInZone } from '../common/utils/stats-time.js';
 
 interface SanctionReason {
   category: ReportCategory;
@@ -44,6 +45,15 @@ const ACTIVITY_PAGE = 50;
 /** 회원 목록 한 쪽 인원 */
 export const USER_PAGE_SIZE = 50;
 
+/** 회원 목록 맨 위 요약 카드(2026-10-25) — 오늘 가입(태국 날짜)·지금 열린 방이 있음·정지/영구차단 */
+export type UserListFilter = 'today' | 'subscribed' | 'sanctioned';
+const filterWhere = (filter: UserListFilter, now = new Date()): Prisma.UserWhereInput =>
+  filter === 'today'
+    ? { createdAt: { gte: startOfTodayInZone(now) } }
+    : filter === 'subscribed'
+      ? { subscriptions: { some: { cancelledAt: null } } }
+      : { status: { in: [UserStatus.SUSPENDED, UserStatus.BANNED] } };
+
 @Injectable()
 export class AdminUsersService {
   constructor(
@@ -52,10 +62,11 @@ export class AdminUsersService {
   ) {}
 
   /**
-   * 회원 목록(2026-10-20: 나눠 불러오기 + 역할별 인원수) — 한 번에 PAGE_SIZE명, page는 1부터. counts는 검색어만 건 역할별 인원(탭 옆 숫자),
-   * total은 지금 역할 탭의 인원(쪽 수 계산용).
+   * 회원 목록(2026-10-20: 나눠 불러오기 + 역할별 인원수, 2026-10-25: 요약 카드) — 한 번에 PAGE_SIZE명, page는 1부터.
+   * counts는 검색어 + 요약 카드 조건을 건 역할별 인원(탭 옆 숫자), summary는 검색어만 건 요약 카드 숫자(전체·오늘 가입·구독 중·제재 중),
+   * total은 지금 조건 전체 인원(쪽 수 계산용). 줄마다 지금 열린 방 개수(activeRoomCount).
    */
-  async findAll(query?: string, role?: Role, sort?: 'recent', page = 1) {
+  async findAll(query?: string, role?: Role, sort?: 'recent', page = 1, filter?: UserListFilter) {
     const search: Prisma.UserWhereInput = query
       ? {
           OR: [
@@ -65,24 +76,36 @@ export class AdminUsersService {
           ],
         }
       : {};
-    const where: Prisma.UserWhereInput = { ...search, ...(role ? { role } : {}) };
-    const [items, byRole] = await Promise.all([
+    const filtered: Prisma.UserWhereInput = filter ? { AND: [search, filterWhere(filter)] } : search;
+    const where: Prisma.UserWhereInput = { ...filtered, ...(role ? { role } : {}) };
+    const now = new Date();
+    const [rows, byRole, today, subscribed, sanctioned] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        select: LIST_SELECT,
+        select: { ...LIST_SELECT, _count: { select: { subscriptions: { where: { cancelledAt: null } } } } },
         // 최근 접속순이면 한 번도 접속 안 한 계정은 맨 뒤
         orderBy: sort === 'recent' ? [{ lastActiveAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }] : { createdAt: 'desc' },
         skip: (Math.max(1, page) - 1) * USER_PAGE_SIZE,
         take: USER_PAGE_SIZE,
       }),
-      this.prisma.user.groupBy({ by: ['role'], where: search, _count: { _all: true } }),
+      this.prisma.user.groupBy({ by: ['role'], where: filtered, _count: { _all: true } }),
+      ...(['today', 'subscribed', 'sanctioned'] as const).map((key) => this.prisma.user.count({ where: { AND: [search, filterWhere(key, now)] } })),
     ]);
     const counts: Record<Role | 'ALL', number> = { ALL: 0, USER: 0, ACTOR: 0, AGENCY_STAFF: 0, ADMIN: 0 };
     for (const row of byRole) {
       counts[row.role] = row._count._all;
       counts.ALL += row._count._all;
     }
-    return { items, counts, total: role ? counts[role] : counts.ALL, page: Math.max(1, page), pageSize: USER_PAGE_SIZE };
+    const all = filter ? await this.prisma.user.count({ where: search }) : counts.ALL;
+    const items = rows.map(({ _count, ...user }) => ({ ...user, activeRoomCount: _count.subscriptions }));
+    return {
+      items,
+      counts,
+      summary: { all, today, subscribed, sanctioned },
+      total: role ? counts[role] : counts.ALL,
+      page: Math.max(1, page),
+      pageSize: USER_PAGE_SIZE,
+    };
   }
 
   /** 회원 한 명(2026-10-20, 회원 상세 화면·신고에서 바로 제재) */

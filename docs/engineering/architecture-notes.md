@@ -1831,6 +1831,16 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `AdminBadge`(tone danger=`danger`, warn=`chart2`, ok=`chart1`, muted=`textSecondary`, 바탕은 그 색 12% 투명), `AdminSummaryCard`. 다른 운영자 화면을 표로 바꿀 때 재사용.
 - 애플 환불 "처리 대기"(RefundRequest.checked* 칸·`/admin/refunds/waiting-count`)는 같은 날 만들었다가 사용자 결정으로 되돌림 — 마이그레이션은 main에 나가기 전이라 파일째 지움.
 
+## 운영자 아티스트·회원 목록 정리 (2026-10-25)
+
+- `GET /admin/users`에 `filter=today|subscribed|sanctioned`(`ListUsersQueryDto.filter`, `UserListFilter`) — today = `createdAt >= startOfTodayInZone()`(태국 0시),
+  subscribed = `subscriptions.some.cancelledAt null`, sanctioned = `status in (SUSPENDED, BANNED)`. 응답에 `summary {all,today,subscribed,sanctioned}`(검색어만 건 count 3개 + all),
+  `counts`(역할별)·`total`은 검색어 + filter 기준. 목록 줄마다 `activeRoomCount`(`_count.subscriptions where cancelledAt null`). `findOne`(LIST_SELECT)은 그대로.
+- 아티스트 목록은 지금처럼 전부 받아 앱에서 거르고 정렬(`SORT_VALUE`) — 상태 판정은 `statusOf`(retiredAt > retireAt > isUpcoming(releaseAt) > 활동 중),
+  스토어 ID 없음 = `!storeProductId && !retiredAt`.
+- `components/admin-table.tsx`에 추가: `AdminStatTiles`(누르면 선택/해제, PC는 한 줄·폰은 두 칸씩 이름·숫자 한 줄), `AdminSortHeader<K>`(sortKey 있는 열만 눌림, `firstDir`),
+  `AdminListRow`(헤더와 같은 columns flex), `AdminCompactRow`(폰 한 줄 카드 left/right). 넓은 화면 판단은 `useWideLayout`.
+
 ## 같은 CP 묶음 갈아타기 (2026-10-22)
 
 - 그룹: `bundles/switch-group.ts` `storeGroupOf(actors)` — COUPLE 방이 정확히 하나 든 묶음만, `roomId` = 그 CP방, `level` 1(CP 멤버 전원 포함)/2. `switchTiming(from,to,platform)` —

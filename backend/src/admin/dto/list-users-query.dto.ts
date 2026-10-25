@@ -23,4 +23,9 @@ export class ListUsersQueryDto {
   @IsInt()
   @Min(1)
   page?: number;
+
+  // 요약 카드(2026-10-25) — 오늘 가입·구독 중·제재 중
+  @IsOptional()
+  @IsIn(['today', 'subscribed', 'sanctioned'])
+  filter?: 'today' | 'subscribed' | 'sanctioned';
 }

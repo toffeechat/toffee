@@ -149,6 +149,8 @@ export interface AdminUser {
   accessLogs?: Pick<AccessLog, 'platform' | 'deviceModel' | 'osVersion' | 'appVersion' | 'createdAt'>[];
   agency: { id: string; name: string } | null;
   actorSelf: { id: string; legalName: string } | null;
+  /** 지금 열린 방 개수(목록에서만, 2026-10-25) */
+  activeRoomCount?: number;
 }
 
 /** 접속 기록 한 줄 — LOGIN(로그인할 때마다) / VISIT(로그인 유지 중 한 시간에 한 번) */
@@ -166,27 +168,32 @@ export interface AccessLog {
 }
 
 export type AdminUserSort = 'recent';
+/** 회원 목록 맨 위 요약 카드(2026-10-25) — 오늘 가입(태국 날짜)·구독 중(열린 방 있음)·제재 중(정지·영구차단) */
+export type AdminUserFilter = 'today' | 'subscribed' | 'sanctioned';
 
 export interface AdminUserPage {
   items: AdminUser[];
   /** 검색어만 건 역할별 인원(탭 옆 숫자) */
   counts: Record<'ALL' | AdminUser['role'], number>;
-  /** 지금 역할 탭의 인원 */
+  /** 검색어만 건 요약 카드 숫자 */
+  summary: { all: number } & Record<AdminUserFilter, number>;
+  /** 지금 조건(역할 탭·요약 카드)의 인원 */
   total: number;
   page: number;
   pageSize: number;
 }
 
 /** 회원 목록(2026-10-20: 한 쪽 50명씩 + 역할별 인원수) */
-export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1) {
+export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1, filter?: AdminUserFilter) {
   return useQuery({
-    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page],
+    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page, filter ?? null],
     queryFn: () => {
       const params = new URLSearchParams();
       if (query) params.set('q', query);
       if (role) params.set('role', role);
       if (sort) params.set('sort', sort);
       if (page > 1) params.set('page', String(page));
+      if (filter) params.set('filter', filter);
       const qs = params.toString();
       return apiClient.get<AdminUserPage>(`/admin/users${qs ? `?${qs}` : ''}`);
     },
