@@ -26,6 +26,21 @@
 
 ---
 
+## 2026-10-25 (이어서) — 메시지 유실·중복 방지 데모 배포, 배포 자동화 비밀값·Railway 종료 대기 설정
+
+- PR #81(중복 방지 키·마무리 종료·재동기화·다시 보내기)을 main에 합쳐 데모 서버·웹 배포(마이그레이션 `20261025120000` 적용).
+- **OTA가 늘 건너뛰어지던 원인**: `scripts/deploy/eas-last-update.mjs`가 `eas update:list --branch`에서 `gitCommitHash`를 찾았는데 지금 eas-cli는
+  그 목록에 커밋을 안 줌 → "마지막 OTA 커밋을 모름" → OTA 끔. 가장 최근 묶음을 `update:view`로 다시 읽게 고침(PR #83, 실패 이유도 로그에).
+  그 뒤 계산해 보니 10-15 OTA(`20ace42`) 이후 네이티브 변경(es·pt-BR iOS 권한 문구, `app.config.ts`)이 있어 워크플로가 "버전업 전 OTA"(`a3a762b`)만
+  preview 채널에 보냄 — 오늘 이후 앱 수정("다시 보내기" 등)은 **새 빌드**가 있어야 폰에 들어감(웹 데모엔 이미 있음).
+- 사용자가 넣은 설정: `EXPO_TOKEN`(Expo 조직 `toffeechat-team` 로봇 `github-deploy` — 첫 토큰은 "GraphQL request failed", 다시 만들어 해결),
+  `PREVIEW_SMOKE_TEST_SECRET` + Railway `SMOKE_TEST_SECRET`, `SENTRY_AUTH_TOKEN`. 확인 실행에서 자동 점검 8개 모두 통과·Sentry 새 오류 없음.
+- **Railway 데모 서버 Teardown: Draining 30초, Overlap 0초**(이전 Draining 0초 — 업데이트 때 바로 강제 종료돼서 마무리 종료 코드가 소용없었음).
+  Overlap은 0으로 둠: 새·옛 서버가 같이 돌면 예약 작업이 두 번 실행될 수 있어서. 운영 서버도 같은 값으로(ops-infra-backlog).
+- **남은 일**: 폰에 오늘 수정을 넣으려면 preview 새 빌드(사용자가 요청할 때), 배포 자동화 A 6~9(Wait for CI·폰 GitHub 앱·업타임·Sentry 알림 — 일부는 다른 세션에서 진행).
+
+---
+
 ## 2026-10-25 — 데모에 금칙어 9개 언어 기본 목록을 처음부터 넣기
 
 - **요청**(사용자): "금칙어 9개국어로 기본적인 건 등록해 줄 수 있니?"

@@ -99,7 +99,7 @@
 | 아티스트 연결 링크 주소·예약 오픈(2026-10-20) | 링크는 `웹주소/link/<토큰>` — 운영자가 연 웹 주소를 씀(앱에서 만들면 데모 주소). 예약 오픈은 공개 시각이 되면 자동으로 열림 | 운영 웹 주소가 정해지면 앱 빌드 환경 변수 `EXPO_PUBLIC_WEB_URL`에 넣기. 예약 오픈하는 아티스트·묶음의 스토어 상품은 공개 시각 전에 심사 통과해 두기. 필요하면 서버 `ACTOR_LINK_TTL_DAYS`(링크 유효 일수, 기본 14) |
 | 애플 환불 알림 누락 대조(2026-10-22) | 애플 환불은 팬이 애플에 직접 요청 → 애플이 환불하면 서버 알림으로 우리 결제 기록이 "환불"로 바뀜. **알림이 안 오면 환불된 돈이 정산에 그대로 남음** — 팬별로 챙기는 기능(운영자 "환불 처리 대기")은 2026-10-22 사용자 결정으로 안 만듦(운영자가 할 수 있는 일이 없고, 이 누락과 "팬이 요청 안 함"을 구분하지도 못해서) | 출시 전(정산 첫 마감 전): 매달 마감 때 App Store Connect 정산 보고서의 환불 건과 우리 장부를 대조하거나, 애플 "환불 내역 조회(Get Refund History)" API로 안내한 결제를 자동 확인하는 작은 작업 — 어느 쪽으로 할지 그때 결정 |
 | 영상 스트리밍 | 당분간 불필요(압축 업로드 + 다운로드 재생) | 영상이 많아지면 Cloudflare Stream 검토 |
-| 배포 때 마무리 시간(2026-10-25) | 서버가 SIGTERM을 받으면 처리 중인 보내기·푸시·예약 작업을 끝낼 때까지 최대 25초 기다렸다가 끔(`SHUTDOWN_GRACE_MS`, 코드 완료) | 👤 운영 Railway(데모도) 배포 설정에서 "SIGTERM 뒤 강제 종료까지 기다리는 시간"(deployment draining)을 **30초 이상**으로 — 호스팅이 그보다 먼저 강제 종료하면 마무리 못 함. 이 세션에선 Railway 문서에 접속이 안 돼 설정 이름·기본값은 확인 못 함(`railway.json`에도 넣을 수 있는지 같이 확인) |
+| 배포 때 마무리 시간(2026-10-25) | 서버가 SIGTERM을 받으면 처리 중인 보내기·푸시·예약 작업을 끝낼 때까지 최대 25초 기다렸다가 끔(`SHUTDOWN_GRACE_MS`, 코드 완료). **데모 서버 설정 완료(2026-10-25)**: Railway → 서버 서비스 → Settings → Deploy → **Teardown 켜짐, Draining 30초, Overlap 0초**(이전엔 Draining 0초라 업데이트 때 바로 강제 종료됐음. Overlap은 0 — 새·옛 서버가 같이 돌면 예약 작업이 두 번 실행될 수 있음) | 👤 운영 Railway 서버를 만들 때도 같은 값(Teardown 켜기, Draining 30, Overlap 0) |
 | 운영 주소(2026-10-21 사용자 확정) | 서버 `api.toffeechat.app`, 소속사·운영자 PC 웹 `app.toffeechat.app` — 앱 `eas.json` production 프로필의 `EXPO_PUBLIC_API_URL`·`EXPO_PUBLIC_WEB_URL`에 넣어 둠 | 운영 Railway·Cloudflare Pages를 만들 때 이 주소로 연결, 서버 `API_PUBLIC_URL`·`WEB_LOGIN_ORIGINS`, 각 로그인 콘솔 돌아올 주소, 랜딩 약관 링크. 순서는 [사업 본부](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) "운영 전환" 탭 2단계 |
 | 운영 기능 설정(2026-10-20) | 코드 완료 — 값만 넣으면 동작 | 👤 운영 서버: `ADMIN_ALERT_EMAIL`(운영자 알림 받을 주소, 저장소에 적지 말 것), 필요하면 `ADMIN_ALERT_KINDS`, `ADMIN_MFA_HOURS`(기본 12). 구글 Play 서비스 계정에 **구독 관리(주문·구독 관리) 권한** — 활동 종료 때 구독 갱신 해지에 필요. 앱 빌드 변수 `EXPO_PUBLIC_IOS_APP_STORE_ID`(앱스토어 등록 후 — 강제 업데이트 화면이 바로 앱 페이지로). 애플 상품 판매 중지가 기존 구독 갱신을 멈추는지 샌드박스로 확인 |
 
@@ -114,15 +114,16 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 | # | 할 일 | 어디서 | 넣을 곳 |
 |---|---|---|---|
 | 1 | **점검용 비밀값 만들기** — 비밀번호 관리자 생성기로 40자 무작위 | — | 아래 2·3에 같은 값 |
-| 2 | Railway 데모 서버 변수 `SMOKE_TEST_SECRET` | Railway → `toffee-demo` → 서버 서비스 → Variables → 저장(자동 재배포) | 서버 |
-| 3 | GitHub Secret `PREVIEW_SMOKE_TEST_SECRET` | 위 값 그대로 | 저장소 Secrets |
-| 4 | **Expo 토큰** — expo.dev → 조직 `toffeechat-team` → Settings → **Robot users** → 새 로봇(역할 Developer) → Create token(만료 없음 또는 1년) | Expo | 저장소 Secret `EXPO_TOKEN` |
-| 5 | **Sentry 읽기 토큰** — sentry.io → 오른쪽 위 내 이름 → User Auth Tokens → Create(권한 `project:read`·`event:read`만). 운영자 홈 "최근 오류"용 `SENTRY_API_TOKEN`과 같은 걸 써도 됨 | Sentry | 저장소 Secret `SENTRY_AUTH_TOKEN` |
+| ✅ 2 | Railway 데모 서버 변수 `SMOKE_TEST_SECRET` | Railway → `toffee-demo` → 서버 서비스 → Variables → 저장(자동 재배포) | 서버 |
+| ✅ 3 | GitHub Secret `PREVIEW_SMOKE_TEST_SECRET` | 위 값 그대로 | 저장소 Secrets |
+| ✅ 4 | **Expo 토큰** — expo.dev → 조직 `toffeechat-team` → Settings → **Robot users** → 새 로봇(역할 Developer) → Create token(만료 없음 또는 1년) | Expo | 저장소 Secret `EXPO_TOKEN` |
+| ✅ 5 | **Sentry 읽기 토큰** — sentry.io → 오른쪽 위 내 이름 → User Auth Tokens → Create(권한 `project:read`·`event:read`만). 운영자 홈 "최근 오류"용 `SENTRY_API_TOKEN`과 같은 걸 써도 됨 | Sentry | 저장소 Secret `SENTRY_AUTH_TOKEN` |
 | 6 | Railway 데모 서버 **Wait for CI** 켜기 — CI(테스트)가 실패한 커밋은 데모에 안 올라가게 | Railway → 서버 서비스 → Settings → Deploy | — |
 | 7 | **폰 GitHub 앱** 설치·로그인 → 설정 → 알림에서 Actions(실패한 실행)·배포 승인 요청 켜기 | App Store | — |
 | 8 | **업타임 모니터** — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
 | 9 | **Sentry 폰 알림** — Sentry → Alerts → Create Alert → Issues → "새 이슈가 생기면" + "1시간에 30번 넘게 생기면" 두 개, 환경 `demo`(나중에 `production` 따로), 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
 
+- **2026-10-25 1~5 완료**: 점검 비밀값(Railway `SMOKE_TEST_SECRET` + GitHub `PREVIEW_SMOKE_TEST_SECRET`, random.org 32자), Expo 로봇 `github-deploy`(조직 `toffeechat-team`, 역할 Developer) 토큰 → `EXPO_TOKEN`, Sentry 개인 토큰(Project·Issue&Event Read) → `SENTRY_AUTH_TOKEN`. 확인 실행: 자동 점검 8개(헬스·DB·로그인·메시지 보내기·받기·답장·웹) 모두 통과, Sentry 새 오류 없음, OTA `a3a762b`(버전업 전 화면 수정)가 robot 이름으로 preview 채널에 나감. 첫 Expo 토큰은 "GraphQL request failed"로 실패 → 다시 만들어 넣으니 됨. 남은 것: 6~9
 - 1~3이 없으면 자동 점검은 헬스·웹만 하고 "로그인·메시지 건너뜀"으로 나옴. 4가 없으면 앱 OTA를 워크플로가 못 해서 PC에서 `npm run ota`를 해야 함. 5가 없으면 "Sentry 확인 안 됨".
 - GitHub Actions 시간: 프리뷰 배포 한 번에 약 10~20분(대부분 서버·웹 빌드를 기다리는 시간). 조직 저장소 무료 월 2,000분 — 하루 2~3번이면 충분. 모자라면 지출 한도 확인.
 - 계정을 새로 만들면(UptimeRobot·Expo 로봇 등) 사업화 장부에 Claude가 적는다.
