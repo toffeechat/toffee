@@ -42,6 +42,7 @@ export function checkEnv(env: Env): EnvCheckResult {
     ['파일 저장소(사진·음성·영상 업로드)', ['STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY']],
     ['푸시 알림', ['FIREBASE_SERVICE_ACCOUNT_JSON']],
     ['오류 수집(Sentry)', ['SENTRY_DSN']],
+    ['운영자 홈 최근 오류·오류 알림(Sentry API)', ['SENTRY_API_TOKEN']],
     ['구글 로그인', ['GOOGLE_CLIENT_ID']],
     ['애플 로그인', ['APPLE_CLIENT_ID']],
     ['라인 로그인', ['LINE_CHANNEL_ID']],

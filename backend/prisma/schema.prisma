@@ -243,6 +243,21 @@ model AccessLog {
   @@index([createdAt])
 }
 
+// 운영자 오류 알림을 보낸 기록(2026-10-25) — Sentry 이슈마다 "새 오류"는 한 번, "1시간에 N번 넘음"은 그 시간대(Sentry 시간 묶음 시작 시각)마다 한 번.
+// 서버가 여러 대거나 다시 켜져도 같은 알림이 두 번 가지 않게 유니크 키로 먼저 자리를 잡은 서버만 보냄. 7일 지나면 지움
+model ErrorAlertSent {
+  id        String   @id @default(uuid())
+  issueId   String
+  // NEW / SPIKE
+  kind      String
+  // NEW는 "first", SPIKE는 시간 묶음 시작 시각(유닉스 초)
+  bucket    String
+  createdAt DateTime @default(now())
+
+  @@unique([issueId, kind, bucket])
+  @@index([createdAt])
+}
+
 // 소속사별 데모 입장 코드(2026-10-19) — 운영자가 소속사 이름·코드·만료일을 등록하고, 코드 하나로 웹 데모의 소속사·아티스트·팬
 // 버튼을 다 씀(데모 계정은 모든 소속사가 같이 씀 — 코드는 "누가 들어왔는지"만 구분). 데모 초기화(demo-seed)로 지우지 않고, 코드는
 // 지우지 않고 중지만(접속 기록이 남아야 해서). User와 연결하지 않음.

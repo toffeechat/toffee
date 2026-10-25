@@ -29,6 +29,7 @@ import { RANK_ICONS, rankItems } from '@/components/console-rank';
 import { AudiencePanels, KpiGrid, RangeCaption, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
 import { StatsRangeControl, formatStatDay } from '@/components/stats-range-picker';
 import { formatBaht } from '@/components/admin-ui';
+import { AdminErrorsCard } from '@/components/admin-errors-card';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { useWideLayout } from '@/components/wide-shell';
@@ -65,7 +66,7 @@ const PLATFORM_NAMES: Record<string, string> = { ios: 'iOS', android: '안드로
 
 /**
  * 운영자 홈 = 통계 대시보드(2026-10-20 사용자 요청: "홈과 통계를 합치고 그래프로 눈에 확 들어오게, 소속사 웹에서 보는 건 운영자도 다").
- * 위에서부터 처리할 일 → 오늘 숫자 → 기간(최근 7·30·90일 또는 직접 고른 날짜, 최대 1년)·아티스트/CP·소속사 필터 →
+ * 위에서부터 처리할 일 → 오늘 숫자 → 최근 오류(Sentry, 2026-10-25) → 기간(최근 7·30·90일 또는 직접 고른 날짜, 최대 1년)·아티스트/CP·소속사 필터 →
  * 서비스 전체(팬·가입·신규 구독 금액) → 아티스트 활동(소속사 대시보드와 같은 카드·추이·순위) → 팬 분포.
  * 순위에서 아티스트를 누르면 소속사와 같은 모니터링 화면(메시지·팬 답장·스토리·통계). 폰에선 맨 아래에 메뉴.
  */
@@ -286,6 +287,9 @@ export default function AdminHomeScreen() {
               </Pressable>
             ))}
           </View>
+
+          {/* 최근 오류(Sentry, 2026-10-25) — 누르면 Sentry 상세 */}
+          <AdminErrorsCard />
 
           {/* 기간·아티스트/CP·소속사 */}
           <View style={statsStyles.filters}>

@@ -25,6 +25,8 @@ const ADMIN_ALERT_SCREENS: Record<string, Href> = {
   INQUIRY: '/admin/inquiries',
   CONTRACT: '/admin/actors',
   RETIRE: '/admin/store-todo',
+  // Sentry 오류(2026-10-25) — 운영자 홈 "최근 오류" 카드에서 Sentry로
+  ERROR: '/admin',
 };
 
 export function usePushNotifications(): void {
