@@ -564,6 +564,31 @@ export interface AdminStatsBreakdown {
   providers: { key: string; count: number }[];
 }
 
+// ── 운영자 홈 "최근 오류"(2026-10-25) — 서버가 Sentry API에서 5분 캐시로 가져옴 ──
+
+export interface AdminErrorIssue {
+  id: string;
+  shortId: string;
+  title: string;
+  culprit: string;
+  level: string;
+  project: string;
+  count: number;
+  count24h: number;
+  userCount: number;
+  firstSeen: string | null;
+  lastSeen: string | null;
+  url: string;
+}
+
+export type AdminErrors =
+  | { status: 'NOT_CONNECTED'; missing: string[] }
+  | { status: 'OK' | 'FAILED'; fetchedAt: string | null; listUrl: string; issues: AdminErrorIssue[]; total24h: number; error?: string };
+
+export function useAdminErrors() {
+  return useQuery({ queryKey: ['admin', 'stats', 'errors'], queryFn: () => apiClient.get<AdminErrors>('/admin/stats/errors'), refetchInterval: 5 * 60_000 });
+}
+
 export function useAdminStatsSummary() {
   return useQuery({
     queryKey: ['admin', 'stats', 'summary'],

@@ -1767,7 +1767,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 스토어: `subscriptions/store-renewal.service.ts`(`@Cron` 매시간, `shouldStopNow(room, expiresAt, now)`), `IapVerificationService.cancelGoogleSubscription`
   (`GOOGLE_PLAY_*` 없으면 false). 애플은 `admin-store.controller.ts`(`GET admin/store/apple-todo`, `PATCH …/sale-stopped` → `Actor/Bundle.storeSaleStoppedAt`).
 - 알림: `notifications/admin-alert.service.ts`(NotificationsModule `@Global`) — `ADMIN_ALERT_EMAIL`(쉼표), `ADMIN_ALERT_KINDS`(REPORT,REFUND,IDLE,INQUIRY,CONTRACT,RETIRE).
-  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`.
+  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`. 2026-10-25 `ERROR` 추가(아래 Sentry, 앱은 `/admin`).
+- 최근 오류(2026-10-25): `admin/sentry-issues.service.ts` — `GET admin/stats/errors`(`ErrorsView`: `NOT_CONNECTED` / `OK` / `FAILED`+직전 목록).
+  `SENTRY_API_TOKEN`(개인 토큰, event:read·project:read·org:read), `SENTRY_ORG`(기본 toffeechat), `SENTRY_PROJECTS`(기본 toffee-backend,toffee-app),
+  `SENTRY_API_URL`(EU면 de.sentry.io), `SENTRY_ISSUES_ENVIRONMENT`. 프로젝트별 `/api/0/projects/{org}/{p}/issues/?query=is:unresolved&statsPeriod=24h&sort=date&limit=25`,
+  메모리 캐시 5분(실패 1분, 동시 요청은 한 번). `@Cron(EVERY_5_MINUTES) watch()` → `alertCandidates()`(`sentry-issues.ts`, 순수 함수 — 새 오류 = firstSeen 30분 안,
+  SPIKE = stats['24h'] 마지막 두 시간 묶음 ≥ `ERROR_ALERT_HOURLY_THRESHOLD`(기본 30, 0 끔)) → `ErrorAlertSent`(@@unique issueId·kind·bucket) create 성공한 것만 notify,
+  P2002면 건너뜀(여러 대·재시작 중복 방지), 3건 넘으면 한 통, 7일 지난 기록 삭제. 앱 `components/admin-errors-card.tsx`, `useAdminErrors`(5분 refetch).
 - 점검·최소 버전: `app-settings/`(global, 15초 캐시) — `AppSetting(id 'app')`, `GET /app-config`(@Public), `GET/PATCH admin/app-settings`(OWNER).
   `MaintenanceGuard`는 APP_GUARD 순서상 RolesGuard 다음(req.user가 있어야 운영자 예외). 앱 `components/app-gate.tsx`, api-client `onMaintenance`.
 - 공지 푸시: `PushService.sendToEveryone(compose, data)` — `reachableUser`/`deliver`로 나눔, 기기를 id 커서로 1,000개씩. `Notice.pushedAt`을 updateMany로 선점.

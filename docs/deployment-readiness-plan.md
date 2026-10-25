@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-25 (이어서) — 운영자 홈 "최근 오류"(Sentry) + 오류 알림
+
+- 사용자 결정: STATUS 아이디어 보관함의 "운영자 화면에서 에러 내역 보기"(10-14엔 2차 후보)를 1차로. 지금은 Sentry 화면에 따로 들어가야만 오류를 알 수 있어서, 1인 운영에서 놓치기 쉬움.
+- 서버(`SentryIssuesService`): Sentry 이슈 API(`/api/0/projects/{org}/{project}/issues/?query=is:unresolved&statsPeriod=24h&sort=date`)를 프로젝트(`toffee-backend`·`toffee-app`)마다 불러 5분 캐시 → `GET /admin/stats/errors`. 토큰(`SENTRY_API_TOKEN`)이 없으면 `NOT_CONNECTED`, 실패하면 `FAILED` + 바로 앞 목록(실패는 1분만 캐시).
+- 알림: 5분마다 새 오류(처음 발생이 30분 안)·1시간 묶음 30번 이상(`ERROR_ALERT_HOURLY_THRESHOLD`, 0이면 끔)을 기존 운영자 알림(`ADMIN_ALERT_KINDS`에 `ERROR`)으로. 같은 알림이 두 번 가지 않게 새 테이블 `ErrorAlertSent`(이슈·종류·시간 묶음 유니크)에 먼저 자리를 잡은 서버만 보냄 — 서버 재시작·여러 대에서도 한 번. 4건 넘으면 한 통으로. 기록은 7일 뒤 삭제.
+- 앱: 운영자 홈 "오늘" 숫자 아래 "최근 오류" 카드(5건, 제목·위치·전체/24시간 횟수·사용자 수·마지막 발생, 누르면 Sentry 상세, "Sentry에서 전체 보기"). 오류 알림 푸시를 누르면 운영자 홈.
+- 정책(잠정, 바꾸기 쉬운 설정값): 기준 30번/시간, 새 오류는 횟수 상관없이 한 번, 카드엔 데모·운영 환경 모두(`SENTRY_ISSUES_ENVIRONMENT`로 좁힘).
+- 문서: 비개발자용 설정 안내 `docs/product/error-monitoring-guide.md`(서버 DSN·개인 토큰·Sentry 자체 알림 규칙·UptimeRobot 가동 감시), ops-infra-backlog 👤 줄.
+- 남은 일: 👤 Sentry 개인 토큰·서버 DSN을 Railway에 넣기, Sentry 자체 알림 규칙·가동 감시 가입. 토피 알림은 서버가 살아 있어야 가므로 서버가 죽는 경우는 가동 감시가 맡음.
+
 ## 2026-10-25 — 운영자 홈 오늘 숫자 카드 → 목록
 
 - 사용자 요청(1차 확정): 오늘 가입·접속·구독 시작·메시지 카드를 누르면 해당 목록. 예) "오늘 가입 54" → 회원 관리에서 오늘(태국) 가입한 54명.
