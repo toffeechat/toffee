@@ -1855,3 +1855,16 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   애플은 같은 그룹이라 그냥 `requestPurchase`. 화면 `subscribe/bundle/[bundleId].tsx`, 훅 `useBundleSwitchInfo`·`useSwitchBundle`.
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
+
+## 아티스트 상태메시지 (2026-10-25)
+
+- `Actor.statusMessage String?`(마이그레이션 `20261025090000_actor_status_message`). COUPLE 행은 안 씀 — 카드는 `coupleMembers.member.statusMessage`.
+  `ActorsService` LIST_SELECT·멤버 select, `ADMIN_ACTOR_SELECT`에 포함(공개 `GET /actors/:id`에도 나감 — 닉네임·대화방 사진과 같은 수준).
+- 검사 공용화: `common/status-message/status-message.ts` `cleanStatusMessage(raw, moderation)`(NFC·공백 정리, 60자 = `STATUS_MESSAGE_MAX_LENGTH`, `\p{Cc}\p{Cf}`, 금칙어 →
+  `STATUS_MESSAGE_*` 오류, 빈 값 null). `AuthService.updateProfile`(팬)도 이걸 씀.
+- `PATCH /actors/:id/status-message`(`@Roles(ACTOR)`) → `ActorsService.updateStatusMessage` — `ensureIsActorSelf` 반환값(SOLO면 그 id, COUPLE이면 내 멤버 id,
+  운영자의 COUPLE이면 null → 403)에 저장, 응답은 요청한 방 `findOne`. 운영자: `PATCH /admin/actors/:id/clear-status-message`(OWNER 아니어도 됨 — 팬 `clear-profile`과 같음),
+  `AdminAction` `ACTOR_STATUS_CLEAR` detail `{statusMessage}`.
+- 앱: `studio/[actorId]/profile.tsx` `StatusMessageForm`(역할 ACTOR일 때만, CP방은 `useMyActors()`의 SOLO id와 겹치는 멤버), `chat-profile/[actorId].tsx` 카드·멤버 줄,
+  `admin/actors/[id].tsx` `StatusMessageSection`(SOLO만, CP는 멤버 줄에 표시), `admin/actions.tsx` detail에 `statusMessage`.
+

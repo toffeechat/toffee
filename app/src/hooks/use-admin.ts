@@ -280,6 +280,8 @@ export interface AdminActor {
   officialProfileImageUrl: string | null;
   chatDisplayName: string;
   chatProfileImageUrl: string | null;
+  /** 상태메시지(2026-10-25) — 아티스트 본인이 씀, 운영자는 지우기만. 커플방은 늘 null(멤버별) */
+  statusMessage: string | null;
   monthlyPriceCents: number;
   storeProductId: string | null;
   verified: boolean;
@@ -386,6 +388,11 @@ export function useSetActorRetired(id: string) {
 /** 활동 종료 예정(2026-10-20) — ISO 또는 null(예정 취소). 정하는 즉시 새 구독이 막히고 그 시각에 자동 종료 */
 export function useSetActorRetireAt(id: string) {
   return useActorMutation((retireAt: string | null) => apiClient.patch<AdminActor>(`/admin/actors/${id}/retire-at`, { retireAt }));
+}
+
+/** 아티스트 상태메시지 지우기(2026-10-25) — 작업 기록에 지운 문구가 남음 */
+export function useClearActorStatusMessage(id: string) {
+  return useActorMutation(() => apiClient.patch<AdminActor>(`/admin/actors/${id}/clear-status-message`));
 }
 
 export function useSetActorContractEnd(id: string) {

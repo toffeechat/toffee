@@ -470,6 +470,7 @@ const USER_ACTIONS: Record<string, { label: string; tone: BadgeTone }> = {
   USER_BAN: { label: '영구차단', tone: 'danger' },
   USER_REACTIVATE: { label: '제재 해제', tone: 'ok' },
   USER_PROFILE_CLEAR: { label: '프로필 지움', tone: 'warn' },
+  ACTOR_STATUS_CLEAR: { label: '상태메시지 지움', tone: 'warn' },
   USER_ROLE: { label: '역할 변경', tone: 'muted' },
   USER_EXPORT: { label: '개인정보 파일 받음', tone: 'muted' },
 };

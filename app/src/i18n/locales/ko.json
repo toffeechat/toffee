@@ -305,6 +305,12 @@
     "save": "저장",
     "saved": "저장했어요.",
     "saveFailed": "저장하지 못했어요. 다시 시도해 주세요.",
+    "statusMessage": "상태메시지",
+    "statusMessageHint": "토피룸 프로필 카드에서 이름 아래 한 줄로 보여요. 비워 두면 보이지 않아요.",
+    "statusMessageCoupleHint": "내 상태메시지예요. 내 토피룸과 CP 토피룸 프로필 카드에 같이 보여요.",
+    "statusMessagePlaceholder": "팬들에게 한마디 남겨 보세요",
+    "statusMessageClear": "지우기",
+    "statusMessageCleared": "지웠어요.",
     "officialNote": "아티스트 찾기 화면의 공식 사진과 공식 이름({{name}})은 운영자가 관리해요. 바꾸려면 운영자에게 요청해 주세요."
   },
   "termsConsent": {

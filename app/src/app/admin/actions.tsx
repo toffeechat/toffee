@@ -11,6 +11,7 @@ const ACTION_LABELS: Record<string, string> = {
   USER_BAN: '영구차단',
   USER_REACTIVATE: '제재 해제',
   USER_PROFILE_CLEAR: '팬 프로필 지움',
+  ACTOR_STATUS_CLEAR: '아티스트 상태메시지 지움',
   USER_ROLE: '역할 변경',
   REPORT_RESOLVE: '신고 승인',
   REPORT_DISMISS: '신고 기각',
@@ -59,6 +60,8 @@ function detailText(entry: AdminActionEntry): string {
   if (typeof d.added === 'number') parts.push(`${d.added}개 추가`);
   // 활동 종료 예정(2026-10-20) — null이면 예정 취소
   if (entry.action === 'ACTOR_RETIRE_SCHEDULE') parts.push(typeof d.retireAt === 'string' ? `${new Date(d.retireAt).toLocaleString('ko-KR', { timeZone: 'Asia/Bangkok' })}(태국) 종료 예정` : '예정 취소');
+  // 지운 상태메시지(팬 프로필·아티스트, 2026-10-25)
+  if (typeof d.statusMessage === 'string') parts.push(`지운 상태메시지 "${d.statusMessage}"`);
   if (typeof d.note === 'string' && d.note) parts.push(`메모 "${d.note}"`);
   if (typeof d.count === 'number') parts.push(`${d.count}명`);
   if (typeof d.releaseAt === 'string') parts.push(`공개 ${new Date(d.releaseAt).toLocaleString('ko-KR', { timeZone: 'Asia/Bangkok' })}(태국)`);
