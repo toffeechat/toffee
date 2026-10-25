@@ -5,6 +5,9 @@
 
 - [`architecture-notes.md`](./architecture-notes.md) — 젤리 대비 아키텍처 갭, 진행 중인
   스키마/권한 설계, 알려진 기술 부채
+- [`deploy-runbook.md`](./deploy-runbook.md) — **배포 런북**(프리뷰·프로덕션 워크플로, 무엇을 올릴지 판단, 마이그레이션 규칙,
+  되돌리기, 운영 DB 데이터 수정, 자동 점검, 비밀값 표, 프로덕션 처음 돌리기 체크리스트)
+- [`device-build.md`](./device-build.md) — 실기기 테스트 빌드·OTA
 
 세션별 작업 이력(무엇을 왜 고쳤는지 날짜순 로그)은 계속
 [`docs/deployment-readiness-plan.md`](../deployment-readiness-plan.md)에 남긴다 — 이 폴더는

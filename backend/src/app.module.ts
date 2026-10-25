@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { SmokeModule } from './smoke/smoke.module.js';
 import { AppSettingsModule } from './app-settings/app-settings.module.js';
 import { SupportModule } from './support/support.module.js';
 import { PrivacyModule } from './privacy/privacy.module.js';
@@ -66,6 +67,7 @@ import { ReleasesModule } from './releases/releases.module.js';
     ReleasesModule,
     LegalModule,
     DemoModule,
+    SmokeModule,
     NoticesModule,
     ModerationModule,
     AdminModule,

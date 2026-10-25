@@ -1,0 +1,149 @@
+name: Deploy preview
+
+# 프리뷰(데모) 배포(2026-10-25, docs/engineering/deploy-runbook.md) — 서버 api-demo.toffeechat.app(Railway toffee-demo) + 웹
+# demo.toffeechat.app(Cloudflare Pages) + 앱 OTA preview 채널. 소속사 시연용 데모를 겸함.
+#
+# 서버·웹은 Railway·Pages가 main을 자동으로 배포함(GitHub 연결) — 이 워크플로는 ① 바뀐 부분을 계산하고 ② 그 커밋이 정말 올라갔는지
+# 기다려 확인하고 ③ 앱 OTA(필요하면 버전업 전 OTA 먼저) ④ 자동 점검(헬스·로그인·메시지) ⑤ Sentry 새 오류 확인 ⑥ 통과한 커밋에
+# "프리뷰 확인" 표시(deploy/preview 상태 + deployed/preview 태그)를 남김. 프로덕션 워크플로는 이 표시가 있는 커밋만 받음.
+# Claude(.claude/skills/deploy)가 main 반영 뒤 실행하고, 폰의 GitHub 앱에서 직접 실행해도 됨(Actions → Deploy preview → Run workflow).
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 올릴 커밋·브랜치(보통 main — 서버·웹은 main만 자동 배포됨)
+        default: main
+        required: true
+      ota_message:
+        description: OTA 설명(비우면 커밋 제목으로)
+        required: false
+      build:
+        description: 새 앱 빌드(네이티브 변경 때만 — 내부 배포라 심사 없음)
+        type: choice
+        options: [none, ios, android, all]
+        default: none
+      skip_ota:
+        description: 앱 OTA 건너뛰기
+        type: boolean
+        default: false
+      override_window:
+        description: 배포를 피할 시간(데모 초기화·소속사 미팅 직전)이어도 진행
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # deployed/preview 태그
+  statuses: write # deploy/preview 확인 표시
+
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment: preview
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SMOKE_TEST_SECRET: ${{ secrets.PREVIEW_SMOKE_TEST_SECRET }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: 올릴 커밋
+        id: target
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "### 프리뷰 배포 — \`$(git rev-parse --short HEAD)\` $(git log -1 --format=%s)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 배포를 피할 시간인지
+        run: node scripts/deploy/check-window.mjs --env preview ${{ inputs.override_window && '--override' || '' }}
+
+      # 네이티브 패키지 판단(plan)·OTA에 필요 — EXPO_TOKEN이 없으면 OTA를 못 하니 설치도 건너뜀
+      - name: 앱 의존성
+        if: env.EXPO_TOKEN != ''
+        working-directory: app
+        run: npm ci
+
+      - name: 마지막 OTA 커밋(EAS)
+        id: last_ota
+        if: env.EXPO_TOKEN != ''
+        run: node scripts/deploy/eas-last-update.mjs --channel preview
+
+      - name: 배포 계획(바뀐 부분)
+        id: plan
+        run: node scripts/deploy/plan.mjs --env preview --target ${{ steps.target.outputs.sha }} --ota-base "${{ steps.last_ota.outputs.commit }}" --json plan.json
+
+      - name: 서버 배포 확인(Railway 자동 배포)
+        if: steps.plan.outputs.server == 'true'
+        run: node scripts/deploy/wait-deployed.mjs --env preview --part server --target ${{ steps.target.outputs.sha }} --timeout-min 25
+
+      - name: 웹 배포 확인(Cloudflare Pages 자동 빌드)
+        if: steps.plan.outputs.web == 'true'
+        run: node scripts/deploy/wait-deployed.mjs --env preview --part web --target ${{ steps.target.outputs.sha }} --timeout-min 20
+
+      # 버전업·네이티브 변경 전에 쌓인 화면 수정은 지금 깔린 버전에 먼저(젤리 2026-08-26 사고, device-build.md 7번)
+      - name: 버전업 전 OTA 먼저
+        if: steps.plan.outputs.ota_before_native != '' && env.EXPO_TOKEN != '' && !inputs.skip_ota
+        run: |
+          git worktree add ../pre-native ${{ steps.plan.outputs.ota_before_native }}
+          cd ../pre-native/app
+          npm ci
+          node scripts/ota.mjs preview "버전업 전 화면 수정 모음 ($(git rev-parse --short HEAD))"
+
+      - name: 앱 OTA(preview 채널)
+        if: steps.plan.outputs.ota == 'true' && env.EXPO_TOKEN != '' && !inputs.skip_ota
+        working-directory: app
+        env:
+          OTA_MESSAGE: ${{ inputs.ota_message }}
+        run: node scripts/ota.mjs preview "${OTA_MESSAGE:-$(git log -1 --format=%s)}"
+
+      - name: OTA를 못 한 이유
+        if: steps.plan.outputs.ota == 'true' && env.EXPO_TOKEN == ''
+        run: echo "> ⚠️ 앱 OTA가 필요하지만 GitHub Secrets에 \`EXPO_TOKEN\`이 없어 건너뜀 — PC에서 \`cd app && npm run ota -- preview \"…\"\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 새 앱 빌드(내부 배포)
+        if: inputs.build != 'none' && env.EXPO_TOKEN != ''
+        working-directory: app
+        run: |
+          [ -d node_modules ] || npm ci
+          npx --yes eas-cli@latest build --profile preview --platform ${{ inputs.build }} --non-interactive --no-wait
+          echo "- 새 빌드 요청함(${{ inputs.build }}) — 끝나면 expo.dev에서 설치 링크" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 자동 점검(헬스·로그인·메시지)
+        id: smoke
+        run: node scripts/deploy/smoke.mjs --env preview
+
+      - name: Sentry 새 오류
+        if: always() && steps.plan.outcome == 'success'
+        run: node scripts/deploy/sentry-check.mjs --env preview --minutes 30
+
+      - name: 프리뷰 확인 표시(프로덕션은 이 커밋만 받음)
+        run: |
+          SHA=${{ steps.target.outputs.sha }}
+          gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=success -f context=deploy/preview \
+            -f description="프리뷰 배포·자동 점검 통과" -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > /dev/null
+          git tag -f deployed/preview "$SHA"
+          git push -f origin refs/tags/deployed/preview
+          echo "- ✅ \`deployed/preview\` = \`${SHA:0:7}\` — 이 커밋은 프로덕션에 올릴 수 있음" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 실패하면 — 되돌리기 안내
+        if: failure()
+        run: |
+          {
+            echo ""
+            echo "### ⛔ 프리뷰 배포·점검 실패"
+            echo "- 서버·웹은 main 자동 배포라 **되돌리기 = 문제 커밋을 main에서 revert** → 이 워크플로 다시 실행(Claude에게 \"되돌려\")."
+            echo "- 급하면 Railway \`toffee-demo\` → Deployments에서 직전 배포의 Redeploy, Cloudflare Pages → 직전 배포의 Rollback."
+            echo "- OTA를 보냈으면: \`eas update:republish\`로 직전 업데이트 다시 보내기(runbook 8번)."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -53,6 +53,11 @@ export class AuthService {
     return { accessToken };
   }
 
+  // 배포 후 자동 점검(SmokeService, 2026-10-25)용 짧은 토큰 — 워크플로 로그에 남아도 금방 못 쓰게
+  issueShortAccessToken(user: { id: string; role: Role }, expiresIn: `${number}m`): Promise<string> {
+    return this.jwtService.signAsync({ sub: user.id, role: user.role }, { expiresIn });
+  }
+
   // Google/Apple/Naver/Kakao/LINE 자격증명 없이 앱을 끝까지 테스트하기 위한 개발용 로그인.
   // DevOnlyGuard가 프로덕션에서 라우트 자체를 404로 숨김.
   // 공개된 데모 서버(2026-10-01)에선 DEV_LOGIN_CODE(입장 코드)를 맞혀야 함 — 주소만 알면 아무 계정(운영자 포함)으로 들어오는 걸 막으려고.
