@@ -864,7 +864,11 @@
     "fanBody": "所有人都会看到“此消息已撤回”。已发送的回复次数不会恢复。",
     "failed": "撤回失败，请重试。",
     "placeholder": "此消息已撤回",
-    "mine": "你撤回了一条消息"
+    "mine": "你撤回了一条消息",
+    "adminBody": "将从粉丝画面中不留痕迹地消失，艺人和经纪公司画面会显示“因运营政策隐藏的消息”。原因会保留在经纪公司记录页面和运营者操作记录中。",
+    "reasonLabel": "撤回原因（必填）",
+    "reasonPlaceholder": "例如：照片暴露了拍摄地点",
+    "reasonShown": "原因：{{reason}}"
   },
   "chatBackground": {
     "title": "Toffee Room 背景",

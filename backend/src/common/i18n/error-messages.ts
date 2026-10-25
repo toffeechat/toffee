@@ -409,6 +409,19 @@ export const ERROR_MESSAGES = {
     'pt-BR': 'Outro artista já usa este nome.',
   },
 
+  // 운영자·소속사가 아티스트 메시지를 지울 때(2026-10-25)
+  MESSAGE_DELETE_REASON_REQUIRED: {
+    ko: '회수 사유를 적어 주세요.',
+    en: 'Please enter a reason for removing this message.',
+    th: 'โปรดระบุเหตุผลในการเรียกคืนข้อความนี้',
+    ja: '取り消しの理由を入力してください。',
+    'zh-Hans': '请填写撤回原因。',
+    'zh-Hant': '請填寫收回原因。',
+    vi: 'Vui lòng nhập lý do thu hồi tin nhắn.',
+    es: 'Escribe el motivo para retirar este mensaje.',
+    'pt-BR': 'Informe o motivo para remover esta mensagem.',
+  },
+
   // ── 권한·구독 ──
   ACTOR_SELF_ONLY: {
     ko: '이 아티스트 본인 계정만 할 수 있어요.',

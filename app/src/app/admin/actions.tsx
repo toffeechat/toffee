@@ -47,6 +47,8 @@ const ACTION_LABELS: Record<string, string> = {
   ADMIN_LEVEL: '운영자 권한 단계 변경',
   ADMIN_MFA: '2단계 인증 켜기·끄기·초기화',
   USER_EXPORT: '개인정보 파일 받기',
+  // 신고 처리가 아닌 삭제로 아티스트 메시지를 직접 지움(2026-10-25)
+  MESSAGE_DELETE: '아티스트 메시지 회수',
 };
 
 function detailText(entry: AdminActionEntry): string {
@@ -54,6 +56,12 @@ function detailText(entry: AdminActionEntry): string {
   const parts: string[] = [];
   if (typeof d.category === 'string') parts.push(`사유 ${d.category}`);
   if (typeof d.title === 'string') parts.push(`"${d.title}"`);
+  // 메시지 회수(2026-10-25) — 사유와 내용 앞부분
+  if (entry.action === 'MESSAGE_DELETE') {
+    if (typeof d.reason === 'string') parts.push(`사유 "${d.reason}"`);
+    if (typeof d.body === 'string') parts.push(`내용 "${d.body}"`);
+    else if (typeof d.mediaType === 'string' && d.mediaType !== 'TEXT') parts.push(`[${d.mediaType}]`);
+  }
   // 금칙어(2026-10-20)
   if (typeof d.term === 'string') parts.push(`"${d.term}"${typeof d.language === 'string' ? ` (${d.language})` : ''}`);
   if (typeof d.added === 'number') parts.push(`${d.added}개 추가`);

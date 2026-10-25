@@ -864,7 +864,11 @@
     "fanBody": "Everyone will see \"This message was unsent\" instead. Your reply count is not restored.",
     "failed": "Couldn't unsend. Please try again.",
     "placeholder": "This message was unsent",
-    "mine": "You unsent this message"
+    "mine": "You unsent this message",
+    "adminBody": "It disappears from fans' screens without a trace, and the artist and agency will see \"Hidden under our policy\". The reason is kept in the agency's records and the admin log.",
+    "reasonLabel": "Reason (required)",
+    "reasonPlaceholder": "e.g. Photo reveals the filming location",
+    "reasonShown": "Reason: {{reason}}"
   },
   "chatBackground": {
     "title": "Toffee Room background",

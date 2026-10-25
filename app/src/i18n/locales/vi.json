@@ -864,7 +864,11 @@
     "fanBody": "Mọi người sẽ thấy \"Tin nhắn đã được thu hồi\". Số lượt trả lời đã dùng không được hoàn lại.",
     "failed": "Không thu hồi được. Vui lòng thử lại.",
     "placeholder": "Tin nhắn đã được thu hồi",
-    "mine": "Bạn đã thu hồi tin nhắn này"
+    "mine": "Bạn đã thu hồi tin nhắn này",
+    "adminBody": "Tin nhắn sẽ biến mất khỏi màn hình fan mà không để lại dấu vết, nghệ sĩ và công ty quản lý sẽ thấy \"Tin nhắn bị ẩn theo chính sách\". Lý do được lưu trong trang ghi chép của công ty quản lý và nhật ký quản trị.",
+    "reasonLabel": "Lý do thu hồi (bắt buộc)",
+    "reasonPlaceholder": "Ví dụ: Ảnh để lộ địa điểm quay",
+    "reasonShown": "Lý do: {{reason}}"
   },
   "chatBackground": {
     "title": "Hình nền Toffee Room",

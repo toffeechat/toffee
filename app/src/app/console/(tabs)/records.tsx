@@ -263,9 +263,17 @@ function DeletedCard({ item }: { item: AgencyRecords['deleted'][number] }) {
       icon={Trash2}
       tone="muted"
       room={item.room}
-      title={t(item.by === 'ADMIN' ? 'records.hiddenByAdmin' : 'records.deletedBy', { who: who(item.by, item.byMe) })}
+      // 소속사가 회수했으면 어느 직원인지 이름까지(2026-10-25, 내가 했으면 "나")
+      title={t(item.by === 'ADMIN' ? 'records.hiddenByAdmin' : 'records.deletedBy', {
+        who: item.byName && !item.byMe ? `${who(item.by, item.byMe)} · ${item.byName}` : who(item.by, item.byMe),
+      })}
       meta={t('records.deletedMeta', { sent: date(item.createdAt), deleted: date(item.deletedAt) })}>
       <Quote text={[item.mediaType !== 'TEXT' ? `[${t(`console.media.${item.mediaType}`)}]` : null, body].filter(Boolean).join(' ') || '-'} faded />
+      {item.reason ? (
+        <ThemedText type="caption" themeColor="textSecondary">
+          {t('retract.reasonShown', { reason: item.reason })}
+        </ThemedText>
+      ) : null}
     </RecordCard>
   );
 }

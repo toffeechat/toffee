@@ -864,7 +864,11 @@
     "fanBody": "Todos verão \"Esta mensagem foi retirada\" no lugar. Seu número de respostas não é restaurado.",
     "failed": "Não foi possível retirar. Tente novamente.",
     "placeholder": "Esta mensagem foi retirada",
-    "mine": "Você retirou esta mensagem"
+    "mine": "Você retirou esta mensagem",
+    "adminBody": "Ela some das telas dos fãs sem deixar rastro, e o artista e a agência verão \"Ocultada pela nossa política\". O motivo fica nos registros da agência e no registro de administração.",
+    "reasonLabel": "Motivo (obrigatório)",
+    "reasonPlaceholder": "ex.: A foto revela o local de gravação",
+    "reasonShown": "Motivo: {{reason}}"
   },
   "chatBackground": {
     "title": "Fundo da Toffee Room",

@@ -864,7 +864,11 @@
     "fanBody": "所有人都會看到「此訊息已收回」。已傳送的回覆次數不會恢復。",
     "failed": "收回失敗，請再試一次。",
     "placeholder": "此訊息已收回",
-    "mine": "你收回了一則訊息"
+    "mine": "你收回了一則訊息",
+    "adminBody": "將從粉絲畫面中不留痕跡地消失，藝人與經紀公司畫面會顯示「因營運政策隱藏的訊息」。原因會保留在經紀公司紀錄頁面與營運者操作紀錄中。",
+    "reasonLabel": "收回原因（必填）",
+    "reasonPlaceholder": "例如：照片洩露了拍攝地點",
+    "reasonShown": "原因：{{reason}}"
   },
   "chatBackground": {
     "title": "Toffee Room 背景",

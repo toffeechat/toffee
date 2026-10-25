@@ -13,6 +13,7 @@ import type { SendReplyDto } from './dto/send-reply.dto.js';
 import type { SendBroadcastDto } from './dto/send-broadcast.dto.js';
 import { appError } from '../common/i18n/app-error.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
+import { AuditService } from '../audit/audit.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 
 const NAME_PLACEHOLDER = '{{name}}';
@@ -146,6 +147,7 @@ export class MessagesService {
     private readonly mediaService: MediaService,
     private readonly config: ConfigService,
     private readonly realtime: RealtimeService,
+    private readonly audit: AuditService,
   ) {}
 
   // 스타 메시지 하나당 팬 1명이 보낼 수 있는 답장 수(버블 방식, 잠정 3 — STATUS.md 출시 전 확정 정책). 설정값으로 조정
@@ -582,8 +584,9 @@ export class MessagesService {
     const previewIds = new Set(previewTargets.map((m) => m.id));
     return this.withSenders(
       await this.mediaService.withReadUrls(
-        messages.map(({ _count, ...message }) => ({
-          ...withQuote(message),
+        // 지운 메시지의 사진·영상은 보관 기간 동안 운영자·소속사 모니터링에서만 흐리게 보임(2026-10-25 — 아티스트 화면엔 자리만), 지운 운영자 id는 안 내려줌
+        messages.map(({ _count, deletedByAdminId: _admin, ...message }) => ({
+          ...withQuote(selfActor && message.deletedAt ? { ...message, mediaUrl: null, mediaKey: null, thumbnailKey: null, thumbhash: null } : message),
           replyCount: _count.replies,
           mine: !!selfActor && message.senderActorId === selfActor.id,
           ...(previewIds.has(message.id) ? { recentReplies: previews.get(message.id) ?? [] } : {}),
@@ -626,37 +629,46 @@ export class MessagesService {
 
   /**
    * 스타의 보낸 메시지 삭제(보내기 취소) — 팬 화면에서 사라지고, 소속사 모니터링엔 "배우가 삭제한 메시지"로 남음.
-   * 이미 보낸 푸시 알림은 되돌릴 수 없음. 첨부 파일은 신고가 걸려 있지 않으면 지움(신고 증거는 남김).
+   * 이미 보낸 푸시 알림은 되돌릴 수 없음. 첨부 파일은 바로 지우지 않고 보관(2026-10-25 — 지운 뒤 문제가 돼도 확인할 수 있게):
+   * 신고가 걸린 건 계속, 아니면 DELETED_MEDIA_RETENTION_DAYS 뒤 새벽 정리(MessageRetentionService.purgeDeletedMedia).
+   * 운영자·소속사가 지울 땐 사유 필수, 운영자는 deletedByAdmin + 작업 기록(MESSAGE_DELETE) — 예전엔 운영자도 ensureIsActorSelf를 통과해
+   * "아티스트가 회수"로 남고 기록이 없었음
    */
-  async deleteBroadcast(requesterId: string, actorId: string, messageId: string) {
+  async deleteBroadcast(requesterId: string, actorId: string, messageId: string, reason?: string) {
     // 팬은 자기 답장만 회수(2026-10-14) — 같은 주소(DELETE …/messages/:id)를 씀
     const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true } });
     if (requester.role === Role.USER) return this.retractReply(requesterId, actorId, messageId);
     // 소속사 직원도 자기 소속 아티스트 메시지를 대신 지울 수 있음(2026-10-12 사용자 결정 — 아티스트 사고 시 급히 내리기).
     // 팬 화면에선 아티스트가 지운 것과 똑같이 사라지고, 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
     const byStaff = requester.role === Role.AGENCY_STAFF;
+    const byAdmin = requester.role === Role.ADMIN;
+    const deletedReason = reason?.trim() || null;
+    if ((byStaff || byAdmin) && !deletedReason) throw new BadRequestException(appError('MESSAGE_DELETE_REASON_REQUIRED'));
     if (byStaff) await ensureCanViewActor(this.prisma, requesterId, actorId);
-    else await ensureIsActorSelf(this.prisma, requesterId, actorId);
+    else if (!byAdmin) await ensureIsActorSelf(this.prisma, requesterId, actorId);
     const message = await this.prisma.message.findFirst({
       where: { id: messageId, actorId, senderType: MessageSenderType.ARTIST },
-      select: { id: true, deletedAt: true, mediaKey: true, thumbnailKey: true, _count: { select: { reports: true } } },
+      select: { id: true, deletedAt: true, body: true, mediaType: true },
     });
     if (!message) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
     if (message.deletedAt) return;
-    const keepFile = message._count.reports > 0;
     await this.prisma.message.update({
       where: { id: messageId },
       data: {
         deletedAt: new Date(),
-        ...(byStaff ? { deletedByStaffId: requesterId } : {}),
-        ...(keepFile ? {} : { mediaKey: null, thumbnailKey: null }),
+        ...(byStaff ? { deletedByStaffId: requesterId, deletedReason } : {}),
+        ...(byAdmin ? { deletedByAdmin: true, deletedByAdminId: requesterId, deletedReason } : {}),
       },
     });
-    void this.realtime.publish({ kind: 'message-removed', actorId });
-    if (!keepFile) {
-      await this.mediaService.deleteQuietly(message.mediaKey);
-      await this.mediaService.deleteQuietly(message.thumbnailKey);
+    if (byAdmin) {
+      await this.audit.record(requesterId, 'MESSAGE_DELETE', 'ACTOR', actorId, {
+        messageId,
+        reason: deletedReason,
+        mediaType: message.mediaType,
+        body: message.body ? message.body.slice(0, PUSH_PREVIEW_LENGTH) : null,
+      });
     }
+    void this.realtime.publish({ kind: 'message-removed', actorId });
   }
 
   /**

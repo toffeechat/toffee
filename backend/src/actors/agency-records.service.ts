@@ -65,9 +65,17 @@ export class AgencyRecordsService {
         where: { actorId: { in: ids }, senderType: MessageSenderType.ARTIST, deletedAt: { not: null } },
         orderBy: { deletedAt: 'desc' },
         take: RECORDS_LIMIT,
-        select: { id: true, actorId: true, body: true, mediaType: true, createdAt: true, deletedAt: true, deletedByAdmin: true, deletedByStaffId: true },
+        select: { id: true, actorId: true, body: true, mediaType: true, createdAt: true, deletedAt: true, deletedByAdmin: true, deletedByStaffId: true, deletedReason: true },
       }),
     ]);
+
+    // 소속사가 지운 건 어느 직원인지 이름까지(2026-10-25 — 같은 소속사 안에서만 보이는 기록이라). 운영자는 개인 대신 "운영자"
+    const staffIds = [...new Set(deleted.map((message) => message.deletedByStaffId).filter((id): id is string => !!id))];
+    const staff = new Map(
+      (staffIds.length ? await this.prisma.user.findMany({ where: { id: { in: staffIds } }, select: { id: true, displayName: true } }) : []).map(
+        (user) => [user.id, user.displayName] as const,
+      ),
+    );
 
     return {
       limit: RECORDS_LIMIT,
@@ -109,6 +117,9 @@ export class AgencyRecordsService {
         // 운영자가 숨김 / 소속사가 삭제 / 아티스트가 삭제(보내기 취소)
         by: message.deletedByAdmin ? Role.ADMIN : message.deletedByStaffId ? Role.AGENCY_STAFF : Role.ACTOR,
         byMe: message.deletedByStaffId === userId,
+        byName: message.deletedByStaffId ? (staff.get(message.deletedByStaffId) ?? null) : null,
+        // 운영자·소속사가 지울 때 받은 사유(2026-10-25부터 필수, 그 전 기록·아티스트 본인 회수는 null)
+        reason: message.deletedReason,
       })),
     };
   }

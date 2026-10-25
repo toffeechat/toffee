@@ -4,6 +4,7 @@ import { ListMessagesQueryDto, ListRepliesQueryDto, SearchMessagesQueryDto } fro
 import { SendReplyDto } from './dto/send-reply.dto.js';
 import { SendBroadcastDto } from './dto/send-broadcast.dto.js';
 import { UpdateGreetingsDto } from './dto/update-greetings.dto.js';
+import { DeleteMessageDto } from './dto/delete-message.dto.js';
 import { GreetingsService } from './greetings.service.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
@@ -100,7 +101,8 @@ export class MessagesController {
     return this.messagesService.replyQuota(user.id, actorId);
   }
 
-  // 회수(2026-10-14, 예전 "삭제") — 아티스트는 자기가 보낸 메시지, 소속사 직원은 자기 소속 아티스트 것을 대신(2026-10-12), 팬은 자기 답장
+  // 회수(2026-10-14, 예전 "삭제") — 아티스트는 자기가 보낸 메시지, 소속사 직원은 자기 소속 아티스트 것을 대신(2026-10-12), 팬은 자기 답장.
+  // 운영자·소속사는 본문 { reason } 필수(2026-10-25)
   @Roles(Role.USER, Role.ACTOR, Role.AGENCY_STAFF, Role.ADMIN)
   @Delete(':messageId')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -108,7 +110,8 @@ export class MessagesController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('actorId') actorId: string,
     @Param('messageId') messageId: string,
+    @Body() dto: DeleteMessageDto,
   ) {
-    await this.messagesService.deleteBroadcast(user.id, actorId, messageId);
+    await this.messagesService.deleteBroadcast(user.id, actorId, messageId, dto.reason);
   }
 }

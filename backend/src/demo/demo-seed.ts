@@ -533,6 +533,7 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
       createdAt: daysAgo(8),
       deletedAt: daysAgo(8),
       deletedByStaffId: ids.staffId,
+      deletedReason: '(เดโม) เปิดเผยสถานที่ถ่ายทำก่อนประกาศ',
     },
   });
 }

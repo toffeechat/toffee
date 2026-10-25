@@ -31,7 +31,8 @@ import { TranslatableText } from '@/components/translatable-text';
 import { MessageText } from '@/components/message-text';
 import { IconButton } from '@/components/ui/icon-button';
 import { ApiError } from '@/lib/api-client';
-import { confirm } from '@/lib/confirm';
+import { ReasonDialog } from '@/components/reason-dialog';
+import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
 
@@ -88,6 +89,9 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
   const remove = useDeleteBroadcast(actorId);
   const [failed, setFailed] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  // 회수할 메시지 id들 — 있으면 사유 입력창(2026-10-25: 운영자·소속사 회수는 사유 필수, 기록 화면·운영자 작업 기록에 남음)
+  const [pendingRemove, setPendingRemove] = useState<string[] | null>(null);
+  const { role } = useAuth();
 
   if (loadingBroadcasts || loadingStories) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
@@ -105,23 +109,35 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
     ...(stories ?? []).map((story): MonitorItem => ({ kind: 'story', createdAt: story.createdAt, story })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const removeMessages = async (messageIds: string[]) => {
-    const title = messageIds.length > 1 ? t('retract.albumTitle', { count: messageIds.length }) : t('retract.title');
-    if (!(await confirm(title, t('retract.agencyBody'), t('retract.action'), t('common.cancel')))) return;
+  const removeMessages = async (messageIds: string[], reason: string) => {
     setFailed(null);
     for (const messageId of messageIds) {
       try {
-        await remove.mutateAsync(messageId);
+        await remove.mutateAsync({ messageId, reason });
       } catch (error) {
         setFailed(error instanceof ApiError ? error.message : t('common.requestFailed'));
         return;
       }
     }
+    setPendingRemove(null);
   };
 
   return (
     <>
-      {failed ? (
+      {pendingRemove ? (
+        <ReasonDialog
+          title={pendingRemove.length > 1 ? t('retract.albumTitle', { count: pendingRemove.length }) : t('retract.title')}
+          message={t(role === 'ADMIN' ? 'retract.adminBody' : 'retract.agencyBody')}
+          label={t('retract.reasonLabel')}
+          placeholder={t('retract.reasonPlaceholder')}
+          okLabel={t('retract.action')}
+          busy={remove.isPending}
+          error={failed}
+          onConfirm={(reason) => void removeMessages(pendingRemove, reason)}
+          onClose={() => (setPendingRemove(null), setFailed(null))}
+        />
+      ) : null}
+      {failed && !pendingRemove ? (
         <ThemedText type="small" themeColor="danger" style={styles.sectionNote}>
           {failed}
         </ThemedText>
@@ -152,7 +168,7 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
                   avatarUri={item.message.sender?.chatProfileImageUrl ?? actor?.chatProfileImageUrl}
                   name={item.message.sender?.chatDisplayName ?? actor?.chatDisplayName ?? ''}
                   actorId={actorId}
-                  onDelete={(ids) => void removeMessages(ids)}
+                  onDelete={(ids) => setPendingRemove(ids)}
                   onOpenReplies={() => onOpenReplies(item.message.id)}
                   menuFor={menuFor}
                   onOpenMenu={setMenuFor}
@@ -230,6 +246,11 @@ function MonitorBubble({
         {removedBy ? (
           <ThemedText type="caption" themeColor="danger">
             {t(removedBy === 'admin' ? 'studio.hiddenByAdmin' : removedBy === 'agency' ? 'console.deletedByAgency' : 'console.deletedByActor')}
+          </ThemedText>
+        ) : null}
+        {removedBy && message.deletedReason ? (
+          <ThemedText type="caption" themeColor="textSecondary">
+            {t('retract.reasonShown', { reason: message.deletedReason })}
           </ThemedText>
         ) : null}
         {/* 인용한 팬 답장은 따로 선 말풍선으로(2026-10-15, 팬 화면과 같게) */}

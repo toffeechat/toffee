@@ -8,8 +8,10 @@ import type { ModerationService } from '../moderation/moderation.service.js';
 import type { MediaService } from '../storage/media.service.js';
 import type { ConfigService } from '@nestjs/config';
 import type { RealtimeService } from '../realtime/realtime.service.js';
+import type { AuditService } from '../audit/audit.service.js';
 
 const realtime = { publish: vi.fn().mockResolvedValue(undefined) } as unknown as RealtimeService;
+const audit = { record: vi.fn().mockResolvedValue(undefined) } as unknown as AuditService;
 
 const config = (values: Record<string, string> = {}) => ({ get: (key: string) => values[key] }) as unknown as ConfigService;
 
@@ -47,7 +49,7 @@ function setup() {
     withReadUrl: vi.fn((item: object) => Promise.resolve(item)),
     resolveImageUrl: vi.fn((value: string | null) => Promise.resolve(value)),
   } as unknown as MediaService;
-  const service = new MessagesService(prisma, push, {} as ModerationService, media, config(), realtime);
+  const service = new MessagesService(prisma, push, {} as ModerationService, media, config(), realtime, audit);
   return { service, fanPushes, staffPushes, prisma, push };
 }
 
@@ -261,7 +263,7 @@ function replySetup(alreadySent: number, settings: Record<string, string> = {}) 
     $transaction: vi.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
   } as unknown as PrismaService;
   const moderation = { assertNoBannedWords: vi.fn().mockResolvedValue(undefined) } as unknown as ModerationService;
-  const service = new MessagesService(prisma, {} as PushService, moderation, {} as MediaService, config(settings), realtime);
+  const service = new MessagesService(prisma, {} as PushService, moderation, {} as MediaService, config(settings), realtime, audit);
   return { service, created, prisma };
 }
 
@@ -323,7 +325,7 @@ describe('MessagesService.listBroadcasts 팬 답장 흐름 미리보기', () => 
       message: { findMany },
     } as unknown as PrismaService;
     const media = { withReadUrls: vi.fn((items: object[]) => Promise.resolve(items)) } as unknown as MediaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, audit);
     return { service, findMany };
   }
 
@@ -364,7 +366,7 @@ describe('MessagesService.listReplies 나눠 받기', () => {
       actor: { findFirst: vi.fn().mockResolvedValue(null) },
       message: { findMany },
     } as unknown as PrismaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, {} as MediaService, config(), realtime);
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, {} as MediaService, config(), realtime, audit);
     return { service, findMany };
   }
 
@@ -385,31 +387,63 @@ describe('MessagesService.listReplies 나눠 받기', () => {
   });
 });
 
-describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', () => {
-  function setupDelete(role: Role, viewable: boolean) {
+describe('MessagesService.deleteBroadcast 소속사·운영자 대신 삭제(2026-10-12, 사유·기록 2026-10-25)', () => {
+  function setupDelete(role: Role, viewable: boolean, selfUserId: string | null = null) {
     const update = vi.fn().mockResolvedValue({});
+    const record = vi.fn().mockResolvedValue(undefined);
     const prisma = {
       user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'staff-1', role, agencyId: 'ag-1' }) },
-      actor: { findFirst: vi.fn().mockResolvedValue(viewable ? { id: 'actor-1' } : null) },
+      actor: {
+        findFirst: vi.fn().mockResolvedValue(viewable ? { id: 'actor-1' } : null),
+        findUnique: vi.fn().mockResolvedValue({ kind: 'SOLO', selfUserId, coupleMembers: [] }),
+      },
       message: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'm1', deletedAt: null, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } }),
+        findFirst: vi.fn().mockResolvedValue({ id: 'm1', deletedAt: null, body: '안녕', mediaType: MessageMediaType.PHOTO }),
         update,
       },
     } as unknown as PrismaService;
     const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
-    return { service, update };
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, { record } as unknown as AuditService);
+    return { service, update, record, media };
   }
 
-  it('자기 소속 아티스트 메시지면 지우고 지운 직원을 기록', async () => {
+  it('자기 소속 아티스트 메시지면 지우고 지운 직원·사유를 기록', async () => {
     const { service, update } = setupDelete(Role.AGENCY_STAFF, true);
-    await service.deleteBroadcast('staff-1', 'actor-1', 'm1');
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deletedByStaffId: 'staff-1' }) }));
+    await service.deleteBroadcast('staff-1', 'actor-1', 'm1', '  사고 대응  ');
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deletedByStaffId: 'staff-1', deletedReason: '사고 대응' }) }));
+  });
+
+  it('소속사·운영자는 사유가 없으면 거절', async () => {
+    for (const role of [Role.AGENCY_STAFF, Role.ADMIN]) {
+      const { service, update } = setupDelete(role, true);
+      await expect(service.deleteBroadcast('staff-1', 'actor-1', 'm1', '   ')).rejects.toThrow('회수 사유');
+      expect(update).not.toHaveBeenCalled();
+    }
   });
 
   it('다른 소속사 아티스트면 거절', async () => {
     const { service, update } = setupDelete(Role.AGENCY_STAFF, false);
-    await expect(service.deleteBroadcast('staff-1', 'actor-1', 'm1')).rejects.toThrow();
+    await expect(service.deleteBroadcast('staff-1', 'actor-1', 'm1', '사유')).rejects.toThrow();
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it('운영자가 지우면 "아티스트가 회수"가 아니라 운영자 삭제 + 작업 기록(MESSAGE_DELETE)', async () => {
+    const { service, update, record } = setupDelete(Role.ADMIN, true);
+    await service.deleteBroadcast('admin-1', 'actor-1', 'm1', '계약 위반 사진');
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ deletedByAdmin: true, deletedByAdminId: 'admin-1', deletedReason: '계약 위반 사진' }) }),
+    );
+    expect(record).toHaveBeenCalledWith('admin-1', 'MESSAGE_DELETE', 'ACTOR', 'actor-1', expect.objectContaining({ messageId: 'm1', reason: '계약 위반 사진' }));
+  });
+
+  it('아티스트 본인 회수는 사유 없이, 첨부 파일은 바로 지우지 않음(보관 후 새벽 정리)', async () => {
+    const { service, update, record, media } = setupDelete(Role.ACTOR, false, 'staff-1');
+    await service.deleteBroadcast('staff-1', 'actor-1', 'm1');
+    const data = (update.mock.calls[0][0] as { data: Record<string, unknown> }).data;
+    expect(data.deletedAt).toBeInstanceOf(Date);
+    expect(data).not.toHaveProperty('mediaKey');
+    expect(data).not.toHaveProperty('deletedReason');
+    expect(media.deleteQuietly).not.toHaveBeenCalled();
+    expect(record).not.toHaveBeenCalled();
   });
 });

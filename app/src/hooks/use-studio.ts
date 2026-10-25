@@ -145,7 +145,9 @@ export function useStudioSend(actorId: string) {
 export function useDeleteBroadcast(actorId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (messageId: string) => apiClient.delete(`/actors/${actorId}/messages/${messageId}`),
+    // 운영자·소속사는 사유 필수(2026-10-25, 서버가 확인) — 아티스트 본인 회수는 reason 없이
+    mutationFn: ({ messageId, reason }: { messageId: string; reason?: string }) =>
+      apiClient.delete(`/actors/${actorId}/messages/${messageId}`, reason ? { reason } : undefined),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['actor-broadcasts', actorId] }),
   });
 }

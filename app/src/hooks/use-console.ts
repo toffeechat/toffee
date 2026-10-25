@@ -196,6 +196,10 @@ export interface AgencyRecords {
     deletedAt: string;
     by: string;
     byMe: boolean;
+    /** 소속사가 회수했으면 그 직원 이름(2026-10-25) */
+    byName: string | null;
+    /** 운영자·소속사가 적은 회수 사유 */
+    reason: string | null;
   }[];
 }
 

@@ -42,6 +42,8 @@ export interface ChatMessage {
   deletedByAdmin?: boolean;
   /** 소속사가 대신 회수한 메시지면 그 직원 id(2026-10-12) — 아티스트·소속사 화면에 "소속사가 회수한 메시지" */
   deletedByStaffId?: string | null;
+  /** 운영자·소속사가 회수할 때 적은 사유(2026-10-25부터 필수) — 모니터링·기록 화면에 표시 */
+  deletedReason?: string | null;
   createdAt: string;
 }
 

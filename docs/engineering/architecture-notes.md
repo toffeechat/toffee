@@ -1855,3 +1855,21 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   애플은 같은 그룹이라 그냥 `requestPurchase`. 화면 `subscribe/bundle/[bundleId].tsx`, 훅 `useBundleSwitchInfo`·`useSwitchBundle`.
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
+
+## 메시지 삭제 기록 보강 (2026-10-25)
+
+- 스키마: `Message.deletedByAdminId`(운영자가 삭제 API로 직접 지운 경우, `deletedByAdmin`도 true — 신고 승인 가림은 null), `Message.deletedReason`,
+  `@@index([deletedAt])`(마이그레이션 `20261025090000_message_delete_reason`).
+- `MessagesService.deleteBroadcast(requesterId, actorId, messageId, reason?)` — `DELETE /actors/:id/messages/:id` 본문 `DeleteMessageDto { reason? }`(최대 300자).
+  역할별: USER → `retractReply`, AGENCY_STAFF → `ensureCanViewActor` + `deletedByStaffId`·`deletedReason`, ADMIN → `deletedByAdmin`·`deletedByAdminId`·`deletedReason` +
+  `AuditService.record(admin, 'MESSAGE_DELETE', 'ACTOR', actorId, {messageId, reason, mediaType, body 60자})`, ACTOR → `ensureIsActorSelf`(사유 없음).
+  직원·운영자는 다듬은 사유가 비면 400 `MESSAGE_DELETE_REASON_REQUIRED`(9개 언어). 원인: 예전엔 ADMIN이 `ensureIsActorSelf`를 통과해 아무 표시 없이 지워져 "아티스트가 회수"로 보였음.
+- 첨부: 지울 때 `mediaKey`·`thumbnailKey`를 비우고 파일을 지우던 걸 없앰. `MessageRetentionService.purgeDeletedMedia`(매일 태국 04:20) — `deletedAt < now − DELETED_MEDIA_RETENTION_DAYS`(기본 90)
+  이고 키가 남았고 신고가 하나도 없는 메시지를 200개씩 `MediaService.deleteQuietly` 후 `updateMany`로 키 비움. 신고 걸린 건 계속 보관(예전 규칙). 키가 남아 있으니
+  `UploadCleanupService`(붙지 않은 파일 정리)도 보관 중 파일을 안 건드림.
+- `listBroadcasts`: `deletedByAdminId`는 안 내려줌, 보는 사람이 아티스트 본인(selfActor)이면 지운 메시지의 미디어 필드를 비움(운영자·소속사 모니터링만 흐리게 보임).
+  `deletedReason`은 내려줌(모니터링 말풍선 아래 "사유: …").
+- `AgencyRecordsService` `deleted[]`에 `byName`(소속사 직원 `displayName`)·`reason` 추가. 운영자는 개인 이름 대신 역할만.
+- 앱: `components/reason-dialog.tsx`(사유 칸 모달, 비면 확인 비활성) — `console/[actorId].tsx` 회수 흐름이 `confirm` 대신 이걸 씀(운영자면 `retract.adminBody`).
+  `useDeleteBroadcast`는 `{messageId, reason?}`, `apiClient.delete(path, body?)`. 운영자 작업 기록 화면에 `MESSAGE_DELETE` 라벨·사유·내용.
+- 테스트: `messages.service.spec.ts`(사유 필수·운영자 기록·본인 회수는 파일 유지), `message-retention.service.spec.ts`(기간·설정값·키 비움).

@@ -49,7 +49,9 @@ export type AdminActionType =
   | 'INQUIRY_CLOSE'
   | 'ADMIN_LEVEL'
   | 'ADMIN_MFA'
-  | 'USER_EXPORT';
+  | 'USER_EXPORT'
+  // 운영자가 신고 처리가 아닌 삭제로 아티스트 메시지를 직접 지움(2026-10-25, 사유 필수 — detail에 messageId·사유·내용 요약)
+  | 'MESSAGE_DELETE';
 
 /**
  * 운영자 작업 기록(AdminAction) — 제재·역할 변경·신고 처리·배우 활동 종료를 누가 언제 했는지. 유료 서비스 분쟁·문의 대응용.

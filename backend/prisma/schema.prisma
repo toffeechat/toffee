@@ -629,6 +629,10 @@ model Message {
   // 소속사가 대신 지운 메시지(2026-10-12, 사고 대응) — 지운 직원 id. 팬 화면에선 아티스트가 지운 것과 똑같이 흔적 없이 사라지고,
   // 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
   deletedByStaffId String?
+  // 운영자가 신고 처리가 아닌 삭제로 직접 지운 경우 그 운영자 id(2026-10-25, deletedByAdmin도 함께 켜짐 — 신고 승인으로 가린 건 null이고
+  // 누가 했는지는 AdminAction REPORT_RESOLVE에). 운영자·소속사가 지울 땐 사유 필수(deletedReason, 소속사 기록 화면에 보임)
+  deletedByAdminId String?
+  deletedReason    String?
   createdAt        DateTime          @default(now())
 
   actor         Actor                @relation("MessageChannel", fields: [actorId], references: [id], onDelete: Cascade)
@@ -644,6 +648,8 @@ model Message {
   @@index([replyToMessageId])
   // 팬 대화방 나눠 받기·방 안 검색·사진 모아보기가 전부 "이 방의 메시지를 시간순으로" 찾음(2026-09-29)
   @@index([actorId, createdAt])
+  // 지운 메시지의 사진·영상을 보관 기간(DELETED_MEDIA_RETENTION_DAYS) 뒤 매일 새벽 정리할 때 오래된 삭제부터 찾음(2026-10-25)
+  @@index([deletedAt])
   // 방 안 검색(본문 중간 글자) — 팬 답장까지 한 테이블이라 인기 배우 방은 행이 많아서 글자 조각 색인(pg_trgm, 2026-09-29)
   @@index([body(ops: raw("gin_trgm_ops"))], type: Gin, map: "Message_body_trgm_idx")
 }
@@ -748,7 +754,7 @@ model AdminAction {
   id         String   @id @default(uuid())
   adminId    String
   // USER_SUSPEND / USER_BAN / USER_REACTIVATE / USER_ROLE / REPORT_RESOLVE / REPORT_DISMISS / ACTOR_RETIRE / ACTOR_RESTORE /
-  // ACTOR_PRICE / BUNDLE_CREATE / BUNDLE_UPDATE (audit.service.ts AdminActionType)
+  // ACTOR_PRICE / BUNDLE_CREATE / BUNDLE_UPDATE / MESSAGE_DELETE … (audit.service.ts AdminActionType)
   action     String
   targetType String
   targetId   String

@@ -312,7 +312,7 @@ export default function StudioChannelScreen() {
     );
     if (!ok) return;
     try {
-      for (const id of messageIds) await deleteBroadcast.mutateAsync(id);
+      for (const id of messageIds) await deleteBroadcast.mutateAsync({ messageId: id });
     } catch {
       setNotice({ text: t('retract.failed'), error: true });
     }
