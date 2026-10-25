@@ -9,6 +9,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments }
 import { useFonts } from 'expo-font';
 import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
 import { AppState, Platform, type AppStateStatus } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { loadThemePreference } from '@/lib/theme-preference';
@@ -34,9 +35,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // DSN이 비어 있으면(로컬 개발) SDK가 아무것도 전송하지 않고 조용히 꺼진 채로 동작함.
 // 앱 쪽은 요청 바디/헤더를 자동 수집하지 않고 사용자 정보도 붙이지 않음(PII 없음).
+// 환경 이름은 프리뷰(데모 서버)·운영을 나눠서(2026-10-25 배포 체계 — 배포 뒤 "새 오류가 생겼는지"를 환경별로 봄). 앱은 OTA 채널
+// 이름(preview·production), 웹은 채널이 없어서 입장 코드 로그인이 켜진 빌드(데모)면 preview
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  environment: __DEV__ ? 'development' : 'production',
+  environment: __DEV__
+    ? 'development'
+    : Updates.channel || (process.env.EXPO_PUBLIC_ENABLE_DEV_LOGIN === 'true' ? 'preview' : 'production'),
 });
 
 SplashScreen.preventAutoHideAsync();

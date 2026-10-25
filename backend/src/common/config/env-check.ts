@@ -25,6 +25,7 @@ export function checkEnv(env: Env): EnvCheckResult {
     if (env.ENABLE_DEV_LOGIN === 'true') errors.push('ENABLE_DEV_LOGIN=true — 운영에서 켜면 누구나 아무 계정으로 로그인 가능');
     if (env.ENABLE_SANDBOX_SUBSCRIBE === 'true') errors.push('ENABLE_SANDBOX_SUBSCRIBE=true — 운영에서 켜면 결제 없이 구독 가능');
     if (!has(env, 'API_PUBLIC_URL')) errors.push('API_PUBLIC_URL 필요(메일 링크·공개 페이지 주소)');
+    if (has(env, 'SMOKE_TEST_SECRET') && env.SMOKE_TEST_SECRET!.trim().length < 32) errors.push('SMOKE_TEST_SECRET은 운영에서 32자 이상(무작위 값)');
   }
 
   if (env.ENABLE_DEV_LOGIN === 'true' && !has(env, 'DEV_LOGIN_CODE')) {
@@ -51,6 +52,7 @@ export function checkEnv(env: Env): EnvCheckResult {
     ['구글 결제 알림(갱신·만료·환불)', ['GOOGLE_RTDN_AUDIENCE', 'GOOGLE_RTDN_SERVICE_ACCOUNT_EMAIL']],
     ['구글 결제 확인', ['GOOGLE_PLAY_PACKAGE_NAME', 'GOOGLE_PLAY_SERVICE_ACCOUNT_JSON']],
     ['고객센터 페이지 이메일', ['SUPPORT_EMAIL']],
+    ['배포 후 자동 점검(스모크 테스트)', ['SMOKE_TEST_SECRET']],
     // 전자상거래법 사업자 정보 표시 — 법인·통신판매업 신고 후(launch-roadmap 5단계)
     ['사업자 정보 표시', ['BUSINESS_NAME', 'BUSINESS_REPRESENTATIVE', 'BUSINESS_ADDRESS', 'BUSINESS_PHONE', 'BUSINESS_REGISTRATION_NUMBER', 'BUSINESS_MAIL_ORDER_NUMBER']],
   ];

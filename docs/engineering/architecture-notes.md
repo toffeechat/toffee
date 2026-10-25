@@ -1853,3 +1853,30 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   애플은 같은 그룹이라 그냥 `requestPurchase`. 화면 `subscribe/bundle/[bundleId].tsx`, 훅 `useBundleSwitchInfo`·`useSwitchBundle`.
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
+
+## 배포 체계 — 워크플로·자동 점검 (2026-10-25)
+
+절차·비밀값·되돌리기는 `deploy-runbook.md`. 여기는 구현 결정만.
+
+- **프리뷰는 기존 자동 배포를 그대로 씀**: Railway `toffee-demo`·Pages `toffee-demo`가 main을 배포하므로 `deploy-preview.yml`은 배포를 "거는" 대신
+  `/health`·`/version.json`의 `commit`이 목표 커밋(또는 그걸 포함하는 새 커밋, `git merge-base --is-ancestor`)이 될 때까지 기다림 — Railway·Cloudflare 토큰 없이 돎.
+  프로덕션은 자동 배포를 끄고 `serviceInstanceDeployV2(commitSha)`(Railway GraphQL, project token은 `Project-Access-Token` 헤더)·`wrangler pages deploy`로 커밋을 지정.
+- 서버 커밋: `GET /health` → `commit: RAILWAY_GIT_COMMIT_SHA || GIT_COMMIT_SHA || null`. 웹: `app/scripts/write-version.mjs`가 `dist/version.json`
+  (`WEB_COMMIT_SHA || CF_PAGES_COMMIT_SHA || GITHUB_SHA || git`). SPA라 파일이 없으면 index.html이 200으로 와서 JSON 파싱 실패 = "모름"으로 처리.
+- **plan.mjs**: 기준 = 떠 있는 커밋 → `deployed/<env>` 태그 → 없음(전부). OTA 기준은 EAS `update:list`의 `gitCommitHash`만(태그로 짐작하면 OTA를 못 한 채
+  태그만 옮겨진 경우 변경을 놓침). 네이티브 판단 = 경로 목록 + `app.config.ts`는 주석만 바뀐 diff 제외 + `package-lock.json` 버전이 바뀐 패키지 중
+  `node_modules/<pkg>`에 `ios`/`android`/`expo-module.config.json`/`react-native.config.js`가 있는 것(설치 전이면 이름 패턴). 네이티브면 `rev-list --first-parent`로
+  처음 네이티브가 바뀐 커밋을 찾아 그 부모(`ota_before_native`)까지 OTA. 마이그레이션 위험 문장은 정규식(주석 제거 후).
+- **"프리뷰 확인" 기록** = 커밋 상태 `deploy/preview`(GITHUB_TOKEN `statuses: write`) — 운영 워크플로 plan 작업이 `gh api commits/<sha>/statuses`로 검사.
+  되돌리기는 `deploy/production` 상태가 있는 커밋만. 태그 `deployed/*`는 `git push -f`(GITHUB_TOKEN이라 다른 워크플로를 깨우지 않음).
+- **승인**: `deploy` 작업에만 `environment: production`(Required reviewers) — 운영 비밀값이 그 환경에만 있어서 plan 작업은 운영에 접근 못 함.
+  plan 요약(GITHUB_STEP_SUMMARY)이 승인 화면 위에 보임.
+- **SmokeModule**(`backend/src/smoke`): `POST /smoke/session`(Public, 분당 5회, `x-smoke-secret` sha256 다이제스트끼리 `timingSafeEqual`) → 트랜잭션으로 고정 ID
+  점검 아티스트(ACTOR)·팬(USER)·대화방(`retiredAt = epoch` → 둘러보기·검색·구독 차단, `agencyId` null → 소속사·정산 제외, 구매 없이 `Subscription` 직접 → 매출 0,
+  `notificationsMuted`·`autoTranslate=false`) upsert + 하루 지난 점검 메시지 삭제 → `AuthService.issueShortAccessToken`(10분, `dac` 없음 — 데모 접속 기록 안 남김).
+  dev-login 대신 이걸 쓰는 이유: 운영엔 dev-login이 없고, 데모에서도 공용 코드 로그인은 소속사 접속 기록·"최근 30분 사용 중이면 새벽 초기화 건너뜀"에 걸림.
+  메시지는 `silent: true` 방송 → 팬 목록 → 팬 답장(새 방송마다 답장 한도가 새로 계산) → 둘 다 회수. 운영에선 `SMOKE_TEST_SECRET` 32자 미만이면 env-check 오류.
+- 앱 Sentry `environment`: `__DEV__` → development, 그 외 `Updates.channel`(preview·production), 웹은 채널이 없어 `EXPO_PUBLIC_ENABLE_DEV_LOGIN === 'true'`면 preview —
+  예전엔 프리뷰 빌드도 production으로 섞였음. 서버는 `SENTRY_ENVIRONMENT`(데모 `demo`).
+- 운영 DB 백업(`.github/actions/db-backup`): PGDG `postgresql-client-17` → `pg_dump -Fc --no-owner` | `gpg --encrypt`(공개키만 runner에) | `aws s3 cp -`(R2,
+  region `auto`) → 크기 확인. 데이터 수정 워크플로는 `BEGIN; <file>; ROLLBACK;`으로 command tag(`UPDATE n`·`DELETE n`·`INSERT 0 n`) 합을 세고, 적용 직전에 한 번 더 센 뒤 COMMIT.

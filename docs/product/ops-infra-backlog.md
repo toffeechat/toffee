@@ -101,6 +101,48 @@
 | 운영 주소(2026-10-21 사용자 확정) | 서버 `api.toffeechat.app`, 소속사·운영자 PC 웹 `app.toffeechat.app` — 앱 `eas.json` production 프로필의 `EXPO_PUBLIC_API_URL`·`EXPO_PUBLIC_WEB_URL`에 넣어 둠 | 운영 Railway·Cloudflare Pages를 만들 때 이 주소로 연결, 서버 `API_PUBLIC_URL`·`WEB_LOGIN_ORIGINS`, 각 로그인 콘솔 돌아올 주소, 랜딩 약관 링크. 순서는 [사업 본부](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) "운영 전환" 탭 2단계 |
 | 운영 기능 설정(2026-10-20) | 코드 완료 — 값만 넣으면 동작 | 👤 운영 서버: `ADMIN_ALERT_EMAIL`(운영자 알림 받을 주소, 저장소에 적지 말 것), 필요하면 `ADMIN_ALERT_KINDS`, `ADMIN_MFA_HOURS`(기본 12). 구글 Play 서비스 계정에 **구독 관리(주문·구독 관리) 권한** — 활동 종료 때 구독 갱신 해지에 필요. 앱 빌드 변수 `EXPO_PUBLIC_IOS_APP_STORE_ID`(앱스토어 등록 후 — 강제 업데이트 화면이 바로 앱 페이지로). 애플 상품 판매 중지가 기존 구독 갱신을 멈추는지 샌드박스로 확인 |
 
+## 배포 자동화 — 내가 직접 할 설정 (2026-10-25)
+
+폰에서 말로 배포하는 체계(`deploy-guide.md`, 기술 `docs/engineering/deploy-runbook.md`)는 코드·워크플로가 끝났고, 아래 값만 넣으면 전부 돈다.
+**값(토큰·비밀값)은 저장소·대화에 붙여 넣지 말 것** — 각 서비스 화면에서 GitHub 화면으로 바로 복사. 넣은 뒤 Claude에게 "넣었어"라고만 하면 확인 실행을 한다.
+GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets and variables → Actions(저장소 전체) 또는 Settings → Environments → 환경 이름(운영용).
+
+### A. 지금 — 프리뷰(데모)용
+
+| # | 할 일 | 어디서 | 넣을 곳 |
+|---|---|---|---|
+| 1 | **점검용 비밀값 만들기** — 비밀번호 관리자 생성기로 40자 무작위 | — | 아래 2·3에 같은 값 |
+| 2 | Railway 데모 서버 변수 `SMOKE_TEST_SECRET` | Railway → `toffee-demo` → 서버 서비스 → Variables → 저장(자동 재배포) | 서버 |
+| 3 | GitHub Secret `PREVIEW_SMOKE_TEST_SECRET` | 위 값 그대로 | 저장소 Secrets |
+| 4 | **Expo 토큰** — expo.dev → 조직 `toffeechat-team` → Settings → **Robot users** → 새 로봇(역할 Developer) → Create token(만료 없음 또는 1년) | Expo | 저장소 Secret `EXPO_TOKEN` |
+| 5 | **Sentry 읽기 토큰** — sentry.io → 오른쪽 위 내 이름 → User Auth Tokens → Create(권한 `project:read`·`event:read`만). 운영자 홈 "최근 오류"용 `SENTRY_API_TOKEN`과 같은 걸 써도 됨 | Sentry | 저장소 Secret `SENTRY_AUTH_TOKEN` |
+| 6 | Railway 데모 서버 **Wait for CI** 켜기 — CI(테스트)가 실패한 커밋은 데모에 안 올라가게 | Railway → 서버 서비스 → Settings → Deploy | — |
+| 7 | **폰 GitHub 앱** 설치·로그인 → 설정 → 알림에서 Actions(실패한 실행)·배포 승인 요청 켜기 | App Store | — |
+| 8 | **업타임 모니터** — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
+| 9 | **Sentry 폰 알림** — Sentry → Alerts → Create Alert → Issues → "새 이슈가 생기면" + "1시간에 30번 넘게 생기면" 두 개, 환경 `demo`(나중에 `production` 따로), 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
+
+- 1~3이 없으면 자동 점검은 헬스·웹만 하고 "로그인·메시지 건너뜀"으로 나옴. 4가 없으면 앱 OTA를 워크플로가 못 해서 PC에서 `npm run ota`를 해야 함. 5가 없으면 "Sentry 확인 안 됨".
+- GitHub Actions 시간: 프리뷰 배포 한 번에 약 10~20분(대부분 서버·웹 빌드를 기다리는 시간). 조직 저장소 무료 월 2,000분 — 하루 2~3번이면 충분. 모자라면 지출 한도 확인.
+- 계정을 새로 만들면(UptimeRobot·Expo 로봇 등) 사업화 장부에 Claude가 적는다.
+
+### B. 운영 환경을 만들 때 (사업 본부 "운영 전환" 2단계, 12월~)
+
+| # | 할 일 | 넣을 곳(Environment `production`) |
+|---|---|---|
+| 1 | Railway 운영 프로젝트·서버 서비스 — GitHub 저장소 연결하되 **자동 배포 끄기**(Settings → Source 브랜치 트리거 해제), Root `/backend`, Config `/backend/railway.json` | — |
+| 2 | Railway 운영 프로젝트 → Settings → Tokens → **Project token**(production 환경) | Secret `RAILWAY_TOKEN` |
+| 3 | 서비스 ID·환경 ID 복사(서비스 화면에서 Ctrl/Cmd+K → "Copy Service ID" / "Copy Environment ID") | Variables `RAILWAY_SERVICE_ID`, `RAILWAY_ENVIRONMENT_ID` |
+| 4 | 운영 점검 비밀값(데모와 **다른** 40자) → Railway 운영 서버 변수 `SMOKE_TEST_SECRET` | Secret `PROD_SMOKE_TEST_SECRET` |
+| 5 | Cloudflare → Workers & Pages → Create → Pages → **Upload assets**(Direct Upload)로 프로젝트 `toffee-app` 생성 → 커스텀 도메인 `app.toffeechat.app` | Variable `CLOUDFLARE_PAGES_PROJECT`=`toffee-app` |
+| 6 | Cloudflare → My Profile → API Tokens → 템플릿 "Edit Cloudflare Pages"(토피 계정만) / 계정 ID(대시보드 오른쪽) | Secret `CLOUDFLARE_API_TOKEN`, Variable `CLOUDFLARE_ACCOUNT_ID` |
+| 7 | **백업 버킷** — R2 비공개 버킷 `toffee-backups` + 이 버킷만 Object Read & Write 토큰, 수명 주기 규칙(90일 뒤 삭제) | Secrets `BACKUP_S3_ENDPOINT`, `BACKUP_S3_BUCKET`, `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY` |
+| 8 | **백업 암호화 키** — PC에서 `gpg --quick-gen-key "Toffee Backup" rsa4096 encr never` → `gpg --armor --export "Toffee Backup"`(공개키만 GitHub에). 비밀키는 `gpg --armor --export-secret-keys`로 내보내 비밀번호 관리자에 보관 — **잃어버리면 백업을 못 품** | Secret `BACKUP_GPG_PUBLIC_KEY` |
+| 9 | 운영 DB 주소(Railway Postgres → Connect → Public URL) | Secret `PROD_DATABASE_URL` (Environment `production-data`에도 같은 값) |
+| 10 | 운영 웹 소셜 로그인 공개 키(데모 Pages 변수와 같은 이름, 운영 값) | Variables `EXPO_PUBLIC_WEB_KAKAO_REST_API_KEY`·`_NAVER_CLIENT_ID`·`_LINE_CHANNEL_ID`·`_APPLE_SERVICES_ID`, 스토어 등록 후 `EXPO_PUBLIC_IOS_APP_STORE_ID` |
+| 11 | GitHub → Settings → Environments → `production`·`production-data` 만들기 → **Required reviewers = 나**, Deployment branches = `main`만 | — |
+| 12 | 업타임 모니터에 `https://api.toffeechat.app/health/ready`·`https://app.toffeechat.app` 추가, Sentry 알림 환경 `production` 추가 | — |
+| 13 | 그다음 Claude에게 "운영 배포 처음 돌려 줘" → 런북 12번 체크리스트(되돌리기·백업·데이터 수정 흐름까지 한 번씩) | — |
+
 ## 3. 사업·법무
 
 **가입 연령(성인만) 보완 — 결정(2026-09-29)**: 생년월일 자기 신고는 속이면 못 막아서, 비용 없는 것부터 겹겹이:
