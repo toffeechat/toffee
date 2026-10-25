@@ -6,6 +6,7 @@ import { MessageSenderType, MessageMediaType, Role } from '../generated/prisma/e
 import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
 import { computeAudienceSnapshot } from '../actors/daily-stats.service.js';
 import { DAY_MS, startOfTodayInZone, zoneDays } from '../common/utils/stats-time.js';
+import { DEFAULT_BANNED_WORDS } from '../moderation/default-banned-words.js';
 
 // 데모 계정은 약관 동의를 마친 상태로(새로 가입하는 계정은 앱 온보딩에서 동의)
 const AGREED = { termsVersion: CURRENT_TERMS_VERSION, termsAcceptedAt: new Date() };
@@ -411,13 +412,15 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     },
   });
 
-  // 금칙어 데모(실제 욕설 대신 테스트용 문자열 — 관리자 화면에서 등록/삭제 확인용)
+  // 금칙어 데모 — 9개 언어 기본 목록(2026-10-25: 운영자가 [기본 목록 넣기]를 눌러도 새벽 초기화로 사라져서 처음부터 넣음) + 테스트용 문자열(관리자 화면에서 등록/삭제 확인용)
   await prisma.bannedWord.createMany({
     data: [
+      ...Object.entries(DEFAULT_BANNED_WORDS).flatMap(([language, terms]) => terms.map((term) => ({ term, language, isDefault: true }))),
       { term: '테스트금칙어', language: 'ko' },
       { term: 'testbadword', language: 'en' },
       { term: 'ทดสอบคำต้องห้าม', language: 'th' },
     ],
+    skipDuplicates: true,
   });
 
   await seedStatsCrowd(prisma, { staffId: staff.id, caramelId: caramel.id, nougatId: nougat.id });
