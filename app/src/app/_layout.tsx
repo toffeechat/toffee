@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import '@/i18n';
 import { SplashOverlay } from '@/components/splash-overlay';
 import { Colors, fontFor } from '@/constants/theme';
+import { useAdminKorean } from '@/hooks/use-admin-korean';
 import { LocalePreferenceProvider } from '@/i18n/locale-preference-context';
 import { useSyncLocale } from '@/hooks/use-sync-locale';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
@@ -153,6 +154,7 @@ function useDemoLinkSwitch() {
 // 로그인 상태에 따라 돌아야 하는 백그라운드 작업들(언어 동기화, 푸시 등록·알림 처리, 실시간 연결)
 function SessionEffects() {
   useDemoLinkSwitch();
+  useAdminKorean();
   useSyncLocale();
   usePushNotifications();
   const { token } = useAuth();
