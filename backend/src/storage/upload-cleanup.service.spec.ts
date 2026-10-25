@@ -13,6 +13,7 @@ function setup(objects: { key: string; lastModified: Date }[]) {
     actor: { findMany: vi.fn().mockResolvedValue([{ officialProfileImageUrl: 'https://placehold.co/x', chatProfileImageUrl: 'actors/a1/profile/p.jpg' }]) },
     agency: { findMany: vi.fn().mockResolvedValue([{ logoUrl: null }]) },
     user: { findMany: vi.fn().mockResolvedValue([{ profileImageUrl: 'users/u1/profile/me.jpg' }]) },
+    supportAttachment: { findMany: vi.fn().mockResolvedValue([{ objectKey: 'users/u1/support/receipt.jpg' }]) },
   } as unknown as PrismaService;
   const deleted: string[] = [];
   const storage = {
@@ -41,8 +42,11 @@ describe('UploadCleanupService', () => {
       // 팬 프로필 사진(2026-10-12) — 쓰는 사진은 남기고, 바꾸고 남은 옛 사진은 지움
       { key: 'users/u1/profile/me.jpg', lastModified: hoursAgo(72) },
       { key: 'users/u1/profile/old.jpg', lastModified: hoursAgo(72) },
+      // 문의 사진(2026-10-25) — 문의에 붙은 건 남기고, 올리고 안 보낸 건 지움
+      { key: 'users/u1/support/receipt.jpg', lastModified: hoursAgo(72) },
+      { key: 'users/u1/support/unsent.jpg', lastModified: hoursAgo(72) },
     ]);
-    await expect(service.removeOrphanUploads(NOW)).resolves.toBe(3);
-    expect(deleted.sort()).toEqual(['actors/a1/message/orphan.jpg', 'agencies/g1/logo/old.png', 'users/u1/profile/old.jpg']);
+    await expect(service.removeOrphanUploads(NOW)).resolves.toBe(4);
+    expect(deleted.sort()).toEqual(['actors/a1/message/orphan.jpg', 'agencies/g1/logo/old.png', 'users/u1/profile/old.jpg', 'users/u1/support/unsent.jpg']);
   });
 });

@@ -3,6 +3,7 @@ import type { Bundle } from './use-bundles';
 import type { ArtistGender, CoupleMemberActor } from './use-actors';
 import { apiClient } from '@/lib/api-client';
 import { selectionQuery, type StatsSelection } from './use-console';
+import { uploadInquiryPhotos, type InquiryCategory, type InquiryPhoto, type PickedPhoto } from './use-support';
 
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
 
@@ -924,13 +925,18 @@ export interface AdminInquiry {
   _count?: { messages: number };
 }
 export interface AdminInquiryDetail extends AdminInquiry {
-  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string; authorId: string }[];
+  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string; authorId: string; attachments: InquiryPhoto[] }[];
 }
 
-export function useAdminInquiries(status?: AdminInquiryStatus) {
+/** 상태·종류 필터(종류는 2026-10-25). counts는 고른 종류 안의 상태별, categoryCounts는 고른 상태 안의 종류별 */
+export function useAdminInquiries(status?: AdminInquiryStatus, category?: InquiryCategory) {
+  const query = new URLSearchParams({ ...(status ? { status } : {}), ...(category ? { category } : {}) }).toString();
   return useQuery({
-    queryKey: ['admin', 'inquiries', status ?? 'ALL'],
-    queryFn: () => apiClient.get<{ counts: Record<'ALL' | AdminInquiryStatus, number>; items: AdminInquiry[] }>(`/admin/inquiries${status ? `?status=${status}` : ''}`),
+    queryKey: ['admin', 'inquiries', status ?? 'ALL', category ?? 'ALL'],
+    queryFn: () =>
+      apiClient.get<{ counts: Record<'ALL' | AdminInquiryStatus, number>; categoryCounts: Record<'ALL' | InquiryCategory, number>; items: AdminInquiry[] }>(
+        `/admin/inquiries${query ? `?${query}` : ''}`,
+      ),
     refetchInterval: 60_000,
     placeholderData: (previous) => previous,
   });
@@ -943,8 +949,21 @@ export function useAdminInquiry(id: string) {
 export function useReplyInquiry(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => apiClient.post<AdminInquiryDetail>(`/admin/inquiries/${id}/messages`, { body }),
+    mutationFn: async ({ body, photos }: { body: string; photos: PickedPhoto[] }) =>
+      apiClient.post<AdminInquiryDetail>(`/admin/inquiries/${id}/messages`, { body, photoKeys: await uploadInquiryPhotos(photos) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'inquiries'] }),
+  });
+}
+
+/** 문의 지우기(2026-10-25) — 사진 파일까지 지움, 작업 기록에 제목이 남음 */
+export function useDeleteAdminInquiry(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.delete<{ deleted: boolean }>(`/admin/inquiries/${id}`),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ['admin', 'inquiries', 'one', id] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'inquiries'] });
+    },
   });
 }
 

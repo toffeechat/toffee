@@ -952,6 +952,15 @@
     "cat_OTHER": "Otro",
     "st_OPEN": "Esperando respuesta",
     "st_ANSWERED": "Respondida",
-    "st_CLOSED": "Cerrada"
+    "st_CLOSED": "Cerrada",
+    "photos": "Adjuntar fotos (opcional)",
+    "photosHint": "Puedes adjuntar hasta 3 fotos, como un recibo de pago o una pantalla de error.",
+    "addPhoto": "Añadir foto",
+    "removePhoto": "Quitar foto",
+    "openPhoto": "Ver foto",
+    "photoUnavailable": "No se pudo cargar la foto",
+    "delete": "Eliminar consulta",
+    "deleteTitle": "Eliminar consulta",
+    "deleteConfirm": "Se eliminarán todos los mensajes y fotos de esta consulta. No se puede deshacer."
   }
 }

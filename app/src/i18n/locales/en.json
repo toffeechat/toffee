@@ -952,6 +952,15 @@
     "cat_OTHER": "Other",
     "st_OPEN": "Waiting for reply",
     "st_ANSWERED": "Answered",
-    "st_CLOSED": "Closed"
+    "st_CLOSED": "Closed",
+    "photos": "Attach photos (optional)",
+    "photosHint": "You can attach up to 3 photos, such as a payment receipt or an error screen.",
+    "addPhoto": "Add photo",
+    "removePhoto": "Remove photo",
+    "openPhoto": "View photo",
+    "photoUnavailable": "Couldn't load photo",
+    "delete": "Delete inquiry",
+    "deleteTitle": "Delete inquiry",
+    "deleteConfirm": "All messages and photos in this inquiry will be deleted. This can't be undone."
   }
 }

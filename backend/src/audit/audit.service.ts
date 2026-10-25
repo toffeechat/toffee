@@ -47,6 +47,7 @@ export type AdminActionType =
   | 'NOTICE_PUSH'
   | 'INQUIRY_REPLY'
   | 'INQUIRY_CLOSE'
+  | 'INQUIRY_DELETE'
   | 'ADMIN_LEVEL'
   | 'ADMIN_MFA'
   | 'USER_EXPORT';

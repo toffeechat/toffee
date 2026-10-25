@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { uploadInquiryPhoto } from '@/lib/upload-media';
 
 export interface FaqSection {
   title: string;
@@ -57,8 +58,30 @@ export interface InquirySummary {
   updatedAt: string;
 }
 
+/** 붙인 사진(2026-10-25) — url은 서버가 준 임시 주소, 저장소가 안 되면 null */
+export interface InquiryPhoto {
+  id: string;
+  url: string | null;
+}
+
 export interface InquiryDetail extends InquirySummary {
-  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string }[];
+  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string; attachments: InquiryPhoto[] }[];
+}
+
+/** 글 하나에 붙일 수 있는 사진 — 서버 INQUIRY_PHOTO_MAX와 같게 */
+export const INQUIRY_PHOTO_MAX = 3;
+
+/** 고른 사진(아직 안 올린 것) — 보낼 때 올림 */
+export interface PickedPhoto {
+  uri: string;
+  mimeType?: string;
+}
+
+/** 고른 사진을 차례로 올리고 키 목록을 돌려줌(회원·운영자 공통) */
+export async function uploadInquiryPhotos(photos: PickedPhoto[]): Promise<string[]> {
+  const keys: string[] = [];
+  for (const photo of photos) keys.push(await uploadInquiryPhoto(photo.uri, photo.mimeType));
+  return keys;
 }
 
 export function useMyInquiries() {
@@ -72,7 +95,8 @@ export function useMyInquiry(id: string) {
 export function useCreateInquiry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { category: InquiryCategory; title: string; body: string }) => apiClient.post<InquiryDetail>('/support/inquiries', input),
+    mutationFn: async ({ photos, ...input }: { category: InquiryCategory; title: string; body: string; photos: PickedPhoto[] }) =>
+      apiClient.post<InquiryDetail>('/support/inquiries', { ...input, photoKeys: await uploadInquiryPhotos(photos) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['support'] }),
   });
 }
@@ -80,9 +104,22 @@ export function useCreateInquiry() {
 export function useAddInquiryMessage(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => apiClient.post<InquiryDetail>(`/support/inquiries/${id}/messages`, { body }),
+    mutationFn: async ({ body, photos }: { body: string; photos: PickedPhoto[] }) =>
+      apiClient.post<InquiryDetail>(`/support/inquiries/${id}/messages`, { body, photoKeys: await uploadInquiryPhotos(photos) }),
     onSuccess: (data) => {
       queryClient.setQueryData(['support', 'inquiries', id], data);
+      void queryClient.invalidateQueries({ queryKey: ['support', 'inquiries'], exact: true });
+    },
+  });
+}
+
+/** 내 문의 지우기(2026-10-25) — 붙인 사진도 같이 지워짐 */
+export function useDeleteInquiry(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.delete<{ deleted: boolean }>(`/support/inquiries/${id}`),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ['support', 'inquiries', id] });
       void queryClient.invalidateQueries({ queryKey: ['support', 'inquiries'], exact: true });
     },
   });

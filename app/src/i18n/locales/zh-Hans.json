@@ -952,6 +952,15 @@
     "cat_OTHER": "其他",
     "st_OPEN": "等待回复",
     "st_ANSWERED": "已回复",
-    "st_CLOSED": "已结束"
+    "st_CLOSED": "已结束",
+    "photos": "附加照片（可选）",
+    "photosHint": "最多可附加 3 张照片，例如付款收据或错误画面。",
+    "addPhoto": "添加照片",
+    "removePhoto": "移除照片",
+    "openPhoto": "查看大图",
+    "photoUnavailable": "无法加载照片",
+    "delete": "删除咨询",
+    "deleteTitle": "删除咨询",
+    "deleteConfirm": "此咨询的所有内容和照片都将被删除，且无法恢复。"
   }
 }
