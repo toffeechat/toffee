@@ -79,6 +79,11 @@ export function resolveRange(query: { days?: number; from?: string; to?: string 
   return { from, to: today, days };
 }
 
+/** 기간 → 시각 범위 [start, end) — 첫날 태국 0시 ~ 마지막 날 다음 날 태국 0시 */
+export function rangeBounds(range: StatsRange): { start: Date; end: Date } {
+  return { start: zoneDayStart(range.from)!, end: new Date(zoneDayStart(range.to)!.getTime() + DAY_MS) };
+}
+
 /** 일별 점을 7일씩 묶음(기간 첫날부터, 마지막 묶음은 짧을 수 있음) — 점의 day는 묶음 첫날 */
 export function bucketWeekly(daily: DailyActivity[]): DailyActivity[] {
   const weeks: DailyActivity[] = [];

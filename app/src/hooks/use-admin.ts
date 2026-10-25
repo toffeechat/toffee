@@ -178,12 +178,16 @@ export interface AdminUserPage {
   pageSize: number;
 }
 
+/** 회원 목록 기간 필터(2026-10-25) — 가입일(joined) 또는 마지막 접속(active)이 그 기간 */
+export type AdminUserPeriod = { field: 'joined' | 'active'; selection: StatsSelection };
+
 /** 회원 목록(2026-10-20: 한 쪽 50명씩 + 역할별 인원수) */
-export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1) {
+export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1, period?: AdminUserPeriod | null) {
+  const periodQuery = period ? `dateField=${period.field}&${selectionQuery(period.selection)}` : '';
   return useQuery({
-    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page],
+    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page, periodQuery],
     queryFn: () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(periodQuery);
       if (query) params.set('q', query);
       if (role) params.set('role', role);
       if (sort) params.set('sort', sort);
@@ -575,6 +579,39 @@ export function useAdminStatsOverview(selection: StatsSelection) {
     queryKey: ['admin', 'stats', 'overview', query],
     queryFn: () => apiClient.get<AdminOverview>(`/admin/stats/overview?${query}`),
     placeholderData: (previous) => previous,
+  });
+}
+
+/** 그 기간 구독 시작·해지 한 건(2026-10-25, 운영자 홈 "오늘 구독 시작" 카드 → 구독 목록) */
+export interface AdminSubscriptionEvent {
+  id: string;
+  type: 'STARTED' | 'CANCELLED';
+  priceCents: number | null;
+  createdAt: string;
+  user: { id: string; displayName: string; nickname: string | null; deletedAt: string | null };
+  actor: { id: string; chatDisplayName: string; legalName: string; kind: 'SOLO' | 'COUPLE' };
+}
+
+export function useAdminSubscriptionEvents(selection: StatsSelection, type: AdminSubscriptionEvent['type']) {
+  const query = `${selectionQuery(selection)}&type=${type}`;
+  return useQuery({
+    queryKey: ['admin', 'stats', 'subscription-events', query],
+    queryFn: () =>
+      apiClient.get<{ items: AdminSubscriptionEvent[]; counts: Record<AdminSubscriptionEvent['type'], number>; limit: number }>(`/admin/stats/subscription-events?${query}`),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** 그 기간 방별 아티스트 메시지·팬 답장 수(2026-10-25, "오늘 메시지" 카드 → 토피룸 모니터링). selection이 없으면 안 불러옴 */
+export function useAdminMessageRooms(selection: StatsSelection | null) {
+  const query = selection ? selectionQuery(selection) : '';
+  return useQuery({
+    queryKey: ['admin', 'stats', 'message-rooms', query],
+    queryFn: () =>
+      apiClient.get<{ rooms: { actorId: string; messages: number; fanReplies: number }[]; totals: { messages: number; fanReplies: number } }>(
+        `/admin/stats/message-rooms?${query}`,
+      ),
+    enabled: !!selection,
   });
 }
 
