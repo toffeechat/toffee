@@ -243,6 +243,21 @@ model AccessLog {
   @@index([createdAt])
 }
 
+// 운영자 오류 알림을 보낸 기록(2026-10-25) — Sentry 이슈마다 "새 오류"는 한 번, "1시간에 N번 넘음"은 그 시간대(Sentry 시간 묶음 시작 시각)마다 한 번.
+// 서버가 여러 대거나 다시 켜져도 같은 알림이 두 번 가지 않게 유니크 키로 먼저 자리를 잡은 서버만 보냄. 7일 지나면 지움
+model ErrorAlertSent {
+  id        String   @id @default(uuid())
+  issueId   String
+  // NEW / SPIKE
+  kind      String
+  // NEW는 "first", SPIKE는 시간 묶음 시작 시각(유닉스 초)
+  bucket    String
+  createdAt DateTime @default(now())
+
+  @@unique([issueId, kind, bucket])
+  @@index([createdAt])
+}
+
 // 소속사별 데모 입장 코드(2026-10-19) — 운영자가 소속사 이름·코드·만료일을 등록하고, 코드 하나로 웹 데모의 소속사·아티스트·팬
 // 버튼을 다 씀(데모 계정은 모든 소속사가 같이 씀 — 코드는 "누가 들어왔는지"만 구분). 데모 초기화(demo-seed)로 지우지 않고, 코드는
 // 지우지 않고 중지만(접속 기록이 남아야 해서). User와 연결하지 않음.
@@ -351,6 +366,9 @@ model Actor {
   chatProfileImageUrl     String?
   // 토피룸 배경 사진(2026-10-14 사용자 결정, 1차) — 아티스트 본인·소속사가 정함, 팬 토피룸 뒤에 깔림. null이면 기본 배경
   chatBackgroundUrl       String?
+  // 상태메시지(2026-10-25 사용자 결정, 1차) — 토피룸 프로필 카드에 보이는 한 줄(카톡처럼, 60자). 아티스트 본인만 쓰고 지움, 운영자는 지우기만.
+  // 처음엔 null(기본 문구 없음 — 비어 있으면 카드에 줄이 안 보임). 커플방 행은 안 씀(멤버 배우 각자의 값을 카드에 보여 줌)
+  statusMessage           String?
   gender                  ArtistGender?
   monthlyPriceCents       Int
   // 개인 구독 스토어 상품 ID(애플·구글 공통, 소문자·숫자·_·.) — 등록 전엔 null(샌드박스 구독만). 2026-09-29
@@ -1015,7 +1033,22 @@ model SupportMessage {
   body      String
   createdAt DateTime @default(now())
 
-  inquiry SupportInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiry     SupportInquiry      @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  attachments SupportAttachment[]
 
   @@index([inquiryId, createdAt])
+}
+
+// 문의 사진(2026-10-25 — 결제 영수증·오류 화면, 글 하나에 3장까지). 파일은 저장소 users/<쓴 사람>/support/ 아래.
+// 문의를 지우거나 문의한 사람이 탈퇴하면 행과 파일을 같이 지움(개인정보)
+model SupportAttachment {
+  id        String   @id @default(uuid())
+  messageId String
+  objectKey String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  message SupportMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, sortOrder])
 }

@@ -305,6 +305,12 @@
     "save": "저장",
     "saved": "저장했어요.",
     "saveFailed": "저장하지 못했어요. 다시 시도해 주세요.",
+    "statusMessage": "상태메시지",
+    "statusMessageHint": "토피룸 프로필 카드에서 이름 아래 한 줄로 보여요. 비워 두면 보이지 않아요.",
+    "statusMessageCoupleHint": "내 상태메시지예요. 내 토피룸과 CP 토피룸 프로필 카드에 같이 보여요.",
+    "statusMessagePlaceholder": "팬들에게 한마디 남겨 보세요",
+    "statusMessageClear": "지우기",
+    "statusMessageCleared": "지웠어요.",
     "officialNote": "아티스트 찾기 화면의 공식 사진과 공식 이름({{name}})은 운영자가 관리해요. 바꾸려면 운영자에게 요청해 주세요."
   },
   "termsConsent": {
@@ -952,7 +958,16 @@
     "cat_OTHER": "기타",
     "st_OPEN": "답변 기다리는 중",
     "st_ANSWERED": "답변 완료",
-    "st_CLOSED": "종료"
+    "st_CLOSED": "종료",
+    "photos": "사진 붙이기 (선택)",
+    "photosHint": "결제 영수증이나 오류 화면을 3장까지 붙일 수 있어요.",
+    "addPhoto": "사진 추가",
+    "removePhoto": "사진 빼기",
+    "openPhoto": "사진 크게 보기",
+    "photoUnavailable": "사진을 불러올 수 없어요",
+    "delete": "문의 지우기",
+    "deleteTitle": "문의 지우기",
+    "deleteConfirm": "이 문의의 글과 붙인 사진이 모두 지워지고 되돌릴 수 없어요."
   },
   "sendRetry": {
     "failed": "연결이 끊겨 전송을 확인하지 못했어요.",

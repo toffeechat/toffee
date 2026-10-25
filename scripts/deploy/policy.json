@@ -1,0 +1,14 @@
+{
+  "$comment": "배포를 피할 시간(2026-10-25, docs/engineering/deploy-runbook.md 6번). check-window.mjs가 읽음. 시각은 timezone 기준. freezes는 Claude가 사용자 말(\"목요일 3시 OO 소속사 미팅\")을 듣고 추가 — 미팅 2시간 전부터 끝날 때까지 프리뷰(데모) 배포 금지. 지난 항목은 지워도 됨",
+  "timezone": "Asia/Bangkok",
+  "quietHours": {
+    "preview": [
+      { "from": "03:45", "to": "04:20", "reason": "데모 매일 자동 초기화(태국 새벽 4시) — 배포로 서버가 바뀌는 중이면 초기화가 실패할 수 있음" }
+    ],
+    "production": [
+      { "from": "19:00", "to": "01:00", "reason": "태국 팬 사용이 가장 많은 저녁~자정 — 급한 장애 수정만(override)" },
+      { "from": "03:45", "to": "04:30", "reason": "새벽 정리 작업(보관 기간 정리·업로드 정리·접속 기록) 시간" }
+    ]
+  },
+  "freezes": []
+}

@@ -305,6 +305,12 @@
     "save": "保存",
     "saved": "已保存。",
     "saveFailed": "保存失败，请重试。",
+    "statusMessage": "状态消息",
+    "statusMessageHint": "会在 Toffee Room 个人资料卡的名字下方显示一行。留空则不显示。",
+    "statusMessageCoupleHint": "这是你自己的状态消息，会显示在你的 Toffee Room 和 CP Toffee Room 的个人资料卡上。",
+    "statusMessagePlaceholder": "给粉丝留一句话吧",
+    "statusMessageClear": "清除",
+    "statusMessageCleared": "已清除。",
     "officialNote": "搜索页面上的官方照片和官方名称（{{name}}）由运营团队管理。如需修改，请联系运营团队。"
   },
   "termsConsent": {
@@ -952,7 +958,16 @@
     "cat_OTHER": "其他",
     "st_OPEN": "等待回复",
     "st_ANSWERED": "已回复",
-    "st_CLOSED": "已结束"
+    "st_CLOSED": "已结束",
+    "photos": "附加照片（可选）",
+    "photosHint": "最多可附加 3 张照片，例如付款收据或错误画面。",
+    "addPhoto": "添加照片",
+    "removePhoto": "移除照片",
+    "openPhoto": "查看大图",
+    "photoUnavailable": "无法加载照片",
+    "delete": "删除咨询",
+    "deleteTitle": "删除咨询",
+    "deleteConfirm": "此咨询的所有内容和照片都将被删除，且无法恢复。"
   },
   "sendRetry": {
     "failed": "连接中断，无法确认是否已发送。",

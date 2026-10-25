@@ -1,14 +1,20 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { AdminStatsService } from './admin-stats.service.js';
+import { SentryIssuesService } from './sentry-issues.service.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
-import { resolveRange } from '../actors/agency-stats.service.js';
+import { rangeBounds, resolveRange } from '../actors/agency-stats.service.js';
 import { ActorStatsQueryDto } from '../actors/dto/agency-stats-query.dto.js';
+import { SubscriptionEventsQueryDto } from './dto/admin-stats-query.dto.js';
+import { SubscriptionEventType } from '../generated/prisma/enums.js';
 
 @Roles(Role.ADMIN)
 @Controller('admin/stats')
 export class AdminStatsController {
-  constructor(private readonly stats: AdminStatsService) {}
+  constructor(
+    private readonly stats: AdminStatsService,
+    private readonly sentry: SentryIssuesService,
+  ) {}
 
   // 운영자 홈 맨 위 오늘 숫자(대기 신고·오늘 가입·접속 등)
   @Get('summary')
@@ -22,8 +28,26 @@ export class AdminStatsController {
     return this.stats.overview(resolveRange(query));
   }
 
+  // 운영자 홈 "최근 오류"(2026-10-25) — Sentry 미해결 오류, 5분 캐시. 키가 없으면 status NOT_CONNECTED
+  @Get('errors')
+  errors() {
+    return this.sentry.view();
+  }
+
   @Get('breakdown')
   breakdown() {
     return this.stats.breakdown();
+  }
+
+  // 운영자 홈 오늘 숫자 → 목록(2026-10-25) — 그 기간 구독 시작·해지 한 건씩(누가 어느 방, 가격)
+  @Get('subscription-events')
+  subscriptionEvents(@Query() query: SubscriptionEventsQueryDto) {
+    return this.stats.subscriptionEvents(rangeBounds(resolveRange(query)), query.type ?? SubscriptionEventType.STARTED);
+  }
+
+  // 그 기간 방별 아티스트 메시지·팬 답장 수 — 토피룸 모니터링의 "그날 메시지" 보기
+  @Get('message-rooms')
+  messageRooms(@Query() query: ActorStatsQueryDto) {
+    return this.stats.messageRooms(rangeBounds(resolveRange(query)));
   }
 }

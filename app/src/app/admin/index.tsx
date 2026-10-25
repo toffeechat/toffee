@@ -29,6 +29,7 @@ import { RANK_ICONS, rankItems } from '@/components/console-rank';
 import { AudiencePanels, KpiGrid, RangeCaption, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
 import { StatsRangeControl, formatStatDay } from '@/components/stats-range-picker';
 import { formatBaht } from '@/components/admin-ui';
+import { AdminErrorsCard } from '@/components/admin-errors-card';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { useWideLayout } from '@/components/wide-shell';
@@ -57,6 +58,7 @@ import { IDLE_WARN_DAYS, idleDays } from '@/utils/idle-days';
 import { isUpcoming } from '@/utils/release';
 import { countryLabel, languageLabel, shortDay } from '@/utils/stat-labels';
 import { useMe } from '@/hooks/use-onboarding';
+import { thaiToday } from '@/utils/stat-range';
 
 const KINDS: RoomKindFilter[] = ['ALL', 'SOLO', 'COUPLE'];
 const PROVIDER_NAMES: Record<string, string> = { GOOGLE: '구글', APPLE: '애플', NAVER: '네이버', KAKAO: '카카오', LINE: '라인', unknown: '알 수 없음' };
@@ -64,7 +66,7 @@ const PLATFORM_NAMES: Record<string, string> = { ios: 'iOS', android: '안드로
 
 /**
  * 운영자 홈 = 통계 대시보드(2026-10-20 사용자 요청: "홈과 통계를 합치고 그래프로 눈에 확 들어오게, 소속사 웹에서 보는 건 운영자도 다").
- * 위에서부터 처리할 일 → 오늘 숫자 → 기간(최근 7·30·90일 또는 직접 고른 날짜, 최대 1년)·아티스트/CP·소속사 필터 →
+ * 위에서부터 처리할 일 → 오늘 숫자 → 최근 오류(Sentry, 2026-10-25) → 기간(최근 7·30·90일 또는 직접 고른 날짜, 최대 1년)·아티스트/CP·소속사 필터 →
  * 서비스 전체(팬·가입·신규 구독 금액) → 아티스트 활동(소속사 대시보드와 같은 카드·추이·순위) → 팬 분포.
  * 순위에서 아티스트를 누르면 소속사와 같은 모니터링 화면(메시지·팬 답장·스토리·통계). 폰에선 맨 아래에 메뉴.
  */
@@ -161,12 +163,43 @@ export default function AdminHomeScreen() {
     { key: 'release', icon: Clock, count: live.filter((actor) => isUpcoming(actor.releaseAt)).length, label: '공개 예정', onPress: () => router.push('/admin/actors') },
   ].filter((todo) => todo.count > 0);
 
-  const today = summary
+  // 오늘 숫자를 누르면 그 목록(2026-10-25 사용자 요청) — 가입·접속은 회원 관리(팬 + 기간), 구독은 구독 시작·해지, 메시지는 토피룸 모니터링(그날 메시지).
+  // 아래 작은 줄(7일·30일·해지)도 따로 눌림. 날짜는 서버와 같은 태국 날짜
+  const day = thaiToday();
+  const onDay = { from: day, to: day };
+  const today: { icon: LucideIcon; label: string; value: string; sub: string; onPress: () => void; onPressSub?: () => void }[] = summary
     ? [
-        { icon: UserPlus, label: '오늘 가입', value: `${summary.fans.newToday}`, sub: `7일 +${summary.fans.new7d}` },
-        { icon: LogIn, label: '오늘 접속', value: `${summary.fans.activeToday}`, sub: `30일 ${summary.fans.active30d}명` },
-        { icon: TrendingUp, label: '오늘 구독 시작', value: `${summary.subscriptions.startedToday}`, sub: `해지 ${summary.subscriptions.cancelledToday}` },
-        { icon: Activity, label: '오늘 메시지', value: `${summary.messages.starToday}`, sub: `팬 답장 ${summary.messages.fanRepliesToday}` },
+        {
+          icon: UserPlus,
+          label: '오늘 가입',
+          value: `${summary.fans.newToday}`,
+          sub: `7일 +${summary.fans.new7d}`,
+          onPress: () => router.push({ pathname: '/admin/users', params: { role: 'USER', dateField: 'joined', ...onDay } }),
+          onPressSub: () => router.push({ pathname: '/admin/users', params: { role: 'USER', dateField: 'joined', days: '7' } }),
+        },
+        {
+          icon: LogIn,
+          label: '오늘 접속',
+          value: `${summary.fans.activeToday}`,
+          sub: `30일 ${summary.fans.active30d}명`,
+          onPress: () => router.push({ pathname: '/admin/users', params: { role: 'USER', dateField: 'active', sort: 'recent', ...onDay } }),
+          onPressSub: () => router.push({ pathname: '/admin/users', params: { role: 'USER', dateField: 'active', sort: 'recent', days: '30' } }),
+        },
+        {
+          icon: TrendingUp,
+          label: '오늘 구독 시작',
+          value: `${summary.subscriptions.startedToday}`,
+          sub: `해지 ${summary.subscriptions.cancelledToday}`,
+          onPress: () => router.push({ pathname: '/admin/subscriptions', params: { type: 'STARTED', ...onDay } }),
+          onPressSub: () => router.push({ pathname: '/admin/subscriptions', params: { type: 'CANCELLED', ...onDay } }),
+        },
+        {
+          icon: Activity,
+          label: '오늘 메시지',
+          value: `${summary.messages.starToday}`,
+          sub: `팬 답장 ${summary.messages.fanRepliesToday}`,
+          onPress: () => router.push({ pathname: '/admin/rooms', params: onDay }),
+        },
       ]
     : [];
 
@@ -219,20 +252,44 @@ export default function AdminHomeScreen() {
           {/* 오늘(태국 시간) */}
           <View style={styles.grid}>
             {today.map((tile) => (
-              <View key={tile.label} style={[styles.tile, todayCell, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <Pressable
+                key={tile.label}
+                onPress={tile.onPress}
+                accessibilityRole="link"
+                accessibilityHint="목록 보기"
+                style={({ hovered, pressed }) => [
+                  styles.tile,
+                  todayCell,
+                  { backgroundColor: theme.background, borderColor: theme.border },
+                  (hovered || pressed) && { backgroundColor: theme.backgroundSelected },
+                ]}>
                 <View style={styles.tileTop}>
                   <Icon as={tile.icon} size={14} color={theme.textSecondary} />
-                  <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+                  <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1} style={styles.flex}>
                     {tile.label}
                   </ThemedText>
+                  <Icon as={ChevronRight} size={14} color={theme.textTertiary} />
                 </View>
                 <ThemedText type="title">{tile.value}</ThemedText>
-                <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
-                  {tile.sub}
-                </ThemedText>
-              </View>
+                {tile.onPressSub ? (
+                  <Pressable onPress={tile.onPressSub} accessibilityRole="link" hitSlop={6} style={styles.tileSub}>
+                    {({ hovered }) => (
+                      <ThemedText type="caption" themeColor="tint" numberOfLines={1} style={hovered ? styles.underline : undefined}>
+                        {`${tile.sub} ›`}
+                      </ThemedText>
+                    )}
+                  </Pressable>
+                ) : (
+                  <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
+                    {tile.sub}
+                  </ThemedText>
+                )}
+              </Pressable>
             ))}
           </View>
+
+          {/* 최근 오류(Sentry, 2026-10-25) — 누르면 Sentry 상세 */}
+          <AdminErrorsCard />
 
           {/* 기간·아티스트/CP·소속사 */}
           <View style={statsStyles.filters}>
@@ -484,6 +541,8 @@ const styles = StyleSheet.create({
   todoIcon: { width: 34, height: 34, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   tile: { borderWidth: StyleSheet.hairlineWidth, borderRadius: Radius.lg, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, gap: 2 },
   tileTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tileSub: { alignSelf: 'flex-start' },
+  underline: { textDecorationLine: 'underline' },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderWidth: StyleSheet.hairlineWidth, borderRadius: Radius.lg, padding: Spacing.three },
   logoutButton: { borderWidth: 1, borderRadius: Radius.md, paddingVertical: Spacing.three, alignItems: 'center', marginTop: Spacing.two },
 });

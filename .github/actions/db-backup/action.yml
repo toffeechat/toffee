@@ -1,0 +1,70 @@
+name: 운영 DB 백업
+description: >-
+  운영 DB를 pg_dump → 공개키로 암호화(gpg) → Cloudflare R2 백업 버킷에 올림(2026-10-25). 마이그레이션이 있는 배포·데이터 수정 전에.
+  저장소·Actions 로그엔 회원 정보가 남지 않음(암호화된 파일만 버킷에, 풀 수 있는 비밀키는 사용자만 보관).
+inputs:
+  database-url: { description: 운영 DB 접속 주소, required: true }
+  gpg-public-key: { description: 백업 암호화용 공개키(ASCII armor), required: true }
+  s3-endpoint: { description: R2 S3 주소(https://<계정ID>.r2.cloudflarestorage.com), required: true }
+  s3-bucket: { description: 백업 버킷 이름, required: true }
+  s3-access-key-id: { description: R2 토큰(이 버킷 쓰기만), required: true }
+  s3-secret-access-key: { description: R2 토큰 비밀값, required: true }
+  label: { description: 파일 이름에 붙일 이유(deploy·data-fix 등), required: true }
+  pg-version: { description: pg_dump 버전(서버 버전 이상), default: '17' }
+outputs:
+  key:
+    description: 버킷 안 파일 경로
+    value: ${{ steps.dump.outputs.key }}
+runs:
+  using: composite
+  steps:
+    - name: 설정 확인
+      shell: bash
+      env:
+        DB: ${{ inputs.database-url }}
+        KEY: ${{ inputs.gpg-public-key }}
+        EP: ${{ inputs.s3-endpoint }}
+        BUCKET: ${{ inputs.s3-bucket }}
+        AK: ${{ inputs.s3-access-key-id }}
+        SK: ${{ inputs.s3-secret-access-key }}
+      run: |
+        missing=""
+        [ -n "$DB" ] || missing="$missing PROD_DATABASE_URL"
+        [ -n "$KEY" ] || missing="$missing BACKUP_GPG_PUBLIC_KEY"
+        [ -n "$EP" ] || missing="$missing BACKUP_S3_ENDPOINT"
+        [ -n "$BUCKET" ] || missing="$missing BACKUP_S3_BUCKET"
+        [ -n "$AK" ] || missing="$missing BACKUP_S3_ACCESS_KEY_ID"
+        [ -n "$SK" ] || missing="$missing BACKUP_S3_SECRET_ACCESS_KEY"
+        if [ -n "$missing" ]; then
+          echo "⛔ 백업 설정이 없어 멈춤:$missing (production 환경 Secrets — ops-infra-backlog '배포 자동화')" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+    - name: pg_dump 설치
+      shell: bash
+      run: |
+        sudo install -d /usr/share/postgresql-common/pgdg
+        sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+        sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-${{ inputs.pg-version }} > /dev/null
+    - name: 백업·암호화·업로드
+      id: dump
+      shell: bash
+      env:
+        DATABASE_URL: ${{ inputs.database-url }}
+        GPG_KEY: ${{ inputs.gpg-public-key }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
+        AWS_DEFAULT_REGION: auto
+      run: |
+        set -euo pipefail
+        export GNUPGHOME="$(mktemp -d)"
+        echo "$GPG_KEY" | gpg --batch --import 2> /dev/null
+        FPR=$(gpg --batch --list-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')
+        KEY="prod/$(date -u +%Y%m%dT%H%M%SZ)-${{ inputs.label }}-${GITHUB_SHA:0:7}.dump.gpg"
+        /usr/lib/postgresql/${{ inputs.pg-version }}/bin/pg_dump --format=custom --no-owner "$DATABASE_URL" \
+          | gpg --batch --trust-model always --encrypt --recipient "$FPR" \
+          | aws s3 cp - "s3://${{ inputs.s3-bucket }}/$KEY" --endpoint-url "${{ inputs.s3-endpoint }}"
+        SIZE=$(aws s3api head-object --bucket "${{ inputs.s3-bucket }}" --key "$KEY" --endpoint-url "${{ inputs.s3-endpoint }}" --query ContentLength --output text)
+        [ "$SIZE" -gt 1000 ] || { echo "⛔ 백업 파일이 너무 작음($SIZE bytes)"; exit 1; }
+        echo "key=$KEY" >> "$GITHUB_OUTPUT"
+        echo "- 🗄️ 운영 DB 백업: \`$KEY\` ($SIZE bytes, 암호화)" >> "$GITHUB_STEP_SUMMARY"

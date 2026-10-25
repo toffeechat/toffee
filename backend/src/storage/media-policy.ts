@@ -82,3 +82,8 @@ export function userProfileImagePrefix(userId: string): string {
 export function isStorageKey(value: string | null | undefined): value is string {
   return !!value && !/^https?:\/\//i.test(value);
 }
+
+// 1:1 문의 사진(2026-10-25) — 쓴 사람(문의한 회원, 답하는 운영자) 기준. users/ 아래라 붙이지 않은 파일은 고아 정리가 지움
+export function supportUploadPrefix(userId: string): string {
+  return `users/${userId}/support/`;
+}

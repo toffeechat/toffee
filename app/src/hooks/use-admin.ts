@@ -3,6 +3,7 @@ import type { Bundle } from './use-bundles';
 import type { ArtistGender, CoupleMemberActor } from './use-actors';
 import { apiClient } from '@/lib/api-client';
 import { selectionQuery, type StatsSelection } from './use-console';
+import { uploadInquiryPhotos, type InquiryCategory, type InquiryPhoto, type PickedPhoto } from './use-support';
 
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
 
@@ -177,12 +178,16 @@ export interface AdminUserPage {
   pageSize: number;
 }
 
+/** 회원 목록 기간 필터(2026-10-25) — 가입일(joined) 또는 마지막 접속(active)이 그 기간 */
+export type AdminUserPeriod = { field: 'joined' | 'active'; selection: StatsSelection };
+
 /** 회원 목록(2026-10-20: 한 쪽 50명씩 + 역할별 인원수) */
-export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1) {
+export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: AdminUserSort, page = 1, period?: AdminUserPeriod | null) {
+  const periodQuery = period ? `dateField=${period.field}&${selectionQuery(period.selection)}` : '';
   return useQuery({
-    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page],
+    queryKey: ['admin', 'users', 'list', query, role ?? null, sort ?? null, page, periodQuery],
     queryFn: () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(periodQuery);
       if (query) params.set('q', query);
       if (role) params.set('role', role);
       if (sort) params.set('sort', sort);
@@ -280,6 +285,8 @@ export interface AdminActor {
   officialProfileImageUrl: string | null;
   chatDisplayName: string;
   chatProfileImageUrl: string | null;
+  /** 상태메시지(2026-10-25) — 아티스트 본인이 씀, 운영자는 지우기만. 커플방은 늘 null(멤버별) */
+  statusMessage: string | null;
   monthlyPriceCents: number;
   storeProductId: string | null;
   verified: boolean;
@@ -386,6 +393,11 @@ export function useSetActorRetired(id: string) {
 /** 활동 종료 예정(2026-10-20) — ISO 또는 null(예정 취소). 정하는 즉시 새 구독이 막히고 그 시각에 자동 종료 */
 export function useSetActorRetireAt(id: string) {
   return useActorMutation((retireAt: string | null) => apiClient.patch<AdminActor>(`/admin/actors/${id}/retire-at`, { retireAt }));
+}
+
+/** 아티스트 상태메시지 지우기(2026-10-25) — 작업 기록에 지운 문구가 남음 */
+export function useClearActorStatusMessage(id: string) {
+  return useActorMutation(() => apiClient.patch<AdminActor>(`/admin/actors/${id}/clear-status-message`));
 }
 
 export function useSetActorContractEnd(id: string) {
@@ -560,6 +572,31 @@ export interface AdminStatsBreakdown {
   providers: { key: string; count: number }[];
 }
 
+// ── 운영자 홈 "최근 오류"(2026-10-25) — 서버가 Sentry API에서 5분 캐시로 가져옴 ──
+
+export interface AdminErrorIssue {
+  id: string;
+  shortId: string;
+  title: string;
+  culprit: string;
+  level: string;
+  project: string;
+  count: number;
+  count24h: number;
+  userCount: number;
+  firstSeen: string | null;
+  lastSeen: string | null;
+  url: string;
+}
+
+export type AdminErrors =
+  | { status: 'NOT_CONNECTED'; missing: string[] }
+  | { status: 'OK' | 'FAILED'; fetchedAt: string | null; listUrl: string; issues: AdminErrorIssue[]; total24h: number; error?: string };
+
+export function useAdminErrors() {
+  return useQuery({ queryKey: ['admin', 'stats', 'errors'], queryFn: () => apiClient.get<AdminErrors>('/admin/stats/errors'), refetchInterval: 5 * 60_000 });
+}
+
 export function useAdminStatsSummary() {
   return useQuery({
     queryKey: ['admin', 'stats', 'summary'],
@@ -574,6 +611,39 @@ export function useAdminStatsOverview(selection: StatsSelection) {
     queryKey: ['admin', 'stats', 'overview', query],
     queryFn: () => apiClient.get<AdminOverview>(`/admin/stats/overview?${query}`),
     placeholderData: (previous) => previous,
+  });
+}
+
+/** 그 기간 구독 시작·해지 한 건(2026-10-25, 운영자 홈 "오늘 구독 시작" 카드 → 구독 목록) */
+export interface AdminSubscriptionEvent {
+  id: string;
+  type: 'STARTED' | 'CANCELLED';
+  priceCents: number | null;
+  createdAt: string;
+  user: { id: string; displayName: string; nickname: string | null; deletedAt: string | null };
+  actor: { id: string; chatDisplayName: string; legalName: string; kind: 'SOLO' | 'COUPLE' };
+}
+
+export function useAdminSubscriptionEvents(selection: StatsSelection, type: AdminSubscriptionEvent['type']) {
+  const query = `${selectionQuery(selection)}&type=${type}`;
+  return useQuery({
+    queryKey: ['admin', 'stats', 'subscription-events', query],
+    queryFn: () =>
+      apiClient.get<{ items: AdminSubscriptionEvent[]; counts: Record<AdminSubscriptionEvent['type'], number>; limit: number }>(`/admin/stats/subscription-events?${query}`),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** 그 기간 방별 아티스트 메시지·팬 답장 수(2026-10-25, "오늘 메시지" 카드 → 토피룸 모니터링). selection이 없으면 안 불러옴 */
+export function useAdminMessageRooms(selection: StatsSelection | null) {
+  const query = selection ? selectionQuery(selection) : '';
+  return useQuery({
+    queryKey: ['admin', 'stats', 'message-rooms', query],
+    queryFn: () =>
+      apiClient.get<{ rooms: { actorId: string; messages: number; fanReplies: number }[]; totals: { messages: number; fanReplies: number } }>(
+        `/admin/stats/message-rooms?${query}`,
+      ),
+    enabled: !!selection,
   });
 }
 
@@ -924,13 +994,18 @@ export interface AdminInquiry {
   _count?: { messages: number };
 }
 export interface AdminInquiryDetail extends AdminInquiry {
-  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string; authorId: string }[];
+  messages: { id: string; fromAdmin: boolean; body: string; createdAt: string; authorId: string; attachments: InquiryPhoto[] }[];
 }
 
-export function useAdminInquiries(status?: AdminInquiryStatus) {
+/** 상태·종류 필터(종류는 2026-10-25). counts는 고른 종류 안의 상태별, categoryCounts는 고른 상태 안의 종류별 */
+export function useAdminInquiries(status?: AdminInquiryStatus, category?: InquiryCategory) {
+  const query = new URLSearchParams({ ...(status ? { status } : {}), ...(category ? { category } : {}) }).toString();
   return useQuery({
-    queryKey: ['admin', 'inquiries', status ?? 'ALL'],
-    queryFn: () => apiClient.get<{ counts: Record<'ALL' | AdminInquiryStatus, number>; items: AdminInquiry[] }>(`/admin/inquiries${status ? `?status=${status}` : ''}`),
+    queryKey: ['admin', 'inquiries', status ?? 'ALL', category ?? 'ALL'],
+    queryFn: () =>
+      apiClient.get<{ counts: Record<'ALL' | AdminInquiryStatus, number>; categoryCounts: Record<'ALL' | InquiryCategory, number>; items: AdminInquiry[] }>(
+        `/admin/inquiries${query ? `?${query}` : ''}`,
+      ),
     refetchInterval: 60_000,
     placeholderData: (previous) => previous,
   });
@@ -943,8 +1018,21 @@ export function useAdminInquiry(id: string) {
 export function useReplyInquiry(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => apiClient.post<AdminInquiryDetail>(`/admin/inquiries/${id}/messages`, { body }),
+    mutationFn: async ({ body, photos }: { body: string; photos: PickedPhoto[] }) =>
+      apiClient.post<AdminInquiryDetail>(`/admin/inquiries/${id}/messages`, { body, photoKeys: await uploadInquiryPhotos(photos) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'inquiries'] }),
+  });
+}
+
+/** 문의 지우기(2026-10-25) — 사진 파일까지 지움, 작업 기록에 제목이 남음 */
+export function useDeleteAdminInquiry(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.delete<{ deleted: boolean }>(`/admin/inquiries/${id}`),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ['admin', 'inquiries', 'one', id] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'inquiries'] });
+    },
   });
 }
 

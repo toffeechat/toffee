@@ -23,6 +23,13 @@ export function formatStatDay(day: string, language: string): string {
   });
 }
 
+/** 운영자 목록 화면의 기간 안내(2026-10-25, 한국어 전용) — "오늘" / "10월 24일" / "최근 7일" / "10월 1일 ~ 10월 24일" */
+export function selectionLabel(selection: StatsSelection, language: string): string {
+  if ('days' in selection) return `최근 ${selection.days}일`;
+  if (selection.from !== selection.to) return `${formatStatDay(selection.from, language)} ~ ${formatStatDay(selection.to, language)}`;
+  return selection.from === thaiToday() ? '오늘' : formatStatDay(selection.from, language);
+}
+
 /**
  * 통계 기간 고르기(2026-10-13 사용자 요청: 최대 90일 → 원하는 기간, 최대 1년) — [7일][30일][90일] 빠른 버튼 + [기간 선택](달력).
  * 직접 고른 기간이면 마지막 버튼에 "8월 1일 ~ 9월 15일".

@@ -1056,6 +1056,8 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 
 ## 출시 준비: Docker·설정 점검·공개 약관·부하 테스트 (2026-09-29)
 
+> 2026-10-25: 이 테스트가 다루지 않은 상황(읽기·답장 폭주, 연결 1만+, 큰 DB, 서버 2대)과 출시 전 재테스트 계획은 [`load-test-plan.md`](./load-test-plan.md).
+
 - `backend/Dockerfile`(node:22-slim 2단계, openssl은 Prisma 마이그레이션 엔진용), `docker-entrypoint.sh`(`RUN_MIGRATIONS` 기본 true →
   `prisma migrate deploy` 후 `node --import ./dist/instrument.js dist/main`), `.dockerignore`. 이 세션에선 Debian 패키지 서버가 막혀
   full `node:22` 변형으로 빌드·실행 확인(새 DB에 마이그레이션 25개 적용, `/health/ready`·`/legal/*`·`/support` 200, SIGTERM 즉시 종료).
@@ -1767,7 +1769,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 스토어: `subscriptions/store-renewal.service.ts`(`@Cron` 매시간, `shouldStopNow(room, expiresAt, now)`), `IapVerificationService.cancelGoogleSubscription`
   (`GOOGLE_PLAY_*` 없으면 false). 애플은 `admin-store.controller.ts`(`GET admin/store/apple-todo`, `PATCH …/sale-stopped` → `Actor/Bundle.storeSaleStoppedAt`).
 - 알림: `notifications/admin-alert.service.ts`(NotificationsModule `@Global`) — `ADMIN_ALERT_EMAIL`(쉼표), `ADMIN_ALERT_KINDS`(REPORT,REFUND,IDLE,INQUIRY,CONTRACT,RETIRE).
-  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`.
+  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`. 2026-10-25 `ERROR` 추가(아래 Sentry, 앱은 `/admin`).
+- 최근 오류(2026-10-25): `admin/sentry-issues.service.ts` — `GET admin/stats/errors`(`ErrorsView`: `NOT_CONNECTED` / `OK` / `FAILED`+직전 목록).
+  `SENTRY_API_TOKEN`(개인 토큰, event:read·project:read·org:read), `SENTRY_ORG`(기본 toffeechat), `SENTRY_PROJECTS`(기본 toffee-backend,toffee-app),
+  `SENTRY_API_URL`(EU면 de.sentry.io), `SENTRY_ISSUES_ENVIRONMENT`. 프로젝트별 `/api/0/projects/{org}/{p}/issues/?query=is:unresolved&statsPeriod=24h&sort=date&limit=25`,
+  메모리 캐시 5분(실패 1분, 동시 요청은 한 번). `@Cron(EVERY_5_MINUTES) watch()` → `alertCandidates()`(`sentry-issues.ts`, 순수 함수 — 새 오류 = firstSeen 30분 안,
+  SPIKE = stats['24h'] 마지막 두 시간 묶음 ≥ `ERROR_ALERT_HOURLY_THRESHOLD`(기본 30, 0 끔)) → `ErrorAlertSent`(@@unique issueId·kind·bucket) create 성공한 것만 notify,
+  P2002면 건너뜀(여러 대·재시작 중복 방지), 3건 넘으면 한 통, 7일 지난 기록 삭제. 앱 `components/admin-errors-card.tsx`, `useAdminErrors`(5분 refetch).
 - 점검·최소 버전: `app-settings/`(global, 15초 캐시) — `AppSetting(id 'app')`, `GET /app-config`(@Public), `GET/PATCH admin/app-settings`(OWNER).
   `MaintenanceGuard`는 APP_GUARD 순서상 RolesGuard 다음(req.user가 있어야 운영자 예외). 앱 `components/app-gate.tsx`, api-client `onMaintenance`.
 - 공지 푸시: `PushService.sendToEveryone(compose, data)` — `reachableUser`/`deliver`로 나눔, 기기를 id 커서로 1,000개씩. `Notice.pushedAt`을 updateMany로 선점.
@@ -1878,3 +1886,72 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   앱 `lib/realtime.ts`: `refreshLiveQueries`(messages·chat-media·reply-quota·my-subscriptions·my-bundles·actor-broadcasts·actor-replies·my-actors 무효화) —
   `resync` 신호, 그리고 ready까지 갔던 연결이 서버 쪽 사유(끝남·오류·멈춤)로 끊긴 뒤 다시 ready가 오면. 멈춘 연결 감시 `STALL_MS` 70초(10초마다 확인).
 
+## 운영자 홈 오늘 숫자 → 목록 (2026-10-25)
+
+- 숫자와 목록이 같은 조건이 되게 summary와 같은 where를 씀. 날짜는 `resolveRange`(days 또는 from~to, 태국 날짜) → `rangeBounds`(`agency-stats.service.ts`, [첫날 0시, 끝날 다음 날 0시)).
+- `GET /admin/users?dateField=joined|active&days|from&to` — `AdminUsersService.findAll(..., period)`: `createdAt`/`lastActiveAt`를 그 범위로 + `deletedAt: null`
+  (summary의 `FAN_WHERE`와 맞추려고. 역할별 counts도 같은 조건). 카드는 `role=USER`를 같이 넘김.
+- `GET /admin/stats/subscription-events?days|from&to&type=STARTED|CANCELLED` — `SubscriptionEvent` 최신순 최대 `EVENT_LIST_LIMIT`(500) + 종류별 counts. 팬 필터 없음(summary와 같음).
+- `GET /admin/stats/message-rooms?days|from&to` — `message.groupBy([actorId, senderType])`, 지운 메시지 포함(summary와 같음). 앱은 `RoomMonitorList messagePeriod`로
+  `/actors/mine` 목록을 이 결과에 있는 방만 거르고 아티스트 메시지 많은 순.
+- 앱: 홈 카드는 `router.push`로 `/admin/users`·`/admin/subscriptions`(새 화면)·`/admin/rooms`에 `from/to`(오늘 = `thaiToday()`) 또는 `days`를 넘기고, 각 화면은
+  `useLocalSearchParams` → `selectionFromParams`로 첫 상태를 정함. 기간 안내 문구는 `selectionLabel`(`stats-range-picker.tsx`). 카드 아래 작은 줄은 안쪽 `Pressable`(웹에서 바깥 카드 onPress가 같이 안 불리는 것 확인).
+
+## 아티스트 상태메시지 (2026-10-25)
+
+- `Actor.statusMessage String?`(마이그레이션 `20261025090000_actor_status_message`). COUPLE 행은 안 씀 — 카드는 `coupleMembers.member.statusMessage`.
+  `ActorsService` LIST_SELECT·멤버 select, `ADMIN_ACTOR_SELECT`에 포함(공개 `GET /actors/:id`에도 나감 — 닉네임·대화방 사진과 같은 수준).
+- 검사 공용화: `common/status-message/status-message.ts` `cleanStatusMessage(raw, moderation)`(NFC·공백 정리, 60자 = `STATUS_MESSAGE_MAX_LENGTH`, `\p{Cc}\p{Cf}`, 금칙어 →
+  `STATUS_MESSAGE_*` 오류, 빈 값 null). `AuthService.updateProfile`(팬)도 이걸 씀.
+- `PATCH /actors/:id/status-message`(`@Roles(ACTOR)`) → `ActorsService.updateStatusMessage` — `ensureIsActorSelf` 반환값(SOLO면 그 id, COUPLE이면 내 멤버 id,
+  운영자의 COUPLE이면 null → 403)에 저장, 응답은 요청한 방 `findOne`. 운영자: `PATCH /admin/actors/:id/clear-status-message`(OWNER 아니어도 됨 — 팬 `clear-profile`과 같음),
+  `AdminAction` `ACTOR_STATUS_CLEAR` detail `{statusMessage}`.
+- 앱: `studio/[actorId]/profile.tsx` `StatusMessageForm`(역할 ACTOR일 때만, CP방은 `useMyActors()`의 SOLO id와 겹치는 멤버), `chat-profile/[actorId].tsx` 카드·멤버 줄,
+  `admin/actors/[id].tsx` `StatusMessageSection`(SOLO만, CP는 멤버 줄에 표시), `admin/actions.tsx` detail에 `statusMessage`.
+
+## 1:1 문의 종류 필터·사진 첨부 (2026-10-25)
+
+- 스키마: `SupportAttachment { messageId → SupportMessage (Cascade), objectKey, sortOrder }` — 마이그레이션 `20261025100000_support_attachments`(손으로 작성, 로컬 Postgres에
+  `migrate deploy` + `migrate diff --exit-code` 통과). 메시지당 `INQUIRY_PHOTO_MAX = 3`(서버 `support.service.ts`, 앱 `use-support.ts` 같은 값).
+- 업로드: `POST /support/uploads {contentType, sizeBytes}`(로그인한 누구나, 20/분) → `MediaService.createUploadAt(supportUploadPrefix(userId), 'PHOTO', …)` =
+  `users/<쓴 사람 id>/support/`. 운영자 답변 사진도 **운영자 자신의 경로**. 글 보낼 때 `photoKeys[]` → `verifyAt`(경로·HEAD·매직 넘버, 안 맞으면 저장소에서 지우고 400).
+  중복 키는 하나로, 4장 이상 `INQUIRY_PHOTO_LIMIT`, 글·사진 둘 다 없으면 `INQUIRY_EMPTY`(새 문의는 DTO에서 body 필수). 응답은 `attachments: [{id, url}]`(`resolveImageUrl`,
+  저장소 미설정이면 url null). 키는 응답에 안 나감.
+- 삭제: `DELETE /support/inquiries/:id`(본인), `DELETE /admin/inquiries/:id`(운영자, audit `INQUIRY_DELETE` + detail `{title, userId}` — 지운 뒤엔 제목을 못 찾아서).
+  행은 cascade, 파일은 `deleteQuietly`. 탈퇴(`AuthService.deleteAccount`)는 트랜잭션에서 `supportAttachment.deleteMany({message:{inquiry:{userId}}})` 후 파일 삭제, 문의 글은 남김.
+  고아 정리(`UploadCleanupService.referencedKeys`)가 `SupportAttachment.objectKey`를 참조로 셈 — 올리고 안 보낸 사진만 하루 뒤 지워짐(`users/` prefix라 원래 훑던 경로).
+- 운영자 목록: `GET /admin/inquiries?status=&category=` → `{counts, categoryCounts, items}`. `groupBy(['status','category'])` 한 번으로 서로 거른 개수(상태 개수는 고른 종류
+  안에서, 종류 개수는 고른 상태 안에서). 목록에 없는 옛 category 값은 "기타"로 셈.
+- 알림·푸시: 운영자 알림 본문 끝에 "(사진 N장)", 사진만 보낸 운영자 답변의 회원 푸시 본문은 `pushStrings().media.PHOTO`. audit `INQUIRY_REPLY` detail `{photos}`.
+- 내 정보 받기: 문의 글마다 `photos`(장수)만.
+- 앱: `components/inquiry-photos.tsx` — `InquiryPhotoPicker`(expo-image-picker `allowsMultipleSelection`+`selectionLimit`, 웹은 limit를 안 지켜 slice, 올리기는 보낼 때)·
+  `InquiryPhotoStrip`(누르면 `/media-viewer` 한 장 모드 — 확대·저장). 문구는 props(회원 9개 언어 `inquiry.*`, 운영자 한국어). 업로드 `lib/upload-media.ts uploadInquiryPhoto`,
+  훅 `uploadInquiryPhotos`(차례로 올림)·`useDeleteInquiry`·`useDeleteAdminInquiry`, `useAdminInquiries(status, category)`.
+- 검증: 단위 `support.service.spec.ts`(8개), `upload-cleanup.service.spec.ts` 갱신. moto_server로 실제 업로드 E2E(올리기→조회 URL 바이트 일치, 남의 경로 키·4장·빈 글·
+  가짜 PNG 400, 운영자 사진만 답변, 필터 개수, 본인 삭제·남이 지우기 404, 탈퇴 후 사진 0장·글 남음, 저장소 파일 전부 삭제) + 웹(회원 폰 폭·운영자 PC/폰 폭, 전체 화면 보기).
+## 배포 체계 — 워크플로·자동 점검 (2026-10-25)
+
+절차·비밀값·되돌리기는 `deploy-runbook.md`. 여기는 구현 결정만.
+
+- **프리뷰는 기존 자동 배포를 그대로 씀**: Railway `toffee-demo`·Pages `toffee-demo`가 main을 배포하므로 `deploy-preview.yml`은 배포를 "거는" 대신
+  `/health`·`/version.json`의 `commit`이 목표 커밋(또는 그걸 포함하는 새 커밋, `git merge-base --is-ancestor`)이 될 때까지 기다림 — Railway·Cloudflare 토큰 없이 돎.
+  프로덕션은 자동 배포를 끄고 `serviceInstanceDeployV2(commitSha)`(Railway GraphQL, project token은 `Project-Access-Token` 헤더)·`wrangler pages deploy`로 커밋을 지정.
+- 서버 커밋: `GET /health` → `commit: RAILWAY_GIT_COMMIT_SHA || GIT_COMMIT_SHA || null`. 웹: `app/scripts/write-version.mjs`가 `dist/version.json`
+  (`WEB_COMMIT_SHA || CF_PAGES_COMMIT_SHA || GITHUB_SHA || git`). SPA라 파일이 없으면 index.html이 200으로 와서 JSON 파싱 실패 = "모름"으로 처리.
+- **plan.mjs**: 기준 = 떠 있는 커밋 → `deployed/<env>` 태그 → 없음(전부). OTA 기준은 EAS `update:list`의 `gitCommitHash`만(태그로 짐작하면 OTA를 못 한 채
+  태그만 옮겨진 경우 변경을 놓침). 네이티브 판단 = 경로 목록 + `app.config.ts`는 주석만 바뀐 diff 제외 + `package-lock.json` 버전이 바뀐 패키지 중
+  `node_modules/<pkg>`에 `ios`/`android`/`expo-module.config.json`/`react-native.config.js`가 있는 것(설치 전이면 이름 패턴). 네이티브면 `rev-list --first-parent`로
+  처음 네이티브가 바뀐 커밋을 찾아 그 부모(`ota_before_native`)까지 OTA. 마이그레이션 위험 문장은 정규식(주석 제거 후).
+- **"프리뷰 확인" 기록** = 커밋 상태 `deploy/preview`(GITHUB_TOKEN `statuses: write`) — 운영 워크플로 plan 작업이 `gh api commits/<sha>/statuses`로 검사.
+  되돌리기는 `deploy/production` 상태가 있는 커밋만. 태그 `deployed/*`는 `git push -f`(GITHUB_TOKEN이라 다른 워크플로를 깨우지 않음).
+- **승인**: `deploy` 작업에만 `environment: production`(Required reviewers) — 운영 비밀값이 그 환경에만 있어서 plan 작업은 운영에 접근 못 함.
+  plan 요약(GITHUB_STEP_SUMMARY)이 승인 화면 위에 보임.
+- **SmokeModule**(`backend/src/smoke`): `POST /smoke/session`(Public, 분당 5회, `x-smoke-secret` sha256 다이제스트끼리 `timingSafeEqual`) → 트랜잭션으로 고정 ID
+  점검 아티스트(ACTOR)·팬(USER)·대화방(`retiredAt = epoch` → 둘러보기·검색·구독 차단, `agencyId` null → 소속사·정산 제외, 구매 없이 `Subscription` 직접 → 매출 0,
+  `notificationsMuted`·`autoTranslate=false`) upsert + 하루 지난 점검 메시지 삭제 → `AuthService.issueShortAccessToken`(10분, `dac` 없음 — 데모 접속 기록 안 남김).
+  dev-login 대신 이걸 쓰는 이유: 운영엔 dev-login이 없고, 데모에서도 공용 코드 로그인은 소속사 접속 기록·"최근 30분 사용 중이면 새벽 초기화 건너뜀"에 걸림.
+  메시지는 `silent: true` 방송 → 팬 목록 → 팬 답장(새 방송마다 답장 한도가 새로 계산) → 둘 다 회수. 운영에선 `SMOKE_TEST_SECRET` 32자 미만이면 env-check 오류.
+- 앱 Sentry `environment`: `__DEV__` → development, 그 외 `Updates.channel`(preview·production), 웹은 채널이 없어 `EXPO_PUBLIC_ENABLE_DEV_LOGIN === 'true'`면 preview —
+  예전엔 프리뷰 빌드도 production으로 섞였음. 서버는 `SENTRY_ENVIRONMENT`(데모 `demo`).
+- 운영 DB 백업(`.github/actions/db-backup`): PGDG `postgresql-client-17` → `pg_dump -Fc --no-owner` | `gpg --encrypt`(공개키만 runner에) | `aws s3 cp -`(R2,
+  region `auto`) → 크기 확인. 데이터 수정 워크플로는 `BEGIN; <file>; ROLLBACK;`으로 command tag(`UPDATE n`·`DELETE n`·`INSERT 0 n`) 합을 세고, 적용 직전에 한 번 더 센 뒤 COMMIT.

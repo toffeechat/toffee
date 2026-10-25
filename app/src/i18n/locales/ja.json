@@ -305,6 +305,12 @@
     "save": "保存",
     "saved": "保存しました。",
     "saveFailed": "保存できませんでした。もう一度お試しください。",
+    "statusMessage": "ステータスメッセージ",
+    "statusMessageHint": "Toffee Roomのプロフィールカードで名前の下に1行で表示されます。空欄にすると表示されません。",
+    "statusMessageCoupleHint": "あなた自身のステータスメッセージです。あなたのToffee RoomとCPのToffee Roomのプロフィールカードに表示されます。",
+    "statusMessagePlaceholder": "ファンにひとこと残してみましょう",
+    "statusMessageClear": "消去",
+    "statusMessageCleared": "消去しました。",
     "officialNote": "検索画面の公式写真と公式名（{{name}}）は運営が管理しています。変更したい場合は運営にご連絡ください。"
   },
   "termsConsent": {
@@ -952,7 +958,16 @@
     "cat_OTHER": "その他",
     "st_OPEN": "返信待ち",
     "st_ANSWERED": "返信済み",
-    "st_CLOSED": "終了"
+    "st_CLOSED": "終了",
+    "photos": "写真を添付（任意）",
+    "photosHint": "決済の領収書やエラー画面など、写真を3枚まで添付できます。",
+    "addPhoto": "写真を追加",
+    "removePhoto": "写真を外す",
+    "openPhoto": "写真を拡大",
+    "photoUnavailable": "写真を読み込めません",
+    "delete": "問い合わせを削除",
+    "deleteTitle": "問い合わせを削除",
+    "deleteConfirm": "この問い合わせのメッセージと写真がすべて削除され、元に戻せません。"
   },
   "sendRetry": {
     "failed": "接続が切れたため、送信を確認できませんでした。",

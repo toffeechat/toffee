@@ -305,6 +305,12 @@
     "save": "บันทึก",
     "saved": "บันทึกแล้ว",
     "saveFailed": "บันทึกไม่สำเร็จ โปรดลองอีกครั้ง",
+    "statusMessage": "ข้อความสถานะ",
+    "statusMessageHint": "จะแสดงเป็นหนึ่งบรรทัดใต้ชื่อในการ์ดโปรไฟล์ Toffee Room ถ้าเว้นว่างไว้จะไม่แสดง",
+    "statusMessageCoupleHint": "นี่คือข้อความสถานะของคุณเอง จะแสดงในการ์ดโปรไฟล์ทั้ง Toffee Room ของคุณและ Toffee Room แบบ CP",
+    "statusMessagePlaceholder": "ฝากข้อความถึงแฟน ๆ สักหน่อย",
+    "statusMessageClear": "ลบ",
+    "statusMessageCleared": "ลบแล้ว",
     "officialNote": "รูปและชื่อทางการ ({{name}}) ในหน้าค้นหาศิลปินดูแลโดยทีมงาน หากต้องการเปลี่ยนโปรดติดต่อทีมงาน"
   },
   "termsConsent": {
@@ -952,7 +958,16 @@
     "cat_OTHER": "อื่น ๆ",
     "st_OPEN": "รอคำตอบ",
     "st_ANSWERED": "ตอบแล้ว",
-    "st_CLOSED": "ปิดแล้ว"
+    "st_CLOSED": "ปิดแล้ว",
+    "photos": "แนบรูป (ไม่บังคับ)",
+    "photosHint": "แนบรูปได้สูงสุด 3 รูป เช่น ใบเสร็จการชำระเงินหรือหน้าจอที่เกิดข้อผิดพลาด",
+    "addPhoto": "เพิ่มรูป",
+    "removePhoto": "นำรูปออก",
+    "openPhoto": "ดูรูปขนาดใหญ่",
+    "photoUnavailable": "โหลดรูปไม่ได้",
+    "delete": "ลบคำถาม",
+    "deleteTitle": "ลบคำถาม",
+    "deleteConfirm": "ข้อความและรูปทั้งหมดในคำถามนี้จะถูกลบ และไม่สามารถกู้คืนได้"
   },
   "sendRetry": {
     "failed": "การเชื่อมต่อขาดหาย ยืนยันการส่งไม่ได้",

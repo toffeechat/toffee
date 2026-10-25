@@ -305,6 +305,12 @@
     "save": "Lưu",
     "saved": "Đã lưu.",
     "saveFailed": "Không lưu được. Vui lòng thử lại.",
+    "statusMessage": "Trạng thái",
+    "statusMessageHint": "Hiển thị thành một dòng dưới tên bạn trên thẻ hồ sơ Toffee Room. Để trống thì sẽ không hiển thị.",
+    "statusMessageCoupleHint": "Đây là trạng thái của riêng bạn. Nó hiển thị trên thẻ hồ sơ của Toffee Room của bạn và các Toffee Room CP.",
+    "statusMessagePlaceholder": "Gửi một lời nhắn đến fan nhé",
+    "statusMessageClear": "Xóa",
+    "statusMessageCleared": "Đã xóa.",
     "officialNote": "Ảnh chính thức và tên chính thức ({{name}}) của bạn trên màn hình khám phá do đội ngũ Toffee quản lý. Liên hệ chúng tôi để thay đổi."
   },
   "termsConsent": {
@@ -952,7 +958,16 @@
     "cat_OTHER": "Khác",
     "st_OPEN": "Đang chờ trả lời",
     "st_ANSWERED": "Đã trả lời",
-    "st_CLOSED": "Đã đóng"
+    "st_CLOSED": "Đã đóng",
+    "photos": "Đính kèm ảnh (không bắt buộc)",
+    "photosHint": "Bạn có thể đính kèm tối đa 3 ảnh, như biên lai thanh toán hoặc màn hình lỗi.",
+    "addPhoto": "Thêm ảnh",
+    "removePhoto": "Bỏ ảnh",
+    "openPhoto": "Xem ảnh lớn",
+    "photoUnavailable": "Không tải được ảnh",
+    "delete": "Xóa yêu cầu",
+    "deleteTitle": "Xóa yêu cầu",
+    "deleteConfirm": "Toàn bộ tin nhắn và ảnh trong yêu cầu này sẽ bị xóa và không thể khôi phục."
   },
   "sendRetry": {
     "failed": "Mất kết nối, chưa xác nhận được đã gửi hay chưa.",

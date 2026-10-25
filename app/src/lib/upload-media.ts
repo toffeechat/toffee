@@ -113,3 +113,8 @@ export function uploadChatProfileImage(actorId: string, uri: string, contentType
 export function uploadMyProfileImage(uri: string, contentType?: string): Promise<string> {
   return putToStorage('/auth/me/profile-image/upload', {}, uri, contentType);
 }
+
+/** 1:1 문의 사진(2026-10-25, 회원·운영자 공통). 받은 키를 문의·추가 질문·답변 API에 photoKeys로 넘김 */
+export function uploadInquiryPhoto(uri: string, contentType?: string): Promise<string> {
+  return putToStorage('/support/uploads', {}, uri, contentType);
+}

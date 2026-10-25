@@ -13,5 +13,6 @@
 - [`launch-roadmap.md`](./launch-roadmap.md) — **사업화 일정**(지금부터 첫 매출까지 단계별 체크리스트)
 - [`agency-outreach.md`](./agency-outreach.md) — **태국 소속사 연락 자료**(제안서 링크, 메일·LINE 문구 영/태, 예상 질문과 답)
 - [`demo-image-prompts.md`](./demo-image-prompts.md) — 데모 아티스트 사진(AI 가상 인물) 생성 프롬프트 — 사람마다 얼굴이 다르게
+- [`deploy-guide.md`](./deploy-guide.md) — **배포 — 폰에서 말로 고친 것을 내보내기**(프리뷰·운영, 안전장치, 운영 배포 승인하는 법)
 - [`cost-overview.md`](./cost-overview.md) — 비용 한눈에 보기(기술 비용·운영/사업 비용, 1회·연간)
 - [`brand/`](./brand/) — 원본 디자인 가이드·로고 파일·화면 목업 이미지(레퍼런스 자료)

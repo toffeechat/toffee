@@ -18,6 +18,13 @@ describe('서버 시작 설정 점검', () => {
     expect(checkEnv({ ...base, JWT_SECRET: 'short' }).errors).toHaveLength(0);
   });
 
+  it('운영에서 짧은 SMOKE_TEST_SECRET은 오류, 없으면 경고만', () => {
+    const prod = { ...base, NODE_ENV: 'production', API_PUBLIC_URL: 'https://api' };
+    expect(checkEnv({ ...prod, SMOKE_TEST_SECRET: 'short' }).errors.some((e) => e.startsWith('SMOKE_TEST_SECRET'))).toBe(true);
+    expect(checkEnv({ ...prod, SMOKE_TEST_SECRET: 'x'.repeat(32) }).errors.some((e) => e.startsWith('SMOKE_TEST_SECRET'))).toBe(false);
+    expect(checkEnv(base).warnings.some((w) => w.startsWith('배포 후 자동 점검'))).toBe(true);
+  });
+
   it('외부 서비스 키가 없으면 경고만(기능이 꺼진 채 켜짐)', () => {
     const { errors, warnings } = checkEnv(base);
     expect(errors).toHaveLength(0);
