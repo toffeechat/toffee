@@ -77,6 +77,12 @@ export class AdminActorsController {
     return this.adminActorsService.setRetireAt(admin.id, id, dto.retireAt ? new Date(dto.retireAt) : null);
   }
 
+  // 아티스트 상태메시지 지우기(2026-10-25) — 쓰기는 아티스트 본인만(PATCH /actors/:id/status-message)
+  @Patch('actors/:id/clear-status-message')
+  clearStatusMessage(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    return this.adminActorsService.clearStatusMessage(admin.id, id);
+  }
+
   // 계약 끝나는 날(2026-10-20) — 지나도 자동 종료 안 함, 홈 할 일·알림만
   @AdminOwnerOnly()
   @Patch('actors/:id/contract')

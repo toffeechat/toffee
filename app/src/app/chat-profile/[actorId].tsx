@@ -13,7 +13,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 /**
  * 대화방 프로필 카드(2026-10-02, 카톡 프로필처럼) — 채팅방 헤더 이름이나 메시지 옆 프로필 사진을 누르면 열림.
- * 정보만 보여줌: 대화방 사진(누르면 크게), 닉네임(크게) + 공식 이름(작게, 다를 때만), 커플방이면 멤버.
+ * 정보만 보여줌: 대화방 사진(누르면 크게), 닉네임(크게) + 공식 이름(작게, 다를 때만), 상태메시지(2026-10-25, 비어 있으면 줄 자체를 숨김),
+ * 커플방이면 멤버(멤버별 상태메시지).
  * 신고·인증 배지·모아보기·구독 관리는 넣지 않음(신고는 메시지 길게 누르기, 나머지는 채팅방 ⋯ 메뉴).
  * memberId가 있으면 커플방 멤버 배우 한 명의 카드(커플방에서 메시지 옆 사진을 눌렀을 때).
  * 구독 전 둘러보기는 공식 프로필(actor/[id], 공식 이름·공식 사진만)이고, 이 카드는 구독자만 들어오는 채팅방에서만 열림.
@@ -29,9 +30,9 @@ export default function ChatProfileScreen() {
   const members = actor ? membersOf(actor) : [];
   const member = memberId ? members.find((m) => m.id === memberId) : undefined;
   const profile = member
-    ? { name: member.chatDisplayName, official: member.legalName, photo: member.chatProfileImageUrl ?? actor?.chatProfileImageUrl ?? null }
+    ? { name: member.chatDisplayName, official: member.legalName, photo: member.chatProfileImageUrl ?? actor?.chatProfileImageUrl ?? null, status: member.statusMessage ?? null }
     : actor
-      ? { name: actor.chatDisplayName, official: actor.legalName, photo: actor.chatProfileImageUrl }
+      ? { name: actor.chatDisplayName, official: actor.legalName, photo: actor.chatProfileImageUrl, status: actor.statusMessage ?? null }
       : null;
 
   const openPhoto = () => {
@@ -58,6 +59,11 @@ export default function ChatProfileScreen() {
                 {profile.official}
               </ThemedText>
             ) : null}
+            {profile.status ? (
+              <ThemedText type="default" themeColor="textSecondary" style={[styles.center, styles.status]}>
+                {profile.status}
+              </ThemedText>
+            ) : null}
           </View>
 
           {!member && members.length > 0 ? (
@@ -82,6 +88,11 @@ export default function ChatProfileScreen() {
                         {m.legalName}
                       </ThemedText>
                     ) : null}
+                    {m.statusMessage ? (
+                      <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+                        {m.statusMessage}
+                      </ThemedText>
+                    ) : null}
                   </View>
                 </Pressable>
               ))}
@@ -99,6 +110,7 @@ const styles = StyleSheet.create({
   body: { alignItems: 'center', paddingHorizontal: Spacing.four, paddingTop: Spacing.five, paddingBottom: Spacing.six, gap: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   names: { alignItems: 'center', gap: Spacing.one },
   center: { textAlign: 'center' },
+  status: { marginTop: Spacing.two },
   members: { alignSelf: 'stretch', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.three, gap: Spacing.two },
   member: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.one },
   memberNames: { flex: 1, minWidth: 0 },

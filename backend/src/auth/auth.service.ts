@@ -13,9 +13,7 @@ import { COMMON_DEMO_CODE } from '../demo/demo-access.service.js';
 import { appError } from '../common/i18n/app-error.js';
 import { MediaService } from '../storage/media.service.js';
 import { userProfileImagePrefix } from '../storage/media-policy.js';
-
-// 팬 상태메시지 최대 길이(2026-10-12, 카톡 60자 참고)
-export const STATUS_MESSAGE_MAX_LENGTH = 60;
+import { cleanStatusMessage } from '../common/status-message/status-message.js';
 
 interface ExternalIdentity {
   providerId: string;
@@ -491,19 +489,7 @@ export class AuthService {
   /** 상태메시지(빈 값이면 지움 — 길이·보이지 않는 문자·금칙어 검사), 사진(업로드 키 / null이면 기본 이미지). 바뀐 이전 사진 파일은 지움 */
   async updateProfile(userId: string, changes: { statusMessage?: string; profileImageKey?: string | null }) {
     const data: { statusMessage?: string | null; profileImageUrl?: string | null } = {};
-    if (changes.statusMessage !== undefined) {
-      const message = changes.statusMessage.normalize('NFC').trim().replace(/\s+/g, ' ');
-      if ([...message].length > STATUS_MESSAGE_MAX_LENGTH) {
-        throw new BadRequestException(appError('STATUS_MESSAGE_TOO_LONG', { max: STATUS_MESSAGE_MAX_LENGTH }));
-      }
-      if (/[\p{Cc}\p{Cf}]/u.test(message)) throw new BadRequestException(appError('STATUS_MESSAGE_INAPPROPRIATE'));
-      if (message) {
-        await this.moderationService.assertNoBannedWords(message).catch(() => {
-          throw new BadRequestException(appError('STATUS_MESSAGE_INAPPROPRIATE'));
-        });
-      }
-      data.statusMessage = message || null;
-    }
+    if (changes.statusMessage !== undefined) data.statusMessage = await cleanStatusMessage(changes.statusMessage, this.moderationService);
     let previous: string | null = null;
     if (changes.profileImageKey !== undefined) {
       if (changes.profileImageKey !== null) await this.media.verifyAt(userProfileImagePrefix(userId), 'PHOTO', changes.profileImageKey);
