@@ -123,6 +123,7 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 | 8 | **업타임 모니터** — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
 | 9 | **Sentry 폰 알림** — Sentry → Alerts → Create Alert → Issues → "새 이슈가 생기면" + "1시간에 30번 넘게 생기면" 두 개, 환경 `demo`(나중에 `production` 따로), 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
 
+- **2026-10-25 확인**: 1~5·8 완료 — `Deploy preview` #9(`233a31b`)에서 자동 점검 8개 모두 통과(로그인·메시지 보내기/받기/답장 포함), EAS 마지막 OTA 커밋 읽기 성공(Expo 토큰), Sentry 새 오류 확인(서버 demo·앱 preview) 동작. 6(Wait for CI)·7(폰 GitHub 앱)·9(Sentry 알림 규칙)는 저장소에서 확인할 수 없어 사용자 확인.
 - 1~3이 없으면 자동 점검은 헬스·웹만 하고 "로그인·메시지 건너뜀"으로 나옴. 4가 없으면 앱 OTA를 워크플로가 못 해서 PC에서 `npm run ota`를 해야 함. 5가 없으면 "Sentry 확인 안 됨".
 - GitHub Actions 시간: 프리뷰 배포 한 번에 약 10~20분(대부분 서버·웹 빌드를 기다리는 시간). 조직 저장소 무료 월 2,000분 — 하루 2~3번이면 충분. 모자라면 지출 한도 확인.
 - 계정을 새로 만들면(UptimeRobot·Expo 로봇 등) 사업화 장부에 Claude가 적는다.
