@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
 import { createTranslationBatcher } from '@/utils/translation-batch';
+import { PendingSends, SEND_RETRY } from '@/utils/send-retry';
 
 export interface MessageQuote {
   id: string;
@@ -81,11 +82,34 @@ export function useRetractReply(actorId: string) {
   });
 }
 
+// 못 보낸 답장의 중복 방지 키 — 같은 방·같은 글을 다시 보내면 같은 키(앱이 켜져 있는 동안, 화면을 나갔다 와도)
+const pendingReplies = new PendingSends();
+
+/**
+ * 팬 답장 보내기 — 중복 방지 키를 붙여서(2026-10-25) 연결이 끊겨 실패하면 자동으로 2번 더 보내 보고, 그래도 안 되면 화면이
+ * "다시 보내기"를 보여 줌. 서버는 저장했는데 응답만 못 받은 경우에도 같은 키라 답장이 두 번 가거나 남은 개수가 두 번 줄지 않음.
+ * mutate(body) 그대로 — 키는 여기서 붙임.
+ */
 export function useSendReply(actorId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => apiClient.post<ChatMessage>(`/actors/${actorId}/messages/reply`, { body }),
-    onSuccess: () => {
+    mutationFn: async (body: string) => {
+      const signature = `${actorId}|${body}`;
+      try {
+        const message = await apiClient.post<ChatMessage>(`/actors/${actorId}/messages/reply`, {
+          body,
+          clientMessageId: pendingReplies.keyFor(signature),
+        });
+        pendingReplies.settle(signature);
+        return message;
+      } catch (error) {
+        pendingReplies.settle(signature, error);
+        throw error;
+      }
+    },
+    ...SEND_RETRY,
+    // 실패해도 새로고침 — 응답만 끊긴 경우 서버엔 저장돼 있어서 대화·남은 답장 수가 실제와 맞게(2026-10-25)
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', actorId] });
       queryClient.invalidateQueries({ queryKey: ['reply-quota', actorId] });
     },

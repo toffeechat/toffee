@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AdminAlertService } from '../notifications/admin-alert.service.js';
 import { alertCandidates, toErrorIssue, type ErrorAlertCandidate, type ErrorIssue, type SentryApiIssue } from './sentry-issues.js';

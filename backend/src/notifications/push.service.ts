@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { cert, getApps, initializeApp, type App, type ServiceAccount } from 'firebase-admin/app';
 import { getMessaging, type Message } from 'firebase-admin/messaging';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ShutdownService } from '../common/lifecycle/shutdown.service.js';
 import { Role, UserStatus } from '../generated/prisma/enums.js';
 
 export interface PushRecipient {
@@ -75,6 +76,8 @@ export class PushService implements OnModuleInit {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    // 발송은 보통 기다리지 않고(void) 돌려서, 배포 때 끝날 때까지 기다리도록 등록(2026-10-25)
+    private readonly shutdown: ShutdownService,
   ) {}
 
   onModuleInit(): void {
@@ -97,7 +100,11 @@ export class PushService implements OnModuleInit {
    * (구독자가 수천 명이어도 사람마다 따로 요청하지 않게). FCM이 죽었다고 알려준 토큰은 바로 삭제.
    * 실패는 로그만 남기고 호출한 쪽 흐름을 막지 않음(best-effort).
    */
-  async sendToUsers(userIds: string[], compose: ComposePush, data?: Record<string, string>, options: SendOptions = {}): Promise<void> {
+  sendToUsers(userIds: string[], compose: ComposePush, data?: Record<string, string>, options: SendOptions = {}): Promise<void> {
+    return this.shutdown.track(this.sendToUsersNow(userIds, compose, data, options));
+  }
+
+  private async sendToUsersNow(userIds: string[], compose: ComposePush, data?: Record<string, string>, options: SendOptions = {}): Promise<void> {
     if (!this.app || userIds.length === 0) return;
     const devices = await this.prisma.pushDevice.findMany({
       where: { userId: { in: userIds }, user: this.reachableUser(options.setting) },
@@ -109,7 +116,11 @@ export class PushService implements OnModuleInit {
   /**
    * 모든 계정에게(2026-10-20 공지 푸시) — 기기를 1,000개씩 나눠 읽어서 보냄(계정 id 목록을 통째로 넘기지 않게)
    */
-  async sendToEveryone(compose: ComposePush, data?: Record<string, string>): Promise<void> {
+  sendToEveryone(compose: ComposePush, data?: Record<string, string>): Promise<void> {
+    return this.shutdown.track(this.sendToEveryoneNow(compose, data));
+  }
+
+  private async sendToEveryoneNow(compose: ComposePush, data?: Record<string, string>): Promise<void> {
     if (!this.app) return;
     let cursor: string | undefined;
     for (;;) {
@@ -198,7 +209,11 @@ export class PushService implements OnModuleInit {
   }
 
   // 배우가 새 메시지를 보낼 때 현재 소속사 스태프 전원에게 알림(모니터링용) — best-effort
-  async notifyActorStaff(actorId: string, compose: ComposePush, data?: Record<string, string>, setting?: PushSetting): Promise<void> {
+  notifyActorStaff(actorId: string, compose: ComposePush, data?: Record<string, string>, setting?: PushSetting): Promise<void> {
+    return this.shutdown.track(this.notifyActorStaffNow(actorId, compose, data, setting));
+  }
+
+  private async notifyActorStaffNow(actorId: string, compose: ComposePush, data?: Record<string, string>, setting?: PushSetting): Promise<void> {
     // 커플방은 두 멤버 배우의 소속사 직원 모두(각 소속사는 자기 배우가 든 커플방을 모니터링, 2026-09-29)
     const actor = await this.prisma.actor.findUnique({
       where: { id: actorId },

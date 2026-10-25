@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron } from '@nestjs/schedule';
+import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../notifications/email.service.js';
 import { Role } from '../generated/prisma/enums.js';

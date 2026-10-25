@@ -11,9 +11,11 @@ const CHANNEL = 'toffee_realtime';
  * - artist-message: 스타가 새 메시지를 보냄 → 그 배우 구독 팬·스타·소속사
  * - message-removed: 스타가 지웠거나 운영자가 가림 → 같은 대상
  * - fan-reply: 팬 답장 → 스타·소속사만(팬 답장은 다른 팬에게 안 보임)
+ * - resync: 이 서버의 LISTEN 연결이 끊겼다 다시 붙음 → 그 사이 신호를 놓쳤을 수 있으니 이 서버에 붙은 모든 연결에
+ *   "전부 다시 불러오기"(2026-10-25). DB를 거치지 않는 서버 안 신호라 다른 서버엔 안 감
  */
 export interface RealtimeEvent {
-  kind: 'artist-message' | 'message-removed' | 'fan-reply' | 'access-changed';
+  kind: 'artist-message' | 'message-removed' | 'fan-reply' | 'access-changed' | 'resync';
   /** access-changed엔 없음(사람 단위 신호) */
   actorId?: string;
   /** fan-reply: 답장이 달린 스타 메시지 */
@@ -32,6 +34,11 @@ export class RealtimeService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RealtimeService.name);
   private readonly subject = new Subject<RealtimeEvent>();
   readonly events$ = this.subject.asObservable();
+  // 배포 때 SSE 연결만 먼저 닫기(2026-10-25) — LISTEN은 하던 요청이 끝날 때까지 유지(그 요청들이 보내는 신호는 다른 서버로도 감)
+  private readonly streamsClosed = new Subject<void>();
+  readonly streamsClosed$ = this.streamsClosed.asObservable();
+  private streamsOpen = true;
+  private listenedOnce = false;
   private client: pg.Client | null = null;
   private retryTimer: NodeJS.Timeout | null = null;
   private retryDelay = 1000;
@@ -46,7 +53,21 @@ export class RealtimeService implements OnModuleInit, OnModuleDestroy {
     void this.listen();
   }
 
+  /** 실시간 연결을 받는 중인지 — 끄기 시작하면 false(새 연결은 거절, 앱은 다른 서버로 다시 붙음) */
+  get acceptingStreams(): boolean {
+    return this.streamsOpen;
+  }
+
+  /** 지금 열린 SSE 연결을 모두 닫음(배포 시작) — 앱은 끊김을 보고 바로 다시 연결(새 서버로) */
+  closeStreams() {
+    if (!this.streamsOpen) return;
+    this.streamsOpen = false;
+    this.streamsClosed.next();
+    this.streamsClosed.complete();
+  }
+
   async onModuleDestroy() {
+    this.closeStreams();
     this.closed = true;
     if (this.retryTimer) clearTimeout(this.retryTimer);
     this.subject.complete();
@@ -83,6 +104,10 @@ export class RealtimeService implements OnModuleInit, OnModuleDestroy {
       await client.query(`LISTEN ${CHANNEL}`);
       this.client = client;
       this.retryDelay = 1000;
+      // 다시 붙은 경우: 끊겨 있던 동안의 신호는 영영 안 옴 — 앱이 지금 보는 목록을 전부 다시 불러오게(2026-10-25. 예전엔
+      // 앱이 연결돼 있다고 믿고 30초 폴링만 해서, 그 사이 메시지가 최대 30초 늦게 보였음)
+      if (this.listenedOnce) this.subject.next({ kind: 'resync' });
+      this.listenedOnce = true;
     } catch (error) {
       this.logger.warn(`listener connect failed: ${(error as Error).message}`);
       this.reconnect(client);

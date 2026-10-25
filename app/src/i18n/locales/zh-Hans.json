@@ -968,5 +968,10 @@
     "delete": "删除咨询",
     "deleteTitle": "删除咨询",
     "deleteConfirm": "此咨询的所有内容和照片都将被删除，且无法恢复。"
+  },
+  "sendRetry": {
+    "failed": "连接中断，无法确认是否已发送。",
+    "action": "重新发送",
+    "dismiss": "关闭"
   }
 }

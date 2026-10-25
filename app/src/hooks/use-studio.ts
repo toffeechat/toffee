@@ -5,6 +5,7 @@ import { useLiveInterval } from '@/lib/realtime';
 import { UploadCancelledError, uploadMedia, type UploadMediaType, type UploadOptions } from '@/lib/upload-media';
 import { createVideoThumbnail } from '@/lib/video-thumbnail';
 import { thumbhashFor } from '@/lib/thumbhash';
+import { PendingSends, SEND_RETRY } from '@/utils/send-retry';
 import type { FanReply } from './use-console';
 import type { ChatMessage } from './use-messages';
 
@@ -87,8 +88,20 @@ async function uploadVideoThumbnail(actorId: string, videoUri: string): Promise<
   }
 }
 
+interface UploadedMedia {
+  mediaKey?: string;
+  thumbnailKey?: string;
+  thumbhash?: string;
+}
+
+// 못 보낸 메시지의 중복 방지 키 + 이미 올린 파일(2026-10-25) — 앱이 켜져 있는 동안 남음(화면을 나갔다 와도). 저장소는 하루가
+// 지나야 붙이지 않은 파일을 지우므로(UploadCleanupService) 그 안에 다시 보내면 올린 파일을 그대로 씀
+const pendingBroadcasts = new PendingSends<UploadedMedia>();
+
 // 미디어가 있으면 먼저 저장소에 올리고(uploadMedia) 받은 키로 발송 — 영상이면 첫 장면 썸네일도 같이.
-// onProgress로 올라간 정도(0~1)를, signal로 취소를 받음(큰 영상이 멈춘 것처럼 보이지 않게, 2026-09-28 점검)
+// onProgress로 올라간 정도(0~1)를, signal로 취소를 받음(큰 영상이 멈춘 것처럼 보이지 않게, 2026-09-28 점검).
+// 중복 방지 키를 붙여서(2026-10-25) 연결이 끊겨 실패하면 자동으로 2번 더, 그래도 안 되면 화면의 "다시 보내기" — 서버가 이미
+// 저장했으면 같은 메시지를 돌려줘서 팬에게 두 번 가거나 알림이 두 번 울리지 않음
 export function useStudioSend(actorId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -109,32 +122,50 @@ export function useStudioSend(actorId: string) {
       silent?: boolean;
       batchCount?: number;
     } & UploadOptions) => {
-      const [mediaKey, videoThumb, photoHash] = await Promise.all([
-        attachment
-          ? uploadMedia(
-              actorId,
-              { purpose: 'message', mediaType: attachment.mediaType, uri: attachment.uri, contentType: attachment.contentType },
-              { onProgress, signal },
-            )
-          : undefined,
-        attachment?.mediaType === 'VIDEO' ? uploadVideoThumbnail(actorId, attachment.uri) : undefined,
-        attachment?.mediaType === 'PHOTO' ? thumbhashFor(attachment.uri) : undefined,
-      ]);
-      if (signal?.aborted) throw new UploadCancelledError('upload cancelled');
-      return apiClient.post<ChatMessage>(`/actors/${actorId}/messages/broadcast`, {
-        mediaType: attachment?.mediaType ?? 'TEXT',
-        body: body || undefined,
-        mediaKey,
-        thumbnailKey: videoThumb?.key,
-        thumbhash: photoHash ?? videoThumb?.thumbhash,
-        durationMs: attachment?.durationMs,
-        waveform: attachment?.waveform,
-        replyToMessageId,
-        silent: silent || undefined,
-        batchCount,
-      });
+      // 같은 첨부·같은 글·같은 인용이면 같은 메시지(여러 장 보내기는 장마다 파일이 달라서 키도 다름)
+      const signature = `${actorId}|${attachment?.uri ?? ''}|${body}|${replyToMessageId ?? ''}`;
+      const clientMessageId = pendingBroadcasts.keyFor(signature);
+      try {
+        // 지난번에 올리기까지 끝났으면 다시 올리지 않음(큰 영상을 또 올리지 않게)
+        const uploaded =
+          pendingBroadcasts.extra(signature) ??
+          (await (async (): Promise<UploadedMedia> => {
+            const [mediaKey, videoThumb, photoHash] = await Promise.all([
+              attachment
+                ? uploadMedia(
+                    actorId,
+                    { purpose: 'message', mediaType: attachment.mediaType, uri: attachment.uri, contentType: attachment.contentType },
+                    { onProgress, signal },
+                  )
+                : undefined,
+              attachment?.mediaType === 'VIDEO' ? uploadVideoThumbnail(actorId, attachment.uri) : undefined,
+              attachment?.mediaType === 'PHOTO' ? thumbhashFor(attachment.uri) : undefined,
+            ]);
+            return { mediaKey, thumbnailKey: videoThumb?.key, thumbhash: photoHash ?? videoThumb?.thumbhash };
+          })());
+        if (signal?.aborted) throw new UploadCancelledError('upload cancelled');
+        pendingBroadcasts.setExtra(signature, uploaded);
+        const message = await apiClient.post<ChatMessage>(`/actors/${actorId}/messages/broadcast`, {
+          mediaType: attachment?.mediaType ?? 'TEXT',
+          body: body || undefined,
+          ...uploaded,
+          durationMs: attachment?.durationMs,
+          waveform: attachment?.waveform,
+          replyToMessageId,
+          silent: silent || undefined,
+          batchCount,
+          clientMessageId,
+        });
+        pendingBroadcasts.settle(signature);
+        return message;
+      } catch (error) {
+        pendingBroadcasts.settle(signature, error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    ...SEND_RETRY,
+    // 실패해도 새로고침 — 응답만 끊긴 경우 서버엔 저장돼 있음(2026-10-25)
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['actor-broadcasts', actorId] });
       void queryClient.invalidateQueries({ queryKey: ['actor-stats', actorId] });
     },

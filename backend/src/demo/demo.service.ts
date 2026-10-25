@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron } from '@nestjs/schedule';
+import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { seedDemo } from './demo-seed.js';
 import { isDemoServer } from './demo-mode.js';

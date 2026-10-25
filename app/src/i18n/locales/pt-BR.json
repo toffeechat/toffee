@@ -968,5 +968,10 @@
     "delete": "Excluir solicitação",
     "deleteTitle": "Excluir solicitação",
     "deleteConfirm": "Todas as mensagens e fotos desta solicitação serão excluídas. Isso não pode ser desfeito."
+  },
+  "sendRetry": {
+    "failed": "A conexão caiu e não deu para confirmar o envio.",
+    "action": "Reenviar",
+    "dismiss": "Fechar"
   }
 }

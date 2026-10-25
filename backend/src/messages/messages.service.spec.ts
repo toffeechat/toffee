@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ConflictException } from '@nestjs/common';
+import { Prisma } from '../generated/prisma/client.js';
 import { MessagesService, toQuote } from './messages.service.js';
 import { MessageMediaType, MessageSenderType, Role, UserStatus } from '../generated/prisma/enums.js';
 import type { ComposePush } from '../notifications/push.service.js';
@@ -255,11 +257,16 @@ function replySetup(alreadySent: number, settings: Record<string, string> = {}) 
     actorFanBlock: { findUnique: vi.fn().mockResolvedValue(null) },
     message: {
       findFirst: vi.fn().mockResolvedValue({ id: 'star-1' }),
+      // 중복 방지 키로 이미 저장된 답장 찾기(2026-10-25) — 기본은 없음
+      findUnique: vi.fn().mockResolvedValue(null),
       count: vi.fn().mockResolvedValue(alreadySent),
       create: created,
     },
-    $transaction: vi.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
+    // 같은 팬·같은 방 답장 줄 세우기(advisory lock)
+    $executeRaw: vi.fn().mockResolvedValue(1),
   } as unknown as PrismaService;
+  // 트랜잭션 안에서도 같은 가짜 DB를 씀
+  (prisma as unknown as { $transaction: unknown }).$transaction = vi.fn((work: (tx: PrismaService) => Promise<unknown>) => work(prisma));
   const moderation = { assertNoBannedWords: vi.fn().mockResolvedValue(undefined) } as unknown as ModerationService;
   const service = new MessagesService(prisma, {} as PushService, moderation, {} as MediaService, config(settings), realtime);
   return { service, created, prisma };
@@ -296,6 +303,96 @@ describe('MessagesService 답장 횟수 제한', () => {
   });
 });
 
+
+// 중복 방지 키(2026-10-25) — 서버는 저장했는데 응답이 끊겨 앱이 같은 키로 다시 보낸 경우
+describe('MessagesService 답장 다시 보내기(중복 방지 키)', () => {
+  it('같은 키로 이미 저장됐으면 새로 만들지 않고 그대로 돌려줌 — 한도·차단 확인도, 실시간 신호도 다시 안 함', async () => {
+    const { service, created, prisma } = replySetup(3);
+    vi.mocked(prisma.message.findUnique).mockResolvedValue({ id: 'r-old', senderType: 'FAN', fanUserId: 'fan', replyToMessageId: 'star-1' } as never);
+    vi.mocked(prisma.actorFanBlock.findUnique).mockResolvedValue({ id: 'block-1' } as never);
+    vi.mocked(realtime.publish).mockClear();
+    // 이미 3개(한도)여도, 그 뒤 차단됐어도 — 이미 보낸 답장이라 성공
+    await expect(service.sendReply('fan', 'actor', { body: '안녕', clientMessageId: 'key-123456' })).resolves.toMatchObject({ id: 'r-old' });
+    expect(created).not.toHaveBeenCalled();
+    expect(realtime.publish).not.toHaveBeenCalled();
+    expect(prisma.message.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { actorId_clientMessageId: { actorId: 'actor', clientMessageId: 'key-123456' } } }),
+    );
+  });
+
+  it('새 키면 키를 같이 저장하고, 같은 팬·같은 방 답장은 잠금으로 줄을 세움', async () => {
+    const { service, created, prisma } = replySetup(0);
+    await service.sendReply('fan', 'actor', { body: '안녕', clientMessageId: 'key-new-0001' });
+    expect(created).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ clientMessageId: 'key-new-0001' }) }));
+    expect(prisma.$executeRaw).toHaveBeenCalled();
+  });
+
+  it('줄을 서는 사이 같은 키의 앞 요청이 저장했으면 그걸 돌려줌(답장 개수 한 번만)', async () => {
+    const { service, created, prisma } = replySetup(2);
+    vi.mocked(prisma.message.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'r-first', senderType: 'FAN', fanUserId: 'fan' } as never);
+    await expect(service.sendReply('fan', 'actor', { body: '안녕', clientMessageId: 'key-race-01' })).resolves.toMatchObject({ id: 'r-first' });
+    expect(created).not.toHaveBeenCalled();
+  });
+
+  it('다른 사람 메시지의 키와 겹치면 409(남의 메시지를 돌려주지 않음)', async () => {
+    const { service, prisma } = replySetup(0);
+    vi.mocked(prisma.message.findUnique).mockResolvedValue({ id: 'other', senderType: 'FAN', fanUserId: 'someone-else' } as never);
+    await expect(service.sendReply('fan', 'actor', { body: '안녕', clientMessageId: 'key-other-1' })).rejects.toThrow(ConflictException);
+  });
+
+  it('키 없이 보내는 예전 앱은 예전처럼(키 조회 없음)', async () => {
+    const { service, created, prisma } = replySetup(0);
+    await service.sendReply('fan', 'actor', { body: '안녕' });
+    expect(prisma.message.findUnique).not.toHaveBeenCalled();
+    expect(created).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ clientMessageId: null }) }));
+  });
+});
+
+describe('MessagesService 스타 메시지 다시 보내기(중복 방지 키)', () => {
+  it('같은 키로 이미 저장됐으면 새로 만들지 않고 푸시·실시간 신호도 다시 안 보냄 — 사진도 파일 확인을 다시 안 함', async () => {
+    const { service, prisma, push } = setup();
+    const message = (prisma as unknown as { message: Record<string, ReturnType<typeof vi.fn>> }).message;
+    message.findUnique = vi.fn().mockResolvedValue({ id: 'm-old', senderType: 'ARTIST', senderActorId: 'actor-1', mediaKey: 'k', mediaUrl: null, replyTo: null });
+    vi.mocked(realtime.publish).mockClear();
+    const sent = await service.sendBroadcast('admin', 'actor-1', {
+      mediaType: MessageMediaType.PHOTO,
+      mediaKey: 'actors/actor-1/message/new.jpg',
+      clientMessageId: 'photo-key-01',
+    });
+    expect(sent).toMatchObject({ id: 'm-old' });
+    expect(message.create).not.toHaveBeenCalled();
+    expect(push.sendToUsers).not.toHaveBeenCalled();
+    expect(push.notifyActorStaff).not.toHaveBeenCalled();
+    expect(realtime.publish).not.toHaveBeenCalled();
+  });
+
+  it('동시에 같은 키 두 요청 — 고유 제약에 걸린 쪽은 먼저 저장된 메시지를 돌려주고 알림은 안 보냄', async () => {
+    const { service, prisma, push } = setup();
+    const message = (prisma as unknown as { message: Record<string, ReturnType<typeof vi.fn>> }).message;
+    message.findUnique = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'm-first', senderType: 'ARTIST', senderActorId: 'actor-1', mediaKey: null, mediaUrl: null, replyTo: null });
+    message.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', { code: 'P2002', clientVersion: 'test', meta: { target: ['actorId', 'clientMessageId'] } }),
+    );
+    await expect(service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕', clientMessageId: 'text-key-01' })).resolves.toMatchObject({
+      id: 'm-first',
+    });
+    expect(push.sendToUsers).not.toHaveBeenCalled();
+  });
+
+  it('새 키면 키를 같이 저장하고 평소처럼 알림', async () => {
+    const { service, prisma, push } = setup();
+    const message = (prisma as unknown as { message: Record<string, ReturnType<typeof vi.fn>> }).message;
+    message.findUnique = vi.fn().mockResolvedValue(null);
+    await service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '안녕', clientMessageId: 'text-key-02' });
+    expect(message.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ clientMessageId: 'text-key-02' }) }));
+    expect(push.sendToUsers).toHaveBeenCalled();
+  });
+});
 
 describe('MessagesService.listBroadcasts 팬 답장 흐름 미리보기', () => {
   const broadcast = (id: string, replies: number, deletedAt: Date | null = null) => ({

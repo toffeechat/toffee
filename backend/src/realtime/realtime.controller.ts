@@ -1,4 +1,4 @@
-import { Controller, Header, MessageEvent, Sse } from '@nestjs/common';
+import { Controller, Header, MessageEvent, ServiceUnavailableException, Sse } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Observable } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -37,6 +37,8 @@ export class RealtimeController {
   @Sse()
   @Header('X-Accel-Buffering', 'no')
   stream(@CurrentUser() user: AuthenticatedUser): Observable<MessageEvent> {
+    // 끄는 중인 서버엔 새로 붙지 않게 — 앱은 재시도하면서 새 서버로 붙음(2026-10-25)
+    if (!this.realtime.acceptingStreams) throw new ServiceUnavailableException();
     return new Observable<MessageEvent>((subscriber) => {
       let audience: Audience | null = null;
       const refresh = () =>
@@ -53,6 +55,11 @@ export class RealtimeController {
       const heartbeat = setInterval(() => subscriber.next({ type: 'ping', data: '' }), HEARTBEAT_MS);
       const subscription = this.realtime.events$.subscribe({
         next: (event) => {
+          // 이 서버가 신호를 놓쳤을 수 있음(LISTEN 재연결) — 모두에게 "전부 다시 불러오기"
+          if (event.kind === 'resync') {
+            subscriber.next({ type: 'change', data: event });
+            return;
+          }
           if (event.kind === 'access-changed') {
             // 내 구독이 바뀜 — 방 목록을 다시 읽고 앱에도 알려 줌(인박스·구독 관리 새로고침)
             if (event.userId === user.id) void refresh().then(() => subscriber.next({ type: 'change', data: event }));
@@ -63,10 +70,13 @@ export class RealtimeController {
         // 서버가 꺼질 때(배포·재시작) 연결을 닫아 줌 — 앱은 알아서 다른 서버로 다시 연결
         complete: () => subscriber.complete(),
       });
+      // 배포 시작 — 하던 요청은 마저 처리하지만 실시간 연결은 먼저 닫아서 앱이 새 서버로 옮겨 가게(2026-10-25)
+      const closing = this.realtime.streamsClosed$.subscribe({ complete: () => subscriber.complete() });
       return () => {
         clearInterval(refreshTimer);
         clearInterval(heartbeat);
         subscription.unsubscribe();
+        closing.unsubscribe();
       };
     });
   }
