@@ -34,6 +34,8 @@ import { needsTranslation } from '@/utils/detect-script';
 import { TranslatableText } from '@/components/translatable-text';
 import { MessageText } from '@/components/message-text';
 import { VoiceMessage } from '@/components/voice-message';
+import { SendRetryBar } from '@/components/send-retry-bar';
+import { isRetryableSendError } from '@/utils/send-retry';
 import { ApiError } from '@/lib/api-client';
 import { saveMedia } from '@/lib/save-media';
 import { useActor } from '@/hooks/use-actors';
@@ -114,6 +116,8 @@ export default function ChatRoomScreen() {
   const acceptReplyRules = useAcceptReplyRules();
   const [draft, setDraft] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
+  // 연결이 끊겨 못 보낸 답장 — 입력칸의 글이 그대로면 "다시 보내기"를 보여 줌
+  const [failedBody, setFailedBody] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const openProfile = useCallback(
@@ -306,11 +310,15 @@ export default function ChatRoomScreen() {
     }
     setDraft('');
     setNotice(null);
+    setFailedBody(null);
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
     sendReply.mutate(body, {
       onError: (err) => {
         setDraft((current) => current || body);
-        setNotice(err instanceof ApiError ? err.message : t('chat.sendFailed'));
+        // 연결 끊김·서버 오류(자동 재시도까지 실패)는 사라지는 알림 대신 "다시 보내기"를 남김(2026-10-25) — 같은 글이면 같은 중복 방지 키라
+        // 서버가 이미 받았어도 한 번만 감. 금칙어·한도·차단 같은 거절은 예전처럼 이유만
+        if (isRetryableSendError(err)) setFailedBody(body);
+        else setNotice(err instanceof ApiError ? err.message : t('chat.sendFailed'));
       },
     });
   };
@@ -542,6 +550,9 @@ export default function ChatRoomScreen() {
         {/* 입력칸은 항상 보이고, 답장할 수 없을 땐(첫 메시지 전·이 메시지 답장 다 씀) 안내 + 입력·보내기만 막음(2026-10-15 사용자 요청 — 예전엔 입력칸이 사라져서 당황스러웠음) */}
         {showComposer && !searchOpen && (
           <View style={styles.composer}>
+            {failedBody !== null && failedBody === draft.trim() && canReply ? (
+              <SendRetryBar onRetry={() => void handleSend()} busy={sendReply.isPending} />
+            ) : null}
             {!canReply || outOfReplies ? (
               <ThemedText type="caption" themeColor="textSecondary" style={styles.quota}>
                 {!canReply ? t('chat.replyAfterFirst') : replyBlocked ? t('chat.replyBlocked') : t('chat.noRepliesLeft', { limit: quota?.limit })}

@@ -953,5 +953,10 @@
     "st_OPEN": "Đang chờ trả lời",
     "st_ANSWERED": "Đã trả lời",
     "st_CLOSED": "Đã đóng"
+  },
+  "sendRetry": {
+    "failed": "Mất kết nối, chưa xác nhận được đã gửi hay chưa.",
+    "action": "Gửi lại",
+    "dismiss": "Đóng"
   }
 }

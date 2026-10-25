@@ -1061,7 +1061,7 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
   full `node:22` 변형으로 빌드·실행 확인(새 DB에 마이그레이션 25개 적용, `/health/ready`·`/legal/*`·`/support` 200, SIGTERM 즉시 종료).
 - `common/config/env-check.ts` — 필수(`DATABASE_URL`, `JWT_SECRET`), 운영(`NODE_ENV=production`)에서 JWT 32자 미만·`ENABLE_DEV_LOGIN`·
   `ENABLE_SANDBOX_SUBSCRIBE`·`API_PUBLIC_URL` 없음이면 `main.ts`가 로그 남기고 `exit(1)`. 외부 서비스 키 누락은 경고만.
-  `main.ts`: `TRUST_PROXY`(숫자=홉 수), `enableShutdownHooks()`. `RealtimeService.onModuleDestroy`의 subject.complete → SSE 스트림 complete.
+  `main.ts`: `TRUST_PROXY`(숫자=홉 수), ~~`enableShutdownHooks()`~~ → 2026-10-25부터 직접 신호 처리(아래 "메시지 유실·중복 방지" 절 — enableShutdownHooks는 DB를 먼저 끊어서 처리 중 요청이 실패했음).
 - `GET /health/ready`(`SELECT 1`, 실패 503). 헬스·약관·지원 페이지는 `@SkipThrottle`.
 - `legal/` — 약관·개인정보처리방침 초안 원본(`legal-texts.ts`), `GET /legal/:doc`(HTML, `?lang`·Accept-Language로 초안 안내 언어),
   `GET /legal/:doc/sections`(앱 `LegalDocument`가 씀), `GET /support`(`SUPPORT_EMAIL`). 앱 `terms.tsx`/`privacy.tsx`는 서버 글을 받음.
@@ -1853,3 +1853,28 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   애플은 같은 그룹이라 그냥 `requestPurchase`. 화면 `subscribe/bundle/[bundleId].tsx`, 훅 `useBundleSwitchInfo`·`useSwitchBundle`.
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
+
+## 메시지 유실·중복 방지 — 중복 방지 키, 마무리 종료, 재동기화 (2026-10-25)
+
+- **중복 방지 키**: `Message.clientMessageId`(nullable) + `@@unique([actorId, clientMessageId])`. DTO `ClientMessageIdField()`(`messages/dto/client-message-id.ts`,
+  `^[A-Za-z0-9_-]{8,64}$`, 선택 — 예전 앱 호환). `MessagesService.sentBefore(actorId, key, owner, include?, db?)` — 같은 방·같은 키 메시지가 같은 보낸 사람
+  (팬: fanUserId, 스타: senderType ARTIST + senderActorId)이면 돌려주고 아니면 409 `CONFLICT`.
+  - `sendReply`: 구독 확인 → `sentBefore`(차단·금칙어·한도보다 먼저) → interactive `$transaction` 안에서 `pg_advisory_xact_lock(hashtext('fan-reply:<actor>:<user>'))`
+    → `sentBefore`(줄 서는 사이 저장된 것) → replyTarget/한도 → create + `lastFanReplyAt`. P2002(`isClientMessageIdConflict`)면 먼저 저장된 것. 새로 저장했을 때만 `fan-reply` 신호.
+  - `sendBroadcast`: `ensureIsActorSelf` → `sentBefore(..., quoteInclude)` → (기존 검증) → create(키 포함), P2002면 먼저 저장된 것을 `presentSent`로 돌려주고 푸시·신호 없음.
+  - 앱 `utils/send-retry.ts`: `newClientMessageId`, `isRetryableSendError`(네트워크 오류·5xx·408·429, `UploadCancelledError` 제외), `SEND_RETRY`(react-query
+    `retry` 2번·`retryDelay` 1s·2s…), `PendingSends<Extra>` — 모듈 단위 Map(signature → {key, extra}), `settle(sig, error?)`는 성공·재시도 불가 실패면 지움.
+    signature: 답장 `${actorId}|${body}`, 스튜디오 `${actorId}|${attachment.uri}|${body}|${replyToMessageId}`(extra = 올린 `mediaKey`·`thumbnailKey`·`thumbhash`).
+    두 훅 모두 `onSettled`에서 새로고침. UI `components/send-retry-bar.tsx`(팬 채팅: 입력칸 글이 실패한 글과 같을 때만, 스튜디오: `sendFailed` 상태).
+- **마무리 종료**: `common/lifecycle/shutdown.service.ts` `ShutdownService`(@Global `LifecycleModule`) — `requestStarted()`(끝 함수 반환, 중복 호출 안전),
+  `track(promise)`, `pending()`(요청 수·작업 수·`isCallbackRunning`인 cron 이름), `beginDrain()`(draining + 모든 CronJob.stop), `drain(timeoutMs)`.
+  `main.ts`: 미들웨어로 요청 수 셈(`/realtime` 제외, draining이면 `Connection: close`), SIGTERM/SIGINT → `beginDrain` → `RealtimeService.closeStreams()` →
+  `drain(SHUTDOWN_GRACE_MS || 25000)` → `app.close()` → `exit(0)`, 두 번째 신호면 exit(1), grace+5초 강제 타이머(unref). `/health/ready`는 draining이면 503.
+  `PushService.sendToUsers/sendToEveryone/notifyActorStaff`는 `shutdown.track(...)`. cron은 `common/lifecycle/cron.ts`의 `Cron`(= `@nestjs/schedule` Cron +
+  `waitForCompletion: true` — cron 4.x는 이 옵션이 있어야 `isCallbackRunning`이 실행 중을 나타내고 겹치는 실행을 건너뜀). `lifecycle.spec.ts`가 직접 import를 막음.
+  Nest 12 `close()` 순서는 callDestroyHook → callBeforeShutdownHook → dispose(http close) → callShutdownHook(그래서 기본 방식으론 DB가 먼저 끊김).
+- **실시간 재동기화**: `RealtimeEvent.kind`에 `resync`(서버 안 신호, pg_notify 안 거침) — `RealtimeService.listen()`이 두 번째 이후 LISTEN 성공 때 발행,
+  컨트롤러가 수신 대상과 무관하게 모든 연결로. `streamsClosed$`·`acceptingStreams`·`closeStreams()`(배포 시작 때 SSE만 먼저 닫음, LISTEN은 app.close까지 유지).
+  앱 `lib/realtime.ts`: `refreshLiveQueries`(messages·chat-media·reply-quota·my-subscriptions·my-bundles·actor-broadcasts·actor-replies·my-actors 무효화) —
+  `resync` 신호, 그리고 ready까지 갔던 연결이 서버 쪽 사유(끝남·오류·멈춤)로 끊긴 뒤 다시 ready가 오면. 멈춘 연결 감시 `STALL_MS` 70초(10초마다 확인).
+

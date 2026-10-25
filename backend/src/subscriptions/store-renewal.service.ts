@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { IapPlatform } from '../generated/prisma/enums.js';
 import type { Prisma } from '../generated/prisma/client.js';

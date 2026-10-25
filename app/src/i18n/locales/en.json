@@ -953,5 +953,10 @@
     "st_OPEN": "Waiting for reply",
     "st_ANSWERED": "Answered",
     "st_CLOSED": "Closed"
+  },
+  "sendRetry": {
+    "failed": "Connection lost — couldn't confirm it was sent.",
+    "action": "Resend",
+    "dismiss": "Dismiss"
   }
 }

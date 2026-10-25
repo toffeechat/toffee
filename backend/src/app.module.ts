@@ -37,6 +37,7 @@ import { LegalModule } from './legal/legal.module.js';
 import { DemoModule } from './demo/demo.module.js';
 import { NoticesModule } from './notices/notices.module.js';
 import { ReleasesModule } from './releases/releases.module.js';
+import { LifecycleModule } from './common/lifecycle/shutdown.service.js';
 
 @Module({
   imports: [
@@ -47,6 +48,8 @@ import { ReleasesModule } from './releases/releases.module.js';
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     ScheduleModule.forRoot(),
+    // 배포 때 처리 중인 요청·푸시·cron을 끝내고 끄기(2026-10-25, main.ts)
+    LifecycleModule,
     PrismaModule,
     RealtimeModule,
     AuditModule,

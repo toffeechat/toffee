@@ -1,6 +1,7 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { PushService } from '../notifications/push.service.js';
 import { pushStrings } from '../notifications/push-messages.js';
 import { ModerationService } from '../moderation/moderation.service.js';
@@ -133,6 +134,15 @@ const REPLY_PREVIEW_PER_MESSAGE = 20;
 const REPLY_PREVIEW_LENGTH = 80;
 
 
+// 중복 방지 키 고유 제약(actorId + clientMessageId) 위반 — 같은 키 요청 두 개가 동시에 저장하려 함
+function isClientMessageIdConflict(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') return false;
+  const target = (error.meta as { target?: unknown; driverAdapterError?: { cause?: { constraint?: { fields?: string[] } } } } | undefined) ?? {};
+  const fields = Array.isArray(target.target) ? target.target : (target.driverAdapterError?.cause?.constraint?.fields ?? []);
+  // 어떤 제약인지 못 읽으면(드라이버마다 다름) 이 테이블엔 다른 고유 제약이 없으니 키 충돌로 봄
+  return fields.length === 0 || fields.some((field) => String(field).includes('clientMessageId'));
+}
+
 function personalize(body: string, fanName: string): string {
   return body.replaceAll(NAME_PLACEHOLDER, fanName);
 }
@@ -155,14 +165,14 @@ export class MessagesService {
   }
 
   // 팬이 지금 답장할 대상(구독 이후 가장 최근의, 지워지지 않은 스타 메시지)과 거기에 이미 보낸 답장 수
-  private async replyTarget(userId: string, actorId: string, since: Date) {
-    const target = await this.prisma.message.findFirst({
+  private async replyTarget(userId: string, actorId: string, since: Date, db: Pick<PrismaService, 'message'> = this.prisma) {
+    const target = await db.message.findFirst({
       where: { actorId, senderType: MessageSenderType.ARTIST, deletedAt: null, createdAt: { gte: since } },
       orderBy: { createdAt: 'desc' },
       select: { id: true },
     });
     const used = target
-      ? await this.prisma.message.count({ where: { replyToMessageId: target.id, fanUserId: userId, senderType: MessageSenderType.FAN } })
+      ? await db.message.count({ where: { replyToMessageId: target.id, fanUserId: userId, senderType: MessageSenderType.FAN } })
       : 0;
     return { target, used };
   }
@@ -327,8 +337,36 @@ export class MessagesService {
     );
   }
 
+  /**
+   * 같은 중복 방지 키로 이미 저장된 메시지(2026-10-25) — 응답이 끊겨 앱이 다시 보낸 경우. 같은 사람이 같은 방에 보낸 것만 인정하고,
+   * 키가 다른 사람·다른 종류 메시지와 겹치면(정상 앱에선 안 생김) 409
+   */
+  private async sentBefore<T extends Prisma.MessageInclude | undefined = undefined>(
+    actorId: string,
+    clientMessageId: string | undefined,
+    owner: { senderType: MessageSenderType; fanUserId?: string; senderActorId?: string | null },
+    include?: T,
+    db: Pick<PrismaService, 'message'> = this.prisma,
+  ) {
+    if (!clientMessageId) return null;
+    const existing = await db.message.findUnique({
+      where: { actorId_clientMessageId: { actorId, clientMessageId } },
+      include,
+    });
+    if (!existing) return null;
+    const same =
+      existing.senderType === owner.senderType &&
+      (owner.senderType === MessageSenderType.FAN ? existing.fanUserId === owner.fanUserId : existing.senderActorId === owner.senderActorId);
+    if (!same) throw new ConflictException(appError('CONFLICT'));
+    return existing as Prisma.MessageGetPayload<{ include: T }>;
+  }
+
   async sendReply(userId: string, actorId: string, dto: SendReplyDto) {
     const subscription = await ensureActiveSubscription(this.prisma, userId, actorId);
+    const owner = { senderType: MessageSenderType.FAN, fanUserId: userId };
+    // 다시 보낸 답장(응답이 끊겼던 것) — 이미 저장됐으면 그대로 돌려줌. 차단·한도 확인보다 먼저(이미 보낸 건 보낸 것)
+    const resent = await this.sentBefore(actorId, dto.clientMessageId, owner);
+    if (resent) return resent;
     // 채널 차단: 구독·열람은 그대로지만 답장은 못 보냄(잠정 정책 — 차단 사실을 알림, STATUS.md)
     const blocked = await this.prisma.actorFanBlock.findUnique({
       where: { actorId_fanUserId: { actorId, fanUserId: userId } },
@@ -336,36 +374,57 @@ export class MessagesService {
     });
     if (blocked) throw new ForbiddenException(appError('REPLY_BLOCKED'));
     await this.moderationService.assertNoBannedWords(dto.body);
-    // 버블 방식: 팬은 대상을 고르지 않고, 지금 팬 화면에 보이는 가장 최근 스타 메시지에 대한 답장이 됨
-    // (구독 전·삭제된 메시지는 팬에게 안 보이므로 제외). 스타 화면은 이걸로 메시지별 답장을 묶어 보여줌.
-    const { target: latestArtistMessage, used } = await this.replyTarget(userId, actorId, subscription.startedAt);
-    // 스타 메시지가 오기 전엔 답장할 곳이 없음 — 예전엔 대상 없이 저장돼서 스타의 "메시지별 답장" 어디에도 안 보였음
-    if (!latestArtistMessage) throw new BadRequestException(appError('REPLY_BEFORE_FIRST'));
-    if (used >= this.repliesPerMessage) {
-      throw new BadRequestException(appError('REPLY_LIMIT', { limit: this.repliesPerMessage }));
+    let saved: { message: Prisma.MessageGetPayload<object>; isNew: boolean };
+    try {
+      saved = await this.prisma.$transaction(async (tx) => {
+        // 같은 팬·같은 방 답장은 한 줄로 — 예전엔 두 번 연달아 누르거나(또는 응답이 끊겨 다시 보낼 때) 두 요청이 같이 "아직 2개"를
+        // 보고 둘 다 저장돼서 한도(3개)를 넘을 수 있었음(2026-10-25). 트랜잭션이 끝나면 자동으로 풀림
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`fan-reply:${actorId}:${userId}`}))`;
+        // 줄을 서는 사이 같은 키의 앞 요청이 저장했을 수 있음
+        const raced = await this.sentBefore(actorId, dto.clientMessageId, owner, undefined, tx);
+        if (raced) return { message: raced, isNew: false };
+        // 버블 방식: 팬은 대상을 고르지 않고, 지금 팬 화면에 보이는 가장 최근 스타 메시지에 대한 답장이 됨
+        // (구독 전·삭제된 메시지는 팬에게 안 보이므로 제외). 스타 화면은 이걸로 메시지별 답장을 묶어 보여줌.
+        const { target: latestArtistMessage, used } = await this.replyTarget(userId, actorId, subscription.startedAt, tx);
+        // 스타 메시지가 오기 전엔 답장할 곳이 없음 — 예전엔 대상 없이 저장돼서 스타의 "메시지별 답장" 어디에도 안 보였음
+        if (!latestArtistMessage) throw new BadRequestException(appError('REPLY_BEFORE_FIRST'));
+        if (used >= this.repliesPerMessage) {
+          throw new BadRequestException(appError('REPLY_LIMIT', { limit: this.repliesPerMessage }));
+        }
+        const created = await tx.message.create({
+          data: {
+            actorId,
+            senderType: MessageSenderType.FAN,
+            fanUserId: userId,
+            body: dto.body,
+            replyToMessageId: latestArtistMessage.id,
+            clientMessageId: dto.clientMessageId ?? null,
+          },
+        });
+        await tx.subscription.update({
+          where: { userId_actorId: { userId, actorId } },
+          data: { lastFanReplyAt: new Date() },
+        });
+        return { message: created, isNew: true };
+      });
+    } catch (error) {
+      // 잠금으로 막지만 혹시 같은 키가 동시에 들어와 고유 제약에 걸리면 먼저 저장된 것을 돌려줌
+      const duplicate = isClientMessageIdConflict(error) ? await this.sentBefore(actorId, dto.clientMessageId, owner) : null;
+      if (duplicate) return duplicate;
+      throw error;
     }
-    const [message] = await this.prisma.$transaction([
-      this.prisma.message.create({
-        data: {
-          actorId,
-          senderType: MessageSenderType.FAN,
-          fanUserId: userId,
-          body: dto.body,
-          replyToMessageId: latestArtistMessage.id,
-        },
-      }),
-      this.prisma.subscription.update({
-        where: { userId_actorId: { userId, actorId } },
-        data: { lastFanReplyAt: new Date() },
-      }),
-    ]);
-    void this.realtime.publish({ kind: 'fan-reply', actorId, messageId: latestArtistMessage.id });
-    return message;
+    // 새로 저장했을 때만 신호(다시 보낸 답장이면 처음 요청이 이미 보냄)
+    if (saved.isNew) void this.realtime.publish({ kind: 'fan-reply', actorId, messageId: saved.message.replyToMessageId ?? undefined });
+    return saved.message;
   }
 
   async sendBroadcast(actorSelfUserId: string, actorId: string, dto: SendBroadcastDto) {
     // 커플방이면 두 멤버 중 실제로 보낸 배우(말풍선·알림에 이름 표시)
     const senderActorId = await ensureIsActorSelf(this.prisma, actorSelfUserId, actorId);
+    // 다시 보낸 메시지(서버는 저장했는데 응답이 끊김, 2026-10-25) — 새로 저장·알림하지 않고 처음 저장한 것을 그대로 돌려줌
+    const owner = { senderType: MessageSenderType.ARTIST, senderActorId };
+    const resent = await this.sentBefore(actorId, dto.clientMessageId, owner, quoteInclude(actorId));
+    if (resent) return this.presentSent(resent);
     // 환영·생일 메시지를 써 둬야 보낼 수 있음(2026-10-13 사용자 결정 — 앱은 첫 화면에서 먼저 쓰게 함, 여긴 우회 방지)
     // CP방은 환영 메시지만 필수(2026-10-14 사용자 결정)
     const greetings = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { kind: true, welcomeMessage: true, birthdayMessage: true } });
@@ -394,26 +453,35 @@ export class MessagesService {
     const thumbnailKey = dto.mediaType === MessageMediaType.VIDEO && dto.thumbnailKey ? dto.thumbnailKey : null;
     if (thumbnailKey) await this.mediaService.verifyForAttach(actorId, 'message', MessageMediaType.PHOTO, thumbnailKey);
 
-    const created = await this.prisma.message.create({
-      data: {
-        actorId,
-        senderActorId,
-        senderType: MessageSenderType.ARTIST,
-        mediaType: dto.mediaType,
-        body: dto.body,
-        mediaKey,
-        thumbnailKey,
-        thumbhash: dto.mediaType === MessageMediaType.PHOTO || dto.mediaType === MessageMediaType.VIDEO ? (dto.thumbhash ?? null) : null,
-        replyToMessageId: dto.replyToMessageId ?? null,
-        // 길이는 음성·영상 모두(말풍선에 표시), 음파는 음성만
-        ...(dto.mediaType === MessageMediaType.AUDIO || dto.mediaType === MessageMediaType.VIDEO
-          ? { mediaDurationMs: dto.durationMs ?? null }
-          : {}),
-        ...(dto.mediaType === MessageMediaType.AUDIO ? { waveform: dto.waveform ?? undefined } : {}),
-      },
-      include: quoteInclude(actorId),
-    });
-    const [message] = await this.withSenders([await this.mediaService.withReadUrl(withQuote(created))]);
+    let created;
+    try {
+      created = await this.prisma.message.create({
+        data: {
+          actorId,
+          senderActorId,
+          senderType: MessageSenderType.ARTIST,
+          clientMessageId: dto.clientMessageId ?? null,
+          mediaType: dto.mediaType,
+          body: dto.body,
+          mediaKey,
+          thumbnailKey,
+          thumbhash: dto.mediaType === MessageMediaType.PHOTO || dto.mediaType === MessageMediaType.VIDEO ? (dto.thumbhash ?? null) : null,
+          replyToMessageId: dto.replyToMessageId ?? null,
+          // 길이는 음성·영상 모두(말풍선에 표시), 음파는 음성만
+          ...(dto.mediaType === MessageMediaType.AUDIO || dto.mediaType === MessageMediaType.VIDEO
+            ? { mediaDurationMs: dto.durationMs ?? null }
+            : {}),
+          ...(dto.mediaType === MessageMediaType.AUDIO ? { waveform: dto.waveform ?? undefined } : {}),
+        },
+        include: quoteInclude(actorId),
+      });
+    } catch (error) {
+      // 같은 키의 요청이 동시에 두 개 들어옴(응답을 못 받은 앱이 바로 다시 보냄) — 먼저 저장된 쪽이 알림을 보내니 여긴 돌려주기만
+      const duplicate = isClientMessageIdConflict(error) ? await this.sentBefore(actorId, dto.clientMessageId, owner, quoteInclude(actorId)) : null;
+      if (duplicate) return this.presentSent(duplicate);
+      throw error;
+    }
+    const message = await this.presentSent(created);
     // 채팅방을 열어 둔 팬·스타·소속사 화면에 바로 반영(푸시보다 먼저)
     void this.realtime.publish({ kind: 'artist-message', actorId });
     // 인용된 팬 — 인용이 가려지지 않았을 때만(정지·탈퇴·차단·신고 처리된 팬 메시지면 따로 알리지 않음)
@@ -505,6 +573,12 @@ export class MessagesService {
       )
       .catch(() => {});
 
+    return message;
+  }
+
+  /** 방금 보낸(또는 다시 보내서 찾은) 스타 메시지를 보내기 응답 모양으로 — 인용 요약·임시 미디어 주소·보낸 배우 */
+  private async presentSent(created: Prisma.MessageGetPayload<{ include: ReturnType<typeof quoteInclude> }>) {
+    const [message] = await this.withSenders([await this.mediaService.withReadUrl(withQuote(created))]);
     return message;
   }
 

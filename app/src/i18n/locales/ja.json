@@ -953,5 +953,10 @@
     "st_OPEN": "返信待ち",
     "st_ANSWERED": "返信済み",
     "st_CLOSED": "終了"
+  },
+  "sendRetry": {
+    "failed": "接続が切れたため、送信を確認できませんでした。",
+    "action": "再送信",
+    "dismiss": "閉じる"
   }
 }

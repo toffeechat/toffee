@@ -953,5 +953,10 @@
     "st_OPEN": "Aguardando resposta",
     "st_ANSWERED": "Respondida",
     "st_CLOSED": "Encerrada"
+  },
+  "sendRetry": {
+    "failed": "A conexão caiu e não deu para confirmar o envio.",
+    "action": "Reenviar",
+    "dismiss": "Fechar"
   }
 }

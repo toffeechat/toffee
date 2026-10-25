@@ -953,5 +953,10 @@
     "st_OPEN": "等待回覆",
     "st_ANSWERED": "已回覆",
     "st_CLOSED": "已結束"
+  },
+  "sendRetry": {
+    "failed": "連線中斷，無法確認是否已傳送。",
+    "action": "重新傳送",
+    "dismiss": "關閉"
   }
 }
