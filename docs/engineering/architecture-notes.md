@@ -1641,6 +1641,14 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   `POST`(code 비우면 `generateDemoCode()` — 0/1/i/l/o 뺀 4-4자, `^[a-z0-9-]{4,32}$`, `DEV_LOGIN_CODE`·`DEV_LOGIN_ADMIN_CODE`와 같으면 409),
   `PATCH /:id`(agencyName·expiresAt·note·revoked), `GET /:id/events`(`common` 가능, 최신 200줄). 삭제 API 없음.
 - 정리: `purgeOld()` 매일 04:45(태국), `ACCESS_LOG_RETENTION_DAYS`(90일).
+- **2026-10-25 화면별 알림**: `DemoAccessRoleSeen`(@@id [codeId, role], firstSeenAt/lastSeenAt/visitCount, Cascade, 마이그레이션
+  `20261025130000_demo_access_role_seen`). `record()`는 `markSeen`(코드 전체 — visitCount·recentlyActive용, 그대로) 다음 `markRoleSeen`
+  (findUnique → 없으면 create(P2002면 다른 요청이 먼저 = 새 접속 아님) / 30분 지났으면 조건부 updateMany로 +1 / 아니면 lastSeenAt만). 이벤트의
+  `newVisit`·메일은 화면 기준, 공용 코드는 role 표 없이 코드 기준. 메일 제목: 코드 첫 접속 "X 첫 접속 (소속사 화면)" / 화면 첫 "X 팬 화면 첫 접속" /
+  그 외 "X 팬 화면 접속 (N번째)"(N = 화면 visitCount).
+- **기록 초기화** `POST /admin/demo-codes/:id/reset-stats` → `resetStats(id)`: 트랜잭션으로 events·role 줄 deleteMany + 코드
+  firstSeenAt/lastSeenAt null·visitCount 0, 메모리 `lastTouch`/`lastEvent`의 `${id}:` 키도 지움(로그인 유지 중이어도 다음 요청이 바로 새 접속).
+  앱: 운영자 데모 입장 코드 줄 [기록 초기화](확인창, 기록 없으면 비활성).
 - 자동 초기화: `DemoService.dailyReset()` `@Cron('0 4 * * *', Asia/Bangkok)` — `isEnabled()` + `DEMO_DAILY_RESET=true`, `recentlyActive(30분)`면 skip,
   아니면 `reset()`과 같은 트랜잭션 seed. 데모 계정은 고정 ID라 토큰 유지.
 - 앱: `app/src/app/admin/demo-codes.tsx`(운영자 홈의 데모 섹션에서만 진입 — `ADMIN_MENU`엔 없음), 훅 `useDemoCodes` 등 `use-admin.ts`.
