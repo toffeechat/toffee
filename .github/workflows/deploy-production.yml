@@ -1,0 +1,259 @@
+name: Deploy production
+
+# 프로덕션(운영) 배포(2026-10-25, docs/engineering/deploy-runbook.md) — 서버 api.toffeechat.app(Railway 운영 서비스, main 자동 배포 끔) +
+# 웹 app.toffeechat.app(Cloudflare Pages 직접 업로드 프로젝트) + 앱 OTA production 채널 + (요청 때만) 스토어 빌드·제출.
+#
+# 1) plan: 프리뷰에서 확인한 커밋(deploy/preview 상태)인지 → 배포를 피할 시간인지 → 바뀐 부분 계산 → 위험한 마이그레이션이면 멈춤
+#    → "무엇이 올라가는지" 요약(이 실행 화면 위쪽). 여기까진 승인 없이 돎.
+# 2) deploy: GitHub Environment "production"의 승인자(사용자)가 폰 GitHub 앱에서 승인해야 시작 →
+#    (마이그레이션이 있으면) DB 백업 → 서버 → 웹 → 버전업 전 OTA → OTA → (요청 시) 빌드·제출 → 자동 점검 → Sentry → deployed/production 태그.
+# 운영 환경이 생기기 전엔 돌리지 말 것(처음 돌릴 때 체크리스트: runbook "프로덕션 처음 돌리기").
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 올릴 커밋(프리뷰에서 확인한 것 — 비우면 마지막으로 확인한 deployed/preview)
+        required: false
+      ota_message:
+        description: OTA 설명(비우면 커밋 제목으로)
+        required: false
+      build:
+        description: 스토어 빌드·제출(네이티브 변경 때만 — 애플·구글 심사 필요)
+        type: choice
+        options: [none, ios, android, all]
+        default: none
+      allow_destructive_migration:
+        description: 컬럼·표 삭제 같은 위험한 마이그레이션 허용("추가 먼저, 제거는 다음 배포"를 지킨 두 번째 배포일 때만)
+        type: boolean
+        default: false
+      override_window:
+        description: 배포를 피할 시간(태국 저녁 19~01시 등)이어도 진행 — 급한 장애 수정만
+        type: boolean
+        default: false
+      rollback:
+        description: 되돌리기(예전에 운영에 올렸던 커밋으로 — 프리뷰 확인 대신 운영 배포 기록을 확인)
+        type: boolean
+        default: false
+      ota_base:
+        description: 마지막 OTA 커밋을 직접 지정(EAS 기록이 없을 때 — 보통 비움)
+        required: false
+
+permissions:
+  contents: write # deployed/production 태그
+  statuses: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      sha: ${{ steps.target.outputs.sha }}
+      server: ${{ steps.plan.outputs.server }}
+      web: ${{ steps.plan.outputs.web }}
+      ota: ${{ steps.plan.outputs.ota }}
+      native: ${{ steps.plan.outputs.native }}
+      migrations: ${{ steps.plan.outputs.migrations }}
+      ota_before_native: ${{ steps.plan.outputs.ota_before_native }}
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      DEPLOY_API_URL: ${{ vars.PROD_API_URL }}
+      DEPLOY_WEB_URL: ${{ vars.PROD_WEB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: 올릴 커밋
+        id: target
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          SHA=$(git rev-parse "${INPUT_SHA:-refs/tags/deployed/preview}^{commit}")
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "### 프로덕션 배포 — \`${SHA:0:7}\` $(git log -1 --format=%s "$SHA")" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 프리뷰에서 확인한 커밋인지(규칙 3)
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          ROLLBACK: ${{ inputs.rollback }}
+        run: |
+          state() { gh api "repos/${{ github.repository }}/commits/$SHA/statuses" --jq "[.[] | select(.context == \"$1\")][0].state // \"\""; }
+          if [ "$ROLLBACK" = "true" ]; then
+            [ "$(state deploy/production)" = "success" ] || { echo "⛔ 되돌리기는 예전에 운영에 올렸던 커밋으로만(deploy/production 표시가 없음)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+            echo "- ↩️ 되돌리기: 예전 운영 배포본" >> "$GITHUB_STEP_SUMMARY"
+          else
+            [ "$(state deploy/preview)" = "success" ] || { echo "⛔ 프리뷰 배포·자동 점검을 통과한 커밋이 아님 — 먼저 Deploy preview(급하면 확인을 짧게)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+            echo "- ✅ 프리뷰에서 확인한 커밋" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 배포를 피할 시간인지
+        run: node scripts/deploy/check-window.mjs --env production ${{ inputs.override_window && '--override' || '' }}
+
+      - name: 앱 의존성(네이티브 판단)
+        working-directory: app
+        run: git checkout -q ${{ steps.target.outputs.sha }} && npm ci
+
+      - name: 마지막 OTA 커밋(EAS)
+        id: last_ota
+        if: env.EXPO_TOKEN != '' && inputs.ota_base == ''
+        run: node scripts/deploy/eas-last-update.mjs --channel production
+
+      - name: 배포 계획 — 무엇이 올라가는지
+        id: plan
+        run: node scripts/deploy/plan.mjs --env production --target ${{ steps.target.outputs.sha }} --ota-base "${{ inputs.ota_base || steps.last_ota.outputs.commit }}" --json plan.json
+
+      - name: 위험한 마이그레이션 막기(규칙 5)
+        if: steps.plan.outputs.destructive == 'true' && !inputs.allow_destructive_migration
+        run: |
+          echo "⛔ 위험한 마이그레이션(삭제·이름 변경·타입 변경)이 있어 멈춤 — 옛 서버·앱이 아직 그 컬럼을 쓰지 않는지 확인한 두 번째 배포면 allow_destructive_migration을 켜고 다시" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: 승인 안내
+        run: echo "> 👆 위 표가 이번에 올라가는 것. 아래 deploy 작업의 **Review deployments → Approve**를 누르면 시작(폰 GitHub 앱 가능)." >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # 승인자 = 사용자(Settings → Environments → production → Required reviewers). 운영 비밀값은 전부 이 환경에만
+    environment:
+      name: production
+      url: ${{ vars.PROD_WEB_URL || 'https://app.toffeechat.app' }}
+    env:
+      SHA: ${{ needs.plan.outputs.sha }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SMOKE_TEST_SECRET: ${{ secrets.PROD_SMOKE_TEST_SECRET }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      DEPLOY_API_URL: ${{ vars.PROD_API_URL }}
+      DEPLOY_WEB_URL: ${{ vars.PROD_WEB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: 운영 DB 백업(마이그레이션이 있을 때)
+        if: needs.plan.outputs.migrations != '0'
+        uses: ./.github/actions/db-backup
+        with:
+          database-url: ${{ secrets.PROD_DATABASE_URL }}
+          gpg-public-key: ${{ secrets.BACKUP_GPG_PUBLIC_KEY }}
+          s3-endpoint: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          s3-bucket: ${{ secrets.BACKUP_S3_BUCKET }}
+          s3-access-key-id: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          s3-secret-access-key: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          label: deploy
+
+      # 마이그레이션은 서버가 켜질 때(docker-entrypoint.sh) 적용 → 새 서버가 /health/ready를 통과해야 Railway가 바꿔 끼움
+      - name: 서버 배포(Railway, 이 커밋)
+        if: needs.plan.outputs.server == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN_KIND: ${{ vars.RAILWAY_TOKEN_KIND }}
+          RAILWAY_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_ID }}
+          RAILWAY_ENVIRONMENT_ID: ${{ vars.RAILWAY_ENVIRONMENT_ID }}
+        run: |
+          node scripts/deploy/railway-deploy.mjs --commit "$SHA"
+          node scripts/deploy/wait-deployed.mjs --env production --part server --target "$SHA" --exact --timeout-min 25
+
+      - name: 앱 의존성
+        if: needs.plan.outputs.web == 'true' || needs.plan.outputs.ota == 'true' || needs.plan.outputs.ota_before_native != '' || inputs.build != 'none'
+        working-directory: app
+        run: npm ci
+
+      # 웹 빌드 값 = eas.json production 프로필 env(앱과 같은 값) + 웹 소셜 로그인 공개 키(GitHub 환경 변수)
+      - name: 웹 빌드
+        if: needs.plan.outputs.web == 'true'
+        working-directory: app
+        env:
+          EXPO_PUBLIC_WEB_KAKAO_REST_API_KEY: ${{ vars.EXPO_PUBLIC_WEB_KAKAO_REST_API_KEY }}
+          EXPO_PUBLIC_WEB_NAVER_CLIENT_ID: ${{ vars.EXPO_PUBLIC_WEB_NAVER_CLIENT_ID }}
+          EXPO_PUBLIC_WEB_LINE_CHANNEL_ID: ${{ vars.EXPO_PUBLIC_WEB_LINE_CHANNEL_ID }}
+          EXPO_PUBLIC_WEB_APPLE_SERVICES_ID: ${{ vars.EXPO_PUBLIC_WEB_APPLE_SERVICES_ID }}
+          EXPO_PUBLIC_IOS_APP_STORE_ID: ${{ vars.EXPO_PUBLIC_IOS_APP_STORE_ID }}
+          WEB_COMMIT_SHA: ${{ needs.plan.outputs.sha }}
+        run: |
+          node -e "const e=require('./eas.json').build.production.env; for (const [k,v] of Object.entries(e)) if (k.startsWith('EXPO_PUBLIC_') && !process.env[k]) console.log(k+'='+v)" >> .env.production.local
+          cat .env.production.local | cut -d= -f1
+          set -a; . ./.env.production.local; set +a
+          npm run build:web
+
+      - name: 웹 배포(Cloudflare Pages)
+        if: needs.plan.outputs.web == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: app
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'toffee-app' }} --branch=main --commit-hash=${{ needs.plan.outputs.sha }}
+
+      - name: 웹 배포 확인
+        if: needs.plan.outputs.web == 'true'
+        run: node scripts/deploy/wait-deployed.mjs --env production --part web --target "$SHA" --exact --timeout-min 5
+
+      - name: 버전업 전 OTA 먼저
+        if: needs.plan.outputs.ota_before_native != '' && env.EXPO_TOKEN != ''
+        run: |
+          git worktree add ../pre-native ${{ needs.plan.outputs.ota_before_native }}
+          cd ../pre-native/app
+          npm ci
+          node scripts/ota.mjs production "버전업 전 화면 수정 모음 ($(git rev-parse --short HEAD))"
+
+      - name: 앱 OTA(production 채널)
+        if: needs.plan.outputs.ota == 'true'
+        working-directory: app
+        env:
+          OTA_MESSAGE: ${{ inputs.ota_message }}
+        run: |
+          [ -n "$EXPO_TOKEN" ] || { echo "⛔ EXPO_TOKEN 없음"; exit 1; }
+          node scripts/ota.mjs production "${OTA_MESSAGE:-$(git log -1 --format=%s)}"
+
+      - name: 스토어 빌드·제출(심사)
+        if: inputs.build != 'none'
+        working-directory: app
+        run: |
+          npx --yes eas-cli@latest build --profile production --platform ${{ inputs.build }} --auto-submit --non-interactive --no-wait
+          echo "- 📦 스토어 빌드·제출 요청(${{ inputs.build }}) — 애플·구글 심사 후 출시(store-submission.md)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 자동 점검(헬스·로그인·메시지)
+        run: node scripts/deploy/smoke.mjs --env production --require-login ${{ needs.plan.outputs.server == 'true' && format('--expect-commit {0}', needs.plan.outputs.sha) || '' }}
+
+      - name: Sentry 새 오류
+        if: always()
+        run: node scripts/deploy/sentry-check.mjs --env production --minutes 30
+
+      - name: 운영 배포 기록
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=success -f context=deploy/production \
+            -f description="운영 배포·자동 점검 통과" -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > /dev/null
+          git tag -f deployed/production "$SHA"
+          git push -f origin refs/tags/deployed/production
+          echo "- ✅ \`deployed/production\` = \`${SHA:0:7}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 실패하면 — 되돌리기 안내
+        if: failure()
+        run: |
+          PREV=$(git rev-parse --short "refs/tags/deployed/production^{commit}" 2>/dev/null || echo "?")
+          {
+            echo ""
+            echo "### ⛔ 운영 배포·점검 실패 — 되돌리기 제안"
+            echo "- 서버·웹: 이 워크플로를 **sha=$PREV, rollback=켬**으로 다시 실행(직전 운영 배포본). DB 마이그레이션은 되돌리지 않음 — 추가만 했으면 옛 서버도 그대로 동작."
+            echo "- OTA를 보냈으면: \`eas update:republish --group <직전 업데이트>\` 또는 \`eas update:roll-back-to-embedded\`(runbook 8번)."
+            echo "- 원인은 Sentry·Railway 로그. 고친 뒤엔 다시 프리뷰부터."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -968,5 +968,10 @@
     "delete": "Delete inquiry",
     "deleteTitle": "Delete inquiry",
     "deleteConfirm": "All messages and photos in this inquiry will be deleted. This can't be undone."
+  },
+  "sendRetry": {
+    "failed": "Connection lost — couldn't confirm it was sent.",
+    "action": "Resend",
+    "dismiss": "Dismiss"
   }
 }

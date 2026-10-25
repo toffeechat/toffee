@@ -968,5 +968,10 @@
     "delete": "문의 지우기",
     "deleteTitle": "문의 지우기",
     "deleteConfirm": "이 문의의 글과 붙인 사진이 모두 지워지고 되돌릴 수 없어요."
+  },
+  "sendRetry": {
+    "failed": "연결이 끊겨 전송을 확인하지 못했어요.",
+    "action": "다시 보내기",
+    "dismiss": "닫기"
   }
 }

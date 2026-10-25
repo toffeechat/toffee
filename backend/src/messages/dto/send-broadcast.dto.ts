@@ -14,6 +14,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { MessageMediaType } from '../../generated/prisma/enums.js';
+import { ClientMessageIdField } from './client-message-id.js';
 
 export class SendBroadcastDto {
   @IsEnum(MessageMediaType)
@@ -77,4 +78,8 @@ export class SendBroadcastDto {
   @IsString()
   @IsNotEmpty()
   replyToMessageId?: string;
+
+  // 중복 방지 키 — 같은 키로 다시 보내면 새로 저장·알림하지 않고 처음 메시지를 돌려줌(여러 장 보내기는 장마다 다른 키)
+  @ClientMessageIdField()
+  clientMessageId?: string;
 }

@@ -29,7 +29,7 @@ export function bucketOverviewWeekly(daily: OverviewDay[]): OverviewDay[] {
 
 /**
  * 운영자 통계(2026-09-28, 2차 대시보드 / 2026-10-20 운영자 홈과 합침) — 오늘 숫자(summary), 기간 추이(overview), 전체 팬 분포(breakdown).
- * 에러 추이는 Sentry 화면에서 봄(키 발급 후 연동, ops-infra-backlog).
+ * 최근 오류는 SentryIssuesService(GET admin/stats/errors, 2026-10-25), 자세한 추이는 Sentry 화면에서.
  */
 @Injectable()
 export class AdminStatsService {

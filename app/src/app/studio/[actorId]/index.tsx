@@ -21,6 +21,8 @@ import { MediaTile } from '@/components/media-tile';
 import { ReplyTicker } from '@/components/reply-ticker';
 import { QuoteBlock } from '@/components/quote-block';
 import { VoiceMessage } from '@/components/voice-message';
+import { SendRetryBar } from '@/components/send-retry-bar';
+import { isRetryableSendError } from '@/utils/send-retry';
 import { ChatBackground } from '@/components/chat-background';
 import { DayDivider, sameDay } from '@/components/day-divider';
 import { AlbumGrid } from '@/components/album-grid';
@@ -266,6 +268,14 @@ export default function StudioChannelScreen() {
   const [voicePanel, setVoicePanel] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
+  // 연결 끊김으로 못 보냄 — "다시 보내기"(2026-10-25)
+  const [sendFailed, setSendFailed] = useState(false);
+  // 실패 이유 보여 주기 — 끊김·서버 오류면 다시 보내기 막대, 취소면 안내, 거절이면 이유
+  const showSendError = (error: unknown) => {
+    if (error instanceof UploadCancelledError) setNotice({ text: t('studio.uploadCancelled'), error: false });
+    else if (isRetryableSendError(error)) setSendFailed(true);
+    else setNotice({ text: error instanceof ApiError && error.message ? error.message : t('studio.sendFailed'), error: true });
+  };
 
   useEffect(() => {
     if (recorderState.isRecording) levels.current.push(dbToLevel(recorderState.metering));
@@ -398,11 +408,8 @@ export default function StudioChannelScreen() {
       setDraft('');
       if (quoteId) clearQuote();
     } catch (error) {
-      setNotice(
-        error instanceof UploadCancelledError
-          ? { text: t('studio.uploadCancelled'), error: false }
-          : { text: error instanceof ApiError && error.message ? error.message : t('studio.sendFailed'), error: true },
-      );
+      // 못 보낸 것부터 남아 있음 — 다시 보내기는 남은 것만, 장마다 같은 중복 방지 키(이미 저장된 장은 두 번 안 감)
+      showSendError(error);
     } finally {
       setProgress(null);
       setBatchStep(null);
@@ -413,6 +420,7 @@ export default function StudioChannelScreen() {
   const handleSend = () => {
     const body = draft.trim();
     if (!body && !attachment) return;
+    setSendFailed(false);
     if (attachments.length > 1) {
       setNotice(null);
       void sendBatch(body);
@@ -431,12 +439,7 @@ export default function StudioChannelScreen() {
           setVoicePanel(false);
           if (quoteId) clearQuote();
         },
-        onError: (error) =>
-          setNotice(
-            error instanceof UploadCancelledError
-              ? { text: t('studio.uploadCancelled'), error: false }
-              : { text: error instanceof ApiError && error.message ? error.message : t('studio.sendFailed'), error: true },
-          ),
+        onError: showSendError,
         onSettled: () => {
           setProgress(null);
           uploadAbort.current = null;
@@ -545,6 +548,13 @@ export default function StudioChannelScreen() {
             </ThemedText>
           </Pressable>
         )}
+
+        {/* 연결이 끊겨 못 보냄(자동 재시도까지 실패, 2026-10-25) — 글·첨부는 그대로 있고, 다시 보내도 이미 저장된 건 한 번만 감 */}
+        {sendFailed && !send.isPending && !batchStep ? (
+          <View style={styles.retryWrap}>
+            <SendRetryBar onRetry={handleSend} onDismiss={() => setSendFailed(false)} />
+          </View>
+        ) : null}
 
         {quoteId && (
           <View style={[styles.tray, { backgroundColor: theme.tintSoft }]}>
@@ -737,6 +747,7 @@ const styles = StyleSheet.create({
   metaButton: { width: 28, height: 28 },
   toast: { position: 'absolute', top: Spacing.three, alignSelf: 'center', maxWidth: '86%', borderRadius: Radius.md, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, zIndex: 10 },
   tray: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginHorizontal: Spacing.three, marginBottom: Spacing.two, borderRadius: Radius.md, padding: Spacing.two, paddingLeft: Spacing.three },
+  retryWrap: { marginHorizontal: Spacing.three },
   trayBody: { flex: 1, gap: 3 },
   thumb: { width: 44, height: 44, borderRadius: Radius.sm },
   gate: { padding: Spacing.four, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },

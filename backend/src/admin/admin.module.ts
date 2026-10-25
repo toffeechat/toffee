@@ -15,11 +15,12 @@ import { ActorLinksService } from './actor-links.service.js';
 import { ActorLinksController, AdminActorLinksController } from './actor-links.controller.js';
 import { AdminSecurityController } from './admin-security.controller.js';
 import { AdminSecurityService } from './admin-security.service.js';
+import { SentryIssuesService } from './sentry-issues.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [ActorsModule, NotificationsModule, AuthModule],
   controllers: [AdminUsersController, AdminAgenciesController, AdminActorsController, AdminStatsController, AdminActorLinksController, ActorLinksController, AdminSecurityController],
-  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService, RetireScheduler, AdminSecurityService],
+  providers: [AdminUsersService, AdminAgenciesService, AdminActorsService, AdminStatsService, ActorImportService, ActorLinksService, RetireScheduler, AdminSecurityService, SentryIssuesService],
 })
 export class AdminModule {}

@@ -968,5 +968,10 @@
     "delete": "刪除諮詢",
     "deleteTitle": "刪除諮詢",
     "deleteConfirm": "此諮詢的所有內容與照片都會被刪除，且無法復原。"
+  },
+  "sendRetry": {
+    "failed": "連線中斷，無法確認是否已傳送。",
+    "action": "重新傳送",
+    "dismiss": "關閉"
   }
 }

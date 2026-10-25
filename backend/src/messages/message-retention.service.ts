@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 // 확정 규칙(2026-09-21, docs/product/feature-decisions.md "대화기록 보존 기간"): 팬 답장은 그 팬이 그 배우 구독을

@@ -89,6 +89,7 @@
 | 데모 접속 알림 메일·자동 초기화(2026-10-19) | 소속사별 입장 코드로 들어오면 운영자에게 메일(30분 넘게 쉬었다 오면 한 통씩), 데모 매일 새벽 자동 초기화 — **코드 완료, 2026-10-19 설정 완료·메일 도착 확인**(Resend: 토피 Gmail 구글 로그인, 도메인 `toffeechat.app` Tokyo 지역 Cloudflare 자동 설정으로 인증, 발송 전용 키 → Railway 4개 변수) | ~~👤 ① 메일 발송 서비스 **Resend** 가입(토피 전용 이메일, 무료 — 하루 100통·월 3,000통) → 도메인 `toffeechat.app` 인증(DNS 레코드 추가) → API 키 발급 ② Railway 데모 서버 변수: `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`(예: `no-reply@` 도메인 주소), `DEMO_ALERT_EMAIL`(알림 받을 주소 — 저장소에 적지 말 것), 자동 초기화를 쓰려면 `DEMO_DAILY_RESET=true` ③ 서버·웹 데모 다시 배포 후 운영자 화면 › 데모 입장 코드에서 소속사별 코드 등록. Resend는 보호자 동의 메일에도 쓰이므로 가입하면 사업화 장부에 추가~~ 끝. 운영 서버를 만들 땐 같은 Resend 계정에 운영용 키를 따로 |
 | 푸시 알림(Firebase) | 코드 완료(2026-09-28), **프로젝트 `toffee-c6cba` 생성(2026-10-01, 애널리틱스 끔)** | ~~Firebase 프로젝트 생성~~ → ~~개발용 앱(`com.toffeechat.app.dev`) 등록·설정 파일~~(2026-10-01 완료) → 서비스 계정 키를 백엔드 `FIREBASE_SERVICE_ACCOUNT_JSON`에, 앱용 `google-services.json`(안드로이드)·`GoogleService-Info.plist`(iOS)를 `app/`에 넣기, 애플 푸시 인증 키(APNs)를 Firebase에 등록. 앱 식별자(번들 ID·패키지명)도 아직 미정 — 스토어 빌드 전에 정할 것 |
 | 에러 모니터링 | Sentry (코드 연동 완료, **2026-10-01 조직 `toffeechat` 가입, 프로젝트 `toffee-app`·`toffee-backend` 생성**) | 앱 DSN은 `app/eas.json`(preview·production)에 넣음 — 남은 것: **서버 호스팅 환경변수 `SENTRY_DSN`**에 `toffee-backend` DSN 넣기(Sentry → toffee-backend → Settings → Client Keys에서 복사), 앱 소스맵용 `SENTRY_AUTH_TOKEN`(EAS 비밀 환경변수, 실기기 빌드 전에). **2026-10-25 추가(유료 운영 안정성)**: ① Sentry 알림 규칙 — 새 오류가 처음 생기면·한 오류가 1시간에 N번 넘으면 메일/폰 앱(Sentry 앱) 알림 ② 서버 `SENTRY_ENVIRONMENT=demo`/`production` 구분 ③ 서버가 아예 죽은 건 Sentry가 못 알려 주니 **가동 감시**(UptimeRobot·Better Stack 무료 등으로 `/health/ready` 1~5분마다, 실패 시 메일·푸시) ④ Railway 사용량 알림(메모리·비용) |
+| 운영자 홈 "최근 오류"·오류 알림(2026-10-25) | 코드 완료 — 서버가 Sentry API로 미해결 오류를 5분마다 가져와 운영자 홈 카드에 보여 주고, 새 오류·1시간 30번 이상이면 운영자 알림(메일·푸시, 종류 `ERROR`). 단계별 방법은 [`error-monitoring-guide.md`](./error-monitoring-guide.md) | ~~① Sentry 개인 토큰 → Railway `SENTRY_API_TOKEN`~~ **2026-10-25 데모 서버 완료**(카드에 실제 목록 확인, 조직은 미국 지역이라 `SENTRY_API_URL` 불필요) ~~② 서버 `SENTRY_DSN`~~ 10-02에 이미 넣음(`SENTRY_ENVIRONMENT=demo`). 운영 서버를 만들 땐 같은 토큰 또는 새 토큰 + `SENTRY_ISSUES_ENVIRONMENT=production` ③ 데모·운영을 나눠 보려면 `SENTRY_ISSUES_ENVIRONMENT` ④ Sentry 자체 알림 규칙(새 오류·1시간 100번) — 운영 서버 만들 때(1월, 운영 전환 2단계) ~~⑤ 가동 감시 UptimeRobot~~ **2026-10-25 완료**(토피 Gmail로 가입, 데모 서버·DB·웹 3개 5분 감시 — 운영 서버 생기면 그 주소도 추가, 무료 플랜 상업적 사용 규정은 그때 다시 확인) — `/health`·`/health/ready`·웹 데모 주소(가입하면 사업화 장부에) |
 | GitHub Actions 사용 시간 | CI는 main에 올릴 때만 실행(2026-09-28) — 무료 시간이 젤리와 합산돼 한도가 찼음 | Organization으로 옮기면 무료 시간이 따로 잡힘(위 1번과 같이 처리). 필요하면 지출 한도 설정 확인 |
 | 의존성 취약점 알림 | Dependabot (설정 파일 추가 완료) | GitHub 저장소 설정에서 알림 켜져 있는지 확인 |
 | 백엔드 호스팅 / DB | **Railway로 결정(2026-10-01)** — 서버+PostgreSQL, 싱가포르 리전. 데모 월 $5~10 예상. 웹 데모 화면은 Cloudflare Pages(무료), 주소 `demo.toffeechat.app`·`api-demo.toffeechat.app`(잠정). 코드 쪽은 준비 끝(2026-09-29). **2026-10-01 가입·2단계 인증·Hobby(월 $5) 결제, 데모 서버·DB 첫 배포 성공**(프로젝트 `toffee-demo`, 임시 주소 `toffee-production.up.railway.app`, `NODE_ENV=development`). 웹 데모는 Cloudflare Pages, 주소 `demo.toffeechat.app`(화면)·`api-demo.toffeechat.app`(서버) 연결 완료(2026-10-02), 배포 설정 `backend/railway.json` | 호스팅 고르기(Docker 이미지를 돌릴 수 있는 곳이면 됨: Railway·Render·Fly.io 등) + 관리형 Postgres(자동 백업). 올릴 때: `backend/Dockerfile`로 배포, 환경변수는 `backend/.env.example` 그대로(빠지면 서버가 켜질 때 로그에 알려 줌), 헬스체크 `GET /health`(살아 있는지)·`/health/ready`(DB까지), 서버 여러 대면 `RUN_MIGRATIONS=false` + 배포 단계에서 `npx prisma migrate deploy` 한 번, 프록시 뒤면 `TRUST_PROXY=1`. **서버 메모리 1GB 이상**(부하 테스트: 실시간 연결 3,000개에 약 550MB). 실시간 연결(SSE)이 오래 열려 있으므로 호스팅의 요청 타임아웃(최소 몇 분)·연결 유지 제한 확인. 앱 개발/운영 설정 분리는 완료(`app.config.ts`/`eas.json`) |
@@ -98,8 +99,51 @@
 | 아티스트 연결 링크 주소·예약 오픈(2026-10-20) | 링크는 `웹주소/link/<토큰>` — 운영자가 연 웹 주소를 씀(앱에서 만들면 데모 주소). 예약 오픈은 공개 시각이 되면 자동으로 열림 | 운영 웹 주소가 정해지면 앱 빌드 환경 변수 `EXPO_PUBLIC_WEB_URL`에 넣기. 예약 오픈하는 아티스트·묶음의 스토어 상품은 공개 시각 전에 심사 통과해 두기. 필요하면 서버 `ACTOR_LINK_TTL_DAYS`(링크 유효 일수, 기본 14) |
 | 애플 환불 알림 누락 대조(2026-10-22) | 애플 환불은 팬이 애플에 직접 요청 → 애플이 환불하면 서버 알림으로 우리 결제 기록이 "환불"로 바뀜. **알림이 안 오면 환불된 돈이 정산에 그대로 남음** — 팬별로 챙기는 기능(운영자 "환불 처리 대기")은 2026-10-22 사용자 결정으로 안 만듦(운영자가 할 수 있는 일이 없고, 이 누락과 "팬이 요청 안 함"을 구분하지도 못해서) | 출시 전(정산 첫 마감 전): 매달 마감 때 App Store Connect 정산 보고서의 환불 건과 우리 장부를 대조하거나, 애플 "환불 내역 조회(Get Refund History)" API로 안내한 결제를 자동 확인하는 작은 작업 — 어느 쪽으로 할지 그때 결정 |
 | 영상 스트리밍 | 당분간 불필요(압축 업로드 + 다운로드 재생) | 영상이 많아지면 Cloudflare Stream 검토 |
+| 배포 때 마무리 시간(2026-10-25) | 서버가 SIGTERM을 받으면 처리 중인 보내기·푸시·예약 작업을 끝낼 때까지 최대 25초 기다렸다가 끔(`SHUTDOWN_GRACE_MS`, 코드 완료) | 👤 운영 Railway(데모도) 배포 설정에서 "SIGTERM 뒤 강제 종료까지 기다리는 시간"(deployment draining)을 **30초 이상**으로 — 호스팅이 그보다 먼저 강제 종료하면 마무리 못 함. 이 세션에선 Railway 문서에 접속이 안 돼 설정 이름·기본값은 확인 못 함(`railway.json`에도 넣을 수 있는지 같이 확인) |
 | 운영 주소(2026-10-21 사용자 확정) | 서버 `api.toffeechat.app`, 소속사·운영자 PC 웹 `app.toffeechat.app` — 앱 `eas.json` production 프로필의 `EXPO_PUBLIC_API_URL`·`EXPO_PUBLIC_WEB_URL`에 넣어 둠 | 운영 Railway·Cloudflare Pages를 만들 때 이 주소로 연결, 서버 `API_PUBLIC_URL`·`WEB_LOGIN_ORIGINS`, 각 로그인 콘솔 돌아올 주소, 랜딩 약관 링크. 순서는 [사업 본부](https://claude.ai/artifact/6WgyADTTudgmSV3tdWvKK6) "운영 전환" 탭 2단계 |
 | 운영 기능 설정(2026-10-20) | 코드 완료 — 값만 넣으면 동작 | 👤 운영 서버: `ADMIN_ALERT_EMAIL`(운영자 알림 받을 주소, 저장소에 적지 말 것), 필요하면 `ADMIN_ALERT_KINDS`, `ADMIN_MFA_HOURS`(기본 12). 구글 Play 서비스 계정에 **구독 관리(주문·구독 관리) 권한** — 활동 종료 때 구독 갱신 해지에 필요. 앱 빌드 변수 `EXPO_PUBLIC_IOS_APP_STORE_ID`(앱스토어 등록 후 — 강제 업데이트 화면이 바로 앱 페이지로). 애플 상품 판매 중지가 기존 구독 갱신을 멈추는지 샌드박스로 확인 |
+
+## 배포 자동화 — 내가 직접 할 설정 (2026-10-25)
+
+폰에서 말로 배포하는 체계(`deploy-guide.md`, 기술 `docs/engineering/deploy-runbook.md`)는 코드·워크플로가 끝났고, 아래 값만 넣으면 전부 돈다.
+**값(토큰·비밀값)은 저장소·대화에 붙여 넣지 말 것** — 각 서비스 화면에서 GitHub 화면으로 바로 복사. 넣은 뒤 Claude에게 "넣었어"라고만 하면 확인 실행을 한다.
+GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets and variables → Actions(저장소 전체) 또는 Settings → Environments → 환경 이름(운영용).
+
+### A. 지금 — 프리뷰(데모)용
+
+| # | 할 일 | 어디서 | 넣을 곳 |
+|---|---|---|---|
+| 1 | **점검용 비밀값 만들기** — 비밀번호 관리자 생성기로 40자 무작위 | — | 아래 2·3에 같은 값 |
+| 2 | Railway 데모 서버 변수 `SMOKE_TEST_SECRET` | Railway → `toffee-demo` → 서버 서비스 → Variables → 저장(자동 재배포) | 서버 |
+| 3 | GitHub Secret `PREVIEW_SMOKE_TEST_SECRET` | 위 값 그대로 | 저장소 Secrets |
+| 4 | **Expo 토큰** — expo.dev → 조직 `toffeechat-team` → Settings → **Robot users** → 새 로봇(역할 Developer) → Create token(만료 없음 또는 1년) | Expo | 저장소 Secret `EXPO_TOKEN` |
+| 5 | **Sentry 읽기 토큰** — sentry.io → 오른쪽 위 내 이름 → User Auth Tokens → Create(권한 `project:read`·`event:read`만). 운영자 홈 "최근 오류"용 `SENTRY_API_TOKEN`과 같은 걸 써도 됨 | Sentry | 저장소 Secret `SENTRY_AUTH_TOKEN` |
+| 6 | Railway 데모 서버 **Wait for CI** 켜기 — CI(테스트)가 실패한 커밋은 데모에 안 올라가게 | Railway → 서버 서비스 → Settings → Deploy | — |
+| 7 | **폰 GitHub 앱** 설치·로그인 → 설정 → 알림에서 Actions(실패한 실행)·배포 승인 요청 켜기 | App Store | — |
+| 8 | **업타임 모니터** — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
+| 9 | **Sentry 폰 알림** — Sentry → Alerts → Create Alert → Issues → "새 이슈가 생기면" + "1시간에 30번 넘게 생기면" 두 개, 환경 `demo`(나중에 `production` 따로), 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
+
+- 1~3이 없으면 자동 점검은 헬스·웹만 하고 "로그인·메시지 건너뜀"으로 나옴. 4가 없으면 앱 OTA를 워크플로가 못 해서 PC에서 `npm run ota`를 해야 함. 5가 없으면 "Sentry 확인 안 됨".
+- GitHub Actions 시간: 프리뷰 배포 한 번에 약 10~20분(대부분 서버·웹 빌드를 기다리는 시간). 조직 저장소 무료 월 2,000분 — 하루 2~3번이면 충분. 모자라면 지출 한도 확인.
+- 계정을 새로 만들면(UptimeRobot·Expo 로봇 등) 사업화 장부에 Claude가 적는다.
+
+### B. 운영 환경을 만들 때 (사업 본부 "운영 전환" 2단계, 12월~)
+
+| # | 할 일 | 넣을 곳(Environment `production`) |
+|---|---|---|
+| 1 | Railway 운영 프로젝트·서버 서비스 — GitHub 저장소 연결하되 **자동 배포 끄기**(Settings → Source 브랜치 트리거 해제), Root `/backend`, Config `/backend/railway.json` | — |
+| 2 | Railway 운영 프로젝트 → Settings → Tokens → **Project token**(production 환경) | Secret `RAILWAY_TOKEN` |
+| 3 | 서비스 ID·환경 ID 복사(서비스 화면에서 Ctrl/Cmd+K → "Copy Service ID" / "Copy Environment ID") | Variables `RAILWAY_SERVICE_ID`, `RAILWAY_ENVIRONMENT_ID` |
+| 4 | 운영 점검 비밀값(데모와 **다른** 40자) → Railway 운영 서버 변수 `SMOKE_TEST_SECRET` | Secret `PROD_SMOKE_TEST_SECRET` |
+| 5 | Cloudflare → Workers & Pages → Create → Pages → **Upload assets**(Direct Upload)로 프로젝트 `toffee-app` 생성 → 커스텀 도메인 `app.toffeechat.app` | Variable `CLOUDFLARE_PAGES_PROJECT`=`toffee-app` |
+| 6 | Cloudflare → My Profile → API Tokens → 템플릿 "Edit Cloudflare Pages"(토피 계정만) / 계정 ID(대시보드 오른쪽) | Secret `CLOUDFLARE_API_TOKEN`, Variable `CLOUDFLARE_ACCOUNT_ID` |
+| 7 | **백업 버킷** — R2 비공개 버킷 `toffee-backups` + 이 버킷만 Object Read & Write 토큰, 수명 주기 규칙(90일 뒤 삭제) | Secrets `BACKUP_S3_ENDPOINT`, `BACKUP_S3_BUCKET`, `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY` |
+| 8 | **백업 암호화 키** — PC에서 `gpg --quick-gen-key "Toffee Backup" rsa4096 encr never` → `gpg --armor --export "Toffee Backup"`(공개키만 GitHub에). 비밀키는 `gpg --armor --export-secret-keys`로 내보내 비밀번호 관리자에 보관 — **잃어버리면 백업을 못 품** | Secret `BACKUP_GPG_PUBLIC_KEY` |
+| 9 | 운영 DB 주소(Railway Postgres → Connect → Public URL) | Secret `PROD_DATABASE_URL` (Environment `production-data`에도 같은 값) |
+| 10 | 운영 웹 소셜 로그인 공개 키(데모 Pages 변수와 같은 이름, 운영 값) | Variables `EXPO_PUBLIC_WEB_KAKAO_REST_API_KEY`·`_NAVER_CLIENT_ID`·`_LINE_CHANNEL_ID`·`_APPLE_SERVICES_ID`, 스토어 등록 후 `EXPO_PUBLIC_IOS_APP_STORE_ID` |
+| 11 | GitHub → Settings → Environments → `production`·`production-data` 만들기 → **Required reviewers = 나**, Deployment branches = `main`만 | — |
+| 12 | 업타임 모니터에 `https://api.toffeechat.app/health/ready`·`https://app.toffeechat.app` 추가, Sentry 알림 환경 `production` 추가 | — |
+| 13 | 그다음 Claude에게 "운영 배포 처음 돌려 줘" → 런북 12번 체크리스트(되돌리기·백업·데이터 수정 흐름까지 한 번씩) | — |
 
 ## 3. 사업·법무
 

@@ -92,10 +92,32 @@
   Actions 무료 시간을 아끼려고 **main 대상 PR/push에서만** 자동으로 돎(작업 브랜치 push에선 안 돎,
   2026-09-28) — 그래서 스키마를 바꿨다면 로컬 Postgres에 `prisma migrate deploy` 후
   `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code`로
-  드리프트 검사까지 직접 할 것. main 반영은 사용자가 요청할 때만. 백엔드는 ESLint가 아니라 oxlint라 `npx eslint src`를 치면 설정 파일이 없다고
+  드리프트 검사까지 직접 할 것. main 반영은 사용자가 요청할 때만(배포 요청 포함 — 아래 "배포 규칙"). 백엔드는 ESLint가 아니라 oxlint라 `npx eslint src`를 치면 설정 파일이 없다고
   실패함(정상). 앱 `tsc`가 `*.module.css`/`global.css` 타입을 못 찾는다고 실패하면
   gitignore된 `app/expo-env.d.ts`가 없는 것 — `/// <reference types="expo/types" />`
   한 줄로 만들어 주거나 `npx expo start`를 한 번 띄우면 자동 생성됨.
+
+## 배포 규칙 (2026-10-25 — 2027년 2월부터 1인 운영, 폰에서 말로 배포)
+
+절차는 `.claude/skills/deploy/SKILL.md`(deploy 스킬), 사람용 런북 `docs/engineering/deploy-runbook.md`, 비개발자 요약 `docs/product/deploy-guide.md`.
+
+- **환경 두 개**: 프리뷰 = 데모 서버·DB(Railway `toffee-demo`, `api-demo.toffeechat.app`) + 웹 `demo.toffeechat.app` + 앱 OTA `preview` 채널
+  (소속사 시연용 겸함, main을 자동 배포) / 프로덕션 = 운영 서버·DB `api.toffeechat.app` + 웹 `app.toffeechat.app` + 앱 OTA `production` 채널
+  (아직 없음 — 사업 본부 "운영 전환" 탭). 워크플로 `deploy-preview.yml`·`deploy-production.yml`(둘 다 수동 실행, 운영은 사용자 승인).
+1. **대상 판단**: 대상을 말하지 않은 "올려/적용/반영"은 **프리뷰**. "운영·실제 사용자·프로덕션·스토어"가 분명할 때만 프로덕션. 애매하면 한 줄로 되묻기.
+   정해진 말("프리뷰에 반영해")을 기다리지 말고 뜻으로 알아들을 것. 배포해 달라는 말 = main 반영 허락.
+2. **무엇을 올릴지는 바뀐 파일로 Claude가 판단**(`scripts/deploy/plan.mjs`): 서버 코드 → 서버 배포, 스키마 → 마이그레이션(서버 배포와 함께, 켤 때 적용),
+   앱 JS → OTA(`app/scripts/ota.mjs`만 — `eas update` 직접 금지), 네이티브 → 새 빌드 + 스토어 제출(**심사가 필요하다고 먼저 알림**), 웹 → Pages.
+   순서: 서버 → 웹 → OTA(백엔드가 같이 바뀌면 서버 배포가 끝난 뒤 OTA). **버전업·네이티브 변경 전에 쌓인 JS 수정은 먼저 OTA**(젤리 2026-08-26 사고).
+3. **프로덕션엔 프리뷰에서 확인한 같은 커밋만**(커밋 상태 `deploy/preview` — 워크플로가 검사). 급한 수정도 프리뷰를 거치되 확인을 짧게(자동 점검 통과면 바로).
+4. **DB 데이터 직접 수정 금지**: 운영 DB에 임의 SQL 금지, 운영자 화면 기능으로 처리. 꼭 필요하면 `ops/data-fixes/` SQL 커밋 →
+   `db-data-fix-production.yml`(백업 → 미리보기 → 승인 2번)로만.
+5. **마이그레이션은 "추가 먼저, 제거는 다음 배포"**: 컬럼·표 삭제·이름·타입 변경은 코드가 안 쓰게 된 다음 배포에서. 옛 앱 버전이 새 서버로 계속 동작해야 함
+   (응답 필드 빼지 않기, 새 요청 필드는 선택값). `minVersion` 강제 업데이트는 정말 필요할 때만(먼저 묻기). 운영 워크플로는 위험한 마이그레이션이면 멈춤.
+6. **배포 후 자동 점검**(헬스·로그인·메시지 보내기/받기/답장·웹, `scripts/deploy/smoke.mjs`)과 Sentry 새 오류를 보고하고, 실패하면 되돌리기를 제안.
+   배포를 피할 시간(`scripts/deploy/policy.json` — 데모 새벽 초기화, 운영은 태국 19~01시)·**소속사 미팅 직전 데모 배포 금지** — 미팅 일정을 들으면
+   `freezes`에 추가. main에 합치는 순간 데모가 배포되므로 **합치기 전에** 확인.
+- 비밀값은 GitHub Secrets·Railway·EAS에만(저장소·대화에 적지 않음). 사용자가 할 설정은 `ops-infra-backlog.md` "배포 자동화".
 
 ## 코드 컨벤션
 

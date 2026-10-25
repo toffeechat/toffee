@@ -1063,7 +1063,7 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
   full `node:22` 변형으로 빌드·실행 확인(새 DB에 마이그레이션 25개 적용, `/health/ready`·`/legal/*`·`/support` 200, SIGTERM 즉시 종료).
 - `common/config/env-check.ts` — 필수(`DATABASE_URL`, `JWT_SECRET`), 운영(`NODE_ENV=production`)에서 JWT 32자 미만·`ENABLE_DEV_LOGIN`·
   `ENABLE_SANDBOX_SUBSCRIBE`·`API_PUBLIC_URL` 없음이면 `main.ts`가 로그 남기고 `exit(1)`. 외부 서비스 키 누락은 경고만.
-  `main.ts`: `TRUST_PROXY`(숫자=홉 수), `enableShutdownHooks()`. `RealtimeService.onModuleDestroy`의 subject.complete → SSE 스트림 complete.
+  `main.ts`: `TRUST_PROXY`(숫자=홉 수), ~~`enableShutdownHooks()`~~ → 2026-10-25부터 직접 신호 처리(아래 "메시지 유실·중복 방지" 절 — enableShutdownHooks는 DB를 먼저 끊어서 처리 중 요청이 실패했음).
 - `GET /health/ready`(`SELECT 1`, 실패 503). 헬스·약관·지원 페이지는 `@SkipThrottle`.
 - `legal/` — 약관·개인정보처리방침 초안 원본(`legal-texts.ts`), `GET /legal/:doc`(HTML, `?lang`·Accept-Language로 초안 안내 언어),
   `GET /legal/:doc/sections`(앱 `LegalDocument`가 씀), `GET /support`(`SUPPORT_EMAIL`). 앱 `terms.tsx`/`privacy.tsx`는 서버 글을 받음.
@@ -1769,7 +1769,13 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 스토어: `subscriptions/store-renewal.service.ts`(`@Cron` 매시간, `shouldStopNow(room, expiresAt, now)`), `IapVerificationService.cancelGoogleSubscription`
   (`GOOGLE_PLAY_*` 없으면 false). 애플은 `admin-store.controller.ts`(`GET admin/store/apple-todo`, `PATCH …/sale-stopped` → `Actor/Bundle.storeSaleStoppedAt`).
 - 알림: `notifications/admin-alert.service.ts`(NotificationsModule `@Global`) — `ADMIN_ALERT_EMAIL`(쉼표), `ADMIN_ALERT_KINDS`(REPORT,REFUND,IDLE,INQUIRY,CONTRACT,RETIRE).
-  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`.
+  푸시 data `{type:'admin-alert', kind}` → 앱 `ADMIN_ALERT_SCREENS`. 2026-10-25 `ERROR` 추가(아래 Sentry, 앱은 `/admin`).
+- 최근 오류(2026-10-25): `admin/sentry-issues.service.ts` — `GET admin/stats/errors`(`ErrorsView`: `NOT_CONNECTED` / `OK` / `FAILED`+직전 목록).
+  `SENTRY_API_TOKEN`(개인 토큰, event:read·project:read·org:read), `SENTRY_ORG`(기본 toffeechat), `SENTRY_PROJECTS`(기본 toffee-backend,toffee-app),
+  `SENTRY_API_URL`(EU면 de.sentry.io), `SENTRY_ISSUES_ENVIRONMENT`. 프로젝트별 `/api/0/projects/{org}/{p}/issues/?query=is:unresolved&statsPeriod=24h&sort=date&limit=25`,
+  메모리 캐시 5분(실패 1분, 동시 요청은 한 번). `@Cron(EVERY_5_MINUTES) watch()` → `alertCandidates()`(`sentry-issues.ts`, 순수 함수 — 새 오류 = firstSeen 30분 안,
+  SPIKE = stats['24h'] 마지막 두 시간 묶음 ≥ `ERROR_ALERT_HOURLY_THRESHOLD`(기본 30, 0 끔)) → `ErrorAlertSent`(@@unique issueId·kind·bucket) create 성공한 것만 notify,
+  P2002면 건너뜀(여러 대·재시작 중복 방지), 3건 넘으면 한 통, 7일 지난 기록 삭제. 앱 `components/admin-errors-card.tsx`, `useAdminErrors`(5분 refetch).
 - 점검·최소 버전: `app-settings/`(global, 15초 캐시) — `AppSetting(id 'app')`, `GET /app-config`(@Public), `GET/PATCH admin/app-settings`(OWNER).
   `MaintenanceGuard`는 APP_GUARD 순서상 RolesGuard 다음(req.user가 있어야 운영자 예외). 앱 `components/app-gate.tsx`, api-client `onMaintenance`.
 - 공지 푸시: `PushService.sendToEveryone(compose, data)` — `reachableUser`/`deliver`로 나눔, 기기를 id 커서로 1,000개씩. `Notice.pushedAt`을 updateMany로 선점.
@@ -1856,6 +1862,30 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
 
+## 메시지 유실·중복 방지 — 중복 방지 키, 마무리 종료, 재동기화 (2026-10-25)
+
+- **중복 방지 키**: `Message.clientMessageId`(nullable) + `@@unique([actorId, clientMessageId])`. DTO `ClientMessageIdField()`(`messages/dto/client-message-id.ts`,
+  `^[A-Za-z0-9_-]{8,64}$`, 선택 — 예전 앱 호환). `MessagesService.sentBefore(actorId, key, owner, include?, db?)` — 같은 방·같은 키 메시지가 같은 보낸 사람
+  (팬: fanUserId, 스타: senderType ARTIST + senderActorId)이면 돌려주고 아니면 409 `CONFLICT`.
+  - `sendReply`: 구독 확인 → `sentBefore`(차단·금칙어·한도보다 먼저) → interactive `$transaction` 안에서 `pg_advisory_xact_lock(hashtext('fan-reply:<actor>:<user>'))`
+    → `sentBefore`(줄 서는 사이 저장된 것) → replyTarget/한도 → create + `lastFanReplyAt`. P2002(`isClientMessageIdConflict`)면 먼저 저장된 것. 새로 저장했을 때만 `fan-reply` 신호.
+  - `sendBroadcast`: `ensureIsActorSelf` → `sentBefore(..., quoteInclude)` → (기존 검증) → create(키 포함), P2002면 먼저 저장된 것을 `presentSent`로 돌려주고 푸시·신호 없음.
+  - 앱 `utils/send-retry.ts`: `newClientMessageId`, `isRetryableSendError`(네트워크 오류·5xx·408·429, `UploadCancelledError` 제외), `SEND_RETRY`(react-query
+    `retry` 2번·`retryDelay` 1s·2s…), `PendingSends<Extra>` — 모듈 단위 Map(signature → {key, extra}), `settle(sig, error?)`는 성공·재시도 불가 실패면 지움.
+    signature: 답장 `${actorId}|${body}`, 스튜디오 `${actorId}|${attachment.uri}|${body}|${replyToMessageId}`(extra = 올린 `mediaKey`·`thumbnailKey`·`thumbhash`).
+    두 훅 모두 `onSettled`에서 새로고침. UI `components/send-retry-bar.tsx`(팬 채팅: 입력칸 글이 실패한 글과 같을 때만, 스튜디오: `sendFailed` 상태).
+- **마무리 종료**: `common/lifecycle/shutdown.service.ts` `ShutdownService`(@Global `LifecycleModule`) — `requestStarted()`(끝 함수 반환, 중복 호출 안전),
+  `track(promise)`, `pending()`(요청 수·작업 수·`isCallbackRunning`인 cron 이름), `beginDrain()`(draining + 모든 CronJob.stop), `drain(timeoutMs)`.
+  `main.ts`: 미들웨어로 요청 수 셈(`/realtime` 제외, draining이면 `Connection: close`), SIGTERM/SIGINT → `beginDrain` → `RealtimeService.closeStreams()` →
+  `drain(SHUTDOWN_GRACE_MS || 25000)` → `app.close()` → `exit(0)`, 두 번째 신호면 exit(1), grace+5초 강제 타이머(unref). `/health/ready`는 draining이면 503.
+  `PushService.sendToUsers/sendToEveryone/notifyActorStaff`는 `shutdown.track(...)`. cron은 `common/lifecycle/cron.ts`의 `Cron`(= `@nestjs/schedule` Cron +
+  `waitForCompletion: true` — cron 4.x는 이 옵션이 있어야 `isCallbackRunning`이 실행 중을 나타내고 겹치는 실행을 건너뜀). `lifecycle.spec.ts`가 직접 import를 막음.
+  Nest 12 `close()` 순서는 callDestroyHook → callBeforeShutdownHook → dispose(http close) → callShutdownHook(그래서 기본 방식으론 DB가 먼저 끊김).
+- **실시간 재동기화**: `RealtimeEvent.kind`에 `resync`(서버 안 신호, pg_notify 안 거침) — `RealtimeService.listen()`이 두 번째 이후 LISTEN 성공 때 발행,
+  컨트롤러가 수신 대상과 무관하게 모든 연결로. `streamsClosed$`·`acceptingStreams`·`closeStreams()`(배포 시작 때 SSE만 먼저 닫음, LISTEN은 app.close까지 유지).
+  앱 `lib/realtime.ts`: `refreshLiveQueries`(messages·chat-media·reply-quota·my-subscriptions·my-bundles·actor-broadcasts·actor-replies·my-actors 무효화) —
+  `resync` 신호, 그리고 ready까지 갔던 연결이 서버 쪽 사유(끝남·오류·멈춤)로 끊긴 뒤 다시 ready가 오면. 멈춘 연결 감시 `STALL_MS` 70초(10초마다 확인).
+
 ## 운영자 홈 오늘 숫자 → 목록 (2026-10-25)
 
 - 숫자와 목록이 같은 조건이 되게 summary와 같은 where를 씀. 날짜는 `resolveRange`(days 또는 from~to, 태국 날짜) → `rangeBounds`(`agency-stats.service.ts`, [첫날 0시, 끝날 다음 날 0시)).
@@ -1899,3 +1929,29 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   훅 `uploadInquiryPhotos`(차례로 올림)·`useDeleteInquiry`·`useDeleteAdminInquiry`, `useAdminInquiries(status, category)`.
 - 검증: 단위 `support.service.spec.ts`(8개), `upload-cleanup.service.spec.ts` 갱신. moto_server로 실제 업로드 E2E(올리기→조회 URL 바이트 일치, 남의 경로 키·4장·빈 글·
   가짜 PNG 400, 운영자 사진만 답변, 필터 개수, 본인 삭제·남이 지우기 404, 탈퇴 후 사진 0장·글 남음, 저장소 파일 전부 삭제) + 웹(회원 폰 폭·운영자 PC/폰 폭, 전체 화면 보기).
+## 배포 체계 — 워크플로·자동 점검 (2026-10-25)
+
+절차·비밀값·되돌리기는 `deploy-runbook.md`. 여기는 구현 결정만.
+
+- **프리뷰는 기존 자동 배포를 그대로 씀**: Railway `toffee-demo`·Pages `toffee-demo`가 main을 배포하므로 `deploy-preview.yml`은 배포를 "거는" 대신
+  `/health`·`/version.json`의 `commit`이 목표 커밋(또는 그걸 포함하는 새 커밋, `git merge-base --is-ancestor`)이 될 때까지 기다림 — Railway·Cloudflare 토큰 없이 돎.
+  프로덕션은 자동 배포를 끄고 `serviceInstanceDeployV2(commitSha)`(Railway GraphQL, project token은 `Project-Access-Token` 헤더)·`wrangler pages deploy`로 커밋을 지정.
+- 서버 커밋: `GET /health` → `commit: RAILWAY_GIT_COMMIT_SHA || GIT_COMMIT_SHA || null`. 웹: `app/scripts/write-version.mjs`가 `dist/version.json`
+  (`WEB_COMMIT_SHA || CF_PAGES_COMMIT_SHA || GITHUB_SHA || git`). SPA라 파일이 없으면 index.html이 200으로 와서 JSON 파싱 실패 = "모름"으로 처리.
+- **plan.mjs**: 기준 = 떠 있는 커밋 → `deployed/<env>` 태그 → 없음(전부). OTA 기준은 EAS `update:list`의 `gitCommitHash`만(태그로 짐작하면 OTA를 못 한 채
+  태그만 옮겨진 경우 변경을 놓침). 네이티브 판단 = 경로 목록 + `app.config.ts`는 주석만 바뀐 diff 제외 + `package-lock.json` 버전이 바뀐 패키지 중
+  `node_modules/<pkg>`에 `ios`/`android`/`expo-module.config.json`/`react-native.config.js`가 있는 것(설치 전이면 이름 패턴). 네이티브면 `rev-list --first-parent`로
+  처음 네이티브가 바뀐 커밋을 찾아 그 부모(`ota_before_native`)까지 OTA. 마이그레이션 위험 문장은 정규식(주석 제거 후).
+- **"프리뷰 확인" 기록** = 커밋 상태 `deploy/preview`(GITHUB_TOKEN `statuses: write`) — 운영 워크플로 plan 작업이 `gh api commits/<sha>/statuses`로 검사.
+  되돌리기는 `deploy/production` 상태가 있는 커밋만. 태그 `deployed/*`는 `git push -f`(GITHUB_TOKEN이라 다른 워크플로를 깨우지 않음).
+- **승인**: `deploy` 작업에만 `environment: production`(Required reviewers) — 운영 비밀값이 그 환경에만 있어서 plan 작업은 운영에 접근 못 함.
+  plan 요약(GITHUB_STEP_SUMMARY)이 승인 화면 위에 보임.
+- **SmokeModule**(`backend/src/smoke`): `POST /smoke/session`(Public, 분당 5회, `x-smoke-secret` sha256 다이제스트끼리 `timingSafeEqual`) → 트랜잭션으로 고정 ID
+  점검 아티스트(ACTOR)·팬(USER)·대화방(`retiredAt = epoch` → 둘러보기·검색·구독 차단, `agencyId` null → 소속사·정산 제외, 구매 없이 `Subscription` 직접 → 매출 0,
+  `notificationsMuted`·`autoTranslate=false`) upsert + 하루 지난 점검 메시지 삭제 → `AuthService.issueShortAccessToken`(10분, `dac` 없음 — 데모 접속 기록 안 남김).
+  dev-login 대신 이걸 쓰는 이유: 운영엔 dev-login이 없고, 데모에서도 공용 코드 로그인은 소속사 접속 기록·"최근 30분 사용 중이면 새벽 초기화 건너뜀"에 걸림.
+  메시지는 `silent: true` 방송 → 팬 목록 → 팬 답장(새 방송마다 답장 한도가 새로 계산) → 둘 다 회수. 운영에선 `SMOKE_TEST_SECRET` 32자 미만이면 env-check 오류.
+- 앱 Sentry `environment`: `__DEV__` → development, 그 외 `Updates.channel`(preview·production), 웹은 채널이 없어 `EXPO_PUBLIC_ENABLE_DEV_LOGIN === 'true'`면 preview —
+  예전엔 프리뷰 빌드도 production으로 섞였음. 서버는 `SENTRY_ENVIRONMENT`(데모 `demo`).
+- 운영 DB 백업(`.github/actions/db-backup`): PGDG `postgresql-client-17` → `pg_dump -Fc --no-owner` | `gpg --encrypt`(공개키만 runner에) | `aws s3 cp -`(R2,
+  region `auto`) → 크기 확인. 데이터 수정 워크플로는 `BEGIN; <file>; ROLLBACK;`으로 command tag(`UPDATE n`·`DELETE n`·`INSERT 0 n`) 합을 세고, 적용 직전에 한 번 더 센 뒤 COMMIT.

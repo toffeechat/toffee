@@ -13,7 +13,7 @@ import { bundleOpensAt, isReleased } from '../common/release/release.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { ChargeLedgerService, sourceOf } from '../settlements/charge-ledger.service.js';
 import type { StoreTransaction } from './iap-verification.service.js';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { ConfigService } from '@nestjs/config';
 import { storeGroupOf, switchTiming, type GroupActor } from '../bundles/switch-group.js';
 

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { AdminActorsService } from './admin-actors.service.js';
 
 /** 활동 종료 예정 시각이 지난 아티스트를 1분마다 실제로 종료(2026-10-20) — 알림·환불 규칙은 바로 종료와 같음 */

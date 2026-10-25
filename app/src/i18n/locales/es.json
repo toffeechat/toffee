@@ -968,5 +968,10 @@
     "delete": "Eliminar consulta",
     "deleteTitle": "Eliminar consulta",
     "deleteConfirm": "Se eliminarán todos los mensajes y fotos de esta consulta. No se puede deshacer."
+  },
+  "sendRetry": {
+    "failed": "Se perdió la conexión y no pudimos confirmar el envío.",
+    "action": "Reenviar",
+    "dismiss": "Cerrar"
   }
 }

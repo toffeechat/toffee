@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
+import { PendingSends, SEND_RETRY } from '@/utils/send-retry';
 import type { Actor } from './use-actors';
 import type { ChatMessage } from './use-messages';
 
@@ -214,12 +215,29 @@ interface SendBroadcastInput {
   mediaKey?: string;
 }
 
-// 배우 본인 전용 — 소속사 콘솔에서는 안 씀(발송 권한 없음). 배우용 화면 만들 때 재사용
+// 못 보낸 메시지의 중복 방지 키(2026-10-25) — use-studio의 useStudioSend와 같은 방식
+const pendingBroadcasts = new PendingSends();
+
+// 배우 본인 전용 — 소속사 콘솔에서는 안 씀(발송 권한 없음). 배우용 화면 만들 때 재사용(지금 화면은 use-studio의 useStudioSend).
+// 중복 방지 키를 붙여서 끊겨 실패하면 자동으로 2번 더 — 서버가 이미 저장했으면 같은 메시지를 돌려줌
 export function useSendBroadcast(actorId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: SendBroadcastInput) =>
-      apiClient.post<ChatMessage>(`/actors/${actorId}/messages/broadcast`, input),
+    mutationFn: async (input: SendBroadcastInput) => {
+      const signature = `${actorId}|${input.mediaType}|${input.mediaKey ?? ''}|${input.body ?? ''}`;
+      try {
+        const message = await apiClient.post<ChatMessage>(`/actors/${actorId}/messages/broadcast`, {
+          ...input,
+          clientMessageId: pendingBroadcasts.keyFor(signature),
+        });
+        pendingBroadcasts.settle(signature);
+        return message;
+      } catch (error) {
+        pendingBroadcasts.settle(signature, error);
+        throw error;
+      }
+    },
+    ...SEND_RETRY,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['actor-stats', actorId] });
     },

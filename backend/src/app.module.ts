@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { SmokeModule } from './smoke/smoke.module.js';
 import { AppSettingsModule } from './app-settings/app-settings.module.js';
 import { SupportModule } from './support/support.module.js';
 import { PrivacyModule } from './privacy/privacy.module.js';
@@ -37,6 +38,7 @@ import { LegalModule } from './legal/legal.module.js';
 import { DemoModule } from './demo/demo.module.js';
 import { NoticesModule } from './notices/notices.module.js';
 import { ReleasesModule } from './releases/releases.module.js';
+import { LifecycleModule } from './common/lifecycle/shutdown.service.js';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { ReleasesModule } from './releases/releases.module.js';
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     ScheduleModule.forRoot(),
+    // 배포 때 처리 중인 요청·푸시·cron을 끝내고 끄기(2026-10-25, main.ts)
+    LifecycleModule,
     PrismaModule,
     RealtimeModule,
     AuditModule,
@@ -66,6 +70,7 @@ import { ReleasesModule } from './releases/releases.module.js';
     ReleasesModule,
     LegalModule,
     DemoModule,
+    SmokeModule,
     NoticesModule,
     ModerationModule,
     AdminModule,

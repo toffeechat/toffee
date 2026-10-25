@@ -12,9 +12,18 @@ import i18n from '@/i18n';
  * 폴링을 길게(30초, 혹시 놓친 신호 대비), 끊겨 있으면 예전처럼 짧게 — `useLiveInterval` (2026-09-29)
  */
 export interface RealtimeEvent {
-  kind: 'artist-message' | 'message-removed' | 'fan-reply' | 'access-changed';
+  /** resync: 서버가 신호를 놓쳤을 수 있음(서버의 DB 신호 연결이 끊겼다 붙음, 2026-10-25) — 보고 있는 목록을 전부 다시 불러옴 */
+  kind: 'artist-message' | 'message-removed' | 'fan-reply' | 'access-changed' | 'resync';
   actorId?: string;
   messageId?: string;
+}
+
+// 실시간 신호로 새로고침하는 목록 전부(방 구분 없이) — 다시 연결됐을 때·resync. 화면에 떠 있는 것만 실제로 다시 받음(react-query)
+const LIVE_QUERY_ROOTS = ['messages', 'chat-media', 'reply-quota', 'my-subscriptions', 'my-bundles', 'actor-broadcasts', 'actor-replies', 'my-actors'];
+
+/** 끊겨 있던 동안(또는 서버가 놓친) 신호 메우기 — 놓친 메시지를 빠짐없이 다시 받음 */
+export function refreshLiveQueries(queryClient: QueryClient) {
+  for (const root of LIVE_QUERY_ROOTS) void queryClient.invalidateQueries({ queryKey: [root] });
 }
 
 let connected = false;
@@ -47,6 +56,10 @@ export function onRealtimeEvent(listener: (event: RealtimeEvent) => void): () =>
 
 function applyEvent(queryClient: QueryClient, event: RealtimeEvent) {
   eventListeners.forEach((listener) => listener(event));
+  if (event.kind === 'resync') {
+    refreshLiveQueries(queryClient);
+    return;
+  }
   // 내 구독이 바뀜(다른 기기에서 구독·해지 등) — 인박스·구독 관리. 서버도 이 연결이 받을 방 목록을 바로 다시 읽음
   if (event.kind === 'access-changed') {
     void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
@@ -73,6 +86,9 @@ function applyEvent(queryClient: QueryClient, event: RealtimeEvent) {
   void queryClient.invalidateQueries({ queryKey: ['my-actors'] });
 }
 
+// 이만큼 아무것도 안 오면 죽은 연결로 봄 — 서버 ping 간격(25초)의 약 3배
+const STALL_MS = 70_000;
+
 /** SSE 본문을 한 덩어리씩 잘라 이벤트로 — "event: x\ndata: {...}\n\n" */
 function parseBlock(block: string): { type: string; data: string } | null {
   let type = 'message';
@@ -96,6 +112,9 @@ export function useRealtimeSync(token: string | null) {
     let controller: AbortController | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let delay = 1000;
+    // 연결이 됐다가(ready) 끊긴 적이 있음 — 다음에 다시 붙으면(ready) 그 사이 놓친 신호를 메우려고 목록을 다시 불러옴(2026-10-25. 예전엔
+    // 다시 붙어도 그냥 신호만 기다려서, 끊긴 동안 온 메시지는 30초 폴링이나 다음 신호 때에야 보였음 — 배포 때마다 생기는 일)
+    let missed = false;
 
     const scheduleRetry = () => {
       if (stopped || retryTimer || AppState.currentState !== 'active') return;
@@ -110,6 +129,16 @@ export function useRealtimeSync(token: string | null) {
       if (stopped || controller) return;
       const current = new AbortController();
       controller = current;
+      let ready = false;
+      // 조용히 죽은 연결(와이파이 ↔ 데이터 전환 등 — 끊겼다는 신호 없이 멈춤) 감시: 서버는 25초마다 ping을 보내니 70초 동안 아무것도
+      // 안 오면 끊고 다시 연결(2026-10-25. 예전엔 "연결됨"으로 남아서 새 메시지가 30초 폴링으로만 보였음)
+      let lastData = Date.now();
+      let stalled = false;
+      const watchdog = setInterval(() => {
+        if (Date.now() - lastData < STALL_MS) return;
+        stalled = true;
+        current.abort();
+      }, 10_000);
       try {
         const res = await fetch(`${API_URL}/realtime`, {
           headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream', 'Accept-Language': i18n.language },
@@ -122,6 +151,7 @@ export function useRealtimeSync(token: string | null) {
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
+          lastData = Date.now();
           buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
           let end = buffer.indexOf('\n\n');
           while (end >= 0) {
@@ -130,8 +160,13 @@ export function useRealtimeSync(token: string | null) {
             end = buffer.indexOf('\n\n');
             if (!event) continue;
             if (event.type === 'ready') {
+              ready = true;
               setConnected(true);
               delay = 1000;
+              if (missed) {
+                missed = false;
+                refreshLiveQueries(queryClient);
+              }
             } else if (event.type === 'change') {
               try {
                 applyEvent(queryClient, JSON.parse(event.data) as RealtimeEvent);
@@ -144,6 +179,9 @@ export function useRealtimeSync(token: string | null) {
       } catch {
         // 연결 실패·끊김 — 아래에서 재시도
       } finally {
+        clearInterval(watchdog);
+        // 앱이 뒤로 가서 끊은 건 빼고(돌아오면 포커스 새로고침이 메움) — 서버 배포·망 끊김·멈춘 연결이면 다음 연결 때 메움
+        if (ready && (stalled || !current.signal.aborted)) missed = true;
         if (controller === current) controller = null;
         setConnected(false);
       }
