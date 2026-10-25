@@ -1,36 +1,67 @@
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminButtonRow, AdminChip } from '@/components/admin-ui';
 import { ROLE_LABELS, statusText, timeAgo } from '@/components/admin-user-panels';
 import { useWideLayout } from '@/components/wide-shell';
-import { useAdminUsers, type AdminUser, type AdminUserSort } from '@/hooks/use-admin';
+import { StatsRangeControl, selectionLabel } from '@/components/stats-range-picker';
+import { useAdminUsers, type AdminUser, type AdminUserPeriod, type AdminUserSort } from '@/hooks/use-admin';
+import { selectionFromParams, type StatsSelection } from '@/hooks/use-console';
+import { thaiToday } from '@/utils/stat-range';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 
 const ROLE_FILTERS: (AdminUser['role'] | null)[] = [null, 'USER', 'ACTOR', 'AGENCY_STAFF', 'ADMIN'];
+const PERIOD_FIELDS: { value: AdminUserPeriod['field'] | null; label: string }[] = [
+  { value: null, label: '기간 전체' },
+  { value: 'joined', label: '가입일' },
+  { value: 'active', label: '최근 접속' },
+];
+
+type Params = { role?: string; sort?: string; dateField?: string; days?: string; from?: string; to?: string };
+
+/** 주소 값 → 기간 필터(운영자 홈 "오늘 가입·오늘 접속" 카드가 dateField·from·to 또는 days를 넘김) */
+function periodFromParams(params: Params): AdminUserPeriod | null {
+  if (params.dateField !== 'joined' && params.dateField !== 'active') return null;
+  return { field: params.dateField, selection: selectionFromParams(params) };
+}
+
+function periodText(period: AdminUserPeriod, language: string) {
+  return `${selectionLabel(period.selection, language)}${period.field === 'joined' ? ' 가입한' : ' 마지막으로 접속한'} 회원 — 태국 시간 기준, 탈퇴한 계정은 빠져요`;
+}
 
 /**
  * 회원 관리(2026-10-20 개편: 사용자 피드백 "회원 카드가 한눈에 안 들어옴") — PC는 표(이름·역할·소속·상태·마지막 접속·가입일), 폰은 두 줄 목록.
  * 줄을 누르면 회원 상세(역할·소속사·제재·접속 기록). 역할 탭 옆에 인원수, 한 쪽 50명씩.
+ * 기간 필터(2026-10-25) — 가입일·최근 접속이 그 기간(통계와 같은 태국 날짜·기간 고르기). 운영자 홈 "오늘 가입 54"를 누르면 팬 + 오늘 가입으로 열림.
  */
 export default function AdminUsersScreen() {
   const theme = useTheme();
   const router = useRouter();
   const wide = useWideLayout();
-  const [query, setQuery] = useState('');
-  const [role, setRole] = useState<AdminUser['role'] | null>(null);
-  const [sort, setSort] = useState<AdminUserSort | undefined>(undefined);
-  const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching } = useAdminUsers(query.trim(), role ?? undefined, sort, page);
-  const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const { i18n } = useTranslation();
+  const params = useLocalSearchParams<Params>();
   const reset = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
     setPage(1);
   };
+  const [query, setQuery] = useState('');
+  const [role, setRole] = useState<AdminUser['role'] | null>(() => ROLE_FILTERS.find((value) => value && value === params.role) ?? null);
+  const [sort, setSort] = useState<AdminUserSort | undefined>(params.sort === 'recent' ? 'recent' : undefined);
+  const [period, setPeriod] = useState<AdminUserPeriod | null>(() => periodFromParams(params));
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching } = useAdminUsers(query.trim(), role ?? undefined, sort, page, period);
+  const today = thaiToday();
+  const isToday = !!period && !('days' in period.selection) && period.selection.from === today && period.selection.to === today;
+  const changePeriod = reset(setPeriod);
+  const pickField = (field: AdminUserPeriod['field'] | null) =>
+    changePeriod(field ? { field, selection: period?.selection ?? { from: today, to: today } } : null);
+  const pickSelection = (selection: StatsSelection) => period && changePeriod({ ...period, selection });
+  const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
   const open = (user: AdminUser) => router.push({ pathname: '/admin/users/[id]', params: { id: user.id } });
 
   return (
@@ -66,6 +97,22 @@ export default function AdminUsersScreen() {
               <AdminChip label="최근 접속순" selected={sort === 'recent'} onPress={() => reset(setSort)('recent')} />
               {isFetching ? <ActivityIndicator color={theme.tint} /> : null}
             </View>
+            <View style={styles.chips}>
+              {PERIOD_FIELDS.map((item) => (
+                <AdminChip key={item.value ?? 'ALL'} label={item.label} selected={(period?.field ?? null) === item.value} onPress={() => pickField(item.value)} />
+              ))}
+            </View>
+            {period ? (
+              <>
+                <View style={styles.chips}>
+                  <AdminChip label="오늘" selected={isToday} onPress={() => pickSelection({ from: today, to: today })} />
+                  <StatsRangeControl value={period.selection} onChange={pickSelection} />
+                </View>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {periodText(period, i18n.language)}
+                </ThemedText>
+              </>
+            ) : null}
             {wide ? (
               <View style={[styles.tableRow, styles.tableHead, { borderBottomColor: theme.backgroundSelected }]}>
                 {['이름(닉네임)', '역할·소속', '상태', '마지막 접속', '가입일'].map((title, i) => (

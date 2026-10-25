@@ -268,6 +268,7 @@ function RootLayout() {
               <Stack.Screen name="admin/settlements" options={{ headerShown: true, title: '정산' }} />
               <Stack.Screen name="admin/actions" options={{ headerShown: true, title: '작업 기록' }} />
               <Stack.Screen name="admin/refunds" options={{ headerShown: true, title: '환불 요청' }} />
+              <Stack.Screen name="admin/subscriptions" options={{ headerShown: true, title: '구독 시작·해지' }} />
               <Stack.Screen name="admin/notices" options={{ headerShown: true, title: '공지사항' }} />
               <Stack.Screen name="admin/demo-codes" options={{ headerShown: true, title: '데모 입장 코드' }} />
               <Stack.Screen name="onboarding/terms" options={{ headerShown: false }} />

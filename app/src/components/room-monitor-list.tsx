@@ -9,7 +9,8 @@ import { RoomListRow } from '@/components/room-list-row';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { agencyLabelOf, membersOf } from '@/hooks/use-actors';
-import { useMyActors, type MyActor, type RoomKindFilter } from '@/hooks/use-console';
+import { useAdminMessageRooms } from '@/hooks/use-admin';
+import { useMyActors, type MyActor, type RoomKindFilter, type StatsSelection } from '@/hooks/use-console';
 import { useTheme } from '@/hooks/use-theme';
 import { useConsoleUnread } from '@/lib/console-alerts';
 import { Radius, Spacing } from '@/constants/theme';
@@ -61,18 +62,31 @@ function IdleLine({ actor }: { actor: MyActor }) {
   );
 }
 
+/** 고른 기간의 이 방 건수(운영자 "그날 메시지" 보기) */
+function PeriodLine({ counts }: { counts: { messages: number; fanReplies: number } }) {
+  const theme = useTheme();
+  return (
+    <ThemedText type="caption" style={{ color: theme.tint }}>
+      {`이 기간 메시지 ${counts.messages}건 · 팬 답장 ${counts.fanReplies}건`}
+    </ThemedText>
+  );
+}
+
 /**
  * 토피룸 모니터링 목록(2026-10-20 사용자 요청: "팬 토피룸 목록처럼 보기 쉽게 + 운영에 필요한 정보") — 소속사 "소속 아티스트" 탭과
  * 운영자 "토피룸 모니터링"이 같이 씀. 팬 목록처럼 사진·방 이름(아티스트가 정한 닉네임)·마지막 메시지·시간에 더해, 팬에겐 안 보이는
  * 공식 이름·소속사(CP방은 멤버)·구독자 수·마지막 메시지 N일 전. 검색(닉네임·공식 이름·소속사)·아티스트/CP·정렬, 운영자는 소속사 필터도.
  * 누르면 그 방의 모니터링(보낸 메시지·팬 답장·스토리·통계).
+ * messagePeriod(운영자, 2026-10-25 — 운영자 홈 "오늘 메시지" 카드에서 넘어옴): 그 기간 메시지·팬 답장이 있는 방만, 아티스트 메시지 많은 순 + 방마다 건수.
  */
-export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: ReactElement }) {
+export function RoomMonitorList({ admin, header, messagePeriod }: { admin?: boolean; header?: ReactElement; messagePeriod?: StatsSelection | null }) {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const { data: actors, isLoading } = useMyActors();
   const unread = useConsoleUnread();
+  const { data: periodRooms, isLoading: loadingPeriod } = useAdminMessageRooms(admin && messagePeriod ? messagePeriod : null);
+  const periodCounts = useMemo(() => (periodRooms ? new Map(periodRooms.rooms.map((room) => [room.actorId, room])) : null), [periodRooms]);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<RoomKindFilter>('ALL');
   const [sort, setSort] = useState<Sort>('recent');
@@ -91,6 +105,7 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
   const rooms = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const filtered = (actors ?? []).filter((actor) => {
+      if (periodCounts && !periodCounts.has(actor.id)) return false;
       if (kind !== 'ALL' && (actor.kind ?? 'SOLO') !== kind) return false;
       if (agency && actor.agency?.id !== agency && !membersOf(actor).some((member) => member.agency?.id === agency)) return false;
       if (!needle) return true;
@@ -99,12 +114,16 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
     });
     const time = (value?: string | null) => (value ? new Date(value).getTime() : 0);
     return filtered.sort((a, b) => {
+      if (periodCounts) {
+        const [x, y] = [periodCounts.get(a.id)!, periodCounts.get(b.id)!];
+        return y.messages - x.messages || y.fanReplies - x.fanReplies;
+      }
       if (sort === 'subscribers') return (b.subscriberCount ?? 0) - (a.subscriberCount ?? 0);
       // 오래 안 보낸 순 — 활동 종료한 방은 맨 아래, 한 번도 안 보낸 방이 맨 위
       if (sort === 'idle') return Number(!!a.retiredAt) - Number(!!b.retiredAt) || time(a.lastBroadcastAt) - time(b.lastBroadcastAt);
       return time(b.lastMessage?.createdAt) - time(a.lastMessage?.createdAt);
     });
-  }, [actors, query, kind, agency, sort]);
+  }, [actors, query, kind, agency, sort, periodCounts]);
 
   const filters = (
     <View style={styles.filters}>
@@ -122,6 +141,7 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
       </View>
       <View style={styles.pillRow}>
         <SegmentedPills options={KINDS.map((value) => ({ value, label: t(`dashboard.kind.${value}`) }))} value={kind} onChange={setKind} />
+        {periodCounts ? null : (
         <SegmentedPills
           options={[
             { value: 'recent' as Sort, label: t('console.sortRecent') },
@@ -131,6 +151,7 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
           value={sort}
           onChange={setSort}
         />
+        )}
       </View>
       {admin && agencies.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -140,6 +161,8 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
       {actors ? (
         <ThemedText type="caption" themeColor="textTertiary">
           {t('dashboard.countItems', { count: rooms.length })}
+          {/* 운영자 화면은 한국어 전용 */}
+          {periodRooms ? ` · 아티스트 메시지 ${periodRooms.totals.messages}건 · 팬 답장 ${periodRooms.totals.fanReplies}건(지운 것 포함)` : ''}
         </ThemedText>
       ) : null}
     </View>
@@ -147,7 +170,7 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {isLoading ? (
+      {isLoading || loadingPeriod ? (
         <ActivityIndicator style={styles.loading} color={theme.tint} />
       ) : (
         <FlatList
@@ -168,7 +191,7 @@ export function RoomMonitorList({ admin, header }: { admin?: boolean; header?: R
               extra={
                 <>
                   <StaffInfoLine actor={item} admin={admin} />
-                  <IdleLine actor={item} />
+                  {periodCounts ? <PeriodLine counts={periodCounts.get(item.id)!} /> : <IdleLine actor={item} />}
                 </>
               }
               onPress={() => router.push(`/console/${item.id}`)}

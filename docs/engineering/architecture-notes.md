@@ -1856,6 +1856,17 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
 
+## 운영자 홈 오늘 숫자 → 목록 (2026-10-25)
+
+- 숫자와 목록이 같은 조건이 되게 summary와 같은 where를 씀. 날짜는 `resolveRange`(days 또는 from~to, 태국 날짜) → `rangeBounds`(`agency-stats.service.ts`, [첫날 0시, 끝날 다음 날 0시)).
+- `GET /admin/users?dateField=joined|active&days|from&to` — `AdminUsersService.findAll(..., period)`: `createdAt`/`lastActiveAt`를 그 범위로 + `deletedAt: null`
+  (summary의 `FAN_WHERE`와 맞추려고. 역할별 counts도 같은 조건). 카드는 `role=USER`를 같이 넘김.
+- `GET /admin/stats/subscription-events?days|from&to&type=STARTED|CANCELLED` — `SubscriptionEvent` 최신순 최대 `EVENT_LIST_LIMIT`(500) + 종류별 counts. 팬 필터 없음(summary와 같음).
+- `GET /admin/stats/message-rooms?days|from&to` — `message.groupBy([actorId, senderType])`, 지운 메시지 포함(summary와 같음). 앱은 `RoomMonitorList messagePeriod`로
+  `/actors/mine` 목록을 이 결과에 있는 방만 거르고 아티스트 메시지 많은 순.
+- 앱: 홈 카드는 `router.push`로 `/admin/users`·`/admin/subscriptions`(새 화면)·`/admin/rooms`에 `from/to`(오늘 = `thaiToday()`) 또는 `days`를 넘기고, 각 화면은
+  `useLocalSearchParams` → `selectionFromParams`로 첫 상태를 정함. 기간 안내 문구는 `selectionLabel`(`stats-range-picker.tsx`). 카드 아래 작은 줄은 안쪽 `Pressable`(웹에서 바깥 카드 onPress가 같이 안 불리는 것 확인).
+
 ## 아티스트 상태메시지 (2026-10-25)
 
 - `Actor.statusMessage String?`(마이그레이션 `20261025090000_actor_status_message`). COUPLE 행은 안 씀 — 카드는 `coupleMembers.member.statusMessage`.

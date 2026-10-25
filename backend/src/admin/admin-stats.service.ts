@@ -7,6 +7,9 @@ import { WEEKLY_AFTER_DAYS, type StatsRange } from '../actors/agency-stats.servi
 // 팬 통계는 실제 팬 계정만(배우·소속사·운영자, 탈퇴 계정 제외)
 const FAN_WHERE = { role: Role.USER, deletedAt: null } as const;
 
+/** 구독 시작·해지 목록 한 번에 보여 줄 최대 건수 */
+export const EVENT_LIST_LIMIT = 500;
+
 type DailyRow = { day: string; count: bigint; sum?: bigint | null };
 export type OverviewDay = { day: string; signups: number; newRevenueCents: number };
 
@@ -115,6 +118,54 @@ export class AdminStatsService {
       totals,
       previous,
       daily: weekly ? bucketOverviewWeekly(points) : points,
+    };
+  }
+
+  /**
+   * 그 기간 구독 시작·해지 목록(2026-10-25, 운영자 홈 "오늘 구독 시작 N · 해지 M"을 누르면) — summary와 같은 기준(SubscriptionEvent, 팬 필터 없음).
+   * 최신순 최대 EVENT_LIST_LIMIT건, counts는 시작·해지 각각 전체 건수.
+   */
+  async subscriptionEvents(bounds: { start: Date; end: Date }, type: SubscriptionEventType) {
+    const createdAt = { gte: bounds.start, lt: bounds.end };
+    const [items, byType] = await Promise.all([
+      this.prisma.subscriptionEvent.findMany({
+        where: { type, createdAt },
+        orderBy: { createdAt: 'desc' },
+        take: EVENT_LIST_LIMIT,
+        select: {
+          id: true,
+          type: true,
+          priceCents: true,
+          createdAt: true,
+          user: { select: { id: true, displayName: true, nickname: true, deletedAt: true } },
+          actor: { select: { id: true, chatDisplayName: true, legalName: true, kind: true } },
+        },
+      }),
+      this.prisma.subscriptionEvent.groupBy({ by: ['type'], where: { createdAt }, _count: { _all: true } }),
+    ]);
+    const counts: Record<SubscriptionEventType, number> = { STARTED: 0, CANCELLED: 0 };
+    for (const row of byType) counts[row.type] = row._count._all;
+    return { items, counts, limit: EVENT_LIST_LIMIT };
+  }
+
+  /** 그 기간 방별 메시지 수(2026-10-25, "오늘 메시지" 카드 → 토피룸 모니터링) — summary와 같은 기준(지운 메시지 포함) */
+  async messageRooms(bounds: { start: Date; end: Date }) {
+    const rows = await this.prisma.message.groupBy({
+      by: ['actorId', 'senderType'],
+      where: { createdAt: { gte: bounds.start, lt: bounds.end } },
+      _count: { _all: true },
+    });
+    const rooms = new Map<string, { actorId: string; messages: number; fanReplies: number }>();
+    for (const row of rows) {
+      const room = rooms.get(row.actorId) ?? { actorId: row.actorId, messages: 0, fanReplies: 0 };
+      if (row.senderType === MessageSenderType.ARTIST) room.messages += row._count._all;
+      else room.fanReplies += row._count._all;
+      rooms.set(row.actorId, room);
+    }
+    const list = [...rooms.values()].sort((a, b) => b.messages - a.messages || b.fanReplies - a.fanReplies);
+    return {
+      rooms: list,
+      totals: { messages: list.reduce((sum, room) => sum + room.messages, 0), fanReplies: list.reduce((sum, room) => sum + room.fanReplies, 0) },
     };
   }
 

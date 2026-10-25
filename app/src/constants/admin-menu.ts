@@ -1,4 +1,4 @@
-import { Ban, Building2, LifeBuoy, MessagesSquare, Settings, ShieldCheck, Flag, History, Megaphone, Package, RotateCcw, Star, UserCog, Wallet, type LucideIcon } from 'lucide-react-native';
+import { Ban, Building2, CalendarCheck, LifeBuoy, MessagesSquare, Settings, ShieldCheck, Flag, History, Megaphone, Package, RotateCcw, Star, UserCog, Wallet, type LucideIcon } from 'lucide-react-native';
 
 /** 운영자 메뉴 — 운영자 홈 목록과 PC 웹 왼쪽 메뉴가 같이 씀. 운영자 화면은 한국어 전용 */
 export type AdminHref =
@@ -8,6 +8,7 @@ export type AdminHref =
   | '/admin/inquiries'
   | '/admin/banned-words'
   | '/admin/users'
+  | '/admin/subscriptions'
   | '/admin/actors'
   | '/admin/bundles'
   | '/admin/agencies'
@@ -28,6 +29,7 @@ export const ADMIN_MENU: { href: AdminHref; label: string; description: string; 
   { href: '/admin/bundles', label: '묶음(패키지) 상품', description: '방 여러 개를 할인가로 묶어 파는 구독 상품 — CP로 3개 한 번에, 스토어 상품 ID', icon: Package, ownerOnly: true },
   { href: '/admin/agencies', label: '소속사 관리', description: '소속사 등록, 이름·로고·정산 배분율', icon: Building2, ownerOnly: true },
   { href: '/admin/users', label: '회원 관리', description: '회원 정지·영구차단, 아티스트·소속사 직원 계정 지정', icon: UserCog },
+  { href: '/admin/subscriptions', label: '구독 시작·해지', description: '그날(기간) 누가 어느 방을 구독 시작·해지했는지, 적용 가격', icon: CalendarCheck },
   { href: '/admin/settlements', label: '정산', description: '월별 결제액·스토어 수수료·소속사 지급액, CSV(PC 웹 전용)', icon: Wallet, webOnly: true, ownerOnly: true },
   { href: '/admin/refunds', label: '환불 요청', description: '아티스트 미발송·활동 종료 환불 요청, 애플 환불 여부', icon: RotateCcw },
   { href: '/admin/banned-words', label: '금칙어 관리', description: '팬 답장에서 자동으로 차단할 단어를 관리해요', icon: Ban },
