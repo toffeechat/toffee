@@ -1056,6 +1056,8 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 
 ## 출시 준비: Docker·설정 점검·공개 약관·부하 테스트 (2026-09-29)
 
+> 2026-10-25: 이 테스트가 다루지 않은 상황(읽기·답장 폭주, 연결 1만+, 큰 DB, 서버 2대)과 출시 전 재테스트 계획은 [`load-test-plan.md`](./load-test-plan.md).
+
 - `backend/Dockerfile`(node:22-slim 2단계, openssl은 Prisma 마이그레이션 엔진용), `docker-entrypoint.sh`(`RUN_MIGRATIONS` 기본 true →
   `prisma migrate deploy` 후 `node --import ./dist/instrument.js dist/main`), `.dockerignore`. 이 세션에선 Debian 패키지 서버가 막혀
   full `node:22` 변형으로 빌드·실행 확인(새 DB에 마이그레이션 25개 적용, `/health/ready`·`/legal/*`·`/support` 200, SIGTERM 즉시 종료).
