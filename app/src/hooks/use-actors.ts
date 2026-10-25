@@ -19,6 +19,8 @@ export interface Actor {
   chatProfileImageUrl: string | null;
   /** 토피룸 배경 사진(2026-10-14) — 없으면 기본 배경 */
   chatBackgroundUrl?: string | null;
+  /** 상태메시지(2026-10-25) — 토피룸 프로필 카드 한 줄. 없으면 줄을 숨김. 커플방은 늘 null(멤버별 값을 씀) */
+  statusMessage?: string | null;
   monthlyPriceCents: number;
   /** 개인 구독 스토어 상품 ID — 없으면 아직 스토어 결제 불가(테스트 구독만) */
   storeProductId?: string | null;
@@ -44,6 +46,8 @@ export interface CoupleMemberActor {
   chatDisplayName: string;
   officialProfileImageUrl: string | null;
   chatProfileImageUrl: string | null;
+  /** 멤버 배우 본인의 상태메시지(2026-10-25) — 개인방 카드와 같은 값 */
+  statusMessage?: string | null;
   retiredAt: string | null;
   retireAt?: string | null;
   /** 멤버 소속사 — CP방 카드에 소속사를 보여 주는 용도(2026-10-16). id는 /actors/mine에만(운영자 소속사 필터, 2026-10-20) */

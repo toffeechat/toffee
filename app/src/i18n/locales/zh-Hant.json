@@ -305,6 +305,12 @@
     "save": "儲存",
     "saved": "已儲存。",
     "saveFailed": "儲存失敗，請重試。",
+    "statusMessage": "狀態訊息",
+    "statusMessageHint": "會在 Toffee Room 個人資料卡的名字下方顯示一行。留空則不顯示。",
+    "statusMessageCoupleHint": "這是你自己的狀態訊息，會顯示在你的 Toffee Room 和 CP Toffee Room 的個人資料卡上。",
+    "statusMessagePlaceholder": "給粉絲留一句話吧",
+    "statusMessageClear": "清除",
+    "statusMessageCleared": "已清除。",
     "officialNote": "搜尋頁面上的官方照片和官方名稱（{{name}}）由營運團隊管理。如需修改，請聯絡營運團隊。"
   },
   "termsConsent": {
@@ -952,6 +958,15 @@
     "cat_OTHER": "其他",
     "st_OPEN": "等待回覆",
     "st_ANSWERED": "已回覆",
-    "st_CLOSED": "已結束"
+    "st_CLOSED": "已結束",
+    "photos": "附加照片（選填）",
+    "photosHint": "最多可附加 3 張照片，例如付款收據或錯誤畫面。",
+    "addPhoto": "新增照片",
+    "removePhoto": "移除照片",
+    "openPhoto": "查看大圖",
+    "photoUnavailable": "無法載入照片",
+    "delete": "刪除諮詢",
+    "deleteTitle": "刪除諮詢",
+    "deleteConfirm": "此諮詢的所有內容與照片都會被刪除，且無法復原。"
   }
 }

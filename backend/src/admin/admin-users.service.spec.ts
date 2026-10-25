@@ -45,3 +45,27 @@ describe('팬 한 명 기준 보기(2026-10-22)', () => {
     expect(result.reportsFiled).toEqual([{ id: 'r-out' }]);
   });
 });
+
+describe('회원 목록 기간 필터(2026-10-25)', () => {
+  it('가입일 기간이면 그 기간 가입 + 탈퇴 제외(역할별 인원도 같은 조건)', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const groupBy = vi.fn().mockResolvedValue([{ role: 'USER', _count: { _all: 54 } }]);
+    const service = new AdminUsersService({ user: { findMany, groupBy } } as unknown as PrismaService, {} as AuditService);
+    const start = new Date('2026-10-24T17:00:00Z');
+    const end = new Date('2026-10-25T17:00:00Z');
+    const result = await service.findAll(undefined, 'USER', undefined, 1, { field: 'joined', start, end });
+    expect(findMany.mock.calls[0][0].where).toEqual({ deletedAt: null, createdAt: { gte: start, lt: end }, role: 'USER' });
+    expect(groupBy.mock.calls[0][0].where).toEqual({ deletedAt: null, createdAt: { gte: start, lt: end } });
+    expect(result.total).toBe(54);
+  });
+
+  it('최근 접속 기간이면 마지막 접속으로 거름', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const groupBy = vi.fn().mockResolvedValue([]);
+    const service = new AdminUsersService({ user: { findMany, groupBy } } as unknown as PrismaService, {} as AuditService);
+    const start = new Date('2026-10-24T17:00:00Z');
+    const end = new Date('2026-10-25T17:00:00Z');
+    await service.findAll(undefined, undefined, 'recent', 1, { field: 'active', start, end });
+    expect(findMany.mock.calls[0][0].where).toEqual({ deletedAt: null, lastActiveAt: { gte: start, lt: end } });
+  });
+});

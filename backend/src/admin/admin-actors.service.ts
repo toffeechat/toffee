@@ -23,12 +23,14 @@ const ADMIN_ACTOR_SELECT = {
   officialProfileImageUrl: true,
   chatDisplayName: true,
   chatProfileImageUrl: true,
+  // 상태메시지(2026-10-25) — 운영자는 보고 지우기만
+  statusMessage: true,
   monthlyPriceCents: true,
   storeProductId: true,
   verified: true,
   gender: true,
   kind: true,
-  coupleMembers: { select: { member: { select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, retiredAt: true, retireAt: true, agency: { select: { id: true, name: true } } } } } },
+  coupleMembers: { select: { member: { select: { id: true, legalName: true, chatDisplayName: true, officialProfileImageUrl: true, chatProfileImageUrl: true, statusMessage: true, retiredAt: true, retireAt: true, agency: { select: { id: true, name: true } } } } } },
   retiredAt: true,
   // 활동 종료 예정(2026-10-20)
   retireAt: true,
@@ -103,6 +105,15 @@ export class AdminActorsService {
         body: t.retiringFanBody,
       }));
     }
+    return this.findOne(id);
+  }
+
+  /** 아티스트 상태메시지 지우기(2026-10-25) — 신고·민원 대응. 아티스트는 다시 쓸 수 있음(쓸 때 금칙어 검사). 지운 문구는 작업 기록에 */
+  async clearStatusMessage(adminId: string, id: string) {
+    const before = await this.prisma.actor.findUnique({ where: { id }, select: { statusMessage: true } });
+    if (!before) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
+    await this.prisma.actor.update({ where: { id }, data: { statusMessage: null } });
+    await this.audit.record(adminId, 'ACTOR_STATUS_CLEAR', 'ACTOR', id, { statusMessage: before.statusMessage });
     return this.findOne(id);
   }
 

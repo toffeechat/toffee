@@ -1056,6 +1056,8 @@ Bubble 실제 약관("만 14세 미만은 가입 전 법정대리인 동의 필�
 
 ## 출시 준비: Docker·설정 점검·공개 약관·부하 테스트 (2026-09-29)
 
+> 2026-10-25: 이 테스트가 다루지 않은 상황(읽기·답장 폭주, 연결 1만+, 큰 DB, 서버 2대)과 출시 전 재테스트 계획은 [`load-test-plan.md`](./load-test-plan.md).
+
 - `backend/Dockerfile`(node:22-slim 2단계, openssl은 Prisma 마이그레이션 엔진용), `docker-entrypoint.sh`(`RUN_MIGRATIONS` 기본 true →
   `prisma migrate deploy` 후 `node --import ./dist/instrument.js dist/main`), `.dockerignore`. 이 세션에선 Debian 패키지 서버가 막혀
   full `node:22` 변형으로 빌드·실행 확인(새 DB에 마이그레이션 25개 적용, `/health/ready`·`/legal/*`·`/support` 200, SIGTERM 즉시 종료).
@@ -1854,6 +1856,49 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
 
+## 운영자 홈 오늘 숫자 → 목록 (2026-10-25)
+
+- 숫자와 목록이 같은 조건이 되게 summary와 같은 where를 씀. 날짜는 `resolveRange`(days 또는 from~to, 태국 날짜) → `rangeBounds`(`agency-stats.service.ts`, [첫날 0시, 끝날 다음 날 0시)).
+- `GET /admin/users?dateField=joined|active&days|from&to` — `AdminUsersService.findAll(..., period)`: `createdAt`/`lastActiveAt`를 그 범위로 + `deletedAt: null`
+  (summary의 `FAN_WHERE`와 맞추려고. 역할별 counts도 같은 조건). 카드는 `role=USER`를 같이 넘김.
+- `GET /admin/stats/subscription-events?days|from&to&type=STARTED|CANCELLED` — `SubscriptionEvent` 최신순 최대 `EVENT_LIST_LIMIT`(500) + 종류별 counts. 팬 필터 없음(summary와 같음).
+- `GET /admin/stats/message-rooms?days|from&to` — `message.groupBy([actorId, senderType])`, 지운 메시지 포함(summary와 같음). 앱은 `RoomMonitorList messagePeriod`로
+  `/actors/mine` 목록을 이 결과에 있는 방만 거르고 아티스트 메시지 많은 순.
+- 앱: 홈 카드는 `router.push`로 `/admin/users`·`/admin/subscriptions`(새 화면)·`/admin/rooms`에 `from/to`(오늘 = `thaiToday()`) 또는 `days`를 넘기고, 각 화면은
+  `useLocalSearchParams` → `selectionFromParams`로 첫 상태를 정함. 기간 안내 문구는 `selectionLabel`(`stats-range-picker.tsx`). 카드 아래 작은 줄은 안쪽 `Pressable`(웹에서 바깥 카드 onPress가 같이 안 불리는 것 확인).
+
+## 아티스트 상태메시지 (2026-10-25)
+
+- `Actor.statusMessage String?`(마이그레이션 `20261025090000_actor_status_message`). COUPLE 행은 안 씀 — 카드는 `coupleMembers.member.statusMessage`.
+  `ActorsService` LIST_SELECT·멤버 select, `ADMIN_ACTOR_SELECT`에 포함(공개 `GET /actors/:id`에도 나감 — 닉네임·대화방 사진과 같은 수준).
+- 검사 공용화: `common/status-message/status-message.ts` `cleanStatusMessage(raw, moderation)`(NFC·공백 정리, 60자 = `STATUS_MESSAGE_MAX_LENGTH`, `\p{Cc}\p{Cf}`, 금칙어 →
+  `STATUS_MESSAGE_*` 오류, 빈 값 null). `AuthService.updateProfile`(팬)도 이걸 씀.
+- `PATCH /actors/:id/status-message`(`@Roles(ACTOR)`) → `ActorsService.updateStatusMessage` — `ensureIsActorSelf` 반환값(SOLO면 그 id, COUPLE이면 내 멤버 id,
+  운영자의 COUPLE이면 null → 403)에 저장, 응답은 요청한 방 `findOne`. 운영자: `PATCH /admin/actors/:id/clear-status-message`(OWNER 아니어도 됨 — 팬 `clear-profile`과 같음),
+  `AdminAction` `ACTOR_STATUS_CLEAR` detail `{statusMessage}`.
+- 앱: `studio/[actorId]/profile.tsx` `StatusMessageForm`(역할 ACTOR일 때만, CP방은 `useMyActors()`의 SOLO id와 겹치는 멤버), `chat-profile/[actorId].tsx` 카드·멤버 줄,
+  `admin/actors/[id].tsx` `StatusMessageSection`(SOLO만, CP는 멤버 줄에 표시), `admin/actions.tsx` detail에 `statusMessage`.
+
+## 1:1 문의 종류 필터·사진 첨부 (2026-10-25)
+
+- 스키마: `SupportAttachment { messageId → SupportMessage (Cascade), objectKey, sortOrder }` — 마이그레이션 `20261025100000_support_attachments`(손으로 작성, 로컬 Postgres에
+  `migrate deploy` + `migrate diff --exit-code` 통과). 메시지당 `INQUIRY_PHOTO_MAX = 3`(서버 `support.service.ts`, 앱 `use-support.ts` 같은 값).
+- 업로드: `POST /support/uploads {contentType, sizeBytes}`(로그인한 누구나, 20/분) → `MediaService.createUploadAt(supportUploadPrefix(userId), 'PHOTO', …)` =
+  `users/<쓴 사람 id>/support/`. 운영자 답변 사진도 **운영자 자신의 경로**. 글 보낼 때 `photoKeys[]` → `verifyAt`(경로·HEAD·매직 넘버, 안 맞으면 저장소에서 지우고 400).
+  중복 키는 하나로, 4장 이상 `INQUIRY_PHOTO_LIMIT`, 글·사진 둘 다 없으면 `INQUIRY_EMPTY`(새 문의는 DTO에서 body 필수). 응답은 `attachments: [{id, url}]`(`resolveImageUrl`,
+  저장소 미설정이면 url null). 키는 응답에 안 나감.
+- 삭제: `DELETE /support/inquiries/:id`(본인), `DELETE /admin/inquiries/:id`(운영자, audit `INQUIRY_DELETE` + detail `{title, userId}` — 지운 뒤엔 제목을 못 찾아서).
+  행은 cascade, 파일은 `deleteQuietly`. 탈퇴(`AuthService.deleteAccount`)는 트랜잭션에서 `supportAttachment.deleteMany({message:{inquiry:{userId}}})` 후 파일 삭제, 문의 글은 남김.
+  고아 정리(`UploadCleanupService.referencedKeys`)가 `SupportAttachment.objectKey`를 참조로 셈 — 올리고 안 보낸 사진만 하루 뒤 지워짐(`users/` prefix라 원래 훑던 경로).
+- 운영자 목록: `GET /admin/inquiries?status=&category=` → `{counts, categoryCounts, items}`. `groupBy(['status','category'])` 한 번으로 서로 거른 개수(상태 개수는 고른 종류
+  안에서, 종류 개수는 고른 상태 안에서). 목록에 없는 옛 category 값은 "기타"로 셈.
+- 알림·푸시: 운영자 알림 본문 끝에 "(사진 N장)", 사진만 보낸 운영자 답변의 회원 푸시 본문은 `pushStrings().media.PHOTO`. audit `INQUIRY_REPLY` detail `{photos}`.
+- 내 정보 받기: 문의 글마다 `photos`(장수)만.
+- 앱: `components/inquiry-photos.tsx` — `InquiryPhotoPicker`(expo-image-picker `allowsMultipleSelection`+`selectionLimit`, 웹은 limit를 안 지켜 slice, 올리기는 보낼 때)·
+  `InquiryPhotoStrip`(누르면 `/media-viewer` 한 장 모드 — 확대·저장). 문구는 props(회원 9개 언어 `inquiry.*`, 운영자 한국어). 업로드 `lib/upload-media.ts uploadInquiryPhoto`,
+  훅 `uploadInquiryPhotos`(차례로 올림)·`useDeleteInquiry`·`useDeleteAdminInquiry`, `useAdminInquiries(status, category)`.
+- 검증: 단위 `support.service.spec.ts`(8개), `upload-cleanup.service.spec.ts` 갱신. moto_server로 실제 업로드 E2E(올리기→조회 URL 바이트 일치, 남의 경로 키·4장·빈 글·
+  가짜 PNG 400, 운영자 사진만 답변, 필터 개수, 본인 삭제·남이 지우기 404, 탈퇴 후 사진 0장·글 남음, 저장소 파일 전부 삭제) + 웹(회원 폰 폭·운영자 PC/폰 폭, 전체 화면 보기).
 ## 배포 체계 — 워크플로·자동 점검 (2026-10-25)
 
 절차·비밀값·되돌리기는 `deploy-runbook.md`. 여기는 구현 결정만.

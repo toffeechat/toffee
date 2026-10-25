@@ -305,6 +305,12 @@
     "save": "Salvar",
     "saved": "Salvo.",
     "saveFailed": "Não foi possível salvar. Tente novamente.",
+    "statusMessage": "Mensagem de status",
+    "statusMessageHint": "Aparece em uma linha abaixo do seu nome no cartão de perfil da sua Toffee Room. Deixe vazio para ocultar.",
+    "statusMessageCoupleHint": "É a sua própria mensagem de status. Aparece nos cartões de perfil da sua Toffee Room e das Toffee Rooms CP.",
+    "statusMessagePlaceholder": "Deixe um recado para seus fãs",
+    "statusMessageClear": "Apagar",
+    "statusMessageCleared": "Apagado.",
     "officialNote": "Sua foto oficial e seu nome oficial ({{name}}) na tela Descobrir são gerenciados pela equipe da Toffee. Fale conosco para alterá-los."
   },
   "termsConsent": {
@@ -952,6 +958,15 @@
     "cat_OTHER": "Outro",
     "st_OPEN": "Aguardando resposta",
     "st_ANSWERED": "Respondida",
-    "st_CLOSED": "Encerrada"
+    "st_CLOSED": "Encerrada",
+    "photos": "Anexar fotos (opcional)",
+    "photosHint": "Você pode anexar até 3 fotos, como um recibo de pagamento ou uma tela de erro.",
+    "addPhoto": "Adicionar foto",
+    "removePhoto": "Remover foto",
+    "openPhoto": "Ver foto",
+    "photoUnavailable": "Não foi possível carregar a foto",
+    "delete": "Excluir solicitação",
+    "deleteTitle": "Excluir solicitação",
+    "deleteConfirm": "Todas as mensagens e fotos desta solicitação serão excluídas. Isso não pode ser desfeito."
   }
 }

@@ -6,6 +6,7 @@ import { ActorStatsQueryDto, AgencyDashboardQueryDto, AgencyRecordsQueryDto } fr
 import { ListActorsQueryDto } from './dto/list-actors-query.dto.js';
 import { CreateChatProfileUploadDto, SetChatProfileImageDto } from './dto/chat-profile-image.dto.js';
 import { UpdateActorNicknameDto } from './dto/update-actor-nickname.dto.js';
+import { UpdateActorStatusMessageDto } from './dto/update-actor-status-message.dto.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
@@ -73,6 +74,13 @@ export class ActorsController {
   @Patch(':id/nickname')
   updateNickname(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateActorNicknameDto) {
     return this.actorsService.updateNickname(user.id, id, dto.nickname);
+  }
+
+  // 상태메시지(2026-10-25) — 배우 본인만(커플방 id면 내 멤버 값). 운영자는 PATCH /admin/actors/:id/clear-status-message로 지우기만
+  @Roles(Role.ACTOR)
+  @Patch(':id/status-message')
+  updateStatusMessage(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateActorStatusMessageDto) {
+    return this.actorsService.updateStatusMessage(user.id, id, dto.statusMessage);
   }
 
   // 대화방 사진 — 배우 본인·같은 소속사 직원·운영자(공식 사진·이름은 운영자 화면에서만, 2026-09-28 사용자 결정)

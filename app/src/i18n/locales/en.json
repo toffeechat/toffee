@@ -305,6 +305,12 @@
     "save": "Save",
     "saved": "Saved.",
     "saveFailed": "Couldn't save. Please try again.",
+    "statusMessage": "Status message",
+    "statusMessageHint": "Shown as one line under your name on your Toffee Room profile card. Leave it empty to hide it.",
+    "statusMessageCoupleHint": "This is your own status message. It's shown on the profile cards of your Toffee Room and your CP Toffee Rooms.",
+    "statusMessagePlaceholder": "Leave a note for your fans",
+    "statusMessageClear": "Clear",
+    "statusMessageCleared": "Cleared.",
     "officialNote": "Your official photo and official name ({{name}}) on the discover screen are managed by the Toffee team. Contact us to change them."
   },
   "termsConsent": {
@@ -952,6 +958,15 @@
     "cat_OTHER": "Other",
     "st_OPEN": "Waiting for reply",
     "st_ANSWERED": "Answered",
-    "st_CLOSED": "Closed"
+    "st_CLOSED": "Closed",
+    "photos": "Attach photos (optional)",
+    "photosHint": "You can attach up to 3 photos, such as a payment receipt or an error screen.",
+    "addPhoto": "Add photo",
+    "removePhoto": "Remove photo",
+    "openPhoto": "View photo",
+    "photoUnavailable": "Couldn't load photo",
+    "delete": "Delete inquiry",
+    "deleteTitle": "Delete inquiry",
+    "deleteConfirm": "All messages and photos in this inquiry will be deleted. This can't be undone."
   }
 }

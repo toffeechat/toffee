@@ -7,6 +7,8 @@ export type AdminActionType =
   | 'USER_BAN'
   | 'USER_REACTIVATE'
   | 'USER_PROFILE_CLEAR'
+  // 아티스트 상태메시지 지우기(2026-10-25) — 지운 문구를 detail에 남김
+  | 'ACTOR_STATUS_CLEAR'
   | 'USER_ROLE'
   | 'REPORT_RESOLVE'
   | 'REPORT_DISMISS'
@@ -47,6 +49,7 @@ export type AdminActionType =
   | 'NOTICE_PUSH'
   | 'INQUIRY_REPLY'
   | 'INQUIRY_CLOSE'
+  | 'INQUIRY_DELETE'
   | 'ADMIN_LEVEL'
   | 'ADMIN_MFA'
   | 'USER_EXPORT';
