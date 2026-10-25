@@ -114,6 +114,9 @@
   `docs/product/deploy-guide.md`, `ops-infra-backlog.md` "배포 자동화"(내가 할 설정 A·B), `ops/data-fixes/README.md`.
 - 확인: 로컬 Postgres + 서버로 점검 두 번 연속·데모 초기화 뒤에도 통과, 틀린 비밀값 401, 둘러보기에 점검 방 안 보임, 회수됨. 웹 빌드에 `version.json`·브라우저 오류 없음.
   배포 피할 시간·미팅 동결 판정, plan(네이티브·버전업 전 OTA·마이그레이션) 예전 커밋들로 시험.
+- **프리뷰 첫 실행**(PR toffeechat/toffee#78 머지 → `Deploy preview` run #1, 약 1분 20초, 성공): 서버 `/health` commit `7229627`(Railway가 `RAILWAY_GIT_COMMIT_SHA`를 넣어 줌 확인),
+  웹 `/version.json`도 `7229627`(Pages `CF_PAGES_COMMIT_SHA`), 자동 점검 헬스·DB·웹 ✅ / 로그인·메시지는 비밀값 전이라 ⚠️ 건너뜀, OTA·Sentry는 토큰 전이라 건너뜀,
+  `deploy/preview` 상태·`deployed/preview` 태그 기록. 첫 실행이라 기준이 없어 "전부"로 판단 — 다음부터는 떠 있는 커밋과 비교.
 - **남은 일**: 👤 `ops-infra-backlog.md` "배포 자동화" A(점검 비밀값·Expo 로봇 토큰·Sentry 토큰·Wait for CI·폰 GitHub 앱·업타임 모니터·Sentry 알림) —
   넣기 전엔 OTA는 PC에서, 점검은 헬스·웹만. 운영 환경을 만들면 B + 런북 12번 "프로덕션 처음 돌리기". 실기기 테스트 아티팩트엔 넣지 않음(새 화면이 없고
   배포 확인은 자동 점검이 함 — 운영 승인을 폰에서 해 보는 건 런북 12번 체크리스트).
