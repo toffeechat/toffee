@@ -958,6 +958,15 @@
     "cat_OTHER": "その他",
     "st_OPEN": "返信待ち",
     "st_ANSWERED": "返信済み",
-    "st_CLOSED": "終了"
+    "st_CLOSED": "終了",
+    "photos": "写真を添付（任意）",
+    "photosHint": "決済の領収書やエラー画面など、写真を3枚まで添付できます。",
+    "addPhoto": "写真を追加",
+    "removePhoto": "写真を外す",
+    "openPhoto": "写真を拡大",
+    "photoUnavailable": "写真を読み込めません",
+    "delete": "問い合わせを削除",
+    "deleteTitle": "問い合わせを削除",
+    "deleteConfirm": "この問い合わせのメッセージと写真がすべて削除され、元に戻せません。"
   }
 }

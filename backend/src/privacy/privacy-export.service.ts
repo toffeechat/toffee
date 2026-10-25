@@ -72,7 +72,7 @@ export class PrivacyExportService {
       this.prisma.supportInquiry.findMany({
         where: { userId },
         orderBy: { createdAt: 'asc' },
-        select: { category: true, title: true, status: true, createdAt: true, messages: { orderBy: { createdAt: 'asc' }, select: { fromAdmin: true, body: true, createdAt: true } } },
+        select: { category: true, title: true, status: true, createdAt: true, messages: { orderBy: { createdAt: 'asc' }, select: { fromAdmin: true, body: true, createdAt: true, _count: { select: { attachments: true } } } } },
       }),
       this.prisma.accessLog.findMany({
         where: { userId },
@@ -95,7 +95,11 @@ export class PrivacyExportService {
       birthdayGreetings,
       releaseWatches,
       storyViewsCount: storyViews,
-      supportInquiries: inquiries,
+      // 붙인 사진(2026-10-25)은 장수만 — 사진은 앱 문의 화면에서 볼 수 있음
+      supportInquiries: inquiries.map(({ messages, ...inquiry }) => ({
+        ...inquiry,
+        messages: messages.map(({ _count, ...message }) => ({ ...message, photos: _count.attachments })),
+      })),
       accessLogs,
     };
   }

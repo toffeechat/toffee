@@ -958,6 +958,15 @@
     "cat_OTHER": "Khác",
     "st_OPEN": "Đang chờ trả lời",
     "st_ANSWERED": "Đã trả lời",
-    "st_CLOSED": "Đã đóng"
+    "st_CLOSED": "Đã đóng",
+    "photos": "Đính kèm ảnh (không bắt buộc)",
+    "photosHint": "Bạn có thể đính kèm tối đa 3 ảnh, như biên lai thanh toán hoặc màn hình lỗi.",
+    "addPhoto": "Thêm ảnh",
+    "removePhoto": "Bỏ ảnh",
+    "openPhoto": "Xem ảnh lớn",
+    "photoUnavailable": "Không tải được ảnh",
+    "delete": "Xóa yêu cầu",
+    "deleteTitle": "Xóa yêu cầu",
+    "deleteConfirm": "Toàn bộ tin nhắn và ảnh trong yêu cầu này sẽ bị xóa và không thể khôi phục."
   }
 }

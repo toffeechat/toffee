@@ -1885,3 +1885,23 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 앱: `studio/[actorId]/profile.tsx` `StatusMessageForm`(역할 ACTOR일 때만, CP방은 `useMyActors()`의 SOLO id와 겹치는 멤버), `chat-profile/[actorId].tsx` 카드·멤버 줄,
   `admin/actors/[id].tsx` `StatusMessageSection`(SOLO만, CP는 멤버 줄에 표시), `admin/actions.tsx` detail에 `statusMessage`.
 
+## 1:1 문의 종류 필터·사진 첨부 (2026-10-25)
+
+- 스키마: `SupportAttachment { messageId → SupportMessage (Cascade), objectKey, sortOrder }` — 마이그레이션 `20261025100000_support_attachments`(손으로 작성, 로컬 Postgres에
+  `migrate deploy` + `migrate diff --exit-code` 통과). 메시지당 `INQUIRY_PHOTO_MAX = 3`(서버 `support.service.ts`, 앱 `use-support.ts` 같은 값).
+- 업로드: `POST /support/uploads {contentType, sizeBytes}`(로그인한 누구나, 20/분) → `MediaService.createUploadAt(supportUploadPrefix(userId), 'PHOTO', …)` =
+  `users/<쓴 사람 id>/support/`. 운영자 답변 사진도 **운영자 자신의 경로**. 글 보낼 때 `photoKeys[]` → `verifyAt`(경로·HEAD·매직 넘버, 안 맞으면 저장소에서 지우고 400).
+  중복 키는 하나로, 4장 이상 `INQUIRY_PHOTO_LIMIT`, 글·사진 둘 다 없으면 `INQUIRY_EMPTY`(새 문의는 DTO에서 body 필수). 응답은 `attachments: [{id, url}]`(`resolveImageUrl`,
+  저장소 미설정이면 url null). 키는 응답에 안 나감.
+- 삭제: `DELETE /support/inquiries/:id`(본인), `DELETE /admin/inquiries/:id`(운영자, audit `INQUIRY_DELETE` + detail `{title, userId}` — 지운 뒤엔 제목을 못 찾아서).
+  행은 cascade, 파일은 `deleteQuietly`. 탈퇴(`AuthService.deleteAccount`)는 트랜잭션에서 `supportAttachment.deleteMany({message:{inquiry:{userId}}})` 후 파일 삭제, 문의 글은 남김.
+  고아 정리(`UploadCleanupService.referencedKeys`)가 `SupportAttachment.objectKey`를 참조로 셈 — 올리고 안 보낸 사진만 하루 뒤 지워짐(`users/` prefix라 원래 훑던 경로).
+- 운영자 목록: `GET /admin/inquiries?status=&category=` → `{counts, categoryCounts, items}`. `groupBy(['status','category'])` 한 번으로 서로 거른 개수(상태 개수는 고른 종류
+  안에서, 종류 개수는 고른 상태 안에서). 목록에 없는 옛 category 값은 "기타"로 셈.
+- 알림·푸시: 운영자 알림 본문 끝에 "(사진 N장)", 사진만 보낸 운영자 답변의 회원 푸시 본문은 `pushStrings().media.PHOTO`. audit `INQUIRY_REPLY` detail `{photos}`.
+- 내 정보 받기: 문의 글마다 `photos`(장수)만.
+- 앱: `components/inquiry-photos.tsx` — `InquiryPhotoPicker`(expo-image-picker `allowsMultipleSelection`+`selectionLimit`, 웹은 limit를 안 지켜 slice, 올리기는 보낼 때)·
+  `InquiryPhotoStrip`(누르면 `/media-viewer` 한 장 모드 — 확대·저장). 문구는 props(회원 9개 언어 `inquiry.*`, 운영자 한국어). 업로드 `lib/upload-media.ts uploadInquiryPhoto`,
+  훅 `uploadInquiryPhotos`(차례로 올림)·`useDeleteInquiry`·`useDeleteAdminInquiry`, `useAdminInquiries(status, category)`.
+- 검증: 단위 `support.service.spec.ts`(8개), `upload-cleanup.service.spec.ts` 갱신. moto_server로 실제 업로드 E2E(올리기→조회 URL 바이트 일치, 남의 경로 키·4장·빈 글·
+  가짜 PNG 400, 운영자 사진만 답변, 필터 개수, 본인 삭제·남이 지우기 404, 탈퇴 후 사진 0장·글 남음, 저장소 파일 전부 삭제) + 웹(회원 폰 폭·운영자 PC/폰 폭, 전체 화면 보기).

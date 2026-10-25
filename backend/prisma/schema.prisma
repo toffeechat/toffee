@@ -1029,7 +1029,22 @@ model SupportMessage {
   body      String
   createdAt DateTime @default(now())
 
-  inquiry SupportInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiry     SupportInquiry      @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  attachments SupportAttachment[]
 
   @@index([inquiryId, createdAt])
+}
+
+// 문의 사진(2026-10-25 — 결제 영수증·오류 화면, 글 하나에 3장까지). 파일은 저장소 users/<쓴 사람>/support/ 아래.
+// 문의를 지우거나 문의한 사람이 탈퇴하면 행과 파일을 같이 지움(개인정보)
+model SupportAttachment {
+  id        String   @id @default(uuid())
+  messageId String
+  objectKey String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  message SupportMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, sortOrder])
 }

@@ -396,6 +396,7 @@ export class AuthService {
    * - 구독은 해지 처리(결제·구독 기록 자체는 전자상거래 법정 보관 기간 동안 유지). 실제 스토어 구독은 앱이 끊을 수
    *   없어서 앱 화면에서 "스토어에서 해지"를 먼저 안내함
    * - 푸시 기기·부모 동의 기록 삭제. 팬 답장 본문은 남기고 작성자는 "탈퇴한 팬"으로 표시
+   * - 1:1 문의 사진(2026-10-25)은 파일까지 삭제, 문의 글은 남김
    * - 소셜 로그인 연결을 끊어서 같은 계정으로 새로 가입 가능. 단 영구차단된 계정은 연결을 남겨서 탈퇴→재가입으로
    *   차단을 피하지 못하게 함(다시 로그인하면 계속 "이용이 제한된 계정")
    * 배우·소속사·운영자 계정은 앱에서 탈퇴하지 않고 운영자가 처리(배우 채널·소속사 연결이 걸려 있어서).
@@ -407,7 +408,10 @@ export class AuthService {
     }
     const now = new Date();
     const active = await this.prisma.subscription.findMany({ where: { userId, cancelledAt: null }, select: { actorId: true } });
+    // 문의 사진(영수증·화면 캡처 — 운영자가 답에 붙인 것 포함)은 행과 파일을 지움(2026-10-25). 문의 글은 분쟁 대응용으로 남김
+    const supportPhotos = await this.prisma.supportAttachment.findMany({ where: { message: { inquiry: { userId } } }, select: { objectKey: true } });
     await this.prisma.$transaction([
+      this.prisma.supportAttachment.deleteMany({ where: { message: { inquiry: { userId } } } }),
       this.prisma.subscription.updateMany({ where: { userId, cancelledAt: null }, data: { cancelledAt: now } }),
       this.prisma.purchase.updateMany({ where: { userId, cancelledAt: null }, data: { cancelledAt: now } }),
       this.prisma.subscriptionEvent.createMany({
@@ -432,6 +436,7 @@ export class AuthService {
         },
       }),
     ]);
+    await Promise.all(supportPhotos.map((photo) => this.media.deleteQuietly(photo.objectKey)));
   }
 
   private generateFallbackName(): string {
