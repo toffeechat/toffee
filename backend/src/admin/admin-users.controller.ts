@@ -7,6 +7,7 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { ChangeRoleDto } from './dto/change-role.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
+import { rangeBounds, resolveRange } from '../actors/agency-stats.service.js';
 import { AdminOwnerOnly } from '../common/decorators/admin-access.decorator.js';
 
 @Roles(Role.ADMIN)
@@ -16,7 +17,7 @@ export class AdminUsersController {
 
   @Get()
   findAll(@Query() query: ListUsersQueryDto) {
-    return this.adminUsersService.findAll(query.q, query.role, query.sort, query.page);
+    return this.adminUsersService.findAll(query.q, query.role, query.sort, query.page, query.dateField ? { field: query.dateField, ...rangeBounds(resolveRange(query)) } : undefined);
   }
 
   @Get(':id')

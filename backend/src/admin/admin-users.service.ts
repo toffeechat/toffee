@@ -38,6 +38,13 @@ const LIST_SELECT = {
   actorSelf: { select: { id: true, legalName: true } },
 } as const;
 
+/** 회원 목록 기간 필터 — 가입일(joined) 또는 마지막 접속(active)이 [start, end) */
+export interface UserPeriod {
+  field: 'joined' | 'active';
+  start: Date;
+  end: Date;
+}
+
 const ACCESS_LOG_PAGE = 200;
 /** 팬 한 명 기준 보기 — 답장·신고·작업 기록 각각 최신순 최대 줄 수 */
 const ACTIVITY_PAGE = 50;
@@ -54,8 +61,9 @@ export class AdminUsersService {
   /**
    * 회원 목록(2026-10-20: 나눠 불러오기 + 역할별 인원수) — 한 번에 PAGE_SIZE명, page는 1부터. counts는 검색어만 건 역할별 인원(탭 옆 숫자),
    * total은 지금 역할 탭의 인원(쪽 수 계산용).
+   * period(2026-10-25) — 가입일·마지막 접속이 [start, end)인 회원만. 운영자 홈 오늘 숫자와 맞도록 이때는 탈퇴 계정을 뺌(통계도 뺌).
    */
-  async findAll(query?: string, role?: Role, sort?: 'recent', page = 1) {
+  async findAll(query?: string, role?: Role, sort?: 'recent', page = 1, period?: UserPeriod) {
     const search: Prisma.UserWhereInput = query
       ? {
           OR: [
@@ -65,6 +73,10 @@ export class AdminUsersService {
           ],
         }
       : {};
+    if (period) {
+      search.deletedAt = null;
+      search[period.field === 'joined' ? 'createdAt' : 'lastActiveAt'] = { gte: period.start, lt: period.end };
+    }
     const where: Prisma.UserWhereInput = { ...search, ...(role ? { role } : {}) };
     const [items, byRole] = await Promise.all([
       this.prisma.user.findMany({

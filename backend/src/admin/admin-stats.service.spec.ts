@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AdminStatsService, bucketOverviewWeekly } from './admin-stats.service.js';
-import { resolveRange } from '../actors/agency-stats.service.js';
+import { rangeBounds, resolveRange } from '../actors/agency-stats.service.js';
 import { DAY_MS, zoneDayStart, zoneDays } from '../common/utils/stats-time.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
@@ -42,5 +42,42 @@ describe('운영자 홈 추이(가입·신규 구독 금액)', () => {
     expect(weeks.map((w) => w.day)).toEqual(['d0', 'd7']);
     expect(weeks[0]).toEqual({ day: 'd0', signups: 7, newRevenueCents: 700 });
     expect(weeks[1]).toEqual({ day: 'd7', signups: 3, newRevenueCents: 300 });
+  });
+});
+
+describe('운영자 홈 오늘 숫자 → 목록(2026-10-25)', () => {
+  const bounds = rangeBounds(resolveRange({ from: '2026-10-25', to: '2026-10-25' }, new Date('2026-10-25T10:00:00Z')));
+
+  it('기간은 태국 날짜 0시 ~ 다음 날 0시', () => {
+    expect(bounds.start.toISOString()).toBe('2026-10-24T17:00:00.000Z');
+    expect(bounds.end.toISOString()).toBe('2026-10-25T17:00:00.000Z');
+  });
+
+  it('구독 시작·해지 목록은 고른 종류만 + 종류별 건수', async () => {
+    const findMany = vi.fn().mockResolvedValue([{ id: 'e1' }]);
+    const groupBy = vi.fn().mockResolvedValue([
+      { type: 'STARTED', _count: { _all: 3 } },
+      { type: 'CANCELLED', _count: { _all: 1 } },
+    ]);
+    const service = new AdminStatsService({ subscriptionEvent: { findMany, groupBy } } as unknown as PrismaService);
+    const result = await service.subscriptionEvents(bounds, 'CANCELLED');
+    expect(findMany.mock.calls[0][0].where).toEqual({ type: 'CANCELLED', createdAt: { gte: bounds.start, lt: bounds.end } });
+    expect(result.counts).toEqual({ STARTED: 3, CANCELLED: 1 });
+    expect(result.items).toEqual([{ id: 'e1' }]);
+  });
+
+  it('방별 메시지 수는 아티스트 메시지 많은 순 + 합계', async () => {
+    const groupBy = vi.fn().mockResolvedValue([
+      { actorId: 'a', senderType: 'FAN', _count: { _all: 5 } },
+      { actorId: 'b', senderType: 'ARTIST', _count: { _all: 2 } },
+      { actorId: 'a', senderType: 'ARTIST', _count: { _all: 1 } },
+    ]);
+    const service = new AdminStatsService({ message: { groupBy } } as unknown as PrismaService);
+    const result = await service.messageRooms(bounds);
+    expect(result.rooms).toEqual([
+      { actorId: 'b', messages: 2, fanReplies: 0 },
+      { actorId: 'a', messages: 1, fanReplies: 5 },
+    ]);
+    expect(result.totals).toEqual({ messages: 3, fanReplies: 5 });
   });
 });
