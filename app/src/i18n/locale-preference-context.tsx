@@ -28,6 +28,8 @@ interface LocalePreferenceValue {
   /** 사용자가 직접 고른 값. null이면 "기기 언어 따르기" */
   override: SupportedLanguage | null;
   setOverride: (next: SupportedLanguage | null) => void;
+  /** 화면 언어를 강제로 고정(운영자 = 한국어). 직접 고른 언어·기기 언어보다 우선, 저장은 안 함 */
+  setForcedLocale: (next: SupportedLanguage | null) => void;
 }
 
 const LocalePreferenceContext = createContext<LocalePreferenceValue | null>(null);
@@ -47,7 +49,8 @@ export function LocalePreferenceProvider({ children }: { children: ReactNode }) 
     });
   }, [urlLanguage]);
 
-  const locale = override ?? getDeviceLanguage();
+  const [forced, setForcedLocale] = useState<SupportedLanguage | null>(null);
+  const locale = forced ?? override ?? getDeviceLanguage();
 
   useEffect(() => {
     if (i18n.language !== locale) void i18n.changeLanguage(locale);
@@ -58,7 +61,7 @@ export function LocalePreferenceProvider({ children }: { children: ReactNode }) 
     void savePreference(OVERRIDE_KEY, next);
   }, []);
 
-  const value = useMemo(() => ({ locale, override, setOverride }), [locale, override, setOverride]);
+  const value = useMemo(() => ({ locale, override, setOverride, setForcedLocale }), [locale, override, setOverride]);
   return <LocalePreferenceContext.Provider value={value}>{children}</LocalePreferenceContext.Provider>;
 }
 
