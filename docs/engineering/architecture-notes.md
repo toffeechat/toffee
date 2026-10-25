@@ -1853,3 +1853,11 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   애플은 같은 그룹이라 그냥 `requestPurchase`. 화면 `subscribe/bundle/[bundleId].tsx`, 훅 `useBundleSwitchInfo`·`useSwitchBundle`.
 - 테스트 `bundle-switch.spec.ts`(애플 올리기·옆으로·늦은 옛 알림·안내 시점, 구글 이어받기·이월·교체 만료 무시, 테스트 구독, creditUnused 계산·중복 방지), `switch-group.spec.ts`.
   실제 스토어 동작(특히 구글 with-time-proration 때 새 토큰의 startTime·orderId, 애플 UPGRADE 알림 순서)은 1월 샌드박스에서 확인.
+
+## 운영자 언어 고정·앱 설정 기본값 (2026-10-25)
+
+- `LocalePreferenceProvider`에 `setForcedLocale` — `locale = forced ?? override ?? 기기 언어`. `useAdminKoreanLocale()`(`hooks/use-sync-locale.ts`, `SessionEffects`)가
+  role이 ADMIN이면 `'ko'`, 아니면 null. 저장된 override는 그대로 둠(로그아웃하면 복귀). `useSyncLocale`이 운영자 `User.locale`도 ko로 맞춤.
+- `GET /admin/app-settings` → `AppSettingsService.adminView()` — `AppSetting` 행이 없으면 기본값 객체(`updatedAt: null`). Nest가 null을 빈 본문으로 보내
+  `apiClient`가 undefined를 돌려주고 React Query가 undefined 데이터를 오류로 처리 → 화면의 `isLoading || !data` 스피너가 안 끝나던 것. 화면은 오류/빈 값이면 메시지 + 다시 시도.
+

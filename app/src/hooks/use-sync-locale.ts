@@ -27,3 +27,12 @@ export function useSyncLocale(): void {
     });
   }, [token, locale]);
 }
+
+/** 운영자 계정이면 앱 언어를 한국어로 고정 — 운영자 화면은 한국어 전용(기기 언어·`?lang=` 링크로 고른 언어와 섞이지 않게) */
+export function useAdminKoreanLocale(): void {
+  const { role } = useAuth();
+  const { setForcedLocale } = useLocalePreference();
+  useEffect(() => {
+    setForcedLocale(role === 'ADMIN' ? 'ko' : null);
+  }, [role, setForcedLocale]);
+}

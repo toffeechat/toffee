@@ -53,7 +53,7 @@ export class AppSettingsController {
   @AdminOwnerOnly()
   @Get('admin/app-settings')
   get() {
-    return this.settings.get();
+    return this.settings.adminView();
   }
 
   @Roles(Role.ADMIN)

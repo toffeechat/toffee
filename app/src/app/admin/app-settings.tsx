@@ -22,8 +22,18 @@ const VERSION = /^\d+(\.\d+){0,2}$/;
  */
 export default function AdminAppSettingsScreen() {
   const theme = useTheme();
-  const { data, isLoading } = useAdminAppSettings();
-  if (isLoading || !data) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
+  const { data, isLoading, error, refetch } = useAdminAppSettings();
+  if (isLoading) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
+  // 못 불러오면 로딩을 계속 돌리지 말고 이유와 다시 시도(전엔 실패해도 스피너만 돌았음)
+  if (error || !data)
+    return (
+      <View style={styles.content}>
+        <AdminMessage text={error instanceof ApiError ? error.message : '앱 설정을 불러오지 못했어요.'} error />
+        <AdminButtonRow>
+          <AdminButton secondary label="다시 시도" onPress={() => void refetch()} />
+        </AdminButtonRow>
+      </View>
+    );
   return <AppSettingsForm data={data} />;
 }
 

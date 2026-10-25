@@ -35,6 +35,26 @@ export class AppSettingsService {
     return this.cache.value;
   }
 
+  /**
+   * 운영자 앱 설정 화면용 — 아직 한 번도 저장 안 해서 행이 없으면 기본값(2026-10-25). 전엔 null을 돌려줘서 응답 본문이 비고,
+   * 앱이 "받은 값 없음"으로 보고 로딩만 계속 돌았음(데모 첫 화면)
+   */
+  async adminView() {
+    const setting = await this.get();
+    return (
+      setting ?? {
+        id: ID,
+        maintenanceOn: false,
+        maintenanceMessage: null,
+        maintenanceUntil: null,
+        minVersionIos: null,
+        minVersionAndroid: null,
+        updatedById: null,
+        updatedAt: null,
+      }
+    );
+  }
+
   /** 지금 점검 중인가 */
   async maintenanceActive(now = new Date()): Promise<boolean> {
     const setting = await this.get();

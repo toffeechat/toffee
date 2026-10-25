@@ -892,11 +892,11 @@ export interface AdminAppSettings {
   maintenanceUntil: string | null;
   minVersionIos: string | null;
   minVersionAndroid: string | null;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 export function useAdminAppSettings() {
-  return useQuery({ queryKey: ['admin', 'app-settings'], queryFn: () => apiClient.get<AdminAppSettings | null>('/admin/app-settings') });
+  return useQuery({ queryKey: ['admin', 'app-settings'], queryFn: () => apiClient.get<AdminAppSettings>('/admin/app-settings') });
 }
 
 export function useUpdateAppSettings() {

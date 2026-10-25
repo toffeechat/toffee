@@ -28,6 +28,8 @@ interface LocalePreferenceValue {
   /** 사용자가 직접 고른 값. null이면 "기기 언어 따르기" */
   override: SupportedLanguage | null;
   setOverride: (next: SupportedLanguage | null) => void;
+  /** 고른 값·기기 언어보다 앞서는 고정 언어(운영자 계정은 한국어) — null이면 고정 안 함 */
+  setForcedLocale: (next: SupportedLanguage | null) => void;
 }
 
 const LocalePreferenceContext = createContext<LocalePreferenceValue | null>(null);
@@ -47,7 +49,10 @@ export function LocalePreferenceProvider({ children }: { children: ReactNode }) 
     });
   }, [urlLanguage]);
 
-  const locale = override ?? getDeviceLanguage();
+  // 운영자(ADMIN) 계정은 한국어로 고정(2026-10-25) — 운영자 화면 문구는 한국어로만 쓰여 있는데, 소속사 화면과 같이 쓰는 통계·기간 고르기·
+  // 공용 버튼은 번역 문구라 전에 `?lang=th` 데모 링크를 열었던 브라우저에선 그 부분만 태국어로 섞여 보였음
+  const [forced, setForcedLocale] = useState<SupportedLanguage | null>(null);
+  const locale = forced ?? override ?? getDeviceLanguage();
 
   useEffect(() => {
     if (i18n.language !== locale) void i18n.changeLanguage(locale);
@@ -58,7 +63,7 @@ export function LocalePreferenceProvider({ children }: { children: ReactNode }) 
     void savePreference(OVERRIDE_KEY, next);
   }, []);
 
-  const value = useMemo(() => ({ locale, override, setOverride }), [locale, override, setOverride]);
+  const value = useMemo(() => ({ locale, override, setOverride, setForcedLocale }), [locale, override, setOverride]);
   return <LocalePreferenceContext.Provider value={value}>{children}</LocalePreferenceContext.Provider>;
 }
 
