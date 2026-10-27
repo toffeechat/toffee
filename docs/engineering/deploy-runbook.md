@@ -172,6 +172,7 @@ SQL을 `ops/data-fixes/YYYYMMDD-설명.sql`로 main에 커밋 → **Production d
 
 1. [ ] Railway 운영 프로젝트·서비스: GitHub 저장소 연결하되 **자동 배포 끄기**(Settings → Source에서 브랜치 트리거 해제 — 워크플로가 커밋을 지정),
        Root Directory `/backend`, Config `/backend/railway.json`, `SMOKE_TEST_SECRET`(32자+), `SENTRY_ENVIRONMENT=production`. Postgres 백업 켜기.
+       워크스페이스 Usage Limits는 **하드 리밋 없이(또는 넉넉하게) 알림만**(데모의 $15 하드 리밋을 그대로 쓰면 운영 서버가 꺼짐).
 2. [ ] Cloudflare Pages `toffee-app`을 **Direct Upload**로 생성(Git 연결 X — 워크플로가 올림), 커스텀 도메인 `app.toffeechat.app`.
 3. [ ] R2 백업 버킷 + 토큰, gpg 키 쌍 만들기(`gpg --quick-gen-key "Toffee Backup" rsa4096 encr never` → `gpg --armor --export` 공개키만 GitHub에).
 4. [ ] GitHub Environments `production`·`production-data` 만들고 승인자 = 본인, 11번 표의 값 넣기. 폰 GitHub 앱 알림 켜기(Settings → Notifications → Actions).
@@ -187,6 +188,8 @@ SQL을 `ops/data-fixes/YYYYMMDD-설명.sql`로 main에 커밋 → **Production d
 9. [ ] 업타임 모니터(`/health/ready`)·Sentry 폰 알림이 오는지(ops-infra-backlog "배포 자동화").
 
 ## 13. 문제가 생기면
+
+- 폰 분실·Claude/GitHub 장애 때 폰만으로 하는 비상 조치(Railway Redeploy·Pages Rollback·점검 모드)는 `docs/product/phone-loss-plan.md` 4번.
 
 - "서버가 제한 시간 안에 안 바뀜" → Railway 빌드 로그. "Wait for CI"를 켰다면 CI가 빨간지. 웹이면 Pages 빌드 로그(Build watch paths가 `*`인지 — 2026-10-02 교훈).
 - `/health`에 `commit: null` → Railway가 GitHub 배포가 아닌 방식(CLI `railway up`)으로 올렸음 → 서버 변수 `GIT_COMMIT_SHA`를 넣거나 GitHub 배포로.
