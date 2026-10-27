@@ -58,6 +58,11 @@ export class PendingSends<Extra = undefined> {
     if (entry) entry.extra = extra;
   }
 
+  /** 전부 잊음 — 로그아웃 때(2026-10-27) */
+  clear() {
+    this.entries.clear();
+  }
+
   /** 끝난 보내기 — 성공했거나, 다시 보내 봐야 소용없는 실패면 잊음(다음에 같은 글을 또 보내면 새 메시지) */
   settle(signature: string, error?: unknown) {
     if (error === undefined || !isRetryableSendError(error)) this.entries.delete(signature);

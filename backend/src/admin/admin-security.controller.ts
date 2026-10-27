@@ -42,20 +42,20 @@ export class AdminSecurityController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('mfa/enable')
   enable(@CurrentUser() admin: AuthenticatedUser, @Body() dto: MfaCodeDto) {
-    return this.security.enable(admin.id, dto.code);
+    return this.security.enable(admin.id, dto.code, admin.sessionId);
   }
 
   @SkipAdminMfa()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('mfa/verify')
   verify(@CurrentUser() admin: AuthenticatedUser, @Body() dto: MfaCodeDto) {
-    return this.security.verify(admin.id, dto.code);
+    return this.security.verify(admin.id, dto.code, admin.sessionId);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('mfa/disable')
   disable(@CurrentUser() admin: AuthenticatedUser, @Body() dto: MfaCodeDto) {
-    return this.security.disable(admin.id, dto.code);
+    return this.security.disable(admin.id, dto.code, admin.sessionId);
   }
 
   @AdminOwnerOnly()

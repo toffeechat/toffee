@@ -54,6 +54,14 @@ describe('소셜 토큰 확인 보강(2026-09-29)', () => {
     fetchMock.mockRestore();
   });
 
+  it('카카오: KAKAO_APP_ID가 비어 있으면 확인 없이 통과시키지 않고 거절(2026-10-27)', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ id: 1, kakao_account: {} })));
+    await expect(withConfig({}).verifyKakaoToken('t')).rejects.toThrow();
+    await expect(withConfig({ KAKAO_APP_ID: ' ' }).verifyKakaoToken('t')).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+    fetchMock.mockRestore();
+  });
+
   it('LINE: 채널이 여러 개면 idToken의 aud와 맞는 채널로 확인', async () => {
     const bodies: string[] = [];
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
@@ -207,6 +215,13 @@ describe('데모 입장 코드(2026-10-01, 운영자 코드 분리 2026-10-14)',
     await expect(withCode('  ').service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
     await expect(withCode(undefined, undefined, 'ADMIN').service.devLogin('admin@toffee.demo')).resolves.toMatchObject({ role: 'ADMIN' });
   });
+
+  it('역할은 새 계정을 만들 때만 — 입장 코드로 기존 계정 역할을 바꾸지 못함(2026-10-27)', async () => {
+    const { service, prisma } = withCode('candy-demo-42', 'boss-77', 'USER');
+    await service.devLogin('fan1@toffee.demo', undefined, 'AGENCY_STAFF' as never, 'candy-demo-42');
+    expect(prisma.user.upsert.mock.calls[0][0].update).toEqual({});
+    expect(prisma.user.upsert.mock.calls[0][0].create.role).toBe('AGENCY_STAFF');
+  });
 });
 
 describe('팬 프로필 상태메시지(2026-10-12)', () => {
@@ -278,5 +293,77 @@ describe('팬 답장 자동 번역 설정값(2026-10-19)', () => {
     await expect(getMe('no')).resolves.toMatchObject({ autoTranslateFanReplies: false });
     await expect(getMe(' TRUE ')).resolves.toMatchObject({ autoTranslateFanReplies: true });
     await expect(getMe('1')).resolves.toMatchObject({ autoTranslateFanReplies: true });
+  });
+});
+
+describe('로그인 세션·토큰 갱신(2026-10-27)', () => {
+  function sessionSetup() {
+    const prisma = {
+      authSession: {
+        create: vi.fn().mockResolvedValue({ id: 's-new', user: { tokenVersion: 4 } }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      user: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ tokenVersion: 4 }),
+        update: vi.fn().mockResolvedValue({ tokenVersion: 5 }),
+      },
+    };
+    const jwt = new JwtService({ secret: 'test-secret' });
+    const service = new AuthService({ get: () => '12h' } as unknown as ConfigService, jwt, prisma as unknown as PrismaService, {} as ModerationService, {} as MediaService);
+    return { service, prisma, jwt };
+  }
+  const payload = (jwt: JwtService, token: string) => jwt.verify<Record<string, unknown>>(token);
+
+  it('로그인하면 세션을 만들고(만료 = JWT_EXPIRES_IN) sid·tv를 담음', async () => {
+    const { service, prisma, jwt } = sessionSetup();
+    const { accessToken } = await service.issueAccessToken({ id: 'u1', role: 'USER' }, { demoCode: 'common', client: { platform: 'ios', deviceModel: 'iPhone', appVersion: '1.2.0' } as never });
+    const data = prisma.authSession.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ userId: 'u1', platform: 'ios', deviceModel: 'iPhone', appVersion: '1.2.0' });
+    expect(data.expiresAt.getTime() - Date.now()).toBeGreaterThan(11.9 * 3_600_000);
+    expect(data.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(12 * 3_600_000);
+    expect(payload(jwt, accessToken)).toMatchObject({ sub: 'u1', sid: 's-new', tv: 4, dac: 'common' });
+  });
+
+  it('갱신은 같은 세션을 연장하고 sid·dac·mfaAt을 그대로(2단계 인증 시각이 늘지 않음)', async () => {
+    const { service, prisma, jwt } = sessionSetup();
+    const { accessToken } = await service.refreshAccessToken({ id: 'a1', role: 'ADMIN', sessionId: 's1', tokenVersion: 4, demoCode: 'd1', mfaAt: 123 });
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+    expect(prisma.authSession.updateMany.mock.calls[0][0].where).toEqual({ id: 's1', userId: 'a1', revokedAt: null });
+    expect(payload(jwt, accessToken)).toMatchObject({ sid: 's1', tv: 4, dac: 'd1', mfaAt: 123 });
+  });
+
+  it('갱신 직전에 세션이 끊겼으면 401', async () => {
+    const { service, prisma } = sessionSetup();
+    prisma.authSession.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.refreshAccessToken({ id: 'u1', role: 'USER', sessionId: 's1', tokenVersion: 0 })).rejects.toThrow();
+  });
+
+  it('sid 없는 옛 토큰을 갱신하면 새 세션으로 옮김', async () => {
+    const { service, prisma, jwt } = sessionSetup();
+    const { accessToken } = await service.refreshAccessToken({ id: 'u1', role: 'USER', tokenVersion: 0 });
+    expect(prisma.authSession.create).toHaveBeenCalled();
+    expect(payload(jwt, accessToken)).toMatchObject({ sid: 's-new' });
+  });
+
+  it('로그아웃은 이 세션만 끊고, 모든 기기 로그아웃은 tokenVersion을 올리고 세션을 전부 끊음', async () => {
+    const { service, prisma } = sessionSetup();
+    await service.logout({ id: 'u1', role: 'USER', sessionId: 's1' });
+    expect(prisma.authSession.updateMany.mock.calls[0][0]).toMatchObject({ where: { id: 's1', userId: 'u1', revokedAt: null }, data: { revokedAt: expect.any(Date) } });
+    await service.logoutAll('u1');
+    expect(prisma.user.update.mock.calls[0][0]).toMatchObject({
+      where: { id: 'u1' },
+      data: { tokenVersion: { increment: 1 }, authSessions: { updateMany: { where: { revokedAt: null } } } },
+    });
+  });
+});
+
+describe('JWT 수명 읽기', () => {
+  it('단위별로 읽고 못 읽으면 30일', async () => {
+    const { jwtLifetimeMs } = await import('./auth-sessions.js');
+    expect(jwtLifetimeMs('30d')).toBe(30 * 86_400_000);
+    expect(jwtLifetimeMs('12h')).toBe(12 * 3_600_000);
+    expect(jwtLifetimeMs('15m')).toBe(15 * 60_000);
+    expect(jwtLifetimeMs(undefined)).toBe(30 * 86_400_000);
+    expect(jwtLifetimeMs('soon')).toBe(30 * 86_400_000);
   });
 });

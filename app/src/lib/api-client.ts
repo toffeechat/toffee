@@ -32,6 +32,12 @@ export function onMaintenance(handler: (() => void) | null) {
   maintenanceHandler = handler;
 }
 
+/** 401 처리 공통(2026-10-27) — 일반 요청과 실시간 연결(/realtime)이 같이 씀. 운영자 2단계 인증이면 코드 화면, 아니면 로그아웃 */
+export function reportUnauthorized(code: string | undefined, message: string) {
+  if (code === 'ADMIN_MFA_REQUIRED') mfaRequiredHandler?.();
+  else unauthorizedHandler?.(message);
+}
+
 // 접속 기록용 기기 정보(2026-10-14) — 운영자 회원 관리에서 "어떤 기기·앱 버전으로 들어왔는지" 확인.
 // 웹은 기기 이름이 없어서 서버가 브라우저 정보로 대신 채움. 헤더 값은 영문·숫자만 안전해서 그 밖의 글자는 지움
 function clientHeaders(): Record<string, string> {
@@ -46,8 +52,9 @@ function clientHeaders(): Record<string, string> {
 }
 const CLIENT_HEADERS = clientHeaders();
 
-async function request<T>(path: string, options: RequestInit = {}, as: 'json' | 'text' = 'json'): Promise<T> {
-  const token = await loadToken();
+// authToken: 저장된 토큰 대신 이 토큰으로(로그아웃 뒤 마무리 요청 — 이때 401이어도 로그아웃 처리를 다시 하지 않음, 2026-10-27)
+async function request<T>(path: string, options: RequestInit = {}, as: 'json' | 'text' = 'json', authToken?: string): Promise<T> {
+  const token = authToken ?? (await loadToken());
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     // 서버가 오류 문구를 지금 앱 언어로 번역해서 줌(backend LocalizedExceptionFilter)
@@ -63,8 +70,7 @@ async function request<T>(path: string, options: RequestInit = {}, as: 'json' | 
     const body = (await res.json().catch(() => ({}))) as { message?: string | string[]; code?: string };
     const message = Array.isArray(body.message) ? body.message.join(', ') : body.message;
     const error = new ApiError(res.status, message ?? i18n.t('common.requestFailed', { status: res.status }), body.code);
-    if (res.status === 401 && body.code === 'ADMIN_MFA_REQUIRED') mfaRequiredHandler?.();
-    else if (res.status === 401 && token) unauthorizedHandler?.(error.message);
+    if (res.status === 401 && !authToken && (token || body.code === 'ADMIN_MFA_REQUIRED')) reportUnauthorized(body.code, error.message);
     if (res.status === 503 && body.code === 'MAINTENANCE') maintenanceHandler?.();
     throw error;
   }
@@ -79,8 +85,8 @@ export const apiClient = {
   get: <T>(path: string) => request<T>(path),
   // CSV 같은 글자 응답(정산 내려받기)
   getText: (path: string) => request<string>(path, {}, 'text'),
-  post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  post: <T>(path: string, body?: unknown, init?: { signal?: AbortSignal; authToken?: string }) =>
+    request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined, signal: init?.signal }, 'json', init?.authToken),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: unknown) =>

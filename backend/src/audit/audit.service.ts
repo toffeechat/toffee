@@ -52,7 +52,15 @@ export type AdminActionType =
   | 'INQUIRY_DELETE'
   | 'ADMIN_LEVEL'
   | 'ADMIN_MFA'
-  | 'USER_EXPORT';
+  | 'USER_EXPORT'
+  // 돈·권한이 걸린 소속·연결·등록(2026-10-27) — 아티스트 소속사 변경, 직원 소속사 지정, 아티스트 본인 계정 연결(운영자), 아티스트·소속사 등록
+  | 'ACTOR_AGENCY'
+  | 'STAFF_AGENCY'
+  | 'ACTOR_SELF_LINK'
+  | 'ACTOR_CREATE'
+  | 'AGENCY_CREATE'
+  // 모든 기기에서 로그아웃시키기(2026-10-27)
+  | 'USER_SIGN_OUT';
 
 /**
  * 운영자 작업 기록(AdminAction) — 제재·역할 변경·신고 처리·배우 활동 종료를 누가 언제 했는지. 유료 서비스 분쟁·문의 대응용.

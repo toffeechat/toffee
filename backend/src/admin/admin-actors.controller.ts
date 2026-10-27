@@ -41,8 +41,8 @@ export class AdminActorsController {
 
   @AdminOwnerOnly()
   @Post('actors')
-  create(@Body() dto: CreateActorDto) {
-    return this.adminActorsService.create(dto);
+  create(@CurrentUser() admin: AuthenticatedUser, @Body() dto: CreateActorDto) {
+    return this.adminActorsService.create(admin.id, dto);
   }
 
   // 커플방 만들기(멤버 배우 2명)
@@ -103,8 +103,8 @@ export class AdminActorsController {
 
   @AdminOwnerOnly()
   @Patch('actors/:id/self-user')
-  linkUser(@Param('id') id: string, @Body() dto: LinkActorUserDto) {
-    return this.adminActorsService.linkUser(id, dto.userId);
+  linkUser(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string, @Body() dto: LinkActorUserDto) {
+    return this.adminActorsService.linkUser(admin.id, id, dto.userId);
   }
 
   @AdminOwnerOnly()

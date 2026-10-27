@@ -155,14 +155,18 @@ export class ActorsService {
 
   /** 방별 마지막 스타 메시지(지운·회수한 것 제외) — 스튜디오·소속사 토피룸 목록의 미리보기 줄 */
   private async lastMessageMap(actorIds: string[]) {
-    if (actorIds.length === 0) return new Map<string, { body: string | null; mediaType: string; createdAt: Date }>();
-    const rows = await this.prisma.message.findMany({
-      where: { actorId: { in: actorIds }, senderType: MessageSenderType.ARTIST, deletedAt: null },
-      distinct: ['actorId'],
-      orderBy: [{ actorId: 'asc' }, { createdAt: 'desc' }],
-      select: { actorId: true, body: true, mediaType: true, createdAt: true },
-    });
-    return new Map(rows.map(({ actorId, ...message }) => [actorId, message]));
+    // 방마다 최신 1건(2026-10-27) — 예전 findMany + distinct는 Prisma가 메모리에서 중복을 걸러서 모든 방의 스타 메시지 전부를 읽었음
+    // (운영자면 전체 메시지). 방별 findFirst는 (actorId, createdAt) 색인으로 한 줄씩만 읽음
+    const rows = await Promise.all(
+      actorIds.map((actorId) =>
+        this.prisma.message.findFirst({
+          where: { actorId, senderType: MessageSenderType.ARTIST, deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          select: { actorId: true, body: true, mediaType: true, createdAt: true },
+        }),
+      ),
+    );
+    return new Map(rows.flatMap((row) => (row ? [[row.actorId, { body: row.body, mediaType: row.mediaType, createdAt: row.createdAt }] as const] : [])));
   }
 
   /** 방별 마지막 스타 메시지 시각(지운 메시지 제외) */

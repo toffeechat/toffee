@@ -17,7 +17,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { ApiError } from '@/lib/api-client';
 import { useActor } from '@/hooks/use-actors';
 import { useSubscribe } from '@/hooks/use-subscriptions';
-import { useStorePurchase } from '@/hooks/use-store-purchase';
+import { STORE_PURCHASE_PENDING, useStorePurchase } from '@/hooks/use-store-purchase';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
@@ -39,7 +39,12 @@ export default function SubscribeScreen() {
   const { data: actor } = useActor(actorId);
   const subscribe = useSubscribe(actorId);
   const store = useStorePurchase({ kind: 'actor', id: actorId, sku: actor?.storeProductId });
-  const storeBuy = useMutation({ mutationFn: store.buy, onSuccess: (result) => result && setDone({}) });
+  const storeBuy = useMutation({
+    mutationFn: store.buy,
+    // 결제 대기(2026-10-27)면 완료 화면 대신 안내 — 결제가 끝나면 앱 전체 결제 처리가 열어 줌
+    onSuccess: (result) => result && result !== STORE_PURCHASE_PENDING && setDone({}),
+  });
+  const storePending = storeBuy.data === STORE_PURCHASE_PENDING;
   const busy = subscribe.isPending || storeBuy.isPending;
   const failure = storeBuy.error ?? subscribe.error;
   const [done, setDone] = useState<{ discount?: string } | null>(null);
@@ -128,6 +133,11 @@ export default function SubscribeScreen() {
               {failure instanceof ApiError ? failure.message : t('subscribeFlow.failed')}
             </ThemedText>
           )}
+          {storePending ? (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+              {t('subscribeFlow.storePending')}
+            </ThemedText>
+          ) : null}
           <Button title={t('subscribeFlow.cta', { price })} variant="accent" loading={busy} onPress={confirm} />
           <PurchaseDisclosure />
           {store.available ? null : (

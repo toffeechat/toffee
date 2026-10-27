@@ -1,10 +1,36 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { MessageSenderType, Role, UserStatus, type ReportCategory } from '../generated/prisma/enums.js';
+import { AdminLevel, MessageSenderType, Role, UserStatus, type ReportCategory } from '../generated/prisma/enums.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
+import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { revokeAllSessions, revokeAllSessionsData } from '../auth/auth-sessions.js';
+
+/** 운영자 권한 단계 — 값이 없으면 OWNER(옛 계정) */
+const levelOf = (user: { adminLevel?: AdminLevel | null }) => user.adminLevel ?? AdminLevel.OWNER;
+
+/**
+ * 운영자가 다른 회원을 다룰 수 있는지(2026-10-27) — 고객 응대(SUPPORT) 운영자가 운영자 계정(유일한 OWNER 포함)을 정지·차단·
+ * 개인정보 내보내기 하던 구멍을 막음. 대상이 운영자면 OWNER만, 제재 계열(sanction)은 자기 자신 금지 + 마지막 OWNER를 정지·차단 금지.
+ * 개인정보 내보내기 컨트롤러(privacy)도 같이 씀. 대상이 없으면 그냥 통과(뒤에서 USER_NOT_FOUND).
+ */
+export async function assertCanManageUser(
+  prisma: PrismaService,
+  caller: AuthenticatedUser,
+  targetId: string,
+  opts: { sanction?: boolean; lockout?: boolean } = {},
+) {
+  if (opts.sanction && caller.id === targetId) throw new ForbiddenException(appError('FORBIDDEN'));
+  const target = await prisma.user.findUnique({ where: { id: targetId }, select: { role: true, adminLevel: true, deletedAt: true } });
+  if (!target || target.role !== Role.ADMIN) return;
+  if (levelOf(caller) !== AdminLevel.OWNER) throw new ForbiddenException(appError('ADMIN_OWNER_ONLY'));
+  if (opts.lockout && levelOf(target) === AdminLevel.OWNER) {
+    const owners = await prisma.user.count({ where: { role: Role.ADMIN, deletedAt: null, OR: [{ adminLevel: null }, { adminLevel: AdminLevel.OWNER }] } });
+    if (owners <= 1) throw new ForbiddenException(appError('ADMIN_LAST_OWNER'));
+  }
+}
 
 interface SanctionReason {
   category: ReportCategory;
@@ -223,7 +249,8 @@ export class AdminUsersService {
   }
 
   /** 회원 한 명의 접속 기록(최근 3개월, 최신순 최대 200줄) — 로그인·접속 시각, 기기, 앱 버전, IP */
-  async accessLogs(userId: string) {
+  async accessLogs(caller: AuthenticatedUser, userId: string) {
+    await assertCanManageUser(this.prisma, caller, userId);
     return this.prisma.accessLog.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -233,27 +260,34 @@ export class AdminUsersService {
   }
 
   // 정지·영구차단은 사유(분류 + 내부 메모)를 같이 남기고 작업 기록에도 — 당사자에겐 로그인 때 분류가 번역돼서 안내됨
-  async suspend(adminId: string, userId: string, until: Date, reason: SanctionReason) {
+  async suspend(caller: AuthenticatedUser, userId: string, until: Date, reason: SanctionReason) {
+    const adminId = caller.id;
+    await assertCanManageUser(this.prisma, caller, userId, { sanction: true, lockout: true });
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: UserStatus.SUSPENDED, suspendedUntil: until, bannedAt: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null },
+      // 로그인도 모두 끊음(2026-10-27) — 정지가 풀려도 다시 로그인해야 함
+      data: { status: UserStatus.SUSPENDED, suspendedUntil: until, bannedAt: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null, ...revokeAllSessionsData() },
       select: LIST_SELECT,
     });
     await this.audit.record(adminId, 'USER_SUSPEND', 'USER', userId, { until: until.toISOString(), ...reason });
     return user;
   }
 
-  async ban(adminId: string, userId: string, reason: SanctionReason) {
+  async ban(caller: AuthenticatedUser, userId: string, reason: SanctionReason) {
+    const adminId = caller.id;
+    await assertCanManageUser(this.prisma, caller, userId, { sanction: true, lockout: true });
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: UserStatus.BANNED, bannedAt: new Date(), suspendedUntil: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null },
+      data: { status: UserStatus.BANNED, bannedAt: new Date(), suspendedUntil: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null, ...revokeAllSessionsData() },
       select: LIST_SELECT,
     });
     await this.audit.record(adminId, 'USER_BAN', 'USER', userId, { ...reason });
     return user;
   }
 
-  async reactivate(adminId: string, userId: string) {
+  async reactivate(caller: AuthenticatedUser, userId: string) {
+    const adminId = caller.id;
+    await assertCanManageUser(this.prisma, caller, userId, { sanction: true });
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: { status: UserStatus.ACTIVE, suspendedUntil: null, bannedAt: null, sanctionCategory: null, sanctionNote: null },
@@ -263,8 +297,19 @@ export class AdminUsersService {
     return user;
   }
 
+  /** 모든 기기에서 로그아웃시키기(2026-10-27) — 계정 도용 의심·본인 요청(폰 분실) 대응. 제재와 같은 권한 확인 */
+  async signOutEverywhere(caller: AuthenticatedUser, userId: string) {
+    await assertCanManageUser(this.prisma, caller, userId, { sanction: true });
+    const target = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!target) throw new NotFoundException(appError('USER_NOT_FOUND'));
+    await revokeAllSessions(this.prisma, userId);
+    await this.audit.record(caller.id, 'USER_SIGN_OUT', 'USER', userId);
+  }
+
   /** 팬 프로필 사진·상태메시지 지우기(2026-10-12) — 신고·민원 대응. 사진 파일은 하루 뒤 정리 작업이 지움 */
-  async clearProfile(adminId: string, userId: string) {
+  async clearProfile(caller: AuthenticatedUser, userId: string) {
+    const adminId = caller.id;
+    await assertCanManageUser(this.prisma, caller, userId, { sanction: true });
     const before = await this.prisma.user.findUnique({ where: { id: userId }, select: { statusMessage: true } });
     if (!before) throw new NotFoundException(appError('USER_NOT_FOUND'));
     const user = await this.prisma.user.update({

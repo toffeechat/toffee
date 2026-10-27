@@ -9,12 +9,12 @@ describe('서버 시작 설정 점검', () => {
   });
 
   it('운영에서 테스트 로그인·무료 구독을 켜 두면 오류', () => {
-    const { errors } = checkEnv({ ...base, NODE_ENV: 'production', API_PUBLIC_URL: 'https://api', ENABLE_DEV_LOGIN: 'true', ENABLE_SANDBOX_SUBSCRIBE: 'true' });
+    const { errors } = checkEnv({ ...base, NODE_ENV: 'production', API_PUBLIC_URL: 'https://api', KAKAO_APP_ID: '1', ENABLE_DEV_LOGIN: 'true', ENABLE_SANDBOX_SUBSCRIBE: 'true' });
     expect(errors).toHaveLength(2);
   });
 
   it('운영에서 짧은 JWT_SECRET·공개 주소 없음은 오류, 개발에선 괜찮음', () => {
-    expect(checkEnv({ ...base, JWT_SECRET: 'short', NODE_ENV: 'production' }).errors).toHaveLength(2);
+    expect(checkEnv({ ...base, JWT_SECRET: 'short', NODE_ENV: 'production', KAKAO_APP_ID: '1' }).errors).toHaveLength(2);
     expect(checkEnv({ ...base, JWT_SECRET: 'short' }).errors).toHaveLength(0);
   });
 
@@ -45,5 +45,16 @@ describe('서버 시작 설정 점검', () => {
     expect(warn('https://<계정ID>.r2.cloudflarestorage.com')).toHaveLength(2);
     expect(warn('abc.r2.cloudflarestorage.com')).toHaveLength(1);
     expect(checkEnv({ ...base, ...storage, STORAGE_ENDPOINT: 'https://abc.r2.cloudflarestorage.com', STORAGE_BUCKET: 'toffee-demo ' }).warnings.some((w) => w.startsWith('STORAGE_BUCKET'))).toBe(true);
+  });
+
+  it('운영에서 KAKAO_APP_ID 없음은 오류, 개발에선 경고만 / 운영에서 TRUST_PROXY 없으면 경고(2026-10-27)', () => {
+    const prod = { ...base, NODE_ENV: 'production', API_PUBLIC_URL: 'https://api' };
+    expect(checkEnv(prod).errors.some((e) => e.startsWith('KAKAO_APP_ID'))).toBe(true);
+    expect(checkEnv({ ...prod, KAKAO_APP_ID: '1' }).errors).toHaveLength(0);
+    expect(checkEnv(base).errors).toHaveLength(0);
+    expect(checkEnv(base).warnings.some((w) => w.includes('KAKAO_APP_ID'))).toBe(true);
+    expect(checkEnv(prod).warnings.some((w) => w.startsWith('TRUST_PROXY'))).toBe(true);
+    expect(checkEnv({ ...prod, TRUST_PROXY: '1' }).warnings.some((w) => w.startsWith('TRUST_PROXY'))).toBe(false);
+    expect(checkEnv(base).warnings.some((w) => w.startsWith('TRUST_PROXY'))).toBe(false);
   });
 });

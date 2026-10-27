@@ -3,6 +3,7 @@ import { AdminStatsService, bucketOverviewWeekly } from './admin-stats.service.j
 import { rangeBounds, resolveRange } from '../actors/agency-stats.service.js';
 import { DAY_MS, zoneDayStart, zoneDays } from '../common/utils/stats-time.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import { SMOKE_IDS } from '../smoke/smoke-ids.js';
 
 describe('운영자 홈 추이(가입·신규 구독 금액)', () => {
   const range = resolveRange({ days: 7 });
@@ -61,7 +62,7 @@ describe('운영자 홈 오늘 숫자 → 목록(2026-10-25)', () => {
     ]);
     const service = new AdminStatsService({ subscriptionEvent: { findMany, groupBy } } as unknown as PrismaService);
     const result = await service.subscriptionEvents(bounds, 'CANCELLED');
-    expect(findMany.mock.calls[0][0].where).toEqual({ type: 'CANCELLED', createdAt: { gte: bounds.start, lt: bounds.end } });
+    expect(findMany.mock.calls[0][0].where).toEqual({ type: 'CANCELLED', createdAt: { gte: bounds.start, lt: bounds.end }, actorId: { not: SMOKE_IDS.actor } });
     expect(result.counts).toEqual({ STARTED: 3, CANCELLED: 1 });
     expect(result.items).toEqual([{ id: 'e1' }]);
   });
@@ -79,5 +80,32 @@ describe('운영자 홈 오늘 숫자 → 목록(2026-10-25)', () => {
       { actorId: 'a', messages: 1, fanReplies: 5 },
     ]);
     expect(result.totals).toEqual({ messages: 3, fanReplies: 5 });
+  });
+});
+
+describe('스모크 점검 계정·방은 운영자 통계에서 뺌(2026-10-27)', () => {
+  it('오늘 숫자의 팬·구독·메시지 집계가 스모크 팬·방을 거름', async () => {
+    const userCount = vi.fn().mockResolvedValue(0);
+    const subCount = vi.fn().mockResolvedValue(0);
+    const eventCount = vi.fn().mockResolvedValue(0);
+    const messageCount = vi.fn().mockResolvedValue(0);
+    const service = new AdminStatsService({
+      user: { count: userCount },
+      subscription: { count: subCount },
+      subscriptionEvent: { count: eventCount },
+      report: { count: vi.fn().mockResolvedValue(0) },
+      message: { count: messageCount },
+    } as unknown as PrismaService);
+    await service.summary();
+    for (const call of userCount.mock.calls) expect(call[0].where.id).toEqual({ not: SMOKE_IDS.fanUser });
+    expect(subCount.mock.calls[0][0].where).toMatchObject({ user: { id: { not: SMOKE_IDS.fanUser } }, actorId: { not: SMOKE_IDS.actor } });
+    for (const call of [...eventCount.mock.calls, ...messageCount.mock.calls]) expect(call[0].where.actorId).toEqual({ not: SMOKE_IDS.actor });
+  });
+
+  it('기간 추이(raw SQL)도 스모크 팬·방을 뺌', async () => {
+    const queryRawUnsafe = vi.fn().mockResolvedValue([]);
+    await new AdminStatsService({ $queryRawUnsafe: queryRawUnsafe } as unknown as PrismaService).overview(resolveRange({ days: 7 }));
+    expect(queryRawUnsafe.mock.calls[0]).toContain(SMOKE_IDS.fanUser);
+    expect(queryRawUnsafe.mock.calls[1]).toContain(SMOKE_IDS.actor);
   });
 });

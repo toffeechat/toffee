@@ -5,6 +5,7 @@ import { LifeBuoy, Bell, Globe, KeyRound, LogOut, Moon, Wallet } from 'lucide-re
 
 import { AppVersion } from '@/components/app-version';
 import { ListRow } from '@/components/ui/list-row';
+import { LogoutAllRow } from '@/components/logout-all-row';
 import { useWideLayout } from '@/components/wide-shell';
 import { PROVIDER_NAMES } from '@/components/social-button-style';
 import { useMe } from '@/hooks/use-onboarding';
@@ -48,6 +49,7 @@ export default function StaffSettingsScreen() {
       <ListRow icon={LifeBuoy} title={t('profile.help')} onPress={() => router.push('/support')} />
       <ListRow icon={KeyRound} title={t('profile.loginInfo')} value={providers || undefined} subtitle={me?.email ?? t('profile.noEmail')} showChevron={false} />
       <ListRow icon={LogOut} title={t('profile.logout')} onPress={() => void logout()} showChevron={false} />
+      <LogoutAllRow />
       <AppVersion />
     </ScrollView>
   );

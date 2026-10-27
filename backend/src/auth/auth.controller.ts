@@ -20,6 +20,7 @@ import { PushDeviceDto } from './dto/push-device.dto.js';
 import { UpdateNicknameDto } from './dto/update-nickname.dto.js';
 import { AuthProvider, Role } from '../generated/prisma/enums.js';
 import { Public } from '../common/decorators/public.decorator.js';
+import { SkipAdminMfa } from '../common/decorators/admin-access.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DevOnlyGuard } from '../common/guards/dev-only.guard.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
@@ -42,7 +43,7 @@ export class AuthController {
     await this.accessLog.recordLogin(user.id, method, client);
     // 데모 입장 코드로 들어왔으면 소속사별 접속 기록·알림(2026-10-19)
     if (demoCode) this.demoAccess.touch(demoCode, user.role, 'LOGIN', client);
-    return this.authService.issueAccessToken(user, demoCode);
+    return this.authService.issueAccessToken(user, { demoCode, client });
   }
 
   @Public()
@@ -137,19 +138,49 @@ export class AuthController {
     return this.signIn(user, 'DEV', client, demoCode);
   }
 
+  // 운영자 2단계 인증 코드 화면 전에도(2026-10-27) — 앱이 역할을 알아야 화면을 고르고 코드 화면을 띄움(자기 정보만)
+  @SkipAdminMfa()
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getMe(user.id);
   }
 
+  // 토큰 자동 갱신(2026-10-27) — 앱이 켤 때·앱으로 돌아올 때 12시간에 한 번. 2단계 인증 코드 화면에서도(mfaAt은 그대로라 권한이 늘지 않음)
+  @SkipAdminMfa()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@CurrentUser() user: AuthenticatedUser, @Client() client: ClientInfo) {
+    return this.authService.refreshAccessToken(user, client);
+  }
+
+  // 이 기기 로그아웃 — 토큰을 바로 못 쓰게 세션을 끊음(2026-10-27)
+  @SkipAdminMfa()
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(@CurrentUser() user: AuthenticatedUser) {
+    await this.authService.logout(user);
+  }
+
+  // 모든 기기에서 로그아웃(설정 화면, 2026-10-27) — 폰을 잃어버렸거나 남의 기기에 로그인해 둔 경우
+  @SkipAdminMfa()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('logout-all')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logoutAll(@CurrentUser() user: AuthenticatedUser) {
+    await this.authService.logoutAll(user.id);
+  }
+
   // 푸시 받을 기기 등록 — 앱이 로그인 후, 그리고 FCM이 토큰을 바꿀 때마다 보냄. 여러 기기 가능.
+  // 운영자는 2단계 인증 뒤에만(운영자 알림이 푸시로 오므로) — 앱이 앱으로 돌아올 때마다 다시 보내서 코드 확인 뒤 등록됨
   @Put('me/push-devices')
   @HttpCode(HttpStatus.NO_CONTENT)
   async registerPushDevice(@CurrentUser() user: AuthenticatedUser, @Body() dto: PushDeviceDto) {
     await this.authService.registerPushDevice(user.id, dto.token, dto.platform);
   }
 
-  // 로그아웃 시 이 기기만 해제 — 같은 폰으로 다른 계정이 로그인했을 때 앞 사람 알림이 오지 않게
+  // 로그아웃 시 이 기기만 해제 — 같은 폰으로 다른 계정이 로그인했을 때 앞 사람 알림이 오지 않게. 코드 화면에서 로그아웃해도 해제되게 2단계 인증 예외(2026-10-27)
+  @SkipAdminMfa()
   @Post('me/push-devices/remove')
   @HttpCode(HttpStatus.NO_CONTENT)
   async unregisterPushDevice(@CurrentUser() user: AuthenticatedUser, @Body() dto: PushDeviceDto) {

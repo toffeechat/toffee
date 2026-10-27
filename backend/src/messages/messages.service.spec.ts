@@ -510,3 +510,110 @@ describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', 
     expect(update).not.toHaveBeenCalled();
   });
 });
+
+describe('MessagesService.deleteBroadcast CP방 본인 메시지만(2026-10-27)', () => {
+  function setupCouple(senderActorId: string | null, mediaUsedElsewhere = 0) {
+    const update = vi.fn().mockResolvedValue({});
+    const count = vi.fn().mockResolvedValue(mediaUsedElsewhere);
+    const prisma = {
+      user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u-pakin', role: Role.ACTOR }) },
+      actor: {
+        findUnique: vi.fn().mockResolvedValue({
+          kind: 'COUPLE',
+          selfUserId: null,
+          coupleMembers: [{ member: { id: 'nawin', selfUserId: 'u-nawin' } }, { member: { id: 'pakin', selfUserId: 'u-pakin' } }],
+        }),
+      },
+      message: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'm1', deletedAt: null, senderActorId, mediaKey: 'actors/c1/message/a.jpg', thumbnailKey: null, _count: { reports: 0 } }),
+        update,
+        count,
+      },
+    } as unknown as PrismaService;
+    const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    return { service, update, media };
+  }
+
+  it('상대 멤버가 보낸 메시지는 회수·파일 삭제 불가', async () => {
+    const { service, update, media } = setupCouple('nawin');
+    await expect(service.deleteBroadcast('u-pakin', 'c1', 'm1')).rejects.toThrow();
+    expect(update).not.toHaveBeenCalled();
+    expect(media.deleteQuietly).not.toHaveBeenCalled();
+  });
+
+  it('내가 보낸 메시지는 회수하고 파일도 지움', async () => {
+    const { service, update, media } = setupCouple('pakin');
+    await service.deleteBroadcast('u-pakin', 'c1', 'm1');
+    expect(update).toHaveBeenCalled();
+    expect(media.deleteQuietly).toHaveBeenCalledWith('actors/c1/message/a.jpg');
+  });
+
+  it('같은 파일 키를 다른 메시지도 쓰면 파일은 남김', async () => {
+    const { service, media } = setupCouple('pakin', 1);
+    await service.deleteBroadcast('u-pakin', 'c1', 'm1');
+    expect(media.deleteQuietly).not.toHaveBeenCalled();
+  });
+});
+
+describe('MessagesService.sendBroadcast 회수된 팬 답장 인용(2026-10-27)', () => {
+  it('팬이 이미 회수한 답장은 인용 불가(QUOTE_INVALID)', async () => {
+    const { service, prisma } = setup();
+    (prisma as unknown as { message: { findFirst: ReturnType<typeof vi.fn> } }).message.findFirst = vi
+      .fn()
+      .mockResolvedValue({ senderType: 'FAN', senderActorId: null, deletedAt: new Date() });
+    await expect(service.sendBroadcast('admin', 'actor-1', { mediaType: MessageMediaType.TEXT, body: '고마워', replyToMessageId: 'fan-msg' })).rejects.toThrow();
+    expect(prisma.message.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('MessagesService 팬 화면 응답(2026-10-27)', () => {
+  function setupFan(role: Role = Role.USER, managesRoom = false) {
+    const prisma = {
+      subscription: {
+        findUnique: vi.fn().mockResolvedValue({ startedAt: new Date('2026-09-01'), cancelledAt: null }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'fan', role, agencyId: null, nickname: '민지', displayName: '민지' }) },
+      actor: { findFirst: vi.fn().mockResolvedValue(managesRoom ? { id: 'a1' } : null), findMany: vi.fn().mockResolvedValue([]) },
+      message: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'm1', senderType: 'ARTIST', senderActorId: null, body: '안녕', deletedAt: null, deletedByAdmin: false, deletedByStaffId: null, clientMessageId: 'star-key', replyTo: null },
+          { id: 'm2', senderType: 'FAN', fanUserId: 'fan', body: '응', deletedAt: null, deletedByAdmin: false, deletedByStaffId: null, clientMessageId: 'my-key', replyTo: null },
+        ]),
+        count: vi.fn().mockResolvedValue(0),
+      },
+    } as unknown as PrismaService;
+    const media = { withReadUrls: vi.fn((items: object[]) => Promise.resolve(items)) } as unknown as MediaService;
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    return { service, prisma };
+  }
+
+  it('지운 사람·아티스트 중복 방지 키 같은 내부 기록은 팬에게 안 내려줌(내 답장 키는 남김)', async () => {
+    const { service } = setupFan();
+    const [artist, mine] = (await service.listForFan('fan', 'a1')) as Record<string, unknown>[];
+    for (const field of ['deletedByAdmin', 'deletedByStaffId', 'clientMessageId']) expect(artist).not.toHaveProperty(field);
+    expect(mine).not.toHaveProperty('deletedByStaffId');
+    expect(mine.clientMessageId).toBe('my-key');
+  });
+
+  it('다른 방을 구독한 아티스트·소속사 계정은 사진 모아보기를 구독자 범위로(예전엔 403)', async () => {
+    const { service, prisma } = setupFan(Role.AGENCY_STAFF, false);
+    await service.listMediaForFan('fan', 'a1');
+    const where = vi.mocked(prisma.message.findMany).mock.calls[0][0]!.where as { createdAt?: unknown };
+    expect(where.createdAt).toEqual({ gte: new Date('2026-09-01') });
+  });
+
+  it('관리하는 방이면 전체(구독 시작 제한 없음)', async () => {
+    const { service, prisma } = setupFan(Role.AGENCY_STAFF, true);
+    await service.listMediaForFan('fan', 'a1');
+    const where = vi.mocked(prisma.message.findMany).mock.calls[0][0]!.where as { createdAt?: unknown };
+    expect(where.createdAt).toBeUndefined();
+  });
+
+  it('관리하지도 구독하지도 않으면 거절', async () => {
+    const { service, prisma } = setupFan(Role.ACTOR, false);
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+    await expect(service.listMediaForFan('fan', 'a1')).rejects.toThrow();
+  });
+});

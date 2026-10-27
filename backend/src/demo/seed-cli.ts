@@ -8,7 +8,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { seedDemo } from './demo-seed.js';
-import { decideSeed } from './demo-mode.js';
+import { decideSeed, demoWipeBlocker } from './demo-mode.js';
 
 async function run() {
   const mode = process.env.DEMO_SEED?.trim();
@@ -21,6 +21,13 @@ async function run() {
   try {
     if (decision === 'seed-if-empty' && (await prisma.user.count()) > 0) {
       return console.log('[demo-seed] 이미 데이터가 있어 건너뜀(다시 넣으려면 DEMO_SEED=reset)');
+    }
+    // 지우기 전에 DB 내용으로 한 번 더 확인(2026-10-27) — 운영 DB에 NODE_ENV·DEMO_SEED를 잘못 넣어도 지우지 않게
+    const blocker = await demoWipeBlocker(prisma);
+    if (blocker) {
+      console.error(`[demo-seed] 지우지 않음 — ${blocker}`);
+      process.exitCode = 1;
+      return;
     }
     await seedDemo(prisma);
     console.log(`[demo-seed] 완료(${decision === 'reset' ? '초기화 후 다시 넣음' : '빈 DB에 넣음'})`);

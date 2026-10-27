@@ -4,7 +4,8 @@ import { PushService } from '../notifications/push.service.js';
 import { pushStrings } from '../notifications/push-messages.js';
 import { ensureCanViewActor, ensureIsActorSelf } from '../common/authorization/actor-access.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
-import { ActorKind, Role } from '../generated/prisma/enums.js';
+import { ActorKind, type Role } from '../generated/prisma/enums.js';
+import { viewerSince } from '../messages/messages.service.js';
 import { MediaService } from '../storage/media.service.js';
 import { fanTag } from '../common/nickname/nickname.js';
 import type { UploadableMediaType } from '../storage/media-policy.js';
@@ -12,7 +13,6 @@ import type { CreateStoryDto } from './dto/create-story.dto.js';
 import { appError } from '../common/i18n/app-error.js';
 
 const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
-const CAN_MONITOR_ROLES = new Set<Role>([Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN]);
 
 @Injectable()
 export class StoriesService {
@@ -51,12 +51,9 @@ export class StoriesService {
   }
 
   // 팬은 구독자만, 소속사/배우 본인/관리자는 모니터링 목적으로 구독 여부와 무관하게 조회 가능
+  // 다른 방을 구독한 아티스트·소속사 계정은 그 방을 관리하지 않으면 구독자로서(2026-10-27 — 예전엔 403)
   async listActive(requesterId: string, actorId: string, requesterRole: Role) {
-    if (CAN_MONITOR_ROLES.has(requesterRole)) {
-      await ensureCanViewActor(this.prisma, requesterId, actorId);
-    } else {
-      await ensureActiveSubscription(this.prisma, requesterId, actorId);
-    }
+    await viewerSince(this.prisma, requesterId, actorId, requesterRole);
     const stories = await this.prisma.story.findMany({
       where: { actorId, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: 'asc' },

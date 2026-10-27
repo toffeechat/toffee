@@ -1,13 +1,12 @@
 import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { MessageSenderType, Role } from '../generated/prisma/enums.js';
+import { MessageSenderType } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import type { SupportedLocale } from '../common/i18n/locales.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
-import { ensureCanViewActor } from '../common/authorization/actor-access.js';
-import { quoteInclude, toQuote } from '../messages/messages.service.js';
+import { QUOTE_PREVIEW_LENGTH, quoteInclude, toQuote, viewerSince } from '../messages/messages.service.js';
 import {
   ClaudeTranslationProvider,
   FakeTranslationProvider,
@@ -60,6 +59,11 @@ export class TranslationService {
   private readonly provider: TranslationProvider | null;
   // 환영 메시지 번역 기억(방 × 언어 × 원문) — 오래된 것부터 버림
   private readonly welcomeCache = new Map<string, string>();
+  /**
+   * 지금 엔진에 맡긴 번역(메시지 × 언어) — 같은 걸 또 부탁하면 엔진을 다시 부르지 않고 이걸 기다림(2026-10-27). 인기 방에 새 메시지가 오면 팬 수천 명이
+   * 동시에 자동 번역을 요청해서, 저장된 번역이 생기기 전까지 모두 유료 엔진을 불렀음. 서버 한 대 안에서만 묶임(서버가 n대면 최대 n번)
+   */
+  private readonly inFlight = new Map<string, Promise<string | null>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -93,20 +97,20 @@ export class TranslationService {
       where: { id: requesterId },
       select: { role: true, nickname: true, displayName: true },
     });
-    if (requester.role === Role.USER) {
+    // 팬(또는 다른 방을 구독한 아티스트·소속사 계정, 2026-10-27)은 since 이후 자기 채팅방에 보이는 것만, 그 방 스태프·본인·운영자는 전부
+    const since = await viewerSince(this.prisma, requesterId, actorId, requester.role);
+    let quoteOnly = false;
+    if (since) {
       // 팬은 자기 채팅방에 보이는 메시지만(다른 팬 답장·구독 전 메시지는 안 보이므로 번역도 불가 — 있는지조차 알려 주지 않게 404)
-      const subscription = await ensureActiveSubscription(this.prisma, requesterId, actorId);
-      const visible =
-        (message.createdAt >= subscription.startedAt && (message.senderType === MessageSenderType.ARTIST || message.fanUserId === requesterId)) ||
-        (await this.isVisibleQuote(message.id, actorId, subscription.startedAt));
-      if (!visible) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
-    } else {
-      await ensureCanViewActor(this.prisma, requesterId, actorId);
+      const visibility = await this.fanVisibility(message, requesterId, actorId, since);
+      if (!visibility) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
+      quoteOnly = visibility === 'quote';
     }
 
-    let text = await this.cachedOrTranslate(message.id, message.body, target, speakerOf(message));
+    const source = this.sourceFor(message.body, quoteOnly);
+    let text = await this.cachedOrTranslate(message.id, source, target, speakerOf(message));
     // 팬에게 보여 줄 스타 메시지는 {{name}} 자리에 그 팬 이름(채팅방 원문과 같게)
-    if (message.senderType === MessageSenderType.ARTIST && requester.role === Role.USER) {
+    if (message.senderType === MessageSenderType.ARTIST && since) {
       text = text.replaceAll(NAME_PLACEHOLDER, requester.nickname ?? requester.displayName ?? '');
     }
     return { messageId: message.id, language: target, text };
@@ -125,52 +129,72 @@ export class TranslationService {
       where: { id: requesterId },
       select: { role: true, nickname: true, displayName: true },
     });
-    let rows = await this.prisma.message.findMany({ where: { id: { in: ids }, actorId, deletedAt: null }, select: MESSAGE_SELECT });
-    if (requester.role === Role.USER) {
-      const subscription = await ensureActiveSubscription(this.prisma, requesterId, actorId);
-      const visible = await Promise.all(
-        rows.map(
-          async (message) =>
-            (message.createdAt >= subscription.startedAt && (message.senderType === MessageSenderType.ARTIST || message.fanUserId === requesterId)) ||
-            (await this.isVisibleQuote(message.id, actorId, subscription.startedAt)),
-        ),
-      );
-      rows = rows.filter((_, index) => visible[index]);
-    } else {
-      await ensureCanViewActor(this.prisma, requesterId, actorId);
-    }
-    const messages = rows.filter((message): message is typeof message & { body: string } => !!message.body);
+    const rows = await this.prisma.message.findMany({ where: { id: { in: ids }, actorId, deletedAt: null }, select: MESSAGE_SELECT });
+    const since = await viewerSince(this.prisma, requesterId, actorId, requester.role);
+    const visibility = since
+      ? await Promise.all(rows.map((message) => this.fanVisibility(message, requesterId, actorId, since)))
+      : rows.map(() => 'full' as const);
+    const messages = rows.flatMap((message, index) => {
+      const seen = visibility[index];
+      return message.body && seen ? [{ ...message, source: this.sourceFor(message.body, seen === 'quote') }] : [];
+    });
 
+    // 같은 번역을 다른 요청이 이미 엔진에 맡겼으면 그걸 기다리고, 아니면 내가 맡음 — 기다리는 사이 다른 요청이 끼어들지 않게 await 없이 바로 등록
     const texts = new Map<string, string>();
-    if (provider.cacheable && messages.length > 0) {
-      const cached = await this.prisma.messageTranslation.findMany({
-        where: { messageId: { in: messages.map((message) => message.id) }, languageCode: target },
-        select: { messageId: true, translatedText: true },
-      });
-      for (const row of cached) texts.set(row.messageId, row.translatedText);
+    const waiting: Promise<void>[] = [];
+    const owned: ((typeof messages)[number] & { settle: (text: string | null) => void })[] = [];
+    for (const message of messages) {
+      const key = this.flightKey(message.id, target, message.source);
+      const pending = this.inFlight.get(key);
+      if (pending) {
+        waiting.push(pending.then((text) => void (text !== null && texts.set(message.id, text))));
+        continue;
+      }
+      let settle!: (text: string | null) => void;
+      const promise = new Promise<string | null>((resolve) => (settle = resolve)).finally(() => this.inFlight.delete(key));
+      this.inFlight.set(key, promise);
+      owned.push({ ...message, settle });
     }
-    const todo = messages.filter((message) => !texts.has(message.id));
-    const groups = [todo.filter((message) => message.senderType === MessageSenderType.ARTIST), todo.filter((message) => message.senderType !== MessageSenderType.ARTIST)];
-    await Promise.all(
-      groups
-        .filter((group) => group.length > 0)
-        .map(async (group) => {
-          let results: (string | null)[];
-          try {
-            results = await provider.translateMany(
-              group.map((message) => ({ text: message.body, speaker: speakerOf(message) })),
-              target,
+
+    try {
+      const shared = owned.filter((message) => message.source.shared);
+      if (provider.cacheable && shared.length > 0) {
+        const cached = await this.prisma.messageTranslation.findMany({
+          where: { messageId: { in: shared.map((message) => message.id) }, languageCode: target },
+          select: { messageId: true, translatedText: true },
+        });
+        for (const row of cached) texts.set(row.messageId, row.translatedText);
+      }
+      const todo = owned.filter((message) => !texts.has(message.id));
+      const groups = [todo.filter((message) => message.senderType === MessageSenderType.ARTIST), todo.filter((message) => message.senderType !== MessageSenderType.ARTIST)];
+      await Promise.all(
+        groups
+          .filter((group) => group.length > 0)
+          .map(async (group) => {
+            let results: (string | null)[];
+            try {
+              results = await provider.translateMany(
+                group.map((message) => ({ text: message.source.text, speaker: speakerOf(message) })),
+                target,
+              );
+            } catch (error) {
+              this.logger.warn(`묶음 번역 실패(${provider.name}, ${group.length}개): ${error instanceof TranslationRefusedError ? `거절 ${error.message}` : String(error)}`);
+              return;
+            }
+            group.forEach((message, index) => {
+              if (results[index]) texts.set(message.id, results[index]);
+            });
+            // 인용 앞부분만 번역한 건 저장하지 않음(전체 번역 자리에 섞이면 안 됨). 두 사람이 동시에 같은 메시지를 번역했으면 먼저 저장된 것만 남김
+            const fresh = group.flatMap((message, index) =>
+              results[index] && message.source.shared ? [{ messageId: message.id, languageCode: target, translatedText: results[index] }] : [],
             );
-          } catch (error) {
-            this.logger.warn(`묶음 번역 실패(${provider.name}, ${group.length}개): ${error instanceof TranslationRefusedError ? `거절 ${error.message}` : String(error)}`);
-            return;
-          }
-          const fresh = group.flatMap((message, index) => (results[index] ? [{ messageId: message.id, languageCode: target, translatedText: results[index] }] : []));
-          for (const row of fresh) texts.set(row.messageId, row.translatedText);
-          // 두 사람이 동시에 같은 메시지를 번역했으면 먼저 저장된 것만 남김
-          if (provider.cacheable && fresh.length > 0) await this.prisma.messageTranslation.createMany({ data: fresh, skipDuplicates: true });
-        }),
-    );
+            if (provider.cacheable && fresh.length > 0) await this.prisma.messageTranslation.createMany({ data: fresh, skipDuplicates: true });
+          }),
+      );
+    } finally {
+      for (const message of owned) message.settle(texts.get(message.id) ?? null);
+    }
+    await Promise.all(waiting);
 
     const fanName = requester.nickname ?? requester.displayName ?? '';
     return {
@@ -182,10 +206,36 @@ export class TranslationService {
           // 팬에게 보여 줄 스타 메시지는 {{name}} 자리에 그 팬 이름(한 개짜리와 같게)
           return {
             messageId: message.id,
-            text: message.senderType === MessageSenderType.ARTIST && requester.role === Role.USER ? text.replaceAll(NAME_PLACEHOLDER, fanName) : text,
+            text: message.senderType === MessageSenderType.ARTIST && since ? text.replaceAll(NAME_PLACEHOLDER, fanName) : text,
           };
         }),
     };
+  }
+
+  /**
+   * 팬 채팅방에 이 메시지가 어떻게 보이는지 — 'full'(구독 이후 스타 메시지·내 답장), 'quote'(아티스트가 인용한 다른 팬 답장이라 인용 칸에 앞부분만), null(안 보임)
+   */
+  private async fanVisibility(
+    message: { id: string; createdAt: Date; senderType: MessageSenderType; fanUserId: string | null },
+    requesterId: string,
+    actorId: string,
+    since: Date,
+  ): Promise<'full' | 'quote' | null> {
+    if (message.createdAt >= since && (message.senderType === MessageSenderType.ARTIST || message.fanUserId === requesterId)) return 'full';
+    return (await this.isVisibleQuote(message.id, actorId, since)) ? 'quote' : null;
+  }
+
+  /**
+   * 번역할 원문(2026-10-27) — 인용으로만 보이는 메시지는 화면처럼 앞 QUOTE_PREVIEW_LENGTH자만(예전엔 번역으로 전체 글이 보였음). 잘린 번역은 메시지 × 언어
+   * 저장 자리(전체 번역)에 넣지 않음(shared: false). 짧아서 안 잘리면 전체와 같으니 저장된 번역을 같이 씀
+   */
+  private sourceFor(body: string, quoteOnly: boolean): { text: string; shared: boolean } {
+    if (!quoteOnly || body.length <= QUOTE_PREVIEW_LENGTH) return { text: body, shared: true };
+    return { text: body.slice(0, QUOTE_PREVIEW_LENGTH), shared: false };
+  }
+
+  private flightKey(messageId: string, target: SupportedLocale, source: { shared: boolean }) {
+    return `${messageId}:${target}${source.shared ? '' : ':quote'}`;
   }
 
   /**
@@ -258,8 +308,34 @@ export class TranslationService {
     return { language: target, title, body };
   }
 
-  private async cachedOrTranslate(messageId: string, body: string, target: SupportedLocale, speaker: TranslationSpeaker): Promise<string> {
+  /** 한 개짜리 번역 — 같은 메시지 × 언어를 이미 엔진에 맡긴 요청(한 개·묶음)이 있으면 그걸 기다림(2026-10-27) */
+  private async cachedOrTranslate(messageId: string, source: { text: string; shared: boolean }, target: SupportedLocale, speaker: TranslationSpeaker): Promise<string> {
+    const key = this.flightKey(messageId, target, source);
+    let pending = this.inFlight.get(key);
+    if (!pending) {
+      const owned = this.translateNow(messageId, source, target, speaker);
+      pending = owned.catch(() => null).finally(() => this.inFlight.delete(key));
+      this.inFlight.set(key, pending);
+      // 맡은 요청은 원래 오류(거절·저장 실패)를 그대로 받음
+      return owned;
+    }
+    const text = await pending;
+    if (text === null) throw new ServiceUnavailableException(appError('TRANSLATION_FAILED'));
+    return text;
+  }
+
+  private async translateNow(messageId: string, source: { text: string; shared: boolean }, target: SupportedLocale, speaker: TranslationSpeaker): Promise<string> {
     const provider = this.provider!;
+    const body = source.text;
+    // 인용 앞부분만 번역한 건 저장된 전체 번역을 쓰지도, 저장하지도 않음
+    if (!source.shared) {
+      try {
+        return await provider.translate(body, target, speaker);
+      } catch (error) {
+        this.logger.warn(`번역 실패(${provider.name}): ${error instanceof TranslationRefusedError ? `거절 ${error.message}` : String(error)}`);
+        throw new ServiceUnavailableException(appError('TRANSLATION_FAILED'));
+      }
+    }
     if (provider.cacheable) {
       const cached = await this.prisma.messageTranslation.findUnique({ where: { messageId_languageCode: { messageId, languageCode: target } } });
       if (cached) return cached.translatedText;

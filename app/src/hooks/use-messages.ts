@@ -3,6 +3,7 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
 import { createTranslationBatcher } from '@/utils/translation-batch';
 import { PendingSends, SEND_RETRY } from '@/utils/send-retry';
+import { onSessionReset } from '@/lib/session-reset';
 
 export interface MessageQuote {
   id: string;
@@ -84,6 +85,8 @@ export function useRetractReply(actorId: string) {
 
 // 못 보낸 답장의 중복 방지 키 — 같은 방·같은 글을 다시 보내면 같은 키(앱이 켜져 있는 동안, 화면을 나갔다 와도)
 const pendingReplies = new PendingSends();
+// 로그아웃하면 비움(2026-10-27) — 같은 기기의 다음 계정이 앞 사람의 키를 쓰지 않게
+onSessionReset(() => pendingReplies.clear());
 
 /**
  * 팬 답장 보내기 — 중복 방지 키를 붙여서(2026-10-25) 연결이 끊겨 실패하면 자동으로 2번 더 보내 보고, 그래도 안 되면 화면이

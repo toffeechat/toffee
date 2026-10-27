@@ -277,6 +277,52 @@ export function useUpdateAgency() {
   });
 }
 
+// 배분율 이력(2026-10-27) — 정산은 결제가 속한 달의 비율. percent null = 기본값
+export interface AgencyShareRates {
+  currentMonth: string;
+  currentPercent: number;
+  defaultPercent: number;
+  /** 마지막으로 마감한 달 — 이 달까지는 못 바꿈 */
+  lastClosedMonth: string | null;
+  rates: { fromMonth: string; percent: number | null; createdAt: string }[];
+}
+
+export function useAgencyShareRates(id: string, enabled = true) {
+  return useQuery({
+    queryKey: ['admin', 'agencies', id, 'share-rates'],
+    queryFn: () => apiClient.get<AgencyShareRates>(`/admin/agencies/${id}/share-rates`),
+    enabled,
+  });
+}
+
+function useShareRateMutation<T>(id: string, fn: (input: T) => Promise<AgencyShareRates>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['admin', 'agencies', id, 'share-rates'], data);
+      invalidateAdminAccounts(queryClient);
+      void queryClient.invalidateQueries({ queryKey: ['settlement'] });
+    },
+  });
+}
+
+export function useSetAgencyShareRate(id: string) {
+  return useShareRateMutation(id, (input: { fromMonth: string; percent: number | null }) =>
+    apiClient.post<AgencyShareRates>(`/admin/agencies/${id}/share-rates`, input),
+  );
+}
+
+export function useDeleteAgencyShareRate(id: string) {
+  return useShareRateMutation(id, (fromMonth: string) => apiClient.delete<AgencyShareRates>(`/admin/agencies/${id}/share-rates/${fromMonth}`));
+}
+
+export function useApplyFoundingShare(id: string) {
+  return useShareRateMutation(id, (input: { fromMonth: string }) =>
+    apiClient.post<AgencyShareRates>(`/admin/agencies/${id}/share-rates/founding`, input),
+  );
+}
+
 // ── 배우 ──────────────────────────────────────────────
 
 export interface AdminActor {

@@ -58,6 +58,8 @@ export function usePushNotifications(): void {
       if (type === 'notice') return router.push('/notices');
       if (type === 'inquiry-reply' && inquiryId) return router.push({ pathname: '/support/[id]', params: { id: inquiryId } });
       if (type === 'admin-alert' && role === 'ADMIN') {
+        // 문의 알림은 그 문의로 바로(2026-10-27)
+        if (kind === 'INQUIRY' && inquiryId) return router.push({ pathname: '/admin/inquiries/[id]', params: { id: inquiryId } });
         const target = ADMIN_ALERT_SCREENS[kind ?? ''];
         if (target) return router.push(target);
       }

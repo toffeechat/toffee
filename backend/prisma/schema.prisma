@@ -171,6 +171,9 @@ model User {
   totpSecret               String?
   totpPendingSecret        String?
   totpEnabledAt            DateTime?
+  // 로그인 토큰 세대(2026-10-27) — 토큰에 tv로 담고 매 요청 비교. 올리면 이 계정의 모든 기기 토큰이 바로 무효(2단계 인증 초기화·끄기,
+  // 정지·영구차단, 운영자의 "모든 기기 로그아웃"). 예전 토큰(tv 없음)은 0으로 봄
+  tokenVersion             Int                   @default(0)
   // 회원 탈퇴 시각 — 탈퇴하면 개인정보(이메일·이름·닉네임·생년월일 등)를 지우고 이 값만 남김. 결제·구독 기록은
   // 법정 보관 기간 동안 유지, 팬 답장은 "탈퇴한 팬"으로 표시(잠정, STATUS.md 출시 전 확정 정책).
   deletedAt                DateTime?
@@ -195,6 +198,7 @@ model User {
   parentalConsent    ParentalConsent?
   adminActions       AdminAction[]       @relation("AdminActions")
   supportInquiries   SupportInquiry[]
+  authSessions       AuthSession[]
 
   // 운영자 회원 검색(이름·닉네임·이메일 중간 글자) — 회원이 가장 많이 늘어나는 테이블이라 글자 조각 색인(pg_trgm, 2026-09-29)
   @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin, map: "User_displayName_trgm_idx")
@@ -241,6 +245,42 @@ model AccessLog {
 
   @@index([userId, createdAt])
   @@index([createdAt])
+}
+
+// 로그인 세션(2026-10-27) — 로그인할 때마다 하나(기기 하나 = 세션 하나), 토큰에 sid로 담음. 로그아웃하면 revokedAt → 그 기기 토큰만 바로 무효.
+// 토큰은 쓰는 동안 /auth/refresh로 다시 받아 expiresAt이 늘어남(30일 안에 한 번이라도 열면 로그인 유지). 끝나고 30일 지난 줄은 정리 작업이 지움
+model AuthSession {
+  id          String    @id @default(uuid())
+  userId      String
+  createdAt   DateTime  @default(now())
+  // 마지막으로 토큰을 다시 받은 시각(매 요청이 아니라 갱신 때만)
+  refreshedAt DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  platform    String?
+  deviceModel String?
+  appVersion  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// 소속사 정산 배분율 이력(2026-10-27) — fromMonth(태국 시간 YYYY-MM)부터 그 달 결제에 적용. 한 달의 배분율 = fromMonth가 그 달 이하인 것 중
+// 가장 늦은 줄(없으면 기본값). 창립 파트너 "첫 12개월 70% → 60%"를 미리 두 줄로 잡아 둠 — 예전엔 소속사의 지금 값(revenueSharePercent) 하나라서
+// 바꾼 뒤에 이전 달을 마감하면 바뀐 값으로 계산됐음. percent null = 기본값(AGENCY_REVENUE_SHARE_PERCENT)
+model AgencyShareRate {
+  id          String   @id @default(uuid())
+  agencyId    String
+  fromMonth   String
+  percent     Int?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@unique([agencyId, fromMonth])
 }
 
 // 운영자 오류 알림을 보낸 기록(2026-10-25) — Sentry 이슈마다 "새 오류"는 한 번, "1시간에 N번 넘음"은 그 시간대(Sentry 시간 묶음 시작 시각)마다 한 번.
@@ -455,8 +495,10 @@ model Agency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 정산 배분율(스토어 수수료 뺀 금액 중 소속사 몫, %) — null이면 기본값(AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 70). 계약마다 다를 수 있음
+  // 정산 배분율(스토어 수수료 뺀 금액 중 소속사 몫, %) — null이면 기본값(AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 70). 계약마다 다를 수 있음.
+  // 2026-10-27부터 정산은 AgencyShareRate(달별 이력)로 계산 — 이 값은 "이번 달 배분율" 표시용으로만 같이 맞춰 둠(옛 앱 호환, 다음 배포에서 정리)
   revenueSharePercent Int?
+  shareRates          AgencyShareRate[]
 
   actors       Actor[]
   staff        User[]
@@ -506,6 +548,8 @@ model Subscription {
   actor Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
 
   @@unique([userId, actorId])
+  // 방의 구독자 목록(메시지 방송·통계) — 예전엔 전체 훑기(2026-10-27)
+  @@index([actorId, cancelledAt])
 }
 
 // 구매(결제 단위) — 배우 개인 구독 1건(actorId) 또는 묶음 1건(bundleId), 둘 중 하나만. 방 이용권(Subscription)은
@@ -684,6 +728,8 @@ model Message {
   @@index([replyToMessageId])
   // 팬 대화방 나눠 받기·방 안 검색·사진 모아보기가 전부 "이 방의 메시지를 시간순으로" 찾음(2026-09-29)
   @@index([actorId, createdAt])
+  // 팬 한 명의 메시지(답장 제한·개인정보 내보내기·탈퇴) — 예전엔 전체 훑기(2026-10-27)
+  @@index([fanUserId, createdAt])
   // 방 안 검색(본문 중간 글자) — 팬 답장까지 한 테이블이라 인기 배우 방은 행이 많아서 글자 조각 색인(pg_trgm, 2026-09-29)
   @@index([body(ops: raw("gin_trgm_ops"))], type: Gin, map: "Message_body_trgm_idx")
 }
@@ -745,6 +791,9 @@ model Report {
 
   // 같은 사람이 같은 메시지를 여러 번 신고해서 순위를 올리는 걸 막음
   @@unique([messageId, reportedById])
+  // 신고한 사람별·처리 상태별 목록(2026-10-27)
+  @@index([reportedById])
+  @@index([status])
 }
 
 // 팬 답장 전송 전에 대조하는 금칙어 목록 — 한국어/태국어/영어 3개 언어로 관리

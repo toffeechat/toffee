@@ -82,7 +82,12 @@ export class SupportService {
   private async deleteInquiry(id: string) {
     const photos = await this.prisma.supportAttachment.findMany({ where: { message: { inquiryId: id } }, select: { objectKey: true } });
     await this.prisma.supportInquiry.delete({ where: { id } });
-    await Promise.all(photos.map((photo) => this.media.deleteQuietly(photo.objectKey)));
+    // 같은 사진 키를 다른 문의 글에도 붙였으면 그 파일은 남김(2026-10-27 — 예전엔 하나를 지우면 다른 문의 사진까지 사라졌음)
+    const keys = [...new Set(photos.map((photo) => photo.objectKey))];
+    if (keys.length === 0) return;
+    const stillUsed = await this.prisma.supportAttachment.findMany({ where: { objectKey: { in: keys } }, select: { objectKey: true } });
+    const keep = new Set(stillUsed.map((row) => row.objectKey));
+    await Promise.all(keys.filter((key) => !keep.has(key)).map((key) => this.media.deleteQuietly(key)));
   }
 
   listMine(userId: string) {

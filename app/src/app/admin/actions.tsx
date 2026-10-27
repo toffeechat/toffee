@@ -10,6 +10,7 @@ const ACTION_LABELS: Record<string, string> = {
   USER_SUSPEND: '회원 정지',
   USER_BAN: '영구차단',
   USER_REACTIVATE: '제재 해제',
+  USER_SIGN_OUT: '모든 기기 로그아웃',
   USER_PROFILE_CLEAR: '팬 프로필 지움',
   ACTOR_STATUS_CLEAR: '아티스트 상태메시지 지움',
   USER_ROLE: '역할 변경',
@@ -49,6 +50,12 @@ const ACTION_LABELS: Record<string, string> = {
   ADMIN_LEVEL: '운영자 권한 단계 변경',
   ADMIN_MFA: '2단계 인증 켜기·끄기·초기화',
   USER_EXPORT: '개인정보 파일 받기',
+  // 돈·접근 권한이 바뀌는 작업 기록 보강(2026-10-27)
+  ACTOR_CREATE: '아티스트 등록',
+  AGENCY_CREATE: '소속사 만들기',
+  ACTOR_AGENCY: '아티스트 소속사 변경',
+  STAFF_AGENCY: '소속사 직원 지정·해제',
+  ACTOR_SELF_LINK: '아티스트 계정 직접 연결·해제',
 };
 
 function detailText(entry: AdminActionEntry): string {
