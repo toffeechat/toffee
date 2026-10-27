@@ -120,10 +120,10 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 | ✅ 5 | **Sentry 읽기 토큰** — sentry.io → 오른쪽 위 내 이름 → User Auth Tokens → Create(권한 `project:read`·`event:read`만). 운영자 홈 "최근 오류"용 `SENTRY_API_TOKEN`과 같은 걸 써도 됨 | Sentry | 저장소 Secret `SENTRY_AUTH_TOKEN` |
 | 6 | Railway 데모 서버 **Wait for CI** 켜기 — CI(테스트)가 실패한 커밋은 데모에 안 올라가게 | Railway → 서버 서비스 → Settings → Deploy | — |
 | 7 | **폰 GitHub 앱** 설치·로그인 → 설정 → 알림에서 Actions(실패한 실행)·배포 승인 요청 켜기 | App Store | — |
-| 8 | **업타임 모니터** — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
+| ✅ 8 | **업타임 모니터**(2026-10-25 완료 — 모니터 3개: 데모 서버 `/health`·DB `/health/ready`·웹, 로그인 계정은 사업화 장부) — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
 | 9 | **Sentry 폰 알림** — Sentry → Alerts → Create Alert → Issues → "새 이슈가 생기면" + "1시간에 30번 넘게 생기면" 두 개, 환경 `demo`(나중에 `production` 따로), 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
 
-- **2026-10-25 1~5 완료**: 점검 비밀값(Railway `SMOKE_TEST_SECRET` + GitHub `PREVIEW_SMOKE_TEST_SECRET`, random.org 32자), Expo 로봇 `github-deploy`(조직 `toffeechat-team`, 역할 Developer) 토큰 → `EXPO_TOKEN`, Sentry 개인 토큰(Project·Issue&Event Read) → `SENTRY_AUTH_TOKEN`. 확인 실행: 자동 점검 8개(헬스·DB·로그인·메시지 보내기·받기·답장·웹) 모두 통과, Sentry 새 오류 없음, OTA `a3a762b`(버전업 전 화면 수정)가 robot 이름으로 preview 채널에 나감. 첫 Expo 토큰은 "GraphQL request failed"로 실패 → 다시 만들어 넣으니 됨. 남은 것: 6~9
+- **2026-10-25 1~5 완료**: 점검 비밀값(Railway `SMOKE_TEST_SECRET` + GitHub `PREVIEW_SMOKE_TEST_SECRET`, random.org 32자), Expo 로봇 `github-deploy`(조직 `toffeechat-team`, 역할 Developer) 토큰 → `EXPO_TOKEN`, Sentry 개인 토큰(Project·Issue&Event Read) → `SENTRY_AUTH_TOKEN`. 확인 실행: 자동 점검 8개(헬스·DB·로그인·메시지 보내기·받기·답장·웹) 모두 통과, Sentry 새 오류 없음, OTA `a3a762b`(버전업 전 화면 수정)가 robot 이름으로 preview 채널에 나감. 첫 Expo 토큰은 "GraphQL request failed"로 실패 → 다시 만들어 넣으니 됨. 남은 것: 6·7·9 (8 업타임 모니터는 같은 날 완료)
 - 1~3이 없으면 자동 점검은 헬스·웹만 하고 "로그인·메시지 건너뜀"으로 나옴. 4가 없으면 앱 OTA를 워크플로가 못 해서 PC에서 `npm run ota`를 해야 함. 5가 없으면 "Sentry 확인 안 됨".
 - GitHub Actions 시간: 프리뷰 배포 한 번에 약 10~20분(대부분 서버·웹 빌드를 기다리는 시간). 조직 저장소 무료 월 2,000분 — 하루 2~3번이면 충분. 모자라면 지출 한도 확인.
 - 계정을 새로 만들면(UptimeRobot·Expo 로봇 등) 사업화 장부에 Claude가 적는다.
