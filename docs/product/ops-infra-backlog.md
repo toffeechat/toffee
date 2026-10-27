@@ -118,12 +118,13 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 | ✅ 3 | GitHub Secret `PREVIEW_SMOKE_TEST_SECRET` | 위 값 그대로 | 저장소 Secrets |
 | ✅ 4 | **Expo 토큰** — expo.dev → 조직 `toffeechat-team` → Settings → **Robot users** → 새 로봇(역할 Developer) → Create token(만료 없음 또는 1년) | Expo | 저장소 Secret `EXPO_TOKEN` |
 | ✅ 5 | **Sentry 읽기 토큰** — sentry.io → 오른쪽 위 내 이름 → User Auth Tokens → Create(권한 `project:read`·`event:read`만). 운영자 홈 "최근 오류"용 `SENTRY_API_TOKEN`과 같은 걸 써도 됨 | Sentry | 저장소 Secret `SENTRY_AUTH_TOKEN` |
-| 6 | Railway 데모 서버 **Wait for CI** 켜기 — CI(테스트)가 실패한 커밋은 데모에 안 올라가게 | Railway → 서버 서비스 → Settings → Deploy | — |
-| 7 | **폰 GitHub 앱** 설치·로그인 → 설정 → 알림에서 Actions(실패한 실행)·배포 승인 요청 켜기 | App Store | — |
+| ✅ 6 | Railway 데모 서버 **Wait for CI** 켜기 — CI(테스트)가 실패한 커밋은 데모에 안 올라가게 | Railway → 서버 서비스 → Settings → Deploy | — |
+| ✅ 7 | **폰 GitHub 앱** 설치·로그인 → 설정 → 알림에서 Actions(실패한 실행)·배포 승인 요청 켜기 | App Store | — |
 | ✅ 8 | **업타임 모니터**(2026-10-25 완료 — 모니터 3개: 데모 서버 `/health`·DB `/health/ready`·웹, 로그인 계정은 사업화 장부) — UptimeRobot(무료, 5분 간격) 가입 → HTTP 모니터 `https://api-demo.toffeechat.app/health/ready`, `https://demo.toffeechat.app` → 알림: 폰 앱 푸시(UptimeRobot 앱 설치) | UptimeRobot | — |
-| 9 | **Sentry 폰 알림** — Sentry → Alerts → Create Alert → Issues → "새 이슈가 생기면" + "1시간에 30번 넘게 생기면" 두 개, 환경 `demo`(나중에 `production` 따로), 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
+| ✅ 9 | **Sentry 폰 알림** — (2026-10 새 화면) Issues → Monitors → 아래 "Create an issue alert" → Source "all issues in all projects", 트리거 "A new issue is created" + "A resolved issue regresses", 동작 Notify → Member(Toffee = dev@). "많이 남(escalates)"은 데모에선 안 걸고 운영 때 B12에서, 동작: 이메일(토피 Gmail → 폰 Gmail 앱 알림). Sentry 앱이 있으면 그 푸시도 | Sentry | — |
 
-- **2026-10-25 1~5 완료**: 점검 비밀값(Railway `SMOKE_TEST_SECRET` + GitHub `PREVIEW_SMOKE_TEST_SECRET`, random.org 32자), Expo 로봇 `github-deploy`(조직 `toffeechat-team`, 역할 Developer) 토큰 → `EXPO_TOKEN`, Sentry 개인 토큰(Project·Issue&Event Read) → `SENTRY_AUTH_TOKEN`. 확인 실행: 자동 점검 8개(헬스·DB·로그인·메시지 보내기·받기·답장·웹) 모두 통과, Sentry 새 오류 없음, OTA `a3a762b`(버전업 전 화면 수정)가 robot 이름으로 preview 채널에 나감. 첫 Expo 토큰은 "GraphQL request failed"로 실패 → 다시 만들어 넣으니 됨. 남은 것: 6·7·9 (8 업타임 모니터는 같은 날 완료)
+- **2026-10-25 1~5 완료**: 점검 비밀값(Railway `SMOKE_TEST_SECRET` + GitHub `PREVIEW_SMOKE_TEST_SECRET`, random.org 32자), Expo 로봇 `github-deploy`(조직 `toffeechat-team`, 역할 Developer) 토큰 → `EXPO_TOKEN`, Sentry 개인 토큰(Project·Issue&Event Read) → `SENTRY_AUTH_TOKEN`. 확인 실행: 자동 점검 8개(헬스·DB·로그인·메시지 보내기·받기·답장·웹) 모두 통과, Sentry 새 오류 없음, OTA `a3a762b`(버전업 전 화면 수정)가 robot 이름으로 preview 채널에 나감. 첫 Expo 토큰은 "GraphQL request failed"로 실패 → 다시 만들어 넣으니 됨. 8 업타임 모니터도 같은 날 완료
+- **2026-10-27 6·7·9 완료 — A 전부 끝**: Railway `toffee` 서비스 Wait for CI 켜고 Apply(같은 코드로 재시작, `/health` 정상 확인), 폰 GitHub 앱 알림 "배포 검토"·"워크플로 실행" 켬 + 웹 설정 Actions "실패만", Sentry 알림 규칙 하나(모든 프로젝트·새 이슈·재발 → dev@ → Gmail) — 테스트 메일 폰 도착 확인.
 - 1~3이 없으면 자동 점검은 헬스·웹만 하고 "로그인·메시지 건너뜀"으로 나옴. 4가 없으면 앱 OTA를 워크플로가 못 해서 PC에서 `npm run ota`를 해야 함. 5가 없으면 "Sentry 확인 안 됨".
 - GitHub Actions 시간: 프리뷰 배포 한 번에 약 10~20분(대부분 서버·웹 빌드를 기다리는 시간). 조직 저장소 무료 월 2,000분 — 하루 2~3번이면 충분. 모자라면 지출 한도 확인.
 - 계정을 새로 만들면(UptimeRobot·Expo 로봇 등) 사업화 장부에 Claude가 적는다.
@@ -143,7 +144,7 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 | 9 | 운영 DB 주소(Railway Postgres → Connect → Public URL) | Secret `PROD_DATABASE_URL` (Environment `production-data`에도 같은 값) |
 | 10 | 운영 웹 소셜 로그인 공개 키(데모 Pages 변수와 같은 이름, 운영 값) | Variables `EXPO_PUBLIC_WEB_KAKAO_REST_API_KEY`·`_NAVER_CLIENT_ID`·`_LINE_CHANNEL_ID`·`_APPLE_SERVICES_ID`, 스토어 등록 후 `EXPO_PUBLIC_IOS_APP_STORE_ID` |
 | 11 | GitHub → Settings → Environments → `production`·`production-data` 만들기 → **Required reviewers = 나**, Deployment branches = `main`만 | — |
-| 12 | 업타임 모니터에 `https://api.toffeechat.app/health/ready`·`https://app.toffeechat.app` 추가, Sentry 알림 환경 `production` 추가 | — |
+| 12 | 업타임 모니터에 `https://api.toffeechat.app/health/ready`·`https://app.toffeechat.app` 추가(UptimeRobot 무료 플랜 상업적 사용 조건 다시 확인 — 장부 메모), Sentry: 기존 규칙(모든 환경 새 이슈·재발)은 두고 운영 전용 규칙 하나 더 — Environment `production`, 트리거 "An issue escalates"(많이 남) | — |
 | 13 | 그다음 Claude에게 "운영 배포 처음 돌려 줘" → 런북 12번 체크리스트(되돌리기·백업·데이터 수정 흐름까지 한 번씩) | — |
 
 ## 3. 사업·법무

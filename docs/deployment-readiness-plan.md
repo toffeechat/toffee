@@ -130,7 +130,13 @@
   처음 돌리기 체크리스트)·비개발자 요약·`ops/data-fixes/`·ops-infra-backlog A/B 모두 main에 있음. `Deploy preview`는 10번 실행 모두 성공(마지막 run #10 = 지금 main `98f7373`,
   바뀐 게 없어 다시 돌리지 않음).
 - STATUS "배포 체계" 줄·launch-roadmap 체크 문구가 "👤 토큰 넣기"로 낡아 있던 것을 10-25 완료(A 1~5)·남은 A 6~9로 고침.
-- **남은 일**: 👤 A 6~9(Railway Wait for CI, 폰 GitHub 앱 알림, UptimeRobot, Sentry 폰 알림). 운영 환경을 만들면 B → 런북 12번.
+- 사용자가 4가지 설정이 왜 필요한지 물음 → Claude는 말을 걸 때만 움직여서 배포 사이(밤·이동 중)에 생기는 장애는 못 봄 → 바깥 감시(업타임·Sentry 메일)와
+  운영 승인 버튼(GitHub 앱)이 필요하다고 설명. 데모에도 지금 걸기로(데모가 지금은 영업용 실서비스, 운영 전에 알림 소음 맞춰 보기).
+- 사업화 장부를 보니 **UptimeRobot은 10-25 이미 완료**(모니터 3개)였는데 ops-infra-backlog에 표시가 빠져 있었음 → 고침.
+- 같이 설정(화면 안내): ① Railway `toffee` Wait for CI 켜고 Apply(같은 코드로 재시작, `/health` 정상) ② 폰 GitHub 앱 "배포 검토"·"워크플로 실행" + 웹 Actions
+  알림 "실패만" ③ Sentry — 새 화면이라 Alerts 메뉴가 없고 Issues → Monitors → "Create an issue alert"에 있었음. 규칙 하나로 모든 프로젝트, 새 이슈 + 재발 →
+  Member(dev@ → Gmail), 테스트 메일 폰 도착 확인. "많이 남(escalates)"은 데모에선 테스트 때문에 울려서 운영 때.
+- **남은 일**: 데모 쪽 설정 A 전부 끝. 운영 환경을 만들면 B(업타임·Sentry 운영 규칙 포함) → 런북 12번.
 
 ---
 

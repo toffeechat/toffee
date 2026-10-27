@@ -51,7 +51,9 @@
 
 ## ④ Sentry 자체 메일 알림 (권장)
 
-1. Sentry → **Alerts → Create Alert → Issues**.
+**2026-10-27 설정 완료**: 규칙 하나 — 모든 프로젝트, "새 이슈" + "해결한 이슈 재발" → Member(dev@ → Gmail). 운영이 생기면 `production` 전용으로 "An issue escalates"(많이 남) 규칙 추가.
+
+1. Sentry → **Alerts → Create Alert → Issues**. (2026-10 새 화면에선 Issues → **Monitors** → 아래 파란 글자 **"Create an issue alert"**, 또는 주소 `toffeechat.sentry.io/alerts/new/issue/`)
 2. 프로젝트 toffee-backend(앱도 하나 더 만들어 toffee-app).
 3. 조건: "A new issue is created"(새 오류) — 하나 더 만들어 "The issue is seen more than **100** times in **1 hour**"(많이 남) 정도.
 4. 동작: "Send a notification to **Member**: 내 계정"(메일).
