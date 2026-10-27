@@ -47,6 +47,10 @@
 2. GitHub 앱 → 알림(또는 저장소 → Actions → Deploy production) → **Review deployments** → `production` 체크 → **Approve**.
 3. 10~20분 뒤 Claude가 결과(자동 점검·새 오류)를 알려 준다.
 
+## 폰을 잃어버렸거나 Claude·GitHub가 안 될 때
+
+[`phone-loss-plan.md`](./phone-loss-plan.md) — 미리 준비할 것, 분실 때 순서, 폰만으로 하는 비상 조치(서버·웹 되돌리기, 점검 모드).
+
 ## 내가 처음에 한 번 해 둘 것
 
 토큰 발급·GitHub 설정·업타임 모니터·Sentry 폰 알림 — 단계별로 [`ops-infra-backlog.md`](./ops-infra-backlog.md) "배포 자동화"에.

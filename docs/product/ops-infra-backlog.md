@@ -145,7 +145,21 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 | 10 | 운영 웹 소셜 로그인 공개 키(데모 Pages 변수와 같은 이름, 운영 값) | Variables `EXPO_PUBLIC_WEB_KAKAO_REST_API_KEY`·`_NAVER_CLIENT_ID`·`_LINE_CHANNEL_ID`·`_APPLE_SERVICES_ID`, 스토어 등록 후 `EXPO_PUBLIC_IOS_APP_STORE_ID` |
 | 11 | GitHub → Settings → Environments → `production`·`production-data` 만들기 → **Required reviewers = 나**, Deployment branches = `main`만 | — |
 | 12 | 업타임 모니터에 `https://api.toffeechat.app/health/ready`·`https://app.toffeechat.app` 추가(UptimeRobot 무료 플랜 상업적 사용 조건 다시 확인 — 장부 메모), Sentry: 기존 규칙(모든 환경 새 이슈·재발)은 두고 운영 전용 규칙 하나 더 — Environment `production`, 트리거 "An issue escalates"(많이 남) | — |
+| 12-1 | **Railway 비용 한도**: 운영 워크스페이스는 Usage Limits의 **하드 리밋을 넉넉하게(또는 끄고) 알림만** — 데모처럼 $15 하드 리밋이면 닿는 순간 운영 서버가 꺼짐. 알림은 예상 월 비용의 1.5배·2배 두 단계 | — |
 | 13 | 그다음 Claude에게 "운영 배포 처음 돌려 줘" → 런북 12번 체크리스트(되돌리기·백업·데이터 수정 흐름까지 한 번씩) | — |
+
+### C. 1인 운영 보완 (2026-10-27 점검 — 혼자·출장 중 운영 기준으로 빈 곳)
+
+| # | 할 일 | 언제 | 왜 |
+|---|---|---|---|
+| 1 | **Railway 비용 하드 리밋을 운영엔 걸지 않기**(B 12-1) | 운영 만들 때 | 데모의 $15 하드 리밋을 그대로 쓰면 팬이 늘어 비용이 오르는 날 유료 서비스가 꺼짐 |
+| 2 | **폰 분실 대비** — [`phone-loss-plan.md`](./phone-loss-plan.md) 2번 "지금 준비할 것" 7개(Gmail 백업 코드·패스키, 복구 코드 확인, 운영자 2단계 인증 기기 두 대 등) | **지금** | 2단계 인증·승인·알림·Claude가 전부 폰 한 대 — 출장 중 잃으면 손쓸 방법이 없음. 운영자 2단계 인증은 "다른 운영자가 초기화"라 혼자면 못 풂 |
+| 3 | **Claude·GitHub 장애 때 폰만으로 비상 조치** — 같은 문서 4번(Railway Redeploy·Cloudflare Rollback·점검 모드) | 운영 전 | 배포 체계가 Claude·GitHub에 기대고 있어서 둘이 장애일 때 서비스 장애가 겹치면 막힘 |
+| 4 | **출장 리허설** — 하루 폰(+노트북)만 들고 데모를 일부러 고장 내고 알림 받기 → Claude로 고치기·되돌리기 → C3 비상 조치 → 운영 승인 흐름까지 | 12~1월(운영 만든 뒤) | 런북 12번은 PC 앞 기준 — 실제 출장 조건에서만 보이는 구멍 찾기 |
+| 5 | **만료일 달력** — 도메인(2027-10)·애플 멤버십(2027-08)·Expo·Sentry 토큰(만들 때 정한 기간)·결제 카드 유효기간을 사업화 장부 `renews`에 채우고 한 달 전 알림 | 11월 | 만료되면 배포·로그인·결제가 조용히 고장 남 |
+| 6 | **무료 한도 확인** — Sentry 월 오류 5천 건, GitHub Actions 월 2천 분, UptimeRobot 무료 플랜 상업적 사용 조건 | 출시 첫 달 | 넘치면 오류 기록이 끊기거나 배포가 멈춤 → 첫 달 사용량 보고 유료 여부 결정 |
+
+- 안 하기로 한 것: 운영과 같은 데이터로 마이그레이션을 미리 시험하는 별도 환경 — 1인 초기 규모엔 과함("추가 먼저" 규칙 + 배포 전 백업으로 충분).
 
 ## 3. 사업·법무
 
