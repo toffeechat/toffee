@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { AdminUsersService } from './admin-users.service.js';
 import { ListUsersQueryDto } from './dto/list-users-query.dto.js';
 import { SanctionReasonDto, SuspendUserDto } from './dto/suspend-user.dto.js';
@@ -69,5 +69,12 @@ export class AdminUsersController {
   @Patch(':id/reactivate')
   reactivate(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
     return this.adminUsersService.reactivate(admin, id);
+  }
+
+  // 모든 기기에서 로그아웃시키기(2026-10-27) — 계정 도용 의심·폰 분실
+  @Post(':id/sign-out')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async signOut(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    await this.adminUsersService.signOutEverywhere(admin, id);
   }
 }

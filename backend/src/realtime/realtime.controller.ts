@@ -7,6 +7,7 @@ import { viewableActorsWhere } from '../common/authorization/actor-access.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { RealtimeService, type RealtimeEvent } from './realtime.service.js';
+import { tokenSessionValid } from '../auth/auth-sessions.js';
 
 // 연결을 유지하려고 보내는 빈 신호 간격(중간 프록시가 조용한 연결을 끊지 않게)
 const HEARTBEAT_MS = 25_000;
@@ -47,8 +48,9 @@ export class RealtimeController {
     return new Observable<MessageEvent>((subscriber) => {
       let audience: Audience | null = null;
       // 연결 중에 정지·영구 정지·탈퇴됐으면 다음 새로고침 때 닫음(2026-10-27 — 예전엔 연결할 때만 확인해서 계속 신호를 받았음)
+      // 로그아웃·모든 기기 로그아웃으로 이 토큰이 끊겨도 닫음(같은 날 로그인 세션)
       const refresh = () =>
-        this.loadAudience(user.id)
+        this.loadAudience(user)
           .then((next) => {
             if (!next) subscriber.complete();
             else audience = next;
@@ -99,13 +101,23 @@ export class RealtimeController {
     });
   }
 
-  /** 볼 수 있는 방 목록 — 계정이 더 이상 쓸 수 없으면(없음·영구 정지·탈퇴·정지 기간 중) null(연결을 닫음, 로그인 확인과 같은 기준) */
-  private async loadAudience(userId: string): Promise<Audience | null> {
+  /** 볼 수 있는 방 목록 — 계정이 더 이상 쓸 수 없거나(없음·영구 정지·탈퇴·정지 기간 중) 토큰이 끊겼으면 null(연결을 닫음, 로그인 확인과 같은 기준) */
+  private async loadAudience(auth: AuthenticatedUser): Promise<Audience | null> {
+    const userId = auth.id;
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true, agencyId: true, status: true, deletedAt: true, suspendedUntil: true },
+      select: {
+        id: true,
+        role: true,
+        agencyId: true,
+        status: true,
+        deletedAt: true,
+        suspendedUntil: true,
+        tokenVersion: true,
+        authSessions: { where: { id: auth.sessionId ?? '' }, select: { revokedAt: true, expiresAt: true } },
+      },
     });
-    if (!user || !accountUsable(user)) return null;
+    if (!user || !accountUsable(user) || !tokenSessionValid(auth, user)) return null;
     if (user.role === Role.ADMIN) return { admin: true, subscribed: new Set(), staff: new Set() };
     const [subscriptions, actors] = await Promise.all([
       this.prisma.subscription.findMany({ where: { userId, cancelledAt: null }, select: { actorId: true } }),

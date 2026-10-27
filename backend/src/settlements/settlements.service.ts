@@ -6,6 +6,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { SettlementPayoutDto } from './dto.js';
+import { shareRateAt, shareRateBook } from './share-rates.js';
 
 // 정산의 "한 달"은 태국 시간 기준(통계와 같음, 서머타임 없는 UTC+7)
 const ZONE_OFFSET_MS = 7 * 60 * 60 * 1000;
@@ -49,6 +50,8 @@ interface ActorRow {
   carriedCents: number;
   refundedCents: number;
   rooms: Map<string, { roomId: string; name: string; kind: string; grossCents: number }>;
+  // 배분율별 정산 대상 금액(2026-10-27) — 이 달 결제는 이 달 배분율, 지난달 조정은 그 결제 달의 배분율, 이월은 앞 달 표의 배분율
+  byPercent: Map<number, number>;
 }
 
 export interface Amounts {
@@ -95,13 +98,15 @@ type AllocationLine = Prisma.ChargeAllocationGetPayload<{ select: typeof ALLOCAT
 
 /**
  * 월 정산(2026-09-29) — 결제 기록(PurchaseCharge)의 배우별 몫(ChargeAllocation)을 결제 순간의 소속사별로 모아
- * 스토어 수수료(STORE_FEE_PERCENT, 잠정 15) → 소속사 몫(소속사별 revenueSharePercent, 없으면 AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 소속사별로 70)
+ * 스토어 수수료(STORE_FEE_PERCENT, 잠정 15) → 소속사 몫(소속사별 배분율 이력 AgencyShareRate, 없으면 AGENCY_REVENUE_SHARE_PERCENT, 잠정 60 — 창립 파트너는 소속사별로 70)
  * / 토피 몫으로 나눔. 무소속 배우는 배우 본인에게 같은 비율. 환불된 결제는 빼고 따로 보여 줌.
  * 마감(SettlementClose): 마감한 달은 저장해 둔 표를 그대로 보여 주고, 마감 뒤에 생긴 일(환불·늦게 기록된 결제)은 그 일이 생긴 열린 달의
  * "조정"으로. 금액은 표시 가격(바트) 기준 추정 — 실제 입금액은 스토어 정산 보고서로 맞춰 봐야 함.
  * 음수 지급액 이월(2026-10-27): 바로 앞 달이 마감됐고 그 달 받는 쪽(소속사 합계, 무소속은 배우 한 명)의 지급액이 음수면(= 보낸 돈 없음), 그 받는 쪽
  * 배우들의 정산 대상 금액(결제액 + 조정, 수수료 떼기 전)을 이 달 조정으로 넘김 — 예전엔 음수가 그냥 사라져 다음 지급에서 빠지지 않았음.
  * 앞 달 금액엔 그 앞 달에서 넘어온 몫이 이미 들어 있어서 앞 달 하나만 보면 연달아 음수여도 두 번 빼지 않음.
+ * 배분율 이력(2026-10-27): 배분율은 계산·마감 시점이 아니라 결제가 속한 달의 비율(AgencyShareRate) — 지난달 결제의 늦은 기록·환불 조정은
+ * 그 달 비율, 음수 이월은 앞 달 표의 비율로 따로 나눠 더함. 소속사 줄의 sharePercent는 이 달 비율, 다른 비율이 섞였으면 sharePercentsUsed.
  */
 @Injectable()
 export class SettlementsService {
@@ -165,7 +170,7 @@ export class SettlementsService {
     const includeSandbox = options.includeSandbox ?? this.sandboxEnabled;
     const agencyWhere = options.agencyId ? { agencyId: options.agencyId } : {};
     const sourceWhere = includeSandbox ? {} : { source: { not: ChargeSource.SANDBOX } };
-    const [current, earlier, closes, previousClose] = await Promise.all([
+    const [current, earlier, closes, previousClose, rateRows] = await Promise.all([
       this.prisma.chargeAllocation.findMany({
         where: { ...agencyWhere, charge: { chargedAt: { gte: from, lt: to }, ...sourceWhere } },
         select: ALLOCATION_SELECT,
@@ -180,29 +185,40 @@ export class SettlementsService {
       }),
       this.prisma.settlementClose.findMany({ select: { month: true, closedAt: true } }),
       this.prisma.settlementClose.findUnique({ where: { month: previousMonth(month) }, select: { snapshot: true } }),
+      this.prisma.agencyShareRate.findMany({ where: agencyWhere, select: { agencyId: true, fromMonth: true, percent: true } }),
     ]);
     const closedAt = new Map(closes.map((close) => [close.month, close.closedAt]));
+    const book = shareRateBook(rateRows);
+    const defaultSharePercent = this.defaultSharePercent;
+    const rateOfLine = (line: AllocationLine, lineMonth: string) => shareRateAt(book, line.agencyId, lineMonth, defaultSharePercent, line.agency?.revenueSharePercent);
 
-    const groups = new Map<string, { agencyId: string | null; name: string | null; sharePercent: number; actors: Map<string, ActorRow> }>();
-    const rowOf = (agency: { agencyId: string | null; name: string | null; sharePercent: number }, actorRef: { actorId: string; name: string }) => {
+    // fallbackPercent: 이력이 없는 소속사의 표시용 비율(결제 줄의 revenueSharePercent, 이월로만 생긴 그룹이면 앞 달 표의 비율)
+    const groups = new Map<string, { agencyId: string | null; name: string | null; fallbackPercent: number; actors: Map<string, ActorRow> }>();
+    const rowOf = (agency: { agencyId: string | null; name: string | null }, actorRef: { actorId: string; name: string }, fallbackPercent: number, fromLine = false) => {
       const key = agency.agencyId ?? '';
       let group = groups.get(key);
       if (!group) {
-        group = { ...agency, actors: new Map() };
+        group = { agencyId: agency.agencyId, name: agency.name, fallbackPercent, actors: new Map() };
         groups.set(key, group);
+      } else if (fromLine) {
+        // 결제 줄의 소속사 지금 값이 이월 표의 값보다 우선(이력 없는 소속사 한정)
+        group.fallbackPercent = fallbackPercent;
       }
       let actor = group.actors.get(actorRef.actorId);
       if (!actor) {
-        actor = { ...actorRef, chargeIds: new Set(), grossCents: 0, adjustmentCents: 0, carriedCents: 0, refundedCents: 0, rooms: new Map() };
+        actor = { ...actorRef, chargeIds: new Set(), grossCents: 0, adjustmentCents: 0, carriedCents: 0, refundedCents: 0, rooms: new Map(), byPercent: new Map() };
         group.actors.set(actorRef.actorId, actor);
       }
       return actor;
     };
     const rowFor = (line: AllocationLine) =>
       rowOf(
-        { agencyId: line.agencyId, name: line.agency?.name ?? null, sharePercent: line.agency?.revenueSharePercent ?? this.defaultSharePercent },
+        { agencyId: line.agencyId, name: line.agency?.name ?? null },
         { actorId: line.actor.id, name: line.actor.legalName },
+        line.agency?.revenueSharePercent ?? defaultSharePercent,
+        true,
       );
+    const addAt = (actor: ActorRow, percent: number, cents: number) => actor.byPercent.set(percent, (actor.byPercent.get(percent) ?? 0) + cents);
 
     for (const line of current) {
       const actor = rowFor(line);
@@ -212,6 +228,7 @@ export class SettlementsService {
       }
       actor.chargeIds.add(line.chargeId);
       actor.grossCents += line.amountCents;
+      addAt(actor, rateOfLine(line, month), line.amountCents);
       const room = actor.rooms.get(line.room.id) ?? { roomId: line.room.id, name: line.room.legalName, kind: line.room.kind, grossCents: 0 };
       room.grossCents += line.amountCents;
       actor.rooms.set(line.room.id, room);
@@ -224,35 +241,51 @@ export class SettlementsService {
       const late = inMonth(line.charge.createdAt) ? line.amountCents : 0;
       const refunded = inMonth(line.charge.refundedAt) ? line.amountCents : 0;
       if (late === 0 && refunded === 0) continue;
-      rowFor(line).adjustmentCents += late - refunded;
+      const actor = rowFor(line);
+      actor.adjustmentCents += late - refunded;
+      // 마감한 달 결제의 조정은 그 결제 달의 배분율로(바꾼 뒤에 환불돼도 70% 달 몫은 70%로 빼야 맞음)
+      addAt(actor, rateOfLine(line, monthOf(line.charge.chargedAt)), late - refunded);
     }
     // 바로 앞 달(마감됨)의 음수 지급액 이월
     if (previousClose) {
       for (const carry of negativeCarries(previousClose.snapshot as unknown as LiveReport)) {
         if (options.agencyId && carry.agency.agencyId !== options.agencyId) continue;
-        const actor = rowOf(carry.agency, carry.actor);
+        const actor = rowOf(carry.agency, carry.actor, carry.agency.sharePercent);
         actor.adjustmentCents += carry.cents;
         actor.carriedCents += carry.cents;
+        addAt(actor, carry.percent, carry.cents);
       }
     }
 
     const storeFeePercent = this.storeFeePercent;
     const agencies = [...groups.values()]
       .map((group) => {
+        // 표시 비율은 항상 이 달 비율(이월로 먼저 생긴 그룹이 앞 달 비율을 보여 주던 문제)
+        const sharePercent = shareRateAt(book, group.agencyId, month, defaultSharePercent, group.fallbackPercent);
+        const used = new Set<number>();
         const actors = [...group.actors.values()]
-          .map((actor) => ({
-            actorId: actor.actorId,
-            name: actor.name,
-            chargeCount: actor.chargeIds.size,
-            grossCents: actor.grossCents,
-            adjustmentCents: actor.adjustmentCents,
-            carriedCents: actor.carriedCents,
-            refundedCents: actor.refundedCents,
-            ...splitRevenue(actor.grossCents + actor.adjustmentCents, storeFeePercent, group.sharePercent),
-            rooms: [...actor.rooms.values()].sort((a, b) => b.grossCents - a.grossCents),
-          }))
+          .map((actor) => {
+            const buckets = [...actor.byPercent].filter(([, cents]) => cents !== 0);
+            for (const [percent] of buckets) used.add(percent);
+            const mixed = buckets.some(([percent]) => percent !== sharePercent);
+            return {
+              actorId: actor.actorId,
+              name: actor.name,
+              chargeCount: actor.chargeIds.size,
+              grossCents: actor.grossCents,
+              adjustmentCents: actor.adjustmentCents,
+              carriedCents: actor.carriedCents,
+              refundedCents: actor.refundedCents,
+              ...splitByPercent(buckets, storeFeePercent, sharePercent),
+              // 다른 비율이 섞였을 때만 비율별 정산 대상 금액 — 이 달이 음수로 마감되면 다음 달 이월도 비율별로(negativeCarries)
+              ...(mixed ? { basesByPercent: buckets.map(([percent, cents]) => ({ percent, cents })) } : {}),
+              rooms: [...actor.rooms.values()].sort((a, b) => b.grossCents - a.grossCents),
+            };
+          })
           .sort((a, b) => b.grossCents - a.grossCents || b.adjustmentCents - a.adjustmentCents);
-        return { agencyId: group.agencyId, name: group.name, sharePercent: group.sharePercent, ...sum(actors), actors };
+        // 이 달 비율 말고 다른 비율이 섞였을 때만(옛 표·앱 호환)
+        const sharePercentsUsed = [...used].some((percent) => percent !== sharePercent) ? [...used].sort((a, b) => b - a) : undefined;
+        return { agencyId: group.agencyId, name: group.name, sharePercent, ...(sharePercentsUsed ? { sharePercentsUsed } : {}), ...sum(actors), actors };
       })
       // 소속사 이름순, 무소속은 맨 뒤
       .sort((a, b) => (a.name === null ? 1 : b.name === null ? -1 : a.name.localeCompare(b.name)));
@@ -437,13 +470,20 @@ function payeeIn(snapshot: LiveReport, dto: { agencyId?: string; actorId?: strin
  * 정산 대상 금액(결제액 + 조정)을 그대로. 소속사 합계가 양수면 소속사 안에서 이미 상계돼 넘길 것 없음.
  */
 export function negativeCarries(snapshot: Pick<LiveReport, 'agencies'>) {
-  const carries: { agency: { agencyId: string | null; name: string | null; sharePercent: number }; actor: { actorId: string; name: string }; cents: number }[] = [];
+  const carries: { agency: { agencyId: string | null; name: string | null; sharePercent: number }; actor: { actorId: string; name: string }; cents: number; percent: number }[] = [];
   for (const agency of snapshot.agencies) {
     const info = { agencyId: agency.agencyId, name: agency.name, sharePercent: agency.sharePercent };
     const payees = agency.agencyId ? (agency.payoutCents < 0 ? agency.actors : []) : agency.actors.filter((actor) => actor.payoutCents < 0);
     for (const actor of payees) {
+      const ref = { actorId: actor.actorId, name: actor.name };
+      // 여러 비율이 섞인 달(2026-10-27)은 비율별로 넘김 — 70% 달 환불로 생긴 음수는 70%로 빼야 보낸 돈과 맞음
+      const basesByPercent = (actor as { basesByPercent?: { percent: number; cents: number }[] }).basesByPercent;
+      if (basesByPercent) {
+        for (const base of basesByPercent) if (base.cents !== 0) carries.push({ agency: info, actor: ref, cents: base.cents, percent: base.percent });
+        continue;
+      }
       const cents = actor.grossCents + (actor.adjustmentCents ?? 0);
-      if (cents !== 0) carries.push({ agency: info, actor: { actorId: actor.actorId, name: actor.name }, cents });
+      if (cents !== 0) carries.push({ agency: info, actor: ref, cents, percent: agency.sharePercent });
     }
   }
   return carries;
@@ -457,6 +497,19 @@ export function previousMonth(month: string): string {
 export function nextMonth(month: string): string {
   const [year, mon] = month.split('-').map(Number);
   return mon === 12 ? `${year + 1}-01` : `${year}-${String(mon + 1).padStart(2, '0')}`;
+}
+
+/** 배분율별 금액을 각각 나눠 더함 — 비율이 하나면 splitRevenue(합계)와 똑같음 */
+function splitByPercent(buckets: [number, number][], storeFeePercent: number, sharePercent: number) {
+  if (buckets.length === 0) return splitRevenue(0, storeFeePercent, sharePercent);
+  return buckets
+    .map(([percent, cents]) => splitRevenue(cents, storeFeePercent, percent))
+    .reduce((acc, part) => ({
+      storeFeeCents: acc.storeFeeCents + part.storeFeeCents,
+      netCents: acc.netCents + part.netCents,
+      payoutCents: acc.payoutCents + part.payoutCents,
+      platformCents: acc.platformCents + part.platformCents,
+    }));
 }
 
 function sum(rows: Partial<Amounts>[]): Amounts {

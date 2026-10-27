@@ -21,6 +21,7 @@ import {
   type AssignableRole,
   type SanctionCategory,
 } from '@/hooks/use-admin';
+import { useSignOutUserEverywhere } from '@/hooks/use-admin-sessions';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { useTheme } from '@/hooks/use-theme';
@@ -267,6 +268,29 @@ export function SanctionSection({ user }: { user: AdminUser }) {
   );
 }
 
+/** 모든 기기에서 로그아웃시키기(2026-10-27) — 계정 도용 의심·본인이 폰을 잃어버렸다고 문의했을 때. 계정은 그대로라 다시 로그인하면 됨 */
+export function SignOutSection({ user }: { user: AdminUser }) {
+  const signOut = useSignOutUserEverywhere();
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
+  const run = async () => {
+    const name = user.nickname ?? user.displayName;
+    if (!(await confirm('모든 기기 로그아웃', `${name} 계정을 로그인된 모든 기기에서 로그아웃시킬까요? 계정은 그대로라 다시 로그인하면 쓸 수 있어요. 작업 기록에 남아요.`, '로그아웃', '취소'))) return;
+    setMessage(null);
+    signOut.mutate(user.id, {
+      onSuccess: () => setMessage({ text: '모든 기기에서 로그아웃시켰어요.' }),
+      onError: (e) => setMessage({ text: errorText(e, '처리하지 못했어요.'), error: true }),
+    });
+  };
+  return (
+    <AdminSection title="로그인" hint="계정 도용이 의심되거나 본인이 폰을 잃어버렸다고 알려 왔을 때. 정지·영구차단은 자동으로 로그아웃돼요.">
+      <AdminButtonRow>
+        <AdminButton secondary label={signOut.isPending ? '처리 중…' : '모든 기기 로그아웃'} disabled={signOut.isPending} onPress={() => void run()} />
+      </AdminButtonRow>
+      <AdminMessage text={message?.text ?? null} error={message?.error} />
+    </AdminSection>
+  );
+}
+
 /** 팬 프로필(2026-10-12) — 부적절하면 지움 */
 export function ProfileSection({ user }: { user: AdminUser }) {
   const clear = useClearUserProfile();
@@ -469,6 +493,7 @@ const USER_ACTIONS: Record<string, { label: string; tone: BadgeTone }> = {
   USER_SUSPEND: { label: '정지', tone: 'danger' },
   USER_BAN: { label: '영구차단', tone: 'danger' },
   USER_REACTIVATE: { label: '제재 해제', tone: 'ok' },
+  USER_SIGN_OUT: { label: '모든 기기 로그아웃', tone: 'warn' },
   USER_PROFILE_CLEAR: { label: '프로필 지움', tone: 'warn' },
   ACTOR_STATUS_CLEAR: { label: '상태메시지 지움', tone: 'warn' },
   USER_ROLE: { label: '역할 변경', tone: 'muted' },

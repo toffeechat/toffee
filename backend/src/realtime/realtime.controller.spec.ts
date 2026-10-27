@@ -51,3 +51,21 @@ describe('계정당 동시 연결 수(2026-10-27)', () => {
     subs.forEach((sub) => sub.unsubscribe());
   });
 });
+
+describe('실시간 연결 중 로그아웃(2026-10-27)', () => {
+  it('모든 기기 로그아웃(tokenVersion 변경)·세션 끊김이면 연결을 닫음', async () => {
+    const realtime = { acceptingStreams: true, events$: new Subject(), streamsClosed$: new Subject() } as unknown as RealtimeService;
+    const row = { id: 'u1', role: 'USER', agencyId: null, status: 'ACTIVE', deletedAt: null, suspendedUntil: null };
+    for (const user of [
+      { ...row, tokenVersion: 1, authSessions: [{ revokedAt: null, expiresAt: new Date(Date.now() + 60_000) }] },
+      { ...row, tokenVersion: 0, authSessions: [{ revokedAt: new Date(), expiresAt: new Date(Date.now() + 60_000) }] },
+    ]) {
+      const prisma = { user: { findUnique: vi.fn().mockResolvedValue(user) }, subscription: { findMany: vi.fn().mockResolvedValue([]) } } as unknown as PrismaService;
+      const controller = new RealtimeController(realtime, prisma);
+      const done = new Promise<void>((resolve) =>
+        controller.stream({ id: 'u1', role: 'USER', sessionId: 's1', tokenVersion: 0 } as AuthenticatedUser).subscribe({ complete: () => resolve() }),
+      );
+      await expect(done).resolves.toBeUndefined();
+    }
+  });
+});

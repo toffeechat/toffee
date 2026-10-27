@@ -1987,3 +1987,20 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - **파일 삭제 전 참조 확인**: 메시지 회수·문의 삭제·스토리 정리 때 같은 키를 쓰는 다른 줄이 있으면 파일을 지우지 않음.
 - **앱 세션 초기화**: `app/src/lib/session-reset.ts`의 `onSessionReset`에 모듈 상태(소속사 알림 숫자, 보내는 중 답장)를 등록 → 로그아웃·401 때 `resetSessionState()`.
 
+## 로그인 세션·토큰 세대, 배분율 달별 이력 (2026-10-27)
+
+- **토큰**: `{sub, role, sid, tv, dac?, mfaAt?}`. `issueAccessToken(user, {demoCode, mfaAt, sessionId, client})` — sessionId가 없으면 `AuthSession`을 만듦
+  (만료 = `JWT_EXPIRES_IN`, `jwtLifetimeMs`), 있으면 이어 씀(2단계 인증 확인·켜기는 같은 기기라 이어 씀). 배포 점검용 짧은 토큰은 세션 없이 tv만.
+- **확인**: `JwtStrategy`가 사용자 조회에 `authSessions where id = sid`를 같이 붙여 한 번에 읽고, 제재·탈퇴 확인 뒤 `tokenSessionValid()`(auth-sessions.ts) —
+  tv ≠ `User.tokenVersion`, 또는 sid가 있는데 세션이 없음·끊김·만료면 401 `SESSION_EXPIRED`. sid 없는 옛 토큰은 tv만 확인. 실시간 연결의 주기 확인도 같은 함수.
+- **끊기**: `revokeAllSessionsData()`를 `user.update` data에 끼워 tv +1 + 세션 일괄 revokedAt(한 번의 갱신) — 정지·영구차단(admin-users), 2단계 인증 초기화·끄기
+  (끄기는 지금 세션만 남기고 새 tv 토큰), `POST /auth/logout-all`, 운영자 `POST admin/users/:id/sign-out`. `POST /auth/logout`은 그 세션만.
+- **연장**: `POST /auth/refresh`(SkipAdminMfa, 분당 10회) — 세션 expiresAt·refreshedAt 늘리고 같은 sid·dac·mfaAt로 다시 서명(조건부 updateMany라 그 사이 끊겼으면 401).
+  sid 없는 옛 토큰이면 새 세션. 앱(auth-context)은 역할을 받은 뒤 한 번 + 앱 복귀 때 12시간 간격.
+- **정리**: `AuthSessionCleanupService` 매일 04:40(방콕) — expiresAt·revokedAt이 30일 지난 줄 삭제.
+- **배분율**: `AgencyShareRate(agencyId, fromMonth, percent)` — `shareRateBook`/`shareRateAt`(settlements/share-rates.ts): fromMonth ≤ 그 달인 마지막 줄, 줄이
+  하나도 없으면 `revenueSharePercent` → 기본값. `compute()`는 배우별로 비율별 금액(`byPercent`)을 모아 `splitRevenue`를 비율마다 더함(한 비율이면 예전과 같음).
+  이번 달 결제 = rate(M), 마감된 달 조정 = rate(그 결제의 달), 이월 = 앞 달 표의 `basesByPercent`(없으면 그 표의 sharePercent). 섞였으면 소속사 줄에 `sharePercentsUsed`.
+  운영자 API `admin/agencies/:id/share-rates`(GET·POST·DELETE `/:fromMonth`·POST `/founding`) — 마지막 마감 달 이하면 `SHARE_RATE_MONTH_CLOSED`, 바꿀 때마다
+  `revenueSharePercent`를 이번 달 값으로 맞춤(옛 PATCH는 이번 달 줄로 저장).
+

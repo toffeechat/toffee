@@ -79,7 +79,7 @@ type Range = { gte?: Date; lt?: Date };
 const inRange = (date: Date | null, range?: Range) => !range || (!!date && (!range.gte || date >= range.gte) && (!range.lt || date < range.lt));
 
 /** 배우 1명(소속사 A, 70%)의 결제만 있는 메모리 DB — 마감·조정 규칙 확인용 */
-function setup(charges: Charge[]) {
+function setup(charges: Charge[], rates: { agencyId: string; fromMonth: string; percent: number | null }[] = []) {
   const closes: { month: string; closedAt: Date; closedById: string | null; snapshot: unknown }[] = [];
   const audits: string[] = [];
   const payouts: { id: string; month: string; payeeKey: string; agencyId: string | null; actorId: string | null; name: string; amountCents: number; paidAt: Date; reference: string | null; memo: string | null }[] = [];
@@ -130,6 +130,7 @@ function setup(charges: Charge[]) {
         charges.filter((c) => c.chargedAt < where.chargedAt.lt).sort((a, b) => +a.chargedAt - +b.chargedAt)[0] ?? null,
     },
     user: { findUnique: async () => ({ displayName: '운영자' }) },
+    agencyShareRate: { findMany: async ({ where }: { where: { agencyId?: string } }) => rates.filter((r) => !where.agencyId || r.agencyId === where.agencyId) },
   };
   const clock = { now: new Date('2026-10-05T00:00:00Z') };
   const service = new SettlementsService(
@@ -137,7 +138,7 @@ function setup(charges: Charge[]) {
     { get: (key: string) => (key === 'ENABLE_SANDBOX_SUBSCRIBE' ? 'true' : undefined) } as unknown as ConfigService,
     { record: async (_admin: string, action: string) => audits.push(action) } as unknown as AuditService,
   );
-  return { service, clock, closes, audits, charges, payouts };
+  return { service, clock, closes, audits, charges, payouts, rates };
 }
 
 const at = (iso: string) => new Date(iso);
@@ -290,5 +291,69 @@ describe('소속사용 정산표', () => {
     expect(header.replace('\ufeff', '').split(',')).not.toContain('platform');
     expect(row.split(',')).toHaveLength(header.split(',').length);
     expect(service.toCsv(SAMPLE_REPORT).split('\n')[0]).toContain('platform');
+  });
+});
+
+describe('배분율 이력(2026-10-27)', () => {
+  // 창립 파트너: 2027-02부터 70%, 2028-02부터 기본(60%)
+  const founding = [
+    { agencyId: 'ag', fromMonth: '2027-02', percent: 70 },
+    { agencyId: 'ag', fromMonth: '2028-02', percent: null },
+  ];
+
+  it('비율을 바꾼 뒤에 마감해도 결제가 속한 달(70%) 비율로', async () => {
+    const t = setup([{ id: 'c1', chargedAt: at('2028-01-10T00:00:00Z'), createdAt: at('2028-01-10T00:00:00Z'), refundedAt: null, amountCents: 10000 }], founding);
+    await t.service.close('admin', '2028-01', undefined, at('2028-02-05T00:00:00Z'));
+    const january = await t.service.report('2028-01');
+    expect(january.agencies[0]).toMatchObject({ sharePercent: 70, payoutCents: 5950 });
+    expect(january.agencies[0]).not.toHaveProperty('sharePercentsUsed');
+  });
+
+  it('마감한 70% 달 결제의 환불은 70%로 빼고, 이 달 결제는 60%로', async () => {
+    const t = setup(
+      [
+        { id: 'c1', chargedAt: at('2028-01-10T00:00:00Z'), createdAt: at('2028-01-10T00:00:00Z'), refundedAt: null, amountCents: 10000 },
+        { id: 'c2', chargedAt: at('2028-02-03T00:00:00Z'), createdAt: at('2028-02-03T00:00:00Z'), refundedAt: null, amountCents: 20000 },
+      ],
+      founding,
+    );
+    await t.service.close('admin', '2028-01', undefined, at('2028-02-05T00:00:00Z'));
+    t.charges[0].refundedAt = at('2028-02-10T00:00:00Z');
+    const february = await t.service.report('2028-02');
+    // 20,000 → 수수료 3,000, 17,000의 60% = 10,200 / -10,000 → 수수료 -1,500, -8,500의 70% = -5,950
+    expect(february.agencies[0]).toMatchObject({ sharePercent: 60, sharePercentsUsed: [70, 60], adjustmentCents: -10000, storeFeeCents: 1500, payoutCents: 4250 });
+    expect(february.totals.payoutCents + february.totals.platformCents + february.totals.storeFeeCents).toBe(10000);
+  });
+
+  it('비율이 하나뿐이면 이력이 있든 없든(옛 revenueSharePercent) 결과가 같음', async () => {
+    const charges = (): Charge[] => [
+      { id: 'c1', chargedAt: at('2026-09-10T00:00:00Z'), createdAt: at('2026-09-10T00:00:00Z'), refundedAt: null, amountCents: 12901 },
+      { id: 'c2', chargedAt: at('2026-10-02T00:00:00Z'), createdAt: at('2026-10-02T00:00:00Z'), refundedAt: null, amountCents: 5000 },
+    ];
+    const run = async (t: ReturnType<typeof setup>) => {
+      await t.service.close('admin', '2026-09', undefined, t.clock.now);
+      t.charges[0].refundedAt = at('2026-10-06T00:00:00Z');
+      return [await t.service.report('2026-09'), await t.service.report('2026-10')].map((report) => ({ ...report, closed: null }));
+    };
+    const withRow = await run(setup(charges(), [{ agencyId: 'ag', fromMonth: '2000-01', percent: 70 }]));
+    expect(withRow).toEqual(await run(setup(charges())));
+    expect(withRow[1].agencies[0]).not.toHaveProperty('sharePercentsUsed');
+  });
+
+  it('이월로 먼저 생긴 소속사 줄도 표시 비율은 이 달 비율', async () => {
+    const t = setup(
+      [
+        { id: 'c1', chargedAt: at('2028-01-10T00:00:00Z'), createdAt: at('2028-01-10T00:00:00Z'), refundedAt: null, amountCents: 10000 },
+        { id: 'c2', chargedAt: at('2028-02-03T00:00:00Z'), createdAt: at('2028-02-03T00:00:00Z'), refundedAt: null, amountCents: 1000 },
+      ],
+      founding,
+    );
+    await t.service.close('admin', '2028-01', undefined, at('2028-02-05T00:00:00Z'));
+    t.charges[0].refundedAt = at('2028-02-10T00:00:00Z');
+    await t.service.close('admin', '2028-02', undefined, at('2028-03-05T00:00:00Z'));
+    const march = await t.service.report('2028-03');
+    // 2월 표의 음수(1,000@60% - 10,000@70% → 510 - 5,950)가 비율별로 넘어옴 — 표시 비율은 3월(60%)
+    expect((await t.service.report('2028-02')).totals.payoutCents).toBe(-5440);
+    expect(march.agencies[0]).toMatchObject({ sharePercent: 60, sharePercentsUsed: [70, 60], carriedCents: -9000, payoutCents: -5440 });
   });
 });

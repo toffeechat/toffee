@@ -6,6 +6,7 @@ import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { revokeAllSessions, revokeAllSessionsData } from '../auth/auth-sessions.js';
 
 /** 운영자 권한 단계 — 값이 없으면 OWNER(옛 계정) */
 const levelOf = (user: { adminLevel?: AdminLevel | null }) => user.adminLevel ?? AdminLevel.OWNER;
@@ -264,7 +265,8 @@ export class AdminUsersService {
     await assertCanManageUser(this.prisma, caller, userId, { sanction: true, lockout: true });
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: UserStatus.SUSPENDED, suspendedUntil: until, bannedAt: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null },
+      // 로그인도 모두 끊음(2026-10-27) — 정지가 풀려도 다시 로그인해야 함
+      data: { status: UserStatus.SUSPENDED, suspendedUntil: until, bannedAt: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null, ...revokeAllSessionsData() },
       select: LIST_SELECT,
     });
     await this.audit.record(adminId, 'USER_SUSPEND', 'USER', userId, { until: until.toISOString(), ...reason });
@@ -276,7 +278,7 @@ export class AdminUsersService {
     await assertCanManageUser(this.prisma, caller, userId, { sanction: true, lockout: true });
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: UserStatus.BANNED, bannedAt: new Date(), suspendedUntil: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null },
+      data: { status: UserStatus.BANNED, bannedAt: new Date(), suspendedUntil: null, sanctionCategory: reason.category, sanctionNote: reason.note?.trim() || null, ...revokeAllSessionsData() },
       select: LIST_SELECT,
     });
     await this.audit.record(adminId, 'USER_BAN', 'USER', userId, { ...reason });
@@ -293,6 +295,15 @@ export class AdminUsersService {
     });
     await this.audit.record(adminId, 'USER_REACTIVATE', 'USER', userId);
     return user;
+  }
+
+  /** 모든 기기에서 로그아웃시키기(2026-10-27) — 계정 도용 의심·본인 요청(폰 분실) 대응. 제재와 같은 권한 확인 */
+  async signOutEverywhere(caller: AuthenticatedUser, userId: string) {
+    await assertCanManageUser(this.prisma, caller, userId, { sanction: true });
+    const target = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!target) throw new NotFoundException(appError('USER_NOT_FOUND'));
+    await revokeAllSessions(this.prisma, userId);
+    await this.audit.record(caller.id, 'USER_SIGN_OUT', 'USER', userId);
   }
 
   /** 팬 프로필 사진·상태메시지 지우기(2026-10-12) — 신고·민원 대응. 사진 파일은 하루 뒤 정리 작업이 지움 */

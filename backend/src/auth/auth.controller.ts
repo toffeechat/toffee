@@ -43,7 +43,7 @@ export class AuthController {
     await this.accessLog.recordLogin(user.id, method, client);
     // 데모 입장 코드로 들어왔으면 소속사별 접속 기록·알림(2026-10-19)
     if (demoCode) this.demoAccess.touch(demoCode, user.role, 'LOGIN', client);
-    return this.authService.issueAccessToken(user, demoCode);
+    return this.authService.issueAccessToken(user, { demoCode, client });
   }
 
   @Public()
@@ -143,6 +143,32 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getMe(user.id);
+  }
+
+  // 토큰 자동 갱신(2026-10-27) — 앱이 켤 때·앱으로 돌아올 때 12시간에 한 번. 2단계 인증 코드 화면에서도(mfaAt은 그대로라 권한이 늘지 않음)
+  @SkipAdminMfa()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@CurrentUser() user: AuthenticatedUser, @Client() client: ClientInfo) {
+    return this.authService.refreshAccessToken(user, client);
+  }
+
+  // 이 기기 로그아웃 — 토큰을 바로 못 쓰게 세션을 끊음(2026-10-27)
+  @SkipAdminMfa()
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(@CurrentUser() user: AuthenticatedUser) {
+    await this.authService.logout(user);
+  }
+
+  // 모든 기기에서 로그아웃(설정 화면, 2026-10-27) — 폰을 잃어버렸거나 남의 기기에 로그인해 둔 경우
+  @SkipAdminMfa()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('logout-all')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logoutAll(@CurrentUser() user: AuthenticatedUser) {
+    await this.authService.logoutAll(user.id);
   }
 
   // 푸시 받을 기기 등록 — 앱이 로그인 후, 그리고 FCM이 토큰을 바꿀 때마다 보냄. 여러 기기 가능.

@@ -10,6 +10,7 @@ const ACTION_LABELS: Record<string, string> = {
   USER_SUSPEND: '회원 정지',
   USER_BAN: '영구차단',
   USER_REACTIVATE: '제재 해제',
+  USER_SIGN_OUT: '모든 기기 로그아웃',
   USER_PROFILE_CLEAR: '팬 프로필 지움',
   ACTOR_STATUS_CLEAR: '아티스트 상태메시지 지움',
   USER_ROLE: '역할 변경',

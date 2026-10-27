@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { AppState } from 'react-native';
 import { addNetworkStateListener } from 'expo-network';
 import { useQueryClient } from '@tanstack/react-query';
-import { loadToken, saveToken, removeToken } from './token-storage';
+import { getCachedToken, loadToken, saveToken, removeToken } from './token-storage';
 import { apiClient, ApiError, onUnauthorized } from './api-client';
 import { resetSessionState } from './session-reset';
 import type { Role } from './types';
@@ -15,6 +15,8 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** 모든 기기에서 로그아웃(2026-10-27) — 서버가 이 계정의 모든 토큰을 끊은 뒤 이 기기도 로그아웃. 서버 요청이 실패하면 던짐 */
+  logoutAll: () => Promise<void>;
   /** 서버에서 역할을 다시 읽음 — 연결 링크로 아티스트 계정이 됐을 때(2026-10-19) */
   refreshRole: () => Promise<void>;
   /** 정지·영구차단 등으로 로그인이 끊긴 이유(로그인 화면에 보여줌) */
@@ -43,6 +45,12 @@ async function fetchRoleWithRetry(attempts = 3): Promise<Role> {
 
 // 로그아웃 뒤 마무리 요청(푸시 해제·소셜 로그아웃)을 기다리는 최대 시간 — 오프라인에서도 로그아웃이 바로 끝나게
 const LOGOUT_CLEANUP_MS = 3000;
+
+// 토큰 자동 갱신(2026-10-27) — 켤 때 한 번 + 앱으로 돌아올 때 12시간에 한 번 /auth/refresh로 만료(30일)를 미룸. 자주 쓰는 사람은
+// 다시 로그인할 일이 없고, 서버는 세션 단위로 끊을 수 있음. 마지막 갱신 시각은 메모리에만(앱을 새로 켜면 한 번 갱신)
+const TOKEN_REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
+let lastTokenRefreshAt = 0;
+let tokenRefreshing = false;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
@@ -117,6 +125,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [token, role, roleFailed]);
 
+  // 토큰 자동 갱신 — 역할까지 받은 뒤(로그인 확인이 끝난 뒤). 새 토큰으로 바뀌면 실시간 연결은 useRealtimeSync(token)가 다시 붙음.
+  // 실패는 무시(401이면 api-client가 로그아웃 처리, 오프라인이면 다음에 앱으로 돌아올 때)
+  useEffect(() => {
+    if (!token || !role) return;
+    const maybeRefresh = async () => {
+      if (tokenRefreshing || Date.now() - lastTokenRefreshAt < TOKEN_REFRESH_INTERVAL_MS) return;
+      tokenRefreshing = true;
+      try {
+        const { accessToken } = await apiClient.post<{ accessToken: string }>('/auth/refresh');
+        lastTokenRefreshAt = Date.now();
+        // 갱신하는 사이에 로그아웃·다른 계정 로그인·2단계 인증 새 토큰이 있었으면 버림
+        if (getCachedToken() !== token) return;
+        await saveToken(accessToken);
+        setToken(accessToken);
+      } catch {
+        // 위 주석대로 무시
+      } finally {
+        tokenRefreshing = false;
+      }
+    };
+    void maybeRefresh();
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void maybeRefresh();
+    });
+    return () => appState.remove();
+  }, [token, role]);
+
   // 서버가 이 토큰을 더 이상 안 받아주면(정지·영구차단·만료) 로그아웃하고 이유를 남김 — 예전엔 모든 화면이
   // 오류만 나는 상태로 멈춰 있었음. 푸시 해제는 어차피 401이라 건너뜀.
   useEffect(() => {
@@ -146,6 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!(error instanceof ApiError && error.status === 401)) await removeToken();
       throw error;
     }
+    // 막 받은 토큰이라 바로 갱신하지 않음
+    lastTokenRefreshAt = Date.now();
     setToken(newToken);
     applyRole(fetchedRole);
   };
@@ -172,13 +209,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 마무리는 기다리지 않음 — 최대 3초 뒤 끊음. 소셜 SDK 세션 정리는 다음 로그인 때 다른 계정을 고를 수 있게(실패해도 무시)
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), LOGOUT_CLEANUP_MS);
+    // 서버 세션도 끊음(2026-10-27) — 토큰이 남아 있어도(백업·유출) 더 못 쓰게
     void Promise.allSettled([
+      authToken ? apiClient.post('/auth/logout', undefined, { authToken, signal: controller.signal }) : Promise.resolve(),
       authToken ? unregisterThisDevice({ authToken, signal: controller.signal }) : Promise.resolve(),
       Promise.race([signOutProviders(), new Promise((resolve) => setTimeout(resolve, LOGOUT_CLEANUP_MS))]),
     ]).finally(() => clearTimeout(timer));
   };
 
-  return <AuthContext.Provider value={{ token, role, isLoading, login, logout, refreshRole, signedOutReason }}>{children}</AuthContext.Provider>;
+  const logoutAll = async () => {
+    // 푸시 해제를 먼저 — 모든 기기 로그아웃 뒤엔 이 토큰으로 해제할 수 없어서 이 폰에 알림이 계속 옴(최대 3초만 기다림)
+    const authToken = (await loadToken()) ?? token ?? undefined;
+    if (authToken) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), LOGOUT_CLEANUP_MS);
+      await unregisterThisDevice({ authToken, signal: controller.signal })
+        .catch(() => {})
+        .finally(() => clearTimeout(timer));
+    }
+    await apiClient.post('/auth/logout-all');
+    lastTokenRefreshAt = 0;
+    await logout();
+  };
+
+  return (
+    <AuthContext.Provider value={{ token, role, isLoading, login, logout, logoutAll, refreshRole, signedOutReason }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {

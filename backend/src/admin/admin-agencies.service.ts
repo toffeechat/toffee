@@ -6,6 +6,15 @@ import { MediaService } from '../storage/media.service.js';
 import { isStorageKey, profileImagePrefix } from '../storage/media-policy.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
+import { ConfigService } from '@nestjs/config';
+import type { FoundingShareDto, SetShareRateDto } from './dto/share-rate.dto.js';
+import { monthOf, monthRange, nextMonth } from '../settlements/settlements.service.js';
+import { shareRateAt, shareRateBook } from '../settlements/share-rates.js';
+
+// 창립 파트너 기본(2026-10-23 사용자 결정, feature-decisions.md) — 본 계약 첫 12개월 70%, 그 뒤 기본값(60%)
+const FOUNDING_MONTHS = 12;
+const FOUNDING_PERCENT = 70;
+const SHARE_RATE_SELECT = { fromMonth: true, percent: true, createdAt: true } as const;
 
 const ADMIN_AGENCY_SELECT = {
   id: true,
@@ -22,7 +31,13 @@ export class AdminAgenciesService {
     private readonly prisma: PrismaService,
     private readonly media: MediaService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService,
   ) {}
+
+  private get defaultSharePercent() {
+    const parsed = Number(this.config.get<string>('AGENCY_REVENUE_SHARE_PERCENT'));
+    return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : 60;
+  }
 
   // 운영자용 목록 — 팬 공개 목록(GET /agencies)과 달리 스태프 수까지
   async findAll() {
@@ -52,15 +67,122 @@ export class AdminAgenciesService {
     if (isStorageKey(dto.logoUrl) && dto.logoUrl !== existing.logoUrl) {
       await this.media.verifyAt(profileImagePrefix('AGENCY', id), 'PHOTO', dto.logoUrl);
     }
-    const agency = await this.prisma.agency.update({ where: { id }, data: { name, logoUrl: dto.logoUrl, revenueSharePercent: dto.revenueSharePercent }, select: ADMIN_AGENCY_SELECT });
+    // 옛 화면의 배분율 한 칸(2026-10-27) — "이번 달부터" 이력 한 줄로 저장(마감한 지난달은 그대로). revenueSharePercent는 아래 동기화로
+    const shareChanged = dto.revenueSharePercent !== undefined && dto.revenueSharePercent !== existing.revenueSharePercent;
+    const fromMonth = monthOf(new Date());
+    if (shareChanged) {
+      await this.prisma.agencyShareRate.upsert({
+        where: { agencyId_fromMonth: { agencyId: id, fromMonth } },
+        create: { agencyId: id, fromMonth, percent: dto.revenueSharePercent ?? null, createdById: adminId },
+        update: { percent: dto.revenueSharePercent ?? null, createdById: adminId },
+      });
+      await this.syncCurrentShare(id);
+    }
+    const agency = await this.prisma.agency.update({ where: { id }, data: { name, logoUrl: dto.logoUrl }, select: ADMIN_AGENCY_SELECT });
     // 정산 비율은 돈과 직결 — 누가 언제 바꿨는지 기록
-    if (dto.revenueSharePercent !== undefined && dto.revenueSharePercent !== existing.revenueSharePercent) {
-      await this.audit.record(adminId, 'AGENCY_SHARE', 'AGENCY', id, { from: existing.revenueSharePercent, to: dto.revenueSharePercent });
+    if (shareChanged) {
+      await this.audit.record(adminId, 'AGENCY_SHARE', 'AGENCY', id, { fromMonth, from: existing.revenueSharePercent, to: dto.revenueSharePercent ?? null });
     }
     if (dto.logoUrl !== undefined && dto.logoUrl !== existing.logoUrl && isStorageKey(existing.logoUrl)) {
       await this.media.deleteQuietly(existing.logoUrl);
     }
     return this.toResponse(agency);
+  }
+
+  /** 배분율 이력(2026-10-27) — 오래된 달부터 + 이번 달 비율·마지막 마감 달(이 달까지는 못 바꿈) */
+  async shareRates(id: string, now = new Date()) {
+    const agency = await this.prisma.agency.findUnique({ where: { id }, select: { revenueSharePercent: true } });
+    if (!agency) throw new NotFoundException(appError('AGENCY_NOT_FOUND'));
+    const [rates, lastClosedMonth] = await Promise.all([
+      this.prisma.agencyShareRate.findMany({ where: { agencyId: id }, select: SHARE_RATE_SELECT, orderBy: { fromMonth: 'asc' } }),
+      this.lastClosedMonth(),
+    ]);
+    const currentMonth = monthOf(now);
+    const book = shareRateBook(rates.map((rate) => ({ ...rate, agencyId: id })));
+    return {
+      currentMonth,
+      currentPercent: shareRateAt(book, id, currentMonth, this.defaultSharePercent, agency.revenueSharePercent),
+      defaultPercent: this.defaultSharePercent,
+      lastClosedMonth,
+      rates,
+    };
+  }
+
+  /** fromMonth부터 배분율 바꾸기(같은 달 줄이 있으면 덮어씀) — 마감한 달은 안 됨, 앞으로의 달은 예약 */
+  async setShareRate(adminId: string, id: string, dto: SetShareRateDto, now = new Date()) {
+    await this.findAgencyOrThrow(id);
+    await this.ensureOpenMonth(dto.fromMonth);
+    const from = await this.rateAt(id, dto.fromMonth);
+    await this.prisma.agencyShareRate.upsert({
+      where: { agencyId_fromMonth: { agencyId: id, fromMonth: dto.fromMonth } },
+      create: { agencyId: id, fromMonth: dto.fromMonth, percent: dto.percent, createdById: adminId },
+      update: { percent: dto.percent, createdById: adminId },
+    });
+    await this.syncCurrentShare(id, now);
+    await this.audit.record(adminId, 'AGENCY_SHARE', 'AGENCY', id, { fromMonth: dto.fromMonth, from, to: dto.percent });
+    return this.shareRates(id, now);
+  }
+
+  /** 이력 한 줄 지우기 — 그 달부터는 앞 줄의 비율로 돌아감. 마감한 달 줄은 안 됨 */
+  async deleteShareRate(adminId: string, id: string, fromMonth: string, now = new Date()) {
+    await this.findAgencyOrThrow(id);
+    monthRange(fromMonth);
+    await this.ensureOpenMonth(fromMonth);
+    const row = await this.prisma.agencyShareRate.findUnique({ where: { agencyId_fromMonth: { agencyId: id, fromMonth } }, select: { percent: true } });
+    if (!row) throw new NotFoundException(appError('NOT_FOUND'));
+    await this.prisma.agencyShareRate.delete({ where: { agencyId_fromMonth: { agencyId: id, fromMonth } } });
+    await this.syncCurrentShare(id, now);
+    await this.audit.record(adminId, 'AGENCY_SHARE', 'AGENCY', id, { fromMonth, from: row.percent, to: await this.rateAt(id, fromMonth), deleted: true });
+    return this.shareRates(id, now);
+  }
+
+  /** 창립 파트너 — fromMonth부터 12개월 70%, 그다음 달부터 기본값(두 줄을 한 번에) */
+  async applyFoundingShare(adminId: string, id: string, dto: FoundingShareDto, now = new Date()) {
+    await this.findAgencyOrThrow(id);
+    await this.ensureOpenMonth(dto.fromMonth);
+    const months = dto.months ?? FOUNDING_MONTHS;
+    const foundingPercent = dto.foundingPercent ?? FOUNDING_PERCENT;
+    const afterPercent = dto.afterPercent ?? null;
+    let afterMonth = dto.fromMonth;
+    for (let i = 0; i < months; i++) afterMonth = nextMonth(afterMonth);
+    await this.prisma.$transaction(async (tx) => {
+      for (const [fromMonth, percent] of [
+        [dto.fromMonth, foundingPercent],
+        [afterMonth, afterPercent],
+      ] as const) {
+        await tx.agencyShareRate.upsert({
+          where: { agencyId_fromMonth: { agencyId: id, fromMonth } },
+          create: { agencyId: id, fromMonth, percent, createdById: adminId },
+          update: { percent, createdById: adminId },
+        });
+      }
+    });
+    await this.syncCurrentShare(id, now);
+    await this.audit.record(adminId, 'AGENCY_SHARE', 'AGENCY', id, { founding: true, fromMonth: dto.fromMonth, months, foundingPercent, afterMonth, afterPercent });
+    return this.shareRates(id, now);
+  }
+
+  /** 이력 기준 그 달의 비율(null = 기본값) */
+  private async rateAt(id: string, month: string): Promise<number | null> {
+    const row = await this.prisma.agencyShareRate.findFirst({ where: { agencyId: id, fromMonth: { lte: month } }, orderBy: { fromMonth: 'desc' }, select: { percent: true } });
+    return row?.percent ?? null;
+  }
+
+  // Agency.revenueSharePercent는 "이번 달 비율" 표시용 사본(옛 앱 호환) — 이력이 바뀔 때마다 맞춤
+  private async syncCurrentShare(id: string, now = new Date()) {
+    await this.prisma.agency.update({ where: { id }, data: { revenueSharePercent: await this.rateAt(id, monthOf(now)) } });
+  }
+
+  private async lastClosedMonth(): Promise<string | null> {
+    const last = await this.prisma.settlementClose.findFirst({ orderBy: { month: 'desc' }, select: { month: true } });
+    return last?.month ?? null;
+  }
+
+  // 마감한 달(마지막 마감 달까지)의 배분율은 다시 해석하지 않음 — 저장한 표와 이후 조정 계산이 어긋나지 않게
+  private async ensureOpenMonth(month: string) {
+    monthRange(month);
+    const last = await this.lastClosedMonth();
+    if (last && month <= last) throw new ConflictException(appError('SHARE_RATE_MONTH_CLOSED', { month: last }));
   }
 
   private async toResponse({ _count, ...agency }: { id: string; name: string; logoUrl: string | null; revenueSharePercent: number | null; createdAt: Date; _count: { actors: number; staff: number } }) {

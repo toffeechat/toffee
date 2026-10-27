@@ -14,6 +14,18 @@ import { appError } from '../common/i18n/app-error.js';
 import { MediaService } from '../storage/media.service.js';
 import { userProfileImagePrefix } from '../storage/media-policy.js';
 import { cleanStatusMessage } from '../common/status-message/status-message.js';
+import type { ClientInfo } from '../access-log/client-info.js';
+import { jwtLifetimeMs, revokeAllSessions } from './auth-sessions.js';
+
+/** 토큰 발급 옵션(2026-10-27) — sessionId가 있으면 그 세션을 이어 씀(2단계 인증처럼 같은 기기에서 이어서), 없으면 새 세션 */
+export interface IssueTokenOptions {
+  // 데모 입장 코드로 들어왔으면 그 코드 id(공용 코드면 'common') — 요청마다 만료·중지 확인과 접속 기록에 씀(2026-10-19)
+  demoCode?: string;
+  // 운영자가 2단계 인증 코드를 확인한 시각(ms, 2026-10-20) — 토큰에 담아 운영자 API가 확인
+  mfaAt?: number;
+  sessionId?: string;
+  client?: ClientInfo;
+}
 
 interface ExternalIdentity {
   providerId: string;
@@ -35,6 +47,8 @@ function sameCode(given: string | undefined, expected: string): boolean {
 @Injectable()
 export class AuthService {
   private readonly googleClient: OAuth2Client;
+  // 토큰·로그인 세션 수명(JWT_EXPIRES_IN, 기본 30일)
+  private readonly tokenLifetimeMs: number;
 
   constructor(
     private readonly configService: ConfigService,
@@ -44,18 +58,79 @@ export class AuthService {
     private readonly media: MediaService,
   ) {
     this.googleClient = new OAuth2Client();
+    this.tokenLifetimeMs = jwtLifetimeMs(this.configService.get<string>('JWT_EXPIRES_IN'));
   }
 
-  // demoCode: 데모 입장 코드로 들어왔으면 그 코드 id(공용 코드면 'common') — 요청마다 만료·중지 확인과 접속 기록에 씀(2026-10-19)
-  // mfaAt: 운영자가 2단계 인증 코드를 확인한 시각(ms, 2026-10-20) — 토큰에 담아 운영자 API가 확인
-  async issueAccessToken(user: { id: string; role: Role }, demoCode?: string, mfaAt?: number): Promise<{ accessToken: string }> {
-    const accessToken = await this.jwtService.signAsync({ sub: user.id, role: user.role, ...(demoCode ? { dac: demoCode } : {}), ...(mfaAt ? { mfaAt } : {}) });
-    return { accessToken };
+  async issueAccessToken(user: { id: string; role: Role }, opts: IssueTokenOptions = {}): Promise<{ accessToken: string }> {
+    const session = opts.sessionId
+      ? { id: opts.sessionId, tokenVersion: (await this.prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { tokenVersion: true } })).tokenVersion }
+      : await this.createSession(user.id, opts.client);
+    return { accessToken: await this.signToken(user, session.id, session.tokenVersion, opts) };
+  }
+
+  // 로그인 세션 한 줄(2026-10-27) — 만료는 토큰과 같게, 기기 정보는 화면 표시용
+  private async createSession(userId: string, client?: ClientInfo) {
+    const session = await this.prisma.authSession.create({
+      data: {
+        userId,
+        expiresAt: new Date(Date.now() + this.tokenLifetimeMs),
+        platform: client?.platform ?? null,
+        deviceModel: client?.deviceModel ?? null,
+        appVersion: client?.appVersion ?? null,
+      },
+      select: { id: true, user: { select: { tokenVersion: true } } },
+    });
+    return { id: session.id, tokenVersion: session.user.tokenVersion };
+  }
+
+  private signToken(user: { id: string; role: Role }, sid: string, tv: number, opts: IssueTokenOptions) {
+    return this.jwtService.signAsync({
+      sub: user.id,
+      role: user.role,
+      sid,
+      tv,
+      ...(opts.demoCode ? { dac: opts.demoCode } : {}),
+      ...(opts.mfaAt ? { mfaAt: opts.mfaAt } : {}),
+    });
+  }
+
+  /**
+   * 토큰 자동 갱신(2026-10-27) — 앱이 켤 때·앱으로 돌아올 때(12시간에 한 번) 불러서 30일 만료를 계속 미룸. 같은 세션·데모 코드·
+   * 2단계 인증 시각(mfaAt은 그대로 — 갱신으로 운영자 확인이 늘어나지 않게). sid 없는 옛 토큰이면 새 세션을 만들어 옮김
+   */
+  async refreshAccessToken(user: AuthenticatedUser, client?: ClientInfo): Promise<{ accessToken: string }> {
+    const opts: IssueTokenOptions = { demoCode: user.demoCode, mfaAt: user.mfaAt, client };
+    if (!user.sessionId) return this.issueAccessToken(user, opts);
+    const now = new Date();
+    const { count } = await this.prisma.authSession.updateMany({
+      where: { id: user.sessionId, userId: user.id, revokedAt: null },
+      data: {
+        refreshedAt: now,
+        expiresAt: new Date(now.getTime() + this.tokenLifetimeMs),
+        ...(client?.appVersion ? { appVersion: client.appVersion } : {}),
+      },
+    });
+    // 확인과 갱신 사이에 끊겼으면(다른 기기에서 "모든 기기 로그아웃")
+    if (count === 0) throw new UnauthorizedException(appError('SESSION_EXPIRED'));
+    return { accessToken: await this.signToken(user, user.sessionId, user.tokenVersion ?? 0, opts) };
+  }
+
+  /** 이 기기만 로그아웃 — 세션을 끊음(sid 없는 옛 토큰은 할 게 없음) */
+  async logout(user: AuthenticatedUser): Promise<void> {
+    if (!user.sessionId) return;
+    await this.prisma.authSession.updateMany({ where: { id: user.sessionId, userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
+  }
+
+  /** 모든 기기에서 로그아웃(본인) — tokenVersion을 올려 옛 토큰까지 전부 */
+  async logoutAll(userId: string): Promise<void> {
+    await revokeAllSessions(this.prisma, userId);
   }
 
   // 배포 후 자동 점검(SmokeService, 2026-10-25)용 짧은 토큰 — 워크플로 로그에 남아도 금방 못 쓰게
-  issueShortAccessToken(user: { id: string; role: Role }, expiresIn: `${number}m`): Promise<string> {
-    return this.jwtService.signAsync({ sub: user.id, role: user.role }, { expiresIn });
+  async issueShortAccessToken(user: { id: string; role: Role }, expiresIn: `${number}m`): Promise<string> {
+    // 세션 없이 tv만(짧게 살아서 따로 끊을 일이 없음, 2026-10-27)
+    const { tokenVersion } = await this.prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { tokenVersion: true } });
+    return this.jwtService.signAsync({ sub: user.id, role: user.role, tv: tokenVersion }, { expiresIn });
   }
 
   // Google/Apple/Naver/Kakao/LINE 자격증명 없이 앱을 끝까지 테스트하기 위한 개발용 로그인.

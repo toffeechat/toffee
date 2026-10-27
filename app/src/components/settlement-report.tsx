@@ -256,6 +256,12 @@ function AgencyTable({ agency, payouts, columns }: {
         <ThemedText type="small" themeColor="textSecondary">
           {t('settlement.share', { percent: agency.sharePercent })}
         </ThemedText>
+        {/* 2026-10-27 — 마감한 달 결제의 조정·이월은 그 결제 달의 배분율로 계산됨(비율이 섞였을 때만 옴) */}
+        {agency.sharePercentsUsed ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('settlement.shareMixed', { percents: agency.sharePercentsUsed.map((percent) => `${percent}%`).join(', ') })}
+          </ThemedText>
+        ) : null}
       </View>
       {/* 좁은 창에선 표를 옆으로 밀어 봄 */}
       <ScrollView horizontal contentContainerStyle={styles.tableScroll}>

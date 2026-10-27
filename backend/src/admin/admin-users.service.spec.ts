@@ -15,6 +15,19 @@ describe('운영자 제재 — 사유·작업 기록', () => {
     await service.suspend({ id: 'admin-1', role: 'ADMIN', adminLevel: 'SUPPORT' }, 'u1', until, { category: 'ABUSE', note: ' 반복 욕설 ' });
     expect(update.mock.calls[0][0].data).toMatchObject({ status: 'SUSPENDED', sanctionCategory: 'ABUSE', sanctionNote: '반복 욕설' });
     expect(record).toHaveBeenCalledWith('admin-1', 'USER_SUSPEND', 'USER', 'u1', expect.objectContaining({ category: 'ABUSE' }));
+    // 로그인도 모두 끊음(2026-10-27)
+    expect(update.mock.calls[0][0].data).toMatchObject({ tokenVersion: { increment: 1 }, authSessions: { updateMany: { data: { revokedAt: expect.any(Date) } } } });
+  });
+
+  it('모든 기기에서 로그아웃시키기 — tokenVersion을 올리고 작업 기록(2026-10-27)', async () => {
+    const update = vi.fn().mockResolvedValue({ tokenVersion: 1 });
+    const record = vi.fn().mockResolvedValue(undefined);
+    const findUnique = vi.fn().mockResolvedValue({ id: 'u1', role: 'USER', adminLevel: null, deletedAt: null });
+    const service = new AdminUsersService({ user: { update, findUnique } } as unknown as PrismaService, { record } as unknown as AuditService);
+    await service.signOutEverywhere({ id: 'admin-1', role: 'ADMIN', adminLevel: 'SUPPORT' }, 'u1');
+    expect(update.mock.calls[0][0].data).toMatchObject({ tokenVersion: { increment: 1 } });
+    expect(record).toHaveBeenCalledWith('admin-1', 'USER_SIGN_OUT', 'USER', 'u1');
+    await expect(service.signOutEverywhere({ id: 'u1', role: 'ADMIN' }, 'u1')).rejects.toThrow(ForbiddenException);
   });
 
   it('당사자 안내 문구에 사유 분류가 받는 사람 언어로 붙음(메모는 안 나감)', () => {

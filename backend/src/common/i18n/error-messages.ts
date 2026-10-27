@@ -251,6 +251,18 @@ export const ERROR_MESSAGES = {
     es: 'Esta cuenta ha sido eliminada.',
     'pt-BR': 'Esta conta foi excluída.',
   },
+  // 로그아웃·모든 기기에서 로그아웃·제재로 끊긴 토큰(2026-10-27)
+  SESSION_EXPIRED: {
+    ko: '로그인이 만료됐어요. 다시 로그인해 주세요.',
+    en: 'Your login has expired. Please log in again.',
+    th: 'การเข้าสู่ระบบหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง',
+    ja: 'ログインの有効期限が切れました。もう一度ログインしてください。',
+    'zh-Hans': '登录已过期，请重新登录。',
+    'zh-Hant': '登入已過期，請重新登入。',
+    vi: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+    es: 'Tu sesión ha caducado. Vuelve a iniciar sesión.',
+    'pt-BR': 'Seu login expirou. Entre novamente.',
+  },
   ACCOUNT_BANNED: {
     ko: (p, l) => `이용이 제한된 계정이에요.${reason(p, l)}`,
     en: (p, l) => `This account has been restricted.${reason(p, l)}`,
@@ -808,6 +820,18 @@ export const ERROR_MESSAGES = {
     vi: 'Đã có bản ghi chi trả. Nếu sai, hãy xóa rồi ghi nhận lại.',
     es: 'Ya hay un pago registrado. Si era incorrecto, elimínalo y vuelve a registrarlo.',
     'pt-BR': 'Já há um pagamento registrado. Se estiver errado, exclua e registre novamente.',
+  },
+  // 배분율 이력(2026-10-27) — 마감한 달의 배분율은 다시 해석하지 않음
+  SHARE_RATE_MONTH_CLOSED: {
+    ko: (p) => `${p.month}까지는 이미 정산을 마감했어요. 배분율은 그다음 달부터 바꿀 수 있어요.`,
+    en: (p) => `Settlements are already closed through ${p.month}. The share rate can only change from the following month.`,
+    th: (p) => `ปิดยอดถึงเดือน ${p.month} แล้ว เปลี่ยนอัตราส่วนแบ่งได้ตั้งแต่เดือนถัดไปเท่านั้น`,
+    ja: (p) => `${p.month}までは精算を締め済みです。配分率はその翌月から変更できます。`,
+    'zh-Hans': (p) => `${p.month}及之前已结账。分成比例只能从下个月起修改。`,
+    'zh-Hant': (p) => `${p.month}及之前已結帳。分成比例只能從下個月起修改。`,
+    vi: (p) => `Đã chốt quyết toán đến ${p.month}. Chỉ có thể đổi tỷ lệ chia từ tháng tiếp theo.`,
+    es: (p) => `Las liquidaciones ya están cerradas hasta ${p.month}. El porcentaje solo puede cambiar a partir del mes siguiente.`,
+    'pt-BR': (p) => `Os acertos já estão fechados até ${p.month}. A porcentagem só pode mudar a partir do mês seguinte.`,
   },
   REFUND_NOT_ELIGIBLE: {
     ko: '환불 요청 대상이 아니에요. 이용 기간 동안 아티스트 메시지가 하나도 없었고, 기간이 끝난 뒤 7일 안일 때만 요청할 수 있어요.',

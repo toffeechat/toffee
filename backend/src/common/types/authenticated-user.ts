@@ -9,4 +9,8 @@ export interface AuthenticatedUser {
   /** 이 계정이 2단계 인증을 켰나 / 이 토큰이 코드를 확인한 시각(ms) */
   mfaEnabled?: boolean;
   mfaAt?: number;
+  /** 로그인 세션(2026-10-27) — 토큰의 sid(옛 토큰엔 없음)·tv·데모 입장 코드. 토큰 갱신·로그아웃·실시간 연결 확인에 씀 */
+  sessionId?: string;
+  tokenVersion?: number;
+  demoCode?: string;
 }

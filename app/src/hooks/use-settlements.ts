@@ -24,7 +24,10 @@ export interface SettlementActor extends SettlementAmounts {
 export interface SettlementAgency extends SettlementAmounts {
   agencyId: string | null;
   name: string | null;
+  // 이 달 배분율(2026-10-27부터 결제가 속한 달 기준)
   sharePercent: number;
+  // 지난달 조정·이월에 다른 배분율이 섞였을 때만 — 쓰인 비율들(큰 순)
+  sharePercentsUsed?: number[];
   actors: SettlementActor[];
 }
 

@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
 import { AppVersion } from '@/components/app-version';
 import { ListRow } from '@/components/ui/list-row';
+import { LogoutAllRow } from '@/components/logout-all-row';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
 import { confirm } from '@/lib/confirm';
@@ -147,6 +148,7 @@ export default function ProfileScreen() {
 
         <Section>
           <ListRow icon={LogOut} title={t('profile.logout')} onPress={() => void logout()} showChevron={false} />
+          <LogoutAllRow />
         </Section>
 
         {notice ? (
