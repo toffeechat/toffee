@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { seedDemo } from './demo-seed.js';
-import { isDemoServer } from './demo-mode.js';
+import { demoWipeBlocker, isDemoServer } from './demo-mode.js';
+import { appError } from '../common/i18n/app-error.js';
 import { DemoAccessService } from './demo-access.service.js';
 
 /**
@@ -26,6 +27,12 @@ export class DemoService {
 
   async reset(): Promise<void> {
     if (!this.isEnabled()) throw new NotFoundException();
+    // DB 내용으로 한 번 더 확인(2026-10-27) — 운영 DB면 거절
+    const blocker = await demoWipeBlocker(this.prisma);
+    if (blocker) {
+      this.logger.error(`데모 초기화 거절 — ${blocker}`);
+      throw new ForbiddenException(appError('FORBIDDEN'));
+    }
     // 한 트랜잭션으로 — 중간에 실패하면 지운 것도 되돌아감. 쿼리가 많아 기본 5초보다 넉넉히
     await this.prisma.$transaction((tx) => seedDemo(tx), { timeout: 60_000, maxWait: 10_000 });
     this.logger.log('운영자 화면에서 데모 데이터를 초기화함');
@@ -37,11 +44,16 @@ export class DemoService {
    * 입장 코드·데모 접속 기록은 지우지 않음(demo-seed가 건드리지 않는 표). 태국 새벽 4시 = 한국 6시.
    */
   @Cron('0 4 * * *', { timeZone: 'Asia/Bangkok' })
-  async dailyReset(): Promise<'reset' | 'skipped' | 'off'> {
+  async dailyReset(): Promise<'reset' | 'skipped' | 'off' | 'blocked'> {
     if (!this.isEnabled() || this.configService.get<string>('DEMO_DAILY_RESET')?.trim() !== 'true') return 'off';
     if (await this.demoAccess.recentlyActive()) {
       this.logger.log('데모 자동 초기화 건너뜀 — 최근 30분 안에 접속한 사람이 있음');
       return 'skipped';
+    }
+    const blocker = await demoWipeBlocker(this.prisma);
+    if (blocker) {
+      this.logger.error(`데모 자동 초기화 거절 — ${blocker}`);
+      return 'blocked';
     }
     await this.prisma.$transaction((tx) => seedDemo(tx), { timeout: 60_000, maxWait: 10_000 });
     this.logger.log('데모 데이터 자동 초기화(매일 새벽)');

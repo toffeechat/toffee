@@ -21,8 +21,8 @@ export class AdminAgenciesController {
   }
 
   @Post('agencies')
-  create(@Body() dto: CreateAgencyDto) {
-    return this.adminAgenciesService.create(dto);
+  create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAgencyDto) {
+    return this.adminAgenciesService.create(user.id, dto);
   }
 
   @Patch('agencies/:id')
@@ -31,8 +31,8 @@ export class AdminAgenciesController {
   }
 
   @Patch('actors/:id/agency')
-  assignActor(@Param('id') id: string, @Body() dto: AssignAgencyDto) {
-    return this.adminAgenciesService.assignActor(id, dto.agencyId);
+  assignActor(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: AssignAgencyDto) {
+    return this.adminAgenciesService.assignActor(user.id, id, dto.agencyId);
   }
 
   @Get('actors/:id/agency-history')
@@ -41,7 +41,7 @@ export class AdminAgenciesController {
   }
 
   @Patch('users/:id/agency')
-  assignStaff(@Param('id') id: string, @Body() dto: AssignAgencyDto) {
-    return this.adminAgenciesService.assignStaff(id, dto.agencyId);
+  assignStaff(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: AssignAgencyDto) {
+    return this.adminAgenciesService.assignStaff(user.id, id, dto.agencyId);
   }
 }

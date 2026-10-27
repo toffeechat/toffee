@@ -24,6 +24,7 @@ import { LocalePreferenceProvider } from '@/i18n/locale-preference-context';
 import { useSyncLocale } from '@/hooks/use-sync-locale';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useOtaUpdate } from '@/hooks/use-ota-update';
+import { useStorePurchaseSync } from '@/hooks/use-store-purchase';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { peekDemoLink } from '@/lib/demo-entry';
 import { getPendingActorLink, loadPendingActorLink } from '@/lib/actor-link';
@@ -91,6 +92,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       router.replace({ pathname: '/link/[token]', params: { token: pendingLink } });
       return;
     }
+    // 역할을 아직 못 받음(오프라인·서버 오류 — auth-context가 다시 시도, 2026-10-27): 팬 화면·"다른 역할 화면" 판단을 미룸
+    // (예전엔 role null을 팬으로 보고 아티스트를 팬 탭으로 보냈음)
+    if (!role) return;
     if (onboardingLoading) return;
 
     // 온보딩은 단계별로 정확한 화면에 있어야 함 — 예전엔 "온보딩 화면 중 아무 데나"면 그대로 둬서, 생년월일을
@@ -151,7 +155,7 @@ function useDemoLinkSwitch() {
   }, [isLoading]);
 }
 
-// 로그인 상태에 따라 돌아야 하는 백그라운드 작업들(언어 동기화, 푸시 등록·알림 처리, 실시간 연결)
+// 로그인 상태에 따라 돌아야 하는 백그라운드 작업들(언어 동기화, 푸시 등록·알림 처리, 실시간 연결, 스토어 결제)
 function SessionEffects() {
   useDemoLinkSwitch();
   useAdminKorean();
@@ -160,6 +164,8 @@ function SessionEffects() {
   const { token } = useAuth();
   useRealtimeSync(token);
   useConsoleWebAlerts();
+  // 스토어 결제 처리(앱 전체에 하나, 2026-10-27) — 결제 화면이 닫혀 있어도 거래를 확인·완료
+  useStorePurchaseSync();
   return null;
 }
 

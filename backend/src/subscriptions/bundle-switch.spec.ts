@@ -86,9 +86,14 @@ function setup() {
         return row;
       },
       update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => Object.assign(subs.find((s) => s.id === where.id)!, data),
+      updateMany: async ({ where, data }: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+        const rows = subs.filter((s) => matches(s, where));
+        rows.forEach((row) => Object.assign(row, data));
+        return { count: rows.length };
+      },
     },
     subscriptionEvent: { create: async () => ({}) },
-    purchaseCharge: { findFirst: async () => (latestCharge.at ? { chargedAt: latestCharge.at } : null) },
+    purchaseCharge: { findFirst: async () => (latestCharge.at ? { chargedAt: latestCharge.at } : null), findUnique: async () => null },
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
   };
   let nextTransaction: StoreTransaction | null = null;

@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
-import { Environment, SignedDataVerifier } from '@apple/app-store-server-library';
+import { Environment, SignedDataVerifier, VerificationException, VerificationStatus } from '@apple/app-store-server-library';
 import { appError } from '../common/i18n/app-error.js';
 
 // Apple이 공개하는 루트 인증서 — StoreKit2 JWS(서명된 트랜잭션·서버 알림) 검증에 필요.
-// 자주 안 바뀌는 값이라 프로세스 실행 중엔 한 번만 받아서 메모리에 캐싱.
+// 자주 안 바뀌는 값이라 프로세스 실행 중엔 한 번만 받아서 메모리에 캐싱(받기에 실패하면 캐싱하지 않고 다음 호출에서 다시, 2026-10-27).
 const APPLE_ROOT_CA_URL = 'https://www.apple.com/certificateauthority/AppleRootCA-G3.cer';
 
 /** 스토어가 확인해 준 구독 결제 한 건(애플·구글 공통 모양) */
@@ -30,6 +30,16 @@ export interface StoreTransaction {
   replacesTransactionId?: string;
   // 구글: 이 구매가 다른 구매로 교체돼 끝남(cancelReason 2) — 이 토큰의 만료 알림으로 방을 닫으면 안 됨(새 구매가 이어받음)
   replaced?: boolean;
+  // 테스트 결제(2026-10-27) — 애플 샌드박스(앱 심사·TestFlight)·구글 라이선스 테스터. 이용은 열어 주되 결제 기록은 SANDBOX(정산 제외)
+  sandbox?: boolean;
+  // 애플: 환불·취소된 결제(revocationDate) — 앱이 저장해 둔 영수증을 다시 보내도 방을 열지 않음(2026-10-27)
+  revoked?: boolean;
+  // 구글: 결제 대기(paymentState 0, 편의점·현금 결제 등) — 결제가 끝나기 전엔 방을 열지 않음(2026-10-27)
+  pending?: boolean;
+  // 구글: 아직 확인(acknowledge) 안 된 구매 — 3일 안에 확인 안 하면 구글이 자동 환불해서 서버가 확인해 줌(2026-10-27)
+  needsAcknowledge?: boolean;
+  // 결제 실패(유예 끝·결제 보류) 뒤 같은 스토어 구독이 회복됨(애플 DID_RENEW/BILLING_RECOVERY, 구글 RECOVERED) — 재구독이 아니라 대화 이어 보기(2026-10-27)
+  recovered?: boolean;
 }
 
 /** 애플 서버 알림(App Store Server Notifications V2)을 검증·해석한 결과 */
@@ -52,6 +62,12 @@ interface GooglePlaySubscriptionResponse {
   linkedPurchaseToken?: string;
   // 0 팬 해지, 1 시스템(결제 실패 등), 2 다른 구독으로 교체, 3 개발자 해지
   cancelReason?: number;
+  // 0 결제 대기, 1 결제됨, 2 무료 체험, 3 업·다운그레이드 대기(만료된 구독엔 없음)
+  paymentState?: number;
+  // 0 아직 확인 안 됨, 1 확인됨
+  acknowledgementState?: number;
+  // 0 테스트(라이선스 테스터), 1 프로모션, 2 보상형 — 실제 결제면 없음
+  purchaseType?: number;
 }
 
 /**
@@ -62,7 +78,7 @@ interface GooglePlaySubscriptionResponse {
 export class IapVerificationService {
   private readonly logger = new Logger(IapVerificationService.name);
   private cachedAppleRootCertificate: Buffer | null = null;
-  private appleVerifier: SignedDataVerifier | null = null;
+  private appleVerifiers: SignedDataVerifier[] | null = null;
   private readonly pubSubClient = new OAuth2Client();
 
   constructor(private readonly configService: ConfigService) {}
@@ -75,39 +91,65 @@ export class IapVerificationService {
     return value;
   }
 
-  private async getAppleVerifier(): Promise<SignedDataVerifier> {
-    if (this.appleVerifier) return this.appleVerifier;
+  /**
+   * 애플 검증기 — 운영 먼저, 환경이 안 맞으면 샌드박스로(2026-10-27). 앱 심사·TestFlight 결제는 운영 앱에서도 샌드박스라, 운영 검증기만 쓰면
+   * 심사원이 구독을 못 함(애플 권장 방식). APPLE_IAP_ENVIRONMENT=SANDBOX(개발)면 샌드박스만. 루트 인증서를 받은 뒤에만 캐싱.
+   */
+  private async getAppleVerifiers(): Promise<SignedDataVerifier[]> {
+    if (this.appleVerifiers) return this.appleVerifiers;
     const bundleId = this.required('APPLE_BUNDLE_ID');
-    const sandbox = this.configService.get<string>('APPLE_IAP_ENVIRONMENT') === 'SANDBOX';
-    const appAppleId = Number(this.configService.get<string>('APPLE_APP_ID')) || undefined;
-    this.appleVerifier = new SignedDataVerifier(
-      [await this.getAppleRootCertificate()],
-      true,
-      sandbox ? Environment.SANDBOX : Environment.PRODUCTION,
-      bundleId,
-      sandbox ? undefined : appAppleId,
-    );
-    return this.appleVerifier;
+    const sandboxOnly = this.configService.get<string>('APPLE_IAP_ENVIRONMENT') === 'SANDBOX';
+    const roots = [await this.getAppleRootCertificate()];
+    const sandbox = new SignedDataVerifier(roots, true, Environment.SANDBOX, bundleId);
+    this.appleVerifiers = sandboxOnly
+      ? [sandbox]
+      : [new SignedDataVerifier(roots, true, Environment.PRODUCTION, bundleId, Number(this.required('APPLE_APP_ID'))), sandbox];
+    return this.appleVerifiers;
+  }
+
+  // 검증기를 차례로 — 환경(또는 운영 앱 id)이 안 맞을 때만 다음 것으로. 서명 자체가 틀리면 바로 실패
+  private async withAppleVerifier<T>(run: (verifier: SignedDataVerifier) => Promise<T>): Promise<{ value: T; verifier: SignedDataVerifier }> {
+    const verifiers = await this.getAppleVerifiers();
+    for (let index = 0; ; index += 1) {
+      try {
+        return { value: await run(verifiers[index]), verifier: verifiers[index] };
+      } catch (error) {
+        const mismatch =
+          error instanceof VerificationException &&
+          (error.status === VerificationStatus.INVALID_ENVIRONMENT || error.status === VerificationStatus.INVALID_APP_IDENTIFIER);
+        if (!mismatch || index === verifiers.length - 1) throw error;
+      }
+    }
   }
 
   // expo-iap가 iOS에서 주는 건 옛날 방식의 base64 영수증이 아니라 StoreKit2 서명 트랜잭션(JWS 문자열)이라, 애플 공식 라이브러리로
   // 로컬에서 서명을 검증하고 페이로드를 디코딩함(Apple 서버로 verifyReceipt를 호출하는 옛날 방식이 아님).
   async verifyApple(signedTransaction: string): Promise<StoreTransaction> {
-    const verifier = await this.getAppleVerifier();
-    const payload = await verifier.verifyAndDecodeTransaction(signedTransaction).catch(() => null);
+    const payload = await this.withAppleVerifier((verifier) => verifier.verifyAndDecodeTransaction(signedTransaction))
+      .then((result) => result.value)
+      .catch((error: unknown) => {
+        // 인증서를 못 받는 등 설정·네트워크 문제는 영수증 탓이 아님 — 그대로(503)
+        if (error instanceof ServiceUnavailableException) throw error;
+        return null;
+      });
     const transaction = payload ? appleTransaction(payload) : null;
     if (!transaction) throw new BadRequestException(appError('IAP_APPLE_VERIFY_FAILED'));
+    // 환불·취소된 결제(2026-10-27) — 예전엔 앱에 남은 서명 트랜잭션을 다시 보내면 환불받은 방이 다시 열렸음
+    if (transaction.revoked) throw new BadRequestException(appError('IAP_EXPIRED'));
     return transaction;
   }
 
   /** 애플 서버 알림 — 서명 검증 후 알림 종류와 안에 든 결제·갱신 정보를 풀어 줌 */
   async decodeAppleNotification(signedPayload: string): Promise<AppleNotification> {
-    const verifier = await this.getAppleVerifier();
-    const notification = await verifier.verifyAndDecodeNotification(signedPayload).catch((error: unknown) => {
+    const decoded = await this.withAppleVerifier((verifier) => verifier.verifyAndDecodeNotification(signedPayload)).catch((error: unknown) => {
+      if (error instanceof ServiceUnavailableException) throw error;
       this.logger.warn(`애플 알림 검증 실패: ${String(error)}`);
       return null;
     });
-    if (!notification?.notificationType) throw new BadRequestException(appError('IAP_APPLE_VERIFY_FAILED'));
+    const notification = decoded?.value;
+    if (!decoded || !notification?.notificationType) throw new BadRequestException(appError('IAP_APPLE_VERIFY_FAILED'));
+    // 안에 든 결제·갱신 정보는 알림을 통과시킨 검증기(같은 환경)로
+    const verifier = decoded.verifier;
     const [transactionPayload, renewal] = await Promise.all([
       notification.data?.signedTransactionInfo ? verifier.verifyAndDecodeTransaction(notification.data.signedTransactionInfo) : null,
       notification.data?.signedRenewalInfo ? verifier.verifyAndDecodeRenewalInfo(notification.data.signedRenewalInfo) : null,
@@ -125,9 +167,15 @@ export class IapVerificationService {
 
   private async getAppleRootCertificate(): Promise<Buffer> {
     if (this.cachedAppleRootCertificate) return this.cachedAppleRootCertificate;
-    const res = await fetch(APPLE_ROOT_CA_URL);
-    this.cachedAppleRootCertificate = Buffer.from(await res.arrayBuffer());
-    return this.cachedAppleRootCertificate;
+    // 실패(네트워크·5xx)를 캐싱하면 서버를 다시 켤 때까지 애플 결제가 전부 실패함 — 성공했을 때만 저장(2026-10-27)
+    const res = await fetch(APPLE_ROOT_CA_URL).catch(() => null);
+    const body = res?.ok ? Buffer.from(await res.arrayBuffer()) : null;
+    if (!body || body.length === 0) {
+      this.logger.warn(`애플 루트 인증서 받기 실패: ${res ? res.status : 'network'}`);
+      throw new ServiceUnavailableException(appError('SERVICE_UNAVAILABLE'));
+    }
+    this.cachedAppleRootCertificate = body;
+    return body;
   }
 
   async verifyGoogle(purchaseToken: string, productId: string, now = new Date()): Promise<StoreTransaction> {
@@ -146,6 +194,27 @@ export class IapVerificationService {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!res.ok) throw new BadRequestException(appError('IAP_GOOGLE_VERIFY_FAILED'));
     return googleTransaction(purchaseToken, productId, (await res.json()) as GooglePlaySubscriptionResponse, now);
+  }
+
+  /**
+   * 구글 구독 확인(acknowledge, 2026-10-27) — 3일 안에 확인 안 하면 구글이 자동 환불·취소함. 원래 앱이 finishTransaction으로 하지만, 앱이 그 전에
+   * 꺼지면 결제한 팬이 환불되고 방이 닫혀서 서버가 결제를 반영한 뒤에도 확인해 줌. 실패해도 경고만(앱·다음 알림이 다시 기회).
+   */
+  async acknowledgeGoogle(purchaseToken: string, productId: string): Promise<void> {
+    try {
+      const packageName = this.required('GOOGLE_PLAY_PACKAGE_NAME');
+      const auth = new GoogleAuth({
+        credentials: JSON.parse(this.required('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON')) as Record<string, string>,
+        scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+      });
+      const accessToken = (await (await auth.getClient()).getAccessToken()).token;
+      if (!accessToken) throw new Error('google auth failed');
+      const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`;
+      const res = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: '{}' });
+      if (!res.ok) throw new Error(`google acknowledge ${res.status}`);
+    } catch (error) {
+      this.logger.warn(`구글 구독 확인(acknowledge) 실패: ${String(error)}`);
+    }
   }
 
   /**
@@ -211,6 +280,8 @@ export function appleTransaction(payload: {
   appAccountToken?: string;
   price?: number;
   currency?: string;
+  revocationDate?: number;
+  environment?: string;
 }): StoreTransaction | null {
   if (!payload.originalTransactionId || !payload.expiresDate || !payload.productId) return null;
   return {
@@ -223,6 +294,9 @@ export function appleTransaction(payload: {
     accountToken: payload.appAccountToken || undefined,
     storeAmountMilli: payload.price,
     storeCurrency: payload.currency,
+    // 운영 환경이 아닌 결제(Sandbox·Xcode) — 정산 제외
+    ...(payload.environment && payload.environment !== String(Environment.PRODUCTION) ? { sandbox: true } : {}),
+    ...(payload.revocationDate ? { revoked: true } : {}),
   };
 }
 
@@ -242,5 +316,8 @@ export function googleTransaction(purchaseToken: string, productId: string, body
     willRenew: body.autoRenewing,
     replacesTransactionId: body.linkedPurchaseToken || undefined,
     replaced: body.cancelReason === 2 || undefined,
+    sandbox: body.purchaseType === 0 || undefined,
+    pending: body.paymentState === 0 || undefined,
+    needsAcknowledge: body.acknowledgementState === 0 || undefined,
   };
 }

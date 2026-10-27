@@ -23,13 +23,30 @@ describe('활동 종료 때 스토어 갱신 멈추기(2026-10-20)', () => {
           // 예정일 전 갱신 — 아직 두기
           { id: 'p3', iapTransactionId: 't3', iapExpiresAt: new Date('2026-11-01'), actor: null, bundle: { actors: [{ actor: { ...solo(null, '2026-12-01T00:00:00Z'), coupleMembers: [] } }] } },
         ]),
-        update: vi.fn().mockResolvedValue({}),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
     const iap = { cancelGoogleSubscription: vi.fn((token: string) => (token === 't2' ? Promise.reject(new Error('500')) : Promise.resolve(true))) };
     const service = new StoreRenewalService(prisma as never, iap as never);
     expect(await service.stopGoogleRenewals(now)).toBe(1);
     expect(iap.cancelGoogleSubscription.mock.calls.map((call) => call[0])).toEqual(['t1', 't2']);
-    expect(prisma.purchase.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { willRenew: false } });
+    expect(prisma.purchase.updateMany).toHaveBeenCalledWith({ where: { id: 'p1', willRenew: true }, data: { willRenew: false } });
+    // 실패한 p2는 갱신 켜짐으로 되돌려 다음에 다시
+    expect(prisma.purchase.updateMany).toHaveBeenCalledWith({ where: { id: 'p2', willRenew: false }, data: { willRenew: true } });
+  });
+
+  it('다른 서버가 먼저 표시했으면(count 0) 구글에 다시 요청하지 않음(2026-10-27)', async () => {
+    const prisma = {
+      purchase: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'p1', iapTransactionId: 't1', iapExpiresAt: new Date('2026-11-01'), actor: { ...solo('2026-10-19T00:00:00Z', null), coupleMembers: [] }, bundle: null },
+        ]),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+    const iap = { cancelGoogleSubscription: vi.fn().mockResolvedValue(true) };
+    const service = new StoreRenewalService(prisma as never, iap as never);
+    expect(await service.stopGoogleRenewals(now)).toBe(0);
+    expect(iap.cancelGoogleSubscription).not.toHaveBeenCalled();
   });
 });

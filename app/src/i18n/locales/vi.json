@@ -416,6 +416,7 @@
     "start": "Bắt đầu nhắn tin",
     "goProfile": "Đến trang của {{name}}",
     "failed": "Không đăng ký được",
+    "storePending": "Đang chờ thanh toán. Sẽ tự động mở khi thanh toán hoàn tất.",
     "refundNote": "Bạn có thể yêu cầu rút lại (hoàn tiền toàn bộ) trong vòng 7 ngày sau khi thanh toán. Bạn cũng có thể yêu cầu hoàn tiền nếu nghệ sĩ không gửi tin nhắn nào trong kỳ hoặc nghệ sĩ ngừng hoạt động.",
     "messageNote": "Nghệ sĩ gửi tin nhắn không định kỳ tùy theo lịch của mình. Tin nhắn, ảnh, giọng nói và video chỉ dành cho người đăng ký, không được chia sẻ ra bên ngoài.",
     "bundleNote": "Nghệ sĩ trong gói có thể thay đổi tùy theo nghệ sĩ hoặc công ty quản lý.",

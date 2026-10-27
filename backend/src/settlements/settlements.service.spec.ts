@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { monthOf, monthRange, SettlementsService, splitRevenue, withoutPlatformShare, type SettlementReport } from './settlements.service.js';
+import { monthOf, monthRange, negativeCarries, SettlementsService, splitRevenue, withoutPlatformShare, type SettlementReport } from './settlements.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { ConfigService } from '@nestjs/config';
 import type { AuditService } from '../audit/audit.service.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 describe('정산 계산', () => {
   it('스토어 수수료 → 소속사 몫 / 토피 몫(반올림은 토피 몫에서)', () => {
@@ -32,7 +33,7 @@ const SAMPLE_REPORT: SettlementReport = {
       sandboxEnabled: false,
       closed: null,
       payouts: [],
-      totals: { grossCents: 0, adjustmentCents: 0, storeFeeCents: 0, netCents: 0, payoutCents: 0, platformCents: 0, refundedCents: 0 },
+      totals: { grossCents: 0, adjustmentCents: 0, carriedCents: 0, storeFeeCents: 0, netCents: 0, payoutCents: 0, platformCents: 0, refundedCents: 0 },
       agencies: [
         {
           agencyId: 'ag',
@@ -40,6 +41,7 @@ const SAMPLE_REPORT: SettlementReport = {
           sharePercent: 70,
           grossCents: 0,
           adjustmentCents: -9900,
+          carriedCents: 0,
           storeFeeCents: 0,
           netCents: 0,
           payoutCents: 0,
@@ -52,6 +54,7 @@ const SAMPLE_REPORT: SettlementReport = {
               chargeCount: 0,
               grossCents: 0,
               adjustmentCents: -9900,
+              carriedCents: 0,
               storeFeeCents: 0,
               netCents: 0,
               payoutCents: 0,
@@ -190,6 +193,50 @@ describe('정산 마감', () => {
     await t.service.reopen('admin', '2026-09');
     expect((await t.service.report('2026-09')).closed).toBeNull();
     expect(t.audits).toEqual(['SETTLEMENT_CLOSE', 'SETTLEMENT_CLOSE', 'SETTLEMENT_REOPEN']);
+  });
+});
+
+describe('음수 지급액 이월(2026-10-27)', () => {
+  it('마감한 달의 지급액이 음수면 다음 달 조정으로 넘어가 다음 지급에서 빠짐 — 양수가 되면 더 안 넘어감', async () => {
+    const t = setup([
+      { id: 'c1', chargedAt: at('2026-09-10T00:00:00Z'), createdAt: at('2026-09-10T00:00:00Z'), refundedAt: null, amountCents: 10000 },
+      { id: 'c2', chargedAt: at('2026-10-02T00:00:00Z'), createdAt: at('2026-10-02T00:00:00Z'), refundedAt: null, amountCents: 5000 },
+      { id: 'c3', chargedAt: at('2026-11-02T00:00:00Z'), createdAt: at('2026-11-02T00:00:00Z'), refundedAt: null, amountCents: 20000 },
+    ]);
+    await t.service.close('admin', '2026-09', undefined, t.clock.now);
+    t.charges[0].refundedAt = at('2026-10-06T00:00:00Z');
+    await t.service.close('admin', '2026-10', undefined, at('2026-11-05T00:00:00Z'));
+    expect((await t.service.report('2026-10')).totals.payoutCents).toBeLessThan(0);
+    const november = await t.service.report('2026-11');
+    // 10월 정산 대상(5,000 - 10,000 = -5,000)이 11월 조정으로 → 20,000 - 5,000 = 15,000의 85%의 70%
+    expect(november.totals).toMatchObject({ grossCents: 20000, adjustmentCents: -5000, carriedCents: -5000, payoutCents: 8925 });
+    await t.service.close('admin', '2026-11', undefined, at('2026-12-05T00:00:00Z'));
+    expect((await t.service.report('2026-12')).totals).toMatchObject({ adjustmentCents: 0, carriedCents: 0 });
+  });
+
+  it('소속사는 합계가 음수일 때만(배우끼리 상계), 무소속은 배우마다', () => {
+    const actor = (actorId: string, grossCents: number, adjustmentCents: number, payoutCents: number) => ({ actorId, name: actorId, grossCents, adjustmentCents, payoutCents });
+    const carries = negativeCarries({
+      agencies: [
+        { agencyId: 'ag', name: 'A', sharePercent: 70, payoutCents: 100, actors: [actor('a1', 0, -1000, -595), actor('a2', 2000, 0, 1190)] },
+        { agencyId: 'bg', name: 'B', sharePercent: 60, payoutCents: -300, actors: [actor('b1', 100, -800, -357), actor('b2', 200, 0, 102)] },
+        { agencyId: null, name: null, sharePercent: 60, payoutCents: 0, actors: [actor('x1', 0, -500, -255), actor('x2', 500, 0, 255)] },
+      ],
+    } as never);
+    expect(carries.map((carry) => [carry.actor.actorId, carry.cents])).toEqual([
+      ['b1', -700],
+      ['b2', 200],
+      ['x1', -500],
+    ]);
+  });
+});
+
+describe('동시 마감(2026-10-27)', () => {
+  it('다른 요청이 먼저 마감해 고유 제약에 걸리면 500 대신 "이미 마감"', async () => {
+    const t = setup([{ id: 'c1', chargedAt: at('2026-09-10T00:00:00Z'), createdAt: at('2026-09-10T00:00:00Z'), refundedAt: null, amountCents: 10000 }]);
+    const db = (t.service as unknown as { prisma: { settlementClose: { create: () => Promise<void> } } }).prisma;
+    db.settlementClose.create = () => Promise.reject(new Prisma.PrismaClientKnownRequestError('unique', { code: 'P2002', clientVersion: 'test' }));
+    await expect(t.service.close('admin', '2026-09', undefined, t.clock.now)).rejects.toThrow('이미 마감');
   });
 });
 

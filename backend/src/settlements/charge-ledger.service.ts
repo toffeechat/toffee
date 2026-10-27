@@ -210,6 +210,12 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
     return count;
   }
 
+  /** 애플 환불 취소(REFUND_REVERSED, 2026-10-27) — 환불 표시를 지워 다시 정산에 넣음(마감한 달이면 지운 달의 조정으로 들어가지 않으니 운영자가 확인) */
+  async unmarkRefunded(db: Db, storeTransactionId: string) {
+    const { count } = await db.purchaseCharge.updateMany({ where: { storeTransactionId, refundedAt: { not: null } }, data: { refundedAt: null } });
+    return count;
+  }
+
   /**
    * 결제 순간 각 배우의 소속사 — 이적 기록(ActorAgencyHistory)이 있으면 그 시점 기록으로(그 시점에 무소속이었으면 null), 기록이
    * 아예 없는 배우(이력 기능 전 배정)는 지금 소속사로.

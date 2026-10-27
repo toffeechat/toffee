@@ -82,7 +82,9 @@ export class AuthService {
     else if (this.assertDevLoginCode(code)) demoCode = COMMON_DEMO_CODE;
     const user = await this.prisma.user.upsert({
       where: { email },
-      update: role ? { role } : {},
+      // 역할은 새로 만들 때만(2026-10-27) — 예전엔 입장 코드만 있으면 role을 실어 보내 기존 계정(시드 계정·남의 테스트 계정)의 역할을 바꿀 수 있었음.
+      // 데모 계정 역할은 시드(demo-seed.ts)가 정하고, 앱의 데모 로그인은 role을 보내지 않음
+      update: {},
       create: { email, displayName: name ?? this.generateFallbackName(), role: role ?? Role.USER },
     });
     return { id: user.id, role: user.role, ...(demoCode ? { demoCode } : {}) };
@@ -155,13 +157,14 @@ export class AuthService {
 
   async verifyKakaoToken(accessToken: string): Promise<ExternalIdentity> {
     // 이 토큰이 우리 앱에서 발급된 것인지 먼저 확인 — /v2/user/me만 부르면 다른 카카오 앱(사용자가 로그인했던 아무 앱)의 토큰으로도
-    // 통과해서 토큰 바꿔치기 로그인이 가능했음(2026-09-29 점검). 앱 ID(KAKAO_APP_ID, 운영·개발 앱이면 쉼표로 둘)가 설정돼 있을 때 검사
+    // 통과해서 토큰 바꿔치기 로그인이 가능했음(2026-09-29 점검). 앱 ID(KAKAO_APP_ID, 운영·개발 앱이면 쉼표로 둘).
+    // 2026-10-27: 설정이 비어 있으면 검사를 건너뛰던 것 → 거절(구글·애플·LINE이 클라이언트 ID 없으면 거절하는 것과 같게). 로컬 개발도
+    // 카카오 로그인을 쓰려면 KAKAO_APP_ID를 넣어야 함(.env.example에 개발 앱 ID가 있음). 테스트 로그인·스모크·e2e는 카카오를 안 씀
     const allowedApps = (this.configService.get<string>('KAKAO_APP_ID') ?? '').split(',').map((value) => value.trim()).filter(Boolean);
-    if (allowedApps.length > 0) {
-      const info = await this.fetchJson<{ app_id?: number }>('https://kapi.kakao.com/v1/user/access_token_info', accessToken, 'Kakao');
-      if (info.app_id === undefined || !allowedApps.includes(String(info.app_id))) {
-        throw new UnauthorizedException(appError('SOCIAL_TOKEN_INVALID', { provider: 'Kakao' }));
-      }
+    if (allowedApps.length === 0) throw new UnauthorizedException(appError('SOCIAL_TOKEN_INVALID', { provider: 'Kakao' }));
+    const info = await this.fetchJson<{ app_id?: number }>('https://kapi.kakao.com/v1/user/access_token_info', accessToken, 'Kakao');
+    if (info.app_id === undefined || !allowedApps.includes(String(info.app_id))) {
+      throw new UnauthorizedException(appError('SOCIAL_TOKEN_INVALID', { provider: 'Kakao' }));
     }
     const body = await this.fetchJson<{
       id?: number;

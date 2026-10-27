@@ -2,7 +2,7 @@ import { Controller, Header, MessageEvent, ServiceUnavailableException, Sse } fr
 import { SkipThrottle } from '@nestjs/throttler';
 import { Observable } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { Role } from '../generated/prisma/enums.js';
+import { Role, UserStatus } from '../generated/prisma/enums.js';
 import { viewableActorsWhere } from '../common/authorization/actor-access.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
@@ -13,6 +13,8 @@ const HEARTBEAT_MS = 25_000;
 // 볼 수 있는 배우 목록 안전 새로고침 간격 — 구독이 바뀌면 access-changed 신호로 바로 다시 읽으므로 이건 역할·소속 변경 같은
 // 드문 경우용. 예전엔 1분마다라 연결 3,000개면 DB 조회가 끊임없었음(2026-09-29 부하 테스트). 연결마다 시점을 흩뜨림
 const AUDIENCE_REFRESH_MS = 10 * 60_000;
+// 한 계정이 이 서버에 동시에 열 수 있는 연결 수 — 넘으면 가장 오래된 것을 닫음(2026-10-27, 토큰 하나로 연결을 무한정 여는 것 방지)
+export const MAX_STREAMS_PER_USER = 5;
 
 interface Audience {
   admin: boolean;
@@ -24,6 +26,9 @@ interface Audience {
 
 @Controller('realtime')
 export class RealtimeController {
+  // 계정별 열린 연결(열린 순서) — 닫는 함수
+  private readonly streams = new Map<string, (() => void)[]>();
+
   constructor(
     private readonly realtime: RealtimeService,
     private readonly prisma: PrismaService,
@@ -41,12 +46,19 @@ export class RealtimeController {
     if (!this.realtime.acceptingStreams) throw new ServiceUnavailableException();
     return new Observable<MessageEvent>((subscriber) => {
       let audience: Audience | null = null;
+      // 연결 중에 정지·영구 정지·탈퇴됐으면 다음 새로고침 때 닫음(2026-10-27 — 예전엔 연결할 때만 확인해서 계속 신호를 받았음)
       const refresh = () =>
         this.loadAudience(user.id)
           .then((next) => {
-            audience = next;
+            if (!next) subscriber.complete();
+            else audience = next;
           })
           .catch(() => {});
+      const close = () => subscriber.complete();
+      const mine = this.streams.get(user.id) ?? [];
+      mine.push(close);
+      this.streams.set(user.id, mine);
+      while (mine.length > MAX_STREAMS_PER_USER) mine.shift()!();
       // 볼 수 있는 방 목록을 다 읽은 뒤에 "준비됨" — 예전엔 먼저 보내서, 읽는 사이에 온 신호가 조용히 버려질 수 있었음
       void refresh().then(() => {
         if (!subscriber.closed) subscriber.next({ type: 'ready', data: '' });
@@ -73,6 +85,12 @@ export class RealtimeController {
       // 배포 시작 — 하던 요청은 마저 처리하지만 실시간 연결은 먼저 닫아서 앱이 새 서버로 옮겨 가게(2026-10-25)
       const closing = this.realtime.streamsClosed$.subscribe({ complete: () => subscriber.complete() });
       return () => {
+        const list = this.streams.get(user.id);
+        if (list) {
+          const index = list.indexOf(close);
+          if (index >= 0) list.splice(index, 1);
+          if (list.length === 0) this.streams.delete(user.id);
+        }
         clearInterval(refreshTimer);
         clearInterval(heartbeat);
         subscription.unsubscribe();
@@ -81,8 +99,13 @@ export class RealtimeController {
     });
   }
 
-  private async loadAudience(userId: string): Promise<Audience> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, role: true, agencyId: true } });
+  /** 볼 수 있는 방 목록 — 계정이 더 이상 쓸 수 없으면(없음·영구 정지·탈퇴·정지 기간 중) null(연결을 닫음, 로그인 확인과 같은 기준) */
+  private async loadAudience(userId: string): Promise<Audience | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, agencyId: true, status: true, deletedAt: true, suspendedUntil: true },
+    });
+    if (!user || !accountUsable(user)) return null;
     if (user.role === Role.ADMIN) return { admin: true, subscribed: new Set(), staff: new Set() };
     const [subscriptions, actors] = await Promise.all([
       this.prisma.subscription.findMany({ where: { userId, cancelledAt: null }, select: { actorId: true } }),
@@ -96,6 +119,11 @@ export class RealtimeController {
       staff: new Set(actors.map((actor) => actor.id)),
     };
   }
+}
+
+export function accountUsable(user: { status: UserStatus; deletedAt: Date | null; suspendedUntil: Date | null }, now = new Date()): boolean {
+  if (user.status === UserStatus.BANNED || user.deletedAt) return false;
+  return !(user.status === UserStatus.SUSPENDED && user.suspendedUntil && user.suspendedUntil > now);
 }
 
 export function canReceive(audience: Audience, event: RealtimeEvent): boolean {

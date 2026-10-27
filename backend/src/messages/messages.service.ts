@@ -17,7 +17,8 @@ import { RealtimeService } from '../realtime/realtime.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 
 const NAME_PLACEHOLDER = '{{name}}';
-const QUOTE_PREVIEW_LENGTH = 120;
+// 인용 칸에 보이는 글 길이 — 번역도 인용으로만 보이는 메시지는 이만큼만(2026-10-27)
+export const QUOTE_PREVIEW_LENGTH = 120;
 
 // 스타의 인용 답장이 가리키는 팬 메시지 — 화면에 보여줄 요약만 가져옴(이 채널에서 차단됐는지도 같이)
 export function quoteInclude(actorId: string) {
@@ -95,6 +96,30 @@ export function toQuote(source: QuotedSource | null, quotingSenderType?: Message
     nickname: hidden || retracted ? null : (source.fanUser?.nickname ?? null),
     body: hidden || retracted || !source.body ? null : source.body.slice(0, QUOTE_PREVIEW_LENGTH),
   };
+}
+
+/**
+ * 방의 콘텐츠를 볼 수 있는 범위(2026-10-27) — 스태프·아티스트 본인·운영자면 null(방 전체), 아니면 구독자로서 구독 시작 시각.
+ * ACTOR·AGENCY_STAFF 계정이 다른 아티스트 방을 유료 구독한 경우 예전엔 ensureCanViewActor만 거쳐서 403이었음 — 그 방을 관리하지 않으면
+ * 일반 팬과 똑같은 범위(구독 시작 이후)로만 보게 함
+ */
+export async function viewerSince(prisma: PrismaService, userId: string, actorId: string, role: Role): Promise<Date | null> {
+  if (role !== Role.USER) {
+    try {
+      await ensureCanViewActor(prisma, userId, actorId);
+      return null;
+    } catch (error) {
+      if (role === Role.ADMIN || !(error instanceof ForbiddenException)) throw error;
+    }
+  }
+  return (await ensureActiveSubscription(prisma, userId, actorId)).startedAt;
+}
+
+// 팬 응답에서 뺄 내부 기록(2026-10-27) — 누가 지웠는지·아티스트 앱의 중복 방지 키는 팬 화면에 필요 없음
+function forFan<T extends { deletedByStaffId?: unknown; deletedByAdmin?: unknown; clientMessageId?: unknown; senderType: MessageSenderType }>(message: T) {
+  const { deletedByStaffId: _staff, deletedByAdmin: _admin, clientMessageId, ...rest } = message;
+  // 내 답장의 키는 남김(내가 보낸 것) — 아티스트 메시지 키만 뺌
+  return message.senderType === MessageSenderType.FAN ? { ...rest, clientMessageId } : rest;
 }
 
 // 이 배우 채널에서 차단되지 않은 팬
@@ -215,7 +240,7 @@ export class MessagesService {
     void this.prisma.subscription
       .update({ where: { userId_actorId: { userId, actorId } }, data: { lastReadAt: new Date() } })
       .catch(() => {});
-    return this.withSenders(
+    const presented = await this.withSenders(
       await this.mediaService.withReadUrls(
         // quotedMe: 아티스트가 바로 이 팬의 메시지를 인용한 답장(2026-10-13) — 그 팬 화면에만 "내 메시지에 답장" 표시(누구의 id인지는 안 내려줌).
         // 팬 화면엔 인용된 팬 닉네임을 안 내려줌(2026-10-13 사용자 결정, 버블처럼 "아티스트의 답장"만) — 아티스트·소속사 화면은 그대로 닉네임
@@ -246,6 +271,7 @@ export class MessagesService {
         ),
       ),
     );
+    return presented.map(forFan);
   }
 
   /**
@@ -271,9 +297,8 @@ export class MessagesService {
   async listMediaForFan(userId: string, actorId: string, page: { limit?: number; before?: string } = {}) {
     // 팬은 구독 시작 이후 것만, 아티스트 본인·소속사·운영자는 그 방 전체(2026-10-15 — 스튜디오 사진 전체 화면에서도 좌우로 넘겨 보게)
     const { role } = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { role: true } });
-    let since: Date | undefined;
-    if (role === Role.USER) since = (await ensureActiveSubscription(this.prisma, userId, actorId)).startedAt;
-    else await ensureCanViewActor(this.prisma, userId, actorId);
+    // 다른 방을 구독한 아티스트·소속사 계정은 팬과 같은 범위(2026-10-27)
+    const since = await viewerSince(this.prisma, userId, actorId, role);
     const where = {
       actorId,
       senderType: MessageSenderType.ARTIST,
@@ -439,7 +464,8 @@ export class MessagesService {
         where: { id: dto.replyToMessageId, actorId },
         select: { senderType: true, senderActorId: true, deletedAt: true },
       });
-      const fanQuote = quoted?.senderType === MessageSenderType.FAN;
+      // 팬이 이미 회수한 답장은 인용 불가(2026-10-27 — 상대 아티스트 메시지와 같게)
+      const fanQuote = quoted?.senderType === MessageSenderType.FAN && !quoted.deletedAt;
       const partnerQuote =
         quoted?.senderType === MessageSenderType.ARTIST &&
         greetings.kind === ActorKind.COUPLE &&
@@ -709,13 +735,18 @@ export class MessagesService {
     // 소속사 직원도 자기 소속 아티스트 메시지를 대신 지울 수 있음(2026-10-12 사용자 결정 — 아티스트 사고 시 급히 내리기).
     // 팬 화면에선 아티스트가 지운 것과 똑같이 사라지고, 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
     const byStaff = requester.role === Role.AGENCY_STAFF;
+    const selfActorId = byStaff ? null : await ensureIsActorSelf(this.prisma, requesterId, actorId);
     if (byStaff) await ensureCanViewActor(this.prisma, requesterId, actorId);
-    else await ensureIsActorSelf(this.prisma, requesterId, actorId);
     const message = await this.prisma.message.findFirst({
       where: { id: messageId, actorId, senderType: MessageSenderType.ARTIST },
-      select: { id: true, deletedAt: true, mediaKey: true, thumbnailKey: true, _count: { select: { reports: true } } },
+      select: { id: true, deletedAt: true, senderActorId: true, mediaKey: true, thumbnailKey: true, _count: { select: { reports: true } } },
     });
     if (!message) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
+    // 아티스트는 자기가 보낸 것만(2026-10-27 — CP방에서 상대 멤버 메시지·파일까지 지울 수 있었음). 1인 방의 예전 메시지(보낸 배우 없음)는 그 방 본인 것
+    if (requester.role !== Role.ADMIN && !byStaff) {
+      const own = message.senderActorId ? message.senderActorId === selfActorId : selfActorId === actorId;
+      if (!own) throw new ForbiddenException(appError('ACTOR_SELF_ONLY'));
+    }
     if (message.deletedAt) return;
     const keepFile = message._count.reports > 0;
     await this.prisma.message.update({
@@ -728,9 +759,16 @@ export class MessagesService {
     });
     void this.realtime.publish({ kind: 'message-removed', actorId });
     if (!keepFile) {
-      await this.mediaService.deleteQuietly(message.mediaKey);
-      await this.mediaService.deleteQuietly(message.thumbnailKey);
+      await this.deleteUnusedFile(message.mediaKey);
+      await this.deleteUnusedFile(message.thumbnailKey);
     }
+  }
+
+  // 같은 파일 키를 다른 메시지도 쓰고 있으면 남김(2026-10-27 — 같은 키를 두 번 붙인 뒤 하나를 지우면 다른 메시지 파일까지 사라졌음)
+  private async deleteUnusedFile(key: string | null) {
+    if (!key) return;
+    const inUse = await this.prisma.message.count({ where: { OR: [{ mediaKey: key }, { thumbnailKey: key }] } });
+    if (inUse === 0) await this.mediaService.deleteQuietly(key);
   }
 
   /**

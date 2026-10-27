@@ -11,6 +11,7 @@ import { showNameToken } from '@/utils/name-token';
 import { useMe } from '@/hooks/use-onboarding';
 import { useAuth } from '@/lib/auth-context';
 import { onRealtimeEvent } from '@/lib/realtime';
+import { onSessionReset } from '@/lib/session-reset';
 
 const MEDIA_TEXT: Partial<Record<string, string>> = { PHOTO: 'inbox.sentPhoto', AUDIO: 'inbox.sentVoice', VIDEO: 'inbox.sentVideo' };
 
@@ -28,6 +29,15 @@ function emit() {
   snapshot = new Map(unread);
   listeners.forEach((listener) => listener());
 }
+
+// 로그아웃하면 안 읽은 수·탭 제목 "(3)"을 지움(2026-10-27) — 안 그러면 다음 계정에도 남음
+onSessionReset(() => {
+  if (unread.size) {
+    unread.clear();
+    emit();
+  }
+  if (Platform.OS === 'web' && typeof document !== 'undefined') document.title = document.title.replace(/^\(\d+\)\s*/, '');
+});
 
 export function markConsoleActorSeen(actorId: string) {
   if (!unread.has(actorId)) return;

@@ -4,6 +4,7 @@ import { fetch } from 'expo/fetch';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { API_URL } from './env';
+import { reportUnauthorized } from './api-client';
 import i18n from '@/i18n';
 
 /**
@@ -144,6 +145,15 @@ export function useRealtimeSync(token: string | null) {
           headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream', 'Accept-Language': i18n.language },
           signal: current.signal,
         });
+        // 로그인이 끊김(정지·만료 등, 2026-10-27) — 예전엔 401도 30초마다 영원히 재시도했음. 다시 붙지 않고 일반 요청과 같은 로그아웃
+        // 처리(운영자 2단계 인증이면 코드 화면 — 새 토큰으로 바뀌면 이 효과가 다시 돌며 연결)
+        if (res.status === 401) {
+          const body = (await res.json().catch(() => ({}))) as { message?: string | string[]; code?: string };
+          stopped = true;
+          const message = Array.isArray(body.message) ? body.message.join(', ') : body.message;
+          reportUnauthorized(body.code, message ?? i18n.t('common.requestFailed', { status: 401 }));
+          return;
+        }
         if (!res.ok || !res.body) throw new Error(`realtime ${res.status}`);
         const reader = res.body.getReader();
         const decoder = new TextDecoder();

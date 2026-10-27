@@ -20,7 +20,7 @@ export interface PushData {
 
 export async function registerThisDevice(): Promise<void> {}
 
-export async function unregisterThisDevice(): Promise<void> {}
+export async function unregisterThisDevice(_options?: { authToken?: string; signal?: AbortSignal }): Promise<void> {}
 
 export function subscribeTokenRefresh(): () => void {
   return () => {};

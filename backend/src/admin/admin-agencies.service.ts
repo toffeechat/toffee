@@ -31,13 +31,15 @@ export class AdminAgenciesService {
   }
 
   // 로고는 소속사가 생긴 뒤에 올릴 수 있음(업로드 경로에 소속사 id가 들어감) — 만들 땐 외부 주소만
-  async create(dto: CreateAgencyDto) {
+  async create(adminId: string, dto: CreateAgencyDto) {
     if (isStorageKey(dto.logoUrl)) throw new BadRequestException(appError('AGENCY_LOGO_AFTER_CREATE'));
     await this.ensureNameAvailable(dto.name.trim());
     const agency = await this.prisma.agency.create({
       data: { name: dto.name.trim(), logoUrl: dto.logoUrl ?? null },
       select: ADMIN_AGENCY_SELECT,
     });
+    // 작업 기록(2026-10-27) — 소속사는 정산·모니터링 권한의 단위라 누가 만들었는지 남김
+    await this.audit.record(adminId, 'AGENCY_CREATE', 'AGENCY', agency.id, { name: agency.name });
     return this.toResponse(agency);
   }
 
@@ -68,15 +70,18 @@ export class AdminAgenciesService {
   // 배우 소속 변경(이적/무소속 전환) — Actor.agencyId와 ActorAgencyHistory를 반드시 한 트랜잭션에서
   // 같이 바꿈. 이력은 정산(이적 시점 기준 매출 귀속)·계약 분쟁 대응용 기록이고, 모니터링 권한은
   // 현재 소속(Actor.agencyId)으로만 판단함.
-  async assignActor(actorId: string, agencyId: string | null) {
+  // 작업 기록(2026-10-27) — 소속이 바뀌면 정산 귀속·모니터링 권한이 바뀌므로 from/to를 남김(바뀌지 않았으면 기록 없음)
+  async assignActor(adminId: string, actorId: string, agencyId: string | null) {
     if (agencyId) await this.findAgencyOrThrow(agencyId);
 
-    return this.prisma.$transaction(async (tx) => {
+    let from: string | null | undefined;
+    const result = await this.prisma.$transaction(async (tx) => {
       const actor = await tx.actor.findUnique({ where: { id: actorId }, select: { agencyId: true, kind: true } });
       if (!actor) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
       // 커플방은 소속사가 없음 — 멤버 배우의 소속사가 각자 모니터링
       if (actor.kind === ActorKind.COUPLE) throw new BadRequestException(appError('NOT_FOR_COUPLE'));
       if (actor.agencyId === agencyId) return this.actorWithAgency(tx, actorId);
+      from = actor.agencyId;
 
       const now = new Date();
       await tx.actorAgencyHistory.updateMany({ where: { actorId, endedAt: null }, data: { endedAt: now } });
@@ -84,6 +89,8 @@ export class AdminAgenciesService {
       await tx.actor.update({ where: { id: actorId }, data: { agencyId } });
       return this.actorWithAgency(tx, actorId);
     });
+    if (from !== undefined) await this.audit.record(adminId, 'ACTOR_AGENCY', 'ACTOR', actorId, { from, to: agencyId });
+    return result;
   }
 
   async actorHistory(actorId: string) {
@@ -97,18 +104,21 @@ export class AdminAgenciesService {
   }
 
   // 스태프 계정의 소속사 지정 — 같은 소속사 배우 전원을 모니터링하게 됨(직원별 담당 배우 구분 없음)
-  async assignStaff(userId: string, agencyId: string | null) {
+  // 작업 기록(2026-10-27) — 직원 소속이 바뀌면 그 소속사 아티스트 전원의 대화·통계를 보게 되므로 from/to를 남김
+  async assignStaff(adminId: string, userId: string, agencyId: string | null) {
     if (agencyId) await this.findAgencyOrThrow(agencyId);
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true, agencyId: true } });
     if (!user) throw new NotFoundException(appError('USER_NOT_FOUND'));
     if (agencyId && user.role !== Role.AGENCY_STAFF) {
       throw new BadRequestException(appError('AGENCY_STAFF_ROLE_REQUIRED'));
     }
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { agencyId },
       select: { id: true, displayName: true, role: true, agency: { select: { id: true, name: true } } },
     });
+    if (user.agencyId !== agencyId) await this.audit.record(adminId, 'STAFF_AGENCY', 'USER', userId, { from: user.agencyId, to: agencyId });
+    return updated;
   }
 
   private actorWithAgency(tx: Pick<PrismaService, 'actor'>, actorId: string) {

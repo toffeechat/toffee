@@ -6,22 +6,36 @@ import type { StoreEvent } from './subscriptions.service.js';
  * 결제됨: SUBSCRIBED(첫 구독·재구독), DID_RENEW(갱신·결제 실패 후 회복), OFFER_REDEEMED. 유예: DID_FAIL_TO_RENEW + GRACE_PERIOD.
  * 만료: EXPIRED, GRACE_PERIOD_EXPIRED. 환불·취소: REFUND, REVOKE(가족 공유 해제). 자동 갱신 끔·다시 켬(DID_CHANGE_RENEWAL_STATUS)은
  * 기간 끝까지 이용이라 방은 그대로 두고 갱신 여부만 기록(RENEWAL, 2026-10-02 — 앱의 "○월 ○일까지 이용" 표시). 만료 알림은 따로 옴.
+ * 2026-10-27: DID_CHANGE_RENEWAL_PREF/UPGRADE(바로 올리기 — 새 결제가 이미 됨)는 결제됨, REFUND_REVERSED(환불 취소)는 환불 표시를 지우고 결제됨,
+ * DID_RENEW/BILLING_RECOVERY는 결제 실패 뒤 회복(재구독 아님 — 대화 이어 보기). 유예 끝(GRACE_PERIOD_EXPIRED)의 만료 시각은 유예 끝 기준.
  */
 export function appleStoreEvent(notification: AppleNotification): StoreEvent {
   const transaction = notification.transaction;
   if (!transaction) return { kind: 'IGNORED', reason: `${notification.type}: 결제 정보 없음` };
   switch (notification.type) {
     case 'SUBSCRIBED':
-    case 'DID_RENEW':
     case 'OFFER_REDEEMED':
       return { kind: 'PAID', transaction };
+    case 'DID_RENEW':
+      return { kind: 'PAID', transaction: notification.subtype === 'BILLING_RECOVERY' ? { ...transaction, recovered: true } : transaction };
+    case 'DID_CHANGE_RENEWAL_PREF':
+      // 올리기는 바로 바뀌고 새 결제(새 transactionId)가 이미 청구됨. 내리기(subtype 없음)는 다음 갱신 때 DID_RENEW로 옴
+      return notification.subtype === 'UPGRADE'
+        ? { kind: 'PAID', transaction }
+        : { kind: 'IGNORED', reason: 'DID_CHANGE_RENEWAL_PREF(내리기) — 다음 갱신 때 반영' };
+    case 'REFUND_REVERSED':
+      return { kind: 'PAID', transaction, refundReversed: true };
     case 'DID_FAIL_TO_RENEW':
       return notification.subtype === 'GRACE_PERIOD' && notification.gracePeriodExpiresAt
         ? { kind: 'GRACE', originalTransactionId: transaction.originalTransactionId, until: notification.gracePeriodExpiresAt }
         : { kind: 'IGNORED', reason: 'DID_FAIL_TO_RENEW(유예 없음) — 만료 알림을 기다림' };
     case 'EXPIRED':
-    case 'GRACE_PERIOD_EXPIRED':
-      return { kind: 'EXPIRED', originalTransactionId: transaction.originalTransactionId, expiresAt: transaction.expiresAt };
+    case 'GRACE_PERIOD_EXPIRED': {
+      // 유예를 거쳤으면 우리가 아는 만료일이 유예 끝까지 늘어나 있음 — 결제 만료일로 비교하면 "늦게 온 옛 알림"으로 버려져 방이 안 닫혔음
+      const grace = notification.gracePeriodExpiresAt;
+      const expiresAt = grace && grace > transaction.expiresAt ? grace : transaction.expiresAt;
+      return { kind: 'EXPIRED', originalTransactionId: transaction.originalTransactionId, expiresAt };
+    }
     case 'DID_CHANGE_RENEWAL_STATUS':
       return {
         kind: 'RENEWAL',
@@ -67,9 +81,9 @@ export async function googleStoreEvent(
   const { notificationType, purchaseToken, subscriptionId } = notification;
   if (GOOGLE_PAID_TYPES.has(notificationType) || notificationType === GOOGLE_GRACE_TYPE) {
     const transaction = await fetchTransaction(purchaseToken, subscriptionId);
-    return notificationType === GOOGLE_GRACE_TYPE
-      ? { kind: 'GRACE', originalTransactionId: purchaseToken, until: transaction.expiresAt }
-      : { kind: 'PAID', transaction };
+    if (notificationType === GOOGLE_GRACE_TYPE) return { kind: 'GRACE', originalTransactionId: purchaseToken, until: transaction.expiresAt };
+    // 1 RECOVERED — 결제 보류에서 회복(같은 구독 — 재구독 아님, 2026-10-27)
+    return { kind: 'PAID', transaction: notificationType === 1 ? { ...transaction, recovered: true } : transaction };
   }
   // 만료·보류도 최신 상태를 다시 받아서 — 늦게 온 옛 알림이면 만료일이 아직 미래라 닫지 않음
   if (notificationType === 5 || notificationType === 13) {

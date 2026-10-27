@@ -64,12 +64,15 @@ export async function registerThisDevice(): Promise<void> {
   await sendToServer(await getToken(messaging));
 }
 
-/** 로그아웃 직전에 호출(아직 로그인 토큰이 있을 때) — 이 기기만 해제, 다른 기기 알림은 유지 */
-export async function unregisterThisDevice(): Promise<void> {
+/**
+ * 로그아웃 때 이 기기만 해제, 다른 기기 알림은 유지. 로그아웃은 저장된 토큰을 먼저 지우므로(오프라인에서 멈추지 않게, 2026-10-27)
+ * 지우기 전 로그인 토큰(authToken)과 짧은 제한 시간(signal)을 받아서 보냄
+ */
+export async function unregisterThisDevice(options?: { authToken?: string; signal?: AbortSignal }): Promise<void> {
   if (!registeredToken) return;
   const token = registeredToken;
   registeredToken = null;
-  await apiClient.post('/auth/me/push-devices/remove', { token }).catch(() => {});
+  await apiClient.post('/auth/me/push-devices/remove', { token }, options).catch(() => {});
 }
 
 /** FCM이 세션 중간에 토큰을 바꾸면(앱 복원·만료 등) 다시 등록 — 안 하면 이 기기만 조용히 알림이 끊김 */
@@ -88,6 +91,10 @@ function toPushData(message: RemoteMessage | null): PushData | null {
     actorId: pick('actorId'),
     bundleId: pick('bundleId'),
     messageId: pick('messageId'),
+    // 공지·운영자 알림 종류·문의 답변(2026-10-27 — 서버는 보내는데 여기서 빠져 있어서 알림을 눌러도 해당 화면으로 못 갔음)
+    noticeId: pick('noticeId'),
+    kind: pick('kind'),
+    inquiryId: pick('inquiryId'),
     senderImage: pick('senderImage'),
     senderName: pick('senderName'),
     // 앱 사용 중 배너에 보여줄 제목·본문(서버가 만든 알림 문구 그대로)

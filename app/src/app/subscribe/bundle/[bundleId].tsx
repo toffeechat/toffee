@@ -19,7 +19,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { ApiError } from '@/lib/api-client';
 import { bundleDiscountPercent, useBundle, useBundleSwitchInfo, useSubscribeBundle, useSwitchBundle } from '@/hooks/use-bundles';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
-import { STORE_REPLACE_NOT_FOUND, useStorePurchase } from '@/hooks/use-store-purchase';
+import { STORE_PURCHASE_PENDING, STORE_REPLACE_NOT_FOUND, useStorePurchase } from '@/hooks/use-store-purchase';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
@@ -47,7 +47,12 @@ export default function SubscribeBundleScreen() {
   const switchSandbox = useSwitchBundle(bundleId);
   const [done, setDone] = useState(false);
   const store = useStorePurchase({ kind: 'bundle', id: bundleId, sku: bundle?.storeProductId });
-  const storeBuy = useMutation({ mutationFn: store.buy, onSuccess: (result) => result && setDone(true) });
+  const storeBuy = useMutation({
+    mutationFn: store.buy,
+    // 결제 대기(2026-10-27)면 완료 화면 대신 안내 — 결제가 끝나면 앱 전체 결제 처리가 열어 줌
+    onSuccess: (result) => result && result !== STORE_PURCHASE_PENDING && setDone(true),
+  });
+  const storePending = storeBuy.data === STORE_PURCHASE_PENDING;
   const failure = storeBuy.error ?? subscribe.error ?? switchSandbox.error;
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   // 공개 예정 묶음(2026-10-19) — 묶음·든 방 중 가장 늦은 공개 시각까지는 구독 대신 알림 받기
@@ -186,6 +191,11 @@ export default function SubscribeBundleScreen() {
             {failure instanceof ApiError ? failure.message : failure instanceof Error && failure.message === STORE_REPLACE_NOT_FOUND ? t('bundle.switchNoPurchase') : t('subscribeFlow.failed')}
           </ThemedText>
         )}
+        {storePending ? (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+            {t('subscribeFlow.storePending')}
+          </ThemedText>
+        ) : null}
         {upcoming ? (
           <>
             <View style={[styles.save, styles.releaseBox, { backgroundColor: theme.tintSoft }]}>

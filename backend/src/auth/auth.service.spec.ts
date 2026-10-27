@@ -54,6 +54,14 @@ describe('소셜 토큰 확인 보강(2026-09-29)', () => {
     fetchMock.mockRestore();
   });
 
+  it('카카오: KAKAO_APP_ID가 비어 있으면 확인 없이 통과시키지 않고 거절(2026-10-27)', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ id: 1, kakao_account: {} })));
+    await expect(withConfig({}).verifyKakaoToken('t')).rejects.toThrow();
+    await expect(withConfig({ KAKAO_APP_ID: ' ' }).verifyKakaoToken('t')).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+    fetchMock.mockRestore();
+  });
+
   it('LINE: 채널이 여러 개면 idToken의 aud와 맞는 채널로 확인', async () => {
     const bodies: string[] = [];
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
@@ -206,6 +214,13 @@ describe('데모 입장 코드(2026-10-01, 운영자 코드 분리 2026-10-14)',
     await expect(withCode(undefined).service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
     await expect(withCode('  ').service.devLogin('fan1@toffee.demo')).resolves.toMatchObject({ id: 'u1' });
     await expect(withCode(undefined, undefined, 'ADMIN').service.devLogin('admin@toffee.demo')).resolves.toMatchObject({ role: 'ADMIN' });
+  });
+
+  it('역할은 새 계정을 만들 때만 — 입장 코드로 기존 계정 역할을 바꾸지 못함(2026-10-27)', async () => {
+    const { service, prisma } = withCode('candy-demo-42', 'boss-77', 'USER');
+    await service.devLogin('fan1@toffee.demo', undefined, 'AGENCY_STAFF' as never, 'candy-demo-42');
+    expect(prisma.user.upsert.mock.calls[0][0].update).toEqual({});
+    expect(prisma.user.upsert.mock.calls[0][0].create.role).toBe('AGENCY_STAFF');
   });
 });
 

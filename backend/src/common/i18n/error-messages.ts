@@ -985,6 +985,18 @@ export const ERROR_MESSAGES = {
     es: 'No pudimos verificar tu compra en Google Play.',
     'pt-BR': 'Não foi possível verificar sua compra no Google Play.',
   },
+  // 2026-10-27 — 편의점·현금 결제처럼 아직 결제가 끝나지 않은 구글 구매(paymentState 0). 결제가 끝나면 앱이 다시 확인해서 열어 줌
+  IAP_PAYMENT_PENDING: {
+    ko: '결제가 아직 끝나지 않았어요. 결제가 완료되면 자동으로 열려요.',
+    en: "Your payment isn't complete yet. The room will open automatically once it is.",
+    th: 'การชำระเงินยังไม่เสร็จสมบูรณ์ ห้องจะเปิดให้อัตโนมัติเมื่อชำระเงินเสร็จ',
+    ja: 'お支払いがまだ完了していません。完了すると自動的に開きます。',
+    'zh-Hans': '付款尚未完成。付款完成后将自动开通。',
+    'zh-Hant': '付款尚未完成。付款完成後將自動開通。',
+    vi: 'Thanh toán của bạn chưa hoàn tất. Phòng sẽ tự động mở khi thanh toán xong.',
+    es: 'Tu pago aún no se ha completado. La sala se abrirá automáticamente cuando termine.',
+    'pt-BR': 'Seu pagamento ainda não foi concluído. A sala será aberta automaticamente quando terminar.',
+  },
   IAP_GOOGLE_AUTH_FAILED: {
     ko: '구글 플레이 인증 토큰을 발급받지 못했어요.',
     en: "We couldn't get a Google Play authorization token.",

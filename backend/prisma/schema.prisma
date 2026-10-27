@@ -506,6 +506,8 @@ model Subscription {
   actor Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
 
   @@unique([userId, actorId])
+  // 방의 구독자 목록(메시지 방송·통계) — 예전엔 전체 훑기(2026-10-27)
+  @@index([actorId, cancelledAt])
 }
 
 // 구매(결제 단위) — 배우 개인 구독 1건(actorId) 또는 묶음 1건(bundleId), 둘 중 하나만. 방 이용권(Subscription)은
@@ -684,6 +686,8 @@ model Message {
   @@index([replyToMessageId])
   // 팬 대화방 나눠 받기·방 안 검색·사진 모아보기가 전부 "이 방의 메시지를 시간순으로" 찾음(2026-09-29)
   @@index([actorId, createdAt])
+  // 팬 한 명의 메시지(답장 제한·개인정보 내보내기·탈퇴) — 예전엔 전체 훑기(2026-10-27)
+  @@index([fanUserId, createdAt])
   // 방 안 검색(본문 중간 글자) — 팬 답장까지 한 테이블이라 인기 배우 방은 행이 많아서 글자 조각 색인(pg_trgm, 2026-09-29)
   @@index([body(ops: raw("gin_trgm_ops"))], type: Gin, map: "Message_body_trgm_idx")
 }
@@ -745,6 +749,9 @@ model Report {
 
   // 같은 사람이 같은 메시지를 여러 번 신고해서 순위를 올리는 걸 막음
   @@unique([messageId, reportedById])
+  // 신고한 사람별·처리 상태별 목록(2026-10-27)
+  @@index([reportedById])
+  @@index([status])
 }
 
 // 팬 답장 전송 전에 대조하는 금칙어 목록 — 한국어/태국어/영어 3개 언어로 관리

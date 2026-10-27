@@ -66,13 +66,18 @@ export class StoreRenewalService {
     for (const purchase of purchases) {
       const rooms = purchase.actor ? [purchase.actor] : (purchase.bundle?.actors.map((item) => item.actor) ?? []);
       if (!rooms.some((room) => shouldStopNow(room, purchase.iapExpiresAt, now))) continue;
+      // 여러 서버가 동시에 돌아도 한 번만 해지 — 먼저 갱신 꺼짐으로 표시한 쪽만 구글에 요청하고, 실패하면 되돌려 다음에 다시(2026-10-27)
+      const { count } = await this.prisma.purchase.updateMany({ where: { id: purchase.id, willRenew: true }, data: { willRenew: false } });
+      if (count !== 1) continue;
       try {
-        if (!(await this.iap.cancelGoogleSubscription(purchase.iapTransactionId!))) continue;
-        await this.prisma.purchase.update({ where: { id: purchase.id }, data: { willRenew: false } });
-        stopped += 1;
+        if (await this.iap.cancelGoogleSubscription(purchase.iapTransactionId!)) {
+          stopped += 1;
+          continue;
+        }
       } catch (error) {
         this.logger.warn(`구글 구독 해지 실패(purchase ${purchase.id}): ${String(error)}`);
       }
+      await this.prisma.purchase.updateMany({ where: { id: purchase.id, willRenew: false }, data: { willRenew: true } });
     }
     return stopped;
   }

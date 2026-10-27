@@ -473,6 +473,7 @@ const USER_ACTIONS: Record<string, { label: string; tone: BadgeTone }> = {
   ACTOR_STATUS_CLEAR: { label: '상태메시지 지움', tone: 'warn' },
   USER_ROLE: { label: '역할 변경', tone: 'muted' },
   USER_EXPORT: { label: '개인정보 파일 받음', tone: 'muted' },
+  STAFF_AGENCY: { label: '소속사 직원 지정', tone: 'muted' },
 };
 const BLOCKER_ROLE: Partial<Record<AdminUser['role'], string>> = { ACTOR: '아티스트', AGENCY_STAFF: '소속사', ADMIN: '운영자' };
 

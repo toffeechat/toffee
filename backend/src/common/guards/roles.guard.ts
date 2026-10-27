@@ -16,14 +16,17 @@ export class RolesGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const targets = [context.getHandler(), context.getClass()];
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, targets);
-    if (!requiredRoles || requiredRoles.length === 0) return true;
-
+    // 공개 라우트(@Public)는 user가 없음 — 그땐 역할·2단계 인증 확인할 것이 없음
     const user = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>().user;
-    if (!user || !requiredRoles.includes(user.role)) {
+
+    if (requiredRoles && requiredRoles.length > 0 && (!user || !requiredRoles.includes(user.role))) {
       throw new ForbiddenException(appError('FORBIDDEN'));
     }
-    if (user.role === Role.ADMIN) {
-      // 2단계 인증(2026-10-20) — 켠 운영자는 최근에 코드를 확인한 토큰이어야 운영자로 동작(코드 확인·설정 API는 예외)
+    if (user?.role === Role.ADMIN) {
+      // 2단계 인증(2026-10-20) — 켠 운영자는 최근에 코드를 확인한 토큰이어야 운영자로 동작(코드 확인·설정 API는 예외).
+      // 2026-10-27: @Roles가 붙은 운영자 API에서만 확인하던 것 → 운영자 계정의 모든 로그인 요청에서. 메시지·정산·신고처럼 @Roles 없이
+      // 서비스 안에서 "운영자면 전체" 권한을 주는 API가 많아서, 코드 확인 전 토큰으로 그쪽을 다 쓸 수 있었음.
+      // 코드 화면 전에 꼭 필요한 것(/auth/me·푸시 기기 등록·해제·2단계 인증 API)만 @SkipAdminMfa
       if (user.mfaEnabled && !this.reflector.getAllAndOverride<boolean>(SKIP_MFA_KEY, targets)) {
         if (!user.mfaAt || Date.now() - user.mfaAt > ADMIN_MFA_TTL_MS) throw new UnauthorizedException(appError('ADMIN_MFA_REQUIRED'));
       }

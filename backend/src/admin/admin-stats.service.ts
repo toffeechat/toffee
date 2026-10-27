@@ -3,9 +3,12 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { MessageSenderType, ReportStatus, Role, SubscriptionEventType } from '../generated/prisma/enums.js';
 import { DAY_MS, STATS_TIME_ZONE, startOfTodayInZone, zoneDayExpr, zoneDayStart, zoneDays } from '../common/utils/stats-time.js';
 import { WEEKLY_AFTER_DAYS, type StatsRange } from '../actors/agency-stats.service.js';
+import { SMOKE_IDS } from '../smoke/smoke-ids.js';
 
-// 팬 통계는 실제 팬 계정만(배우·소속사·운영자, 탈퇴 계정 제외)
-const FAN_WHERE = { role: Role.USER, deletedAt: null } as const;
+// 팬 통계는 실제 팬 계정만(배우·소속사·운영자, 탈퇴 계정 제외). 배포 후 자동 점검(스모크) 팬·방도 뺌(2026-10-27 — 배포마다 접속·메시지가 잡혀 숫자가 부풀었음)
+const FAN_WHERE = { role: Role.USER, deletedAt: null, id: { not: SMOKE_IDS.fanUser } } as const;
+/** 스모크 점검 방(메시지·구독 시작/해지 숫자에서 뺌) */
+const NOT_SMOKE_ROOM = { actorId: { not: SMOKE_IDS.actor } } as const;
 
 /** 구독 시작·해지 목록 한 번에 보여 줄 최대 건수 */
 export const EVENT_LIST_LIMIT = 500;
@@ -46,15 +49,15 @@ export class AdminStatsService {
         this.prisma.user.count({ where: { ...FAN_WHERE, createdAt: { gte: d7 } } }),
         this.prisma.user.count({ where: { ...FAN_WHERE, lastActiveAt: { gte: today } } }),
         this.prisma.user.count({ where: { ...FAN_WHERE, lastActiveAt: { gte: d30 } } }),
-        this.prisma.subscription.count({ where: { cancelledAt: null, user: FAN_WHERE } }),
+        this.prisma.subscription.count({ where: { cancelledAt: null, user: FAN_WHERE, ...NOT_SMOKE_ROOM } }),
         this.prisma.user.count({ where: { ...FAN_WHERE, subscriptions: { some: { cancelledAt: null } } } }),
-        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.STARTED, createdAt: { gte: today } } }),
-        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.CANCELLED, createdAt: { gte: today } } }),
-        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.STARTED, createdAt: { gte: d30 } } }),
-        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.CANCELLED, createdAt: { gte: d30 } } }),
+        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.STARTED, createdAt: { gte: today }, ...NOT_SMOKE_ROOM } }),
+        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.CANCELLED, createdAt: { gte: today }, ...NOT_SMOKE_ROOM } }),
+        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.STARTED, createdAt: { gte: d30 }, ...NOT_SMOKE_ROOM } }),
+        this.prisma.subscriptionEvent.count({ where: { type: SubscriptionEventType.CANCELLED, createdAt: { gte: d30 }, ...NOT_SMOKE_ROOM } }),
         this.prisma.report.count({ where: { status: ReportStatus.PENDING } }),
-        this.prisma.message.count({ where: { senderType: MessageSenderType.ARTIST, createdAt: { gte: today } } }),
-        this.prisma.message.count({ where: { senderType: MessageSenderType.FAN, createdAt: { gte: today } } }),
+        this.prisma.message.count({ where: { senderType: MessageSenderType.ARTIST, createdAt: { gte: today }, ...NOT_SMOKE_ROOM } }),
+        this.prisma.message.count({ where: { senderType: MessageSenderType.FAN, createdAt: { gte: today }, ...NOT_SMOKE_ROOM } }),
       ]);
     return {
       timeZone: STATS_TIME_ZONE,
@@ -87,15 +90,17 @@ export class AdminStatsService {
     const [signups, started] = await Promise.all([
       this.prisma.$queryRawUnsafe<DailyRow[]>(
         `SELECT ${zoneDayExpr('"createdAt"')} AS day, count(*) AS count FROM "User"
-         WHERE "createdAt" >= $1 AND "createdAt" < $2 AND role = 'USER' AND "deletedAt" IS NULL GROUP BY 1`,
+         WHERE "createdAt" >= $1 AND "createdAt" < $2 AND role = 'USER' AND "deletedAt" IS NULL AND id <> $3 GROUP BY 1`,
         previousFrom,
         end,
+        SMOKE_IDS.fanUser,
       ),
       this.prisma.$queryRawUnsafe<DailyRow[]>(
         `SELECT ${zoneDayExpr('"createdAt"')} AS day, count(*) AS count, sum("priceCents") AS sum FROM "SubscriptionEvent"
-         WHERE "createdAt" >= $1 AND "createdAt" < $2 AND type = 'STARTED' GROUP BY 1`,
+         WHERE "createdAt" >= $1 AND "createdAt" < $2 AND type = 'STARTED' AND "actorId" <> $3 GROUP BY 1`,
         previousFrom,
         end,
+        SMOKE_IDS.actor,
       ),
     ]);
     const daily = new Map<string, OverviewDay>(zoneDays(fromStart, range.days).map((day) => [day, { day, signups: 0, newRevenueCents: 0 }]));
@@ -129,7 +134,7 @@ export class AdminStatsService {
     const createdAt = { gte: bounds.start, lt: bounds.end };
     const [items, byType] = await Promise.all([
       this.prisma.subscriptionEvent.findMany({
-        where: { type, createdAt },
+        where: { type, createdAt, ...NOT_SMOKE_ROOM },
         orderBy: { createdAt: 'desc' },
         take: EVENT_LIST_LIMIT,
         select: {
@@ -141,7 +146,7 @@ export class AdminStatsService {
           actor: { select: { id: true, chatDisplayName: true, legalName: true, kind: true } },
         },
       }),
-      this.prisma.subscriptionEvent.groupBy({ by: ['type'], where: { createdAt }, _count: { _all: true } }),
+      this.prisma.subscriptionEvent.groupBy({ by: ['type'], where: { createdAt, ...NOT_SMOKE_ROOM }, _count: { _all: true } }),
     ]);
     const counts: Record<SubscriptionEventType, number> = { STARTED: 0, CANCELLED: 0 };
     for (const row of byType) counts[row.type] = row._count._all;
@@ -152,7 +157,7 @@ export class AdminStatsService {
   async messageRooms(bounds: { start: Date; end: Date }) {
     const rows = await this.prisma.message.groupBy({
       by: ['actorId', 'senderType'],
-      where: { createdAt: { gte: bounds.start, lt: bounds.end } },
+      where: { createdAt: { gte: bounds.start, lt: bounds.end }, ...NOT_SMOKE_ROOM },
       _count: { _all: true },
     });
     const rooms = new Map<string, { actorId: string; messages: number; fanReplies: number }>();

@@ -26,6 +26,10 @@ export function checkEnv(env: Env): EnvCheckResult {
     if (env.ENABLE_SANDBOX_SUBSCRIBE === 'true') errors.push('ENABLE_SANDBOX_SUBSCRIBE=true — 운영에서 켜면 결제 없이 구독 가능');
     if (!has(env, 'API_PUBLIC_URL')) errors.push('API_PUBLIC_URL 필요(메일 링크·공개 페이지 주소)');
     if (has(env, 'SMOKE_TEST_SECRET') && env.SMOKE_TEST_SECRET!.trim().length < 32) errors.push('SMOKE_TEST_SECRET은 운영에서 32자 이상(무작위 값)');
+    // 카카오 토큰이 우리 앱 것인지 확인하는 값(2026-10-27) — 없으면 카카오 로그인이 전부 거절됨(예전엔 확인 없이 통과해 토큰 바꿔치기 가능)
+    if (!has(env, 'KAKAO_APP_ID')) errors.push('KAKAO_APP_ID 필요(카카오 토큰 앱 확인 — 없으면 카카오 로그인이 전부 거절됨)');
+    // 프록시(Railway 등) 뒤에서 TRUST_PROXY가 없으면 req.ip가 프록시 주소 — IP별 요청 제한이 모든 사용자를 한 사람으로 묶고 접속 기록 IP도 틀림
+    if (!has(env, 'TRUST_PROXY')) warnings.push('TRUST_PROXY 없음 — 프록시 뒤라면 1로(없으면 요청 제한·접속 기록 IP가 프록시 주소 하나로 잡힘)');
   }
 
   if (env.ENABLE_DEV_LOGIN === 'true' && !has(env, 'DEV_LOGIN_CODE')) {
@@ -46,7 +50,6 @@ export function checkEnv(env: Env): EnvCheckResult {
     ['구글 로그인', ['GOOGLE_CLIENT_ID']],
     ['애플 로그인', ['APPLE_CLIENT_ID']],
     ['라인 로그인', ['LINE_CHANNEL_ID']],
-    ['카카오 토큰 앱 확인', ['KAKAO_APP_ID']],
     ['메시지 번역(Claude)', ['ANTHROPIC_API_KEY']],
     ['PC 웹 소셜 로그인(카카오·네이버·LINE)', ['WEB_LOGIN_ORIGINS']],
     ['애플 결제 확인', ['APPLE_BUNDLE_ID', 'APPLE_APP_ID']],
@@ -57,6 +60,8 @@ export function checkEnv(env: Env): EnvCheckResult {
     // 전자상거래법 사업자 정보 표시 — 법인·통신판매업 신고 후(launch-roadmap 5단계)
     ['사업자 정보 표시', ['BUSINESS_NAME', 'BUSINESS_REPRESENTATIVE', 'BUSINESS_ADDRESS', 'BUSINESS_PHONE', 'BUSINESS_REGISTRATION_NUMBER', 'BUSINESS_MAIL_ORDER_NUMBER']],
   ];
+  // 카카오는 운영에선 위 errors(2026-10-27), 그 밖에선 경고만
+  if (!production) groups.push(['카카오 로그인(토큰 앱 확인)', ['KAKAO_APP_ID']]);
   // 부모 동의 방식일 때만 메일이 필수(성인만 가입이면 안 씀)
   if (env.ADULTS_ONLY === 'false') groups.push(['부모 동의 메일', ['RESEND_API_KEY', 'EMAIL_FROM_ADDRESS']]);
   for (const [label, keys] of groups) {

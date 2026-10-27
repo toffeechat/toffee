@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { IapVerificationService } from './iap-verification.service.js';
 import { ChargeKind, ChargeSource, IapPlatform, MessageSenderType, ParentalConsentStatus, SubscriptionEventType } from '../generated/prisma/enums.js';
@@ -33,7 +33,8 @@ interface StoreTargetInfo {
 
 /** 스토어 알림을 우리 쪽 사건으로 옮긴 것(store-events.ts가 애플·구글 알림을 이걸로 바꿈) */
 export type StoreEvent =
-  | { kind: 'PAID'; transaction: StoreTransaction }
+  // refundReversed: 애플 환불 취소(REFUND_REVERSED) — 그 결제의 환불 표시를 지우고 다시 결제됨으로(2026-10-27)
+  | { kind: 'PAID'; transaction: StoreTransaction; refundReversed?: boolean }
   | { kind: 'GRACE'; originalTransactionId: string; until: Date }
   // expiresAt: 알림이 말하는 만료 시각 — 우리가 아는 만료일이 더 뒤면(그 사이 갱신됨) 늦게 온 옛 알림이라 무시
   | { kind: 'EXPIRED'; originalTransactionId: string; expiresAt?: Date }
@@ -81,6 +82,8 @@ function actorIdsOf(purchase: PurchaseRow): string[] {
  */
 @Injectable()
 export class SubscriptionsService {
+  private readonly logger = new Logger(SubscriptionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly iapVerificationService: IapVerificationService,
@@ -302,6 +305,8 @@ export class SubscriptionsService {
         : await this.iapVerificationService.verifyGoogle(dto.purchaseToken!, dto.productId!);
     if (verified.accountToken && verified.accountToken !== userId) throw new ConflictException(appError('IAP_RECEIPT_IN_USE'));
     if (verified.expiresAt.getTime() <= Date.now()) throw new BadRequestException(appError('IAP_EXPIRED'));
+    // 구글 결제 대기(편의점·현금 등, 2026-10-27) — 돈이 들어오기 전엔 방을 열지 않음. 결제가 끝나면 스토어 알림(PURCHASED)이 엶
+    if (verified.pending) throw new BadRequestException(appError('IAP_PAYMENT_PENDING'));
     const target = await this.storeTarget(verified.productId);
     if (!target) throw new BadRequestException(appError('IAP_PRODUCT_UNKNOWN'));
     if ((expected.actorId && target.actorId !== expected.actorId) || (expected.bundleId && target.bundleId !== expected.bundleId)) {
@@ -309,7 +314,25 @@ export class SubscriptionsService {
     }
     const result = await this.upsertStorePurchase(userId, verified, target);
     this.accessChanged(userId);
+    await this.acknowledgeIfNeeded(verified);
     return result;
+  }
+
+  // 구글 구매를 반영한 뒤 아직 확인(acknowledge) 안 됐으면 서버가 확인 — 3일 자동 환불 방지(2026-10-27). 실패는 경고만(IapVerificationService)
+  private async acknowledgeIfNeeded(verified: StoreTransaction) {
+    if (verified.platform === 'ANDROID' && verified.needsAcknowledge && !verified.pending) {
+      await this.iapVerificationService.acknowledgeGoogle(verified.originalTransactionId, verified.productId);
+    }
+  }
+
+  /**
+   * 환불된 결제로 닫힌(또는 없는) 구매를 다시 열려는지(2026-10-27) — 앱에 남은 영수증·늦게 온 옛 알림을 다시 보내 환불받은 방을 다시 여는 것을 막음.
+   * 열려 있는 구매의 결제가 환불된 것(스타 미발송 환불처럼 이용은 그대로 두는 환불)은 그대로 갱신.
+   */
+  private async reopensRefunded(existing: { cancelledAt: Date | null } | null, verified: StoreTransaction): Promise<boolean> {
+    if ((existing && !existing.cancelledAt) || !verified.storeTransactionId) return false;
+    const charge = await this.prisma.purchaseCharge.findUnique({ where: { storeTransactionId: verified.storeTransactionId }, select: { refundedAt: true } });
+    return !!charge?.refundedAt;
   }
 
   // 개인 구독 결제(배우 화면) — 응답 모양은 샌드박스 구독과 같게
@@ -382,6 +405,7 @@ export class SubscriptionsService {
       const replaced = await this.prisma.purchase.findUnique({ where: { iapTransactionId: verified.replacesTransactionId } });
       if (replaced && replaced.userId === userId) existing = replaced;
     }
+    if (await this.reopensRefunded(existing, verified)) throw new BadRequestException(appError('IAP_EXPIRED'));
     const switching = !!existing && ((existing.actorId ?? undefined) !== target.actorId || (existing.bundleId ?? undefined) !== target.bundleId);
     if (existing && switching) {
       const latest = await this.prisma.purchaseCharge.findFirst({
@@ -399,7 +423,8 @@ export class SubscriptionsService {
     const charge = {
       chargedAt: verified.purchasedAt,
       periodEnd: verified.expiresAt,
-      source: sourceOf(verified.platform),
+      // 애플 샌드박스(앱 심사·TestFlight)·구글 테스트 결제는 이용은 열되 정산·매출에선 빠지게 SANDBOX로(2026-10-27)
+      source: verified.sandbox ? ChargeSource.SANDBOX : sourceOf(verified.platform),
       storeTransactionId: verified.storeTransactionId,
       storeAmountMilli: verified.storeAmountMilli,
       storeCurrency: verified.storeCurrency,
@@ -431,12 +456,23 @@ export class SubscriptionsService {
     userId: string,
     verified: StoreTransaction,
     target: StoreTargetInfo,
-    existing: { id: string; iapExpiresAt: Date | null } | null,
+    existing: { id: string; iapExpiresAt: Date | null; cancelledAt: Date | null } | null,
     iap: { iapPlatform: 'IOS' | 'ANDROID'; iapTransactionId: string; iapExpiresAt: Date; willRenew?: boolean },
     charge: Parameters<ChargeLedgerService['record']>[2],
   ): Promise<string> {
     return this.prisma.$transaction(async (tx) => {
       let id: string;
+      // 결제 실패(유예 끝·결제 보류)로 닫혔던 같은 스토어 구독이 회복됨(2026-10-27) — 재구독이 아니라 대화를 이어서 보여 줌.
+      // 환불로 닫힌 구매(마지막 결제가 환불됨)는 해당 없음
+      let resumeSince: Date | undefined;
+      if (existing?.cancelledAt && verified.recovered) {
+        const last = await tx.purchaseCharge.findFirst({
+          where: { purchaseId: existing.id, kind: ChargeKind.PAYMENT },
+          orderBy: { chargedAt: 'desc' },
+          select: { refundedAt: true },
+        });
+        if (!last?.refundedAt) resumeSince = existing.cancelledAt;
+      }
       if (existing) {
         // 만료일은 늘리기만(늦게 온 옛 영수증이 줄이지 않게)
         const expiresAt = existing.iapExpiresAt && existing.iapExpiresAt > verified.expiresAt ? existing.iapExpiresAt : verified.expiresAt;
@@ -450,7 +486,7 @@ export class SubscriptionsService {
       }
       // 같은 결제(storeTransactionId)는 한 번만 — 스토어 알림이 먼저 기록했어도 중복 없음
       if (verified.storeTransactionId || !existing) await this.ledger.record(tx, id, charge);
-      await this.syncAccess(tx, userId, target.actorIds, target.prices);
+      await this.syncAccess(tx, userId, target.actorIds, target.prices, resumeSince);
       return id;
     });
   }
@@ -514,8 +550,17 @@ export class SubscriptionsService {
       if (!existing && !(await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }))) return { applied: false };
       const target = await this.storeTarget(event.transaction.productId);
       if (!target) return { applied: false };
+      // 구글 결제 대기 — 결제가 끝난 뒤 알림에서 엶
+      if (event.transaction.pending) return { applied: false };
+      if (event.refundReversed && event.transaction.storeTransactionId) {
+        await this.ledger.unmarkRefunded(this.prisma, event.transaction.storeTransactionId);
+        // 기간이 이미 끝난 결제면 환불 표시만 되돌림(방은 다시 안 엶)
+        if (event.transaction.expiresAt.getTime() <= Date.now()) return { applied: true };
+      }
+      if (await this.reopensRefunded(existing, event.transaction)) return { applied: false };
       await this.upsertStorePurchase(userId, event.transaction, target);
       this.accessChanged(userId);
+      await this.acknowledgeIfNeeded(event.transaction);
       return { applied: true };
     }
     const purchase = await this.prisma.purchase.findUnique({ where: { iapTransactionId: event.originalTransactionId }, include: PURCHASE_INCLUDE });
@@ -539,22 +584,30 @@ export class SubscriptionsService {
       }
       return { applied: true };
     }
-    // 스토어 알림은 순서가 뒤바뀌어 올 수 있음 — 예전 만료 알림이 갱신 뒤에 도착하면 결제한 팬의 방을 닫게 됨(2026-09-29 점검)
+    // 스토어 알림은 순서가 뒤바뀌어 올 수 있음 — 예전 만료 알림이 갱신 뒤에 도착하면 결제한 팬의 방을 닫게 됨(2026-09-29 점검).
+    // 우리가 아는 만료일이 이미 지났으면 옛 알림이 아님(2026-10-27) — 유예(GRACE)가 만료일을 늘려 둔 뒤 온 유예 끝·결제 재시도 끝 만료 알림이
+    // 예전엔 "늦게 온 옛 알림"으로 버려져 방이 sweepExpired까지 열려 있었음
     if (event.kind === 'EXPIRED' && event.expiresAt) {
-      if (event.expiresAt.getTime() > Date.now()) return { applied: false };
-      if (purchase.iapExpiresAt && purchase.iapExpiresAt > event.expiresAt) return { applied: false };
+      const now = Date.now();
+      if (event.expiresAt.getTime() > now) return { applied: false };
+      if (purchase.iapExpiresAt && purchase.iapExpiresAt > event.expiresAt && purchase.iapExpiresAt.getTime() > now) return { applied: false };
     }
     // EXPIRED · REFUNDED — 아직 열려 있으면 닫음
     if (!purchase.cancelledAt) await this.closePurchase(purchase);
     return { applied: true };
   }
 
-  private async closePurchase(purchase: PurchaseRow) {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.purchase.update({ where: { id: purchase.id }, data: { cancelledAt: new Date() } });
+  // 여러 서버가 같은 구매를 동시에 닫아도(알림·만료 정리가 겹침) 한 번만 — 아직 열려 있을 때만 닫고, 닫은 쪽만 해지 이력을 남김(2026-10-27)
+  private async closePurchase(purchase: PurchaseRow): Promise<boolean> {
+    const closed = await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const { count } = await tx.purchase.updateMany({ where: { id: purchase.id, cancelledAt: null }, data: { cancelledAt: now } });
+      if (count !== 1) return false;
       await this.syncAccess(tx, purchase.userId, actorIdsOf(purchase), new Map());
+      return true;
     });
-    this.accessChanged(purchase.userId);
+    if (closed) this.accessChanged(purchase.userId);
+    return closed;
   }
 
   /**
@@ -569,8 +622,9 @@ export class SubscriptionsService {
       where: { iapPlatform: { not: null }, cancelledAt: null, iapExpiresAt: { lt: new Date(now.getTime() - graceMs) } },
       include: PURCHASE_INCLUDE,
     });
-    for (const purchase of expired) await this.closePurchase(purchase);
-    return expired.length;
+    let closed = 0;
+    for (const purchase of expired) if (await this.closePurchase(purchase)) closed += 1;
+    return closed;
   }
 
   /**
@@ -688,8 +742,11 @@ export class SubscriptionsService {
    * 방 이용권을 유효한 구매에 맞춰 다시 계산 — 구매가 생기거나 해지·만료될 때마다 영향 받는 배우들에 대해 부름.
    * 새로 열린 방은 대화를 지금부터 보여줌(재구독 시 이전 대화 비공개, 버블 방식)·시작 이력(STARTED, 가격은 prices),
    * 닫힌 방은 해지 이력(CANCELLED). 이미 열려 있던 방은 그대로(개인 → 묶음 전환에도 대화가 이어짐).
+   * resumeSince(2026-10-27): 결제 실패로 닫혔던 같은 스토어 구독의 회복 — 그 구매가 닫힌 시각(resumeSince) 이후에 닫힌 방은 재구독이 아니라서
+   * 대화 시작 시점(startedAt)·무사용 판정 기록을 그대로 두고 다시 엶(짧은 결제 실패로 대화가 사라지지 않게).
+   * 열기·닫기는 상태가 바뀔 때만(조건부 갱신) — 동시에 두 번 돌아도 이력이 한 번만 남음.
    */
-  private async syncAccess(tx: Db, userId: string, actorIds: string[], prices: Map<string, number>) {
+  private async syncAccess(tx: Db, userId: string, actorIds: string[], prices: Map<string, number>, resumeSince?: Date) {
     if (actorIds.length === 0) return;
     const covered = new Set((await this.activePurchases(tx, userId)).flatMap(actorIdsOf));
     const existing = await tx.subscription.findMany({ where: { userId, actorId: { in: actorIds } } });
@@ -700,11 +757,15 @@ export class SubscriptionsService {
       const open = !!sub && !sub.cancelledAt;
       if (covered.has(actorId) && !open) {
         const fresh = { startedAt: now, cancelledAt: null, lastArtistMessageAt: null, lastFanReplyAt: null };
-        if (sub) await tx.subscription.update({ where: { id: sub.id }, data: fresh });
-        else await tx.subscription.create({ data: { userId, actorId, ...fresh } });
+        if (sub) {
+          const resume = !!resumeSince && !!sub.cancelledAt && sub.cancelledAt >= resumeSince;
+          const { count } = await tx.subscription.updateMany({ where: { id: sub.id, cancelledAt: { not: null } }, data: resume ? { cancelledAt: null } : fresh });
+          if (count !== 1) continue;
+        } else await tx.subscription.create({ data: { userId, actorId, ...fresh } });
         await tx.subscriptionEvent.create({ data: { userId, actorId, type: SubscriptionEventType.STARTED, priceCents: prices.get(actorId) } });
       } else if (!covered.has(actorId) && open) {
-        await tx.subscription.update({ where: { id: sub.id }, data: { cancelledAt: now } });
+        const { count } = await tx.subscription.updateMany({ where: { id: sub.id, cancelledAt: null }, data: { cancelledAt: now } });
+        if (count !== 1) continue;
         await tx.subscriptionEvent.create({ data: { userId, actorId, type: SubscriptionEventType.CANCELLED } });
       }
     }

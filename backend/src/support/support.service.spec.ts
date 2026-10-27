@@ -72,9 +72,21 @@ describe('1:1 문의 사진(2026-10-25)', () => {
 
   it('문의를 지우면 회원·운영자 사진 파일도 지움', async () => {
     const { service, prisma, media } = setup();
+    // 지운 뒤엔 그 키를 쓰는 다른 첨부가 없음
+    prisma.supportAttachment.findMany.mockResolvedValueOnce([{ objectKey: 'users/u1/support/a.jpg' }, { objectKey: 'users/admin/support/b.jpg' }]).mockResolvedValueOnce([]);
     await service.deleteMine('u1', 'q1');
     expect(prisma.supportInquiry.delete).toHaveBeenCalledWith({ where: { id: 'q1' } });
     expect(media.deleteQuietly).toHaveBeenCalledWith('users/u1/support/a.jpg');
+    expect(media.deleteQuietly).toHaveBeenCalledWith('users/admin/support/b.jpg');
+  });
+
+  it('같은 사진 키를 다른 문의에도 붙였으면 그 파일은 남김(2026-10-27)', async () => {
+    const { service, prisma, media } = setup();
+    prisma.supportAttachment.findMany
+      .mockResolvedValueOnce([{ objectKey: 'users/u1/support/a.jpg' }, { objectKey: 'users/admin/support/b.jpg' }])
+      .mockResolvedValueOnce([{ objectKey: 'users/u1/support/a.jpg' }]);
+    await service.deleteMine('u1', 'q1');
+    expect(media.deleteQuietly).not.toHaveBeenCalledWith('users/u1/support/a.jpg');
     expect(media.deleteQuietly).toHaveBeenCalledWith('users/admin/support/b.jpg');
   });
 

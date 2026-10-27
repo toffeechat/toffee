@@ -39,8 +39,8 @@ export class AdminUsersController {
 
   // 접속 기록(2026-10-14)
   @Get(':id/access-logs')
-  accessLogs(@Param('id') id: string) {
-    return this.adminUsersService.accessLogs(id);
+  accessLogs(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    return this.adminUsersService.accessLogs(admin, id);
   }
 
   @AdminOwnerOnly()
@@ -49,24 +49,25 @@ export class AdminUsersController {
     return this.adminUsersService.changeRole(admin.id, id, dto.role);
   }
 
+  // 제재 계열(2026-10-27) — 운영자 계정이 대상이면 OWNER만, 자기 자신·마지막 OWNER 정지·차단은 막음(assertCanManageUser)
   @Patch(':id/suspend')
   suspend(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string, @Body() dto: SuspendUserDto) {
-    return this.adminUsersService.suspend(admin.id, id, new Date(dto.until), { category: dto.category, note: dto.note });
+    return this.adminUsersService.suspend(admin, id, new Date(dto.until), { category: dto.category, note: dto.note });
   }
 
   @Patch(':id/ban')
   ban(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string, @Body() dto: SanctionReasonDto) {
-    return this.adminUsersService.ban(admin.id, id, { category: dto.category, note: dto.note });
+    return this.adminUsersService.ban(admin, id, { category: dto.category, note: dto.note });
   }
 
   // 팬 프로필 사진·상태메시지 지우기(2026-10-12)
   @Patch(':id/clear-profile')
   clearProfile(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
-    return this.adminUsersService.clearProfile(admin.id, id);
+    return this.adminUsersService.clearProfile(admin, id);
   }
 
   @Patch(':id/reactivate')
   reactivate(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
-    return this.adminUsersService.reactivate(admin.id, id);
+    return this.adminUsersService.reactivate(admin, id);
   }
 }

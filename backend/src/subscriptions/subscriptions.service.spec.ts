@@ -86,6 +86,12 @@ function fakeDb(user: Record<string, unknown> = DONE_USER) {
         return row;
       },
       update: async ({ where, data }: { where: { id: string }; data: Partial<Sub> }) => Object.assign(subs.find((s) => s.id === where.id)!, data),
+      // 조건부 열기·닫기(2026-10-27) — id + cancelledAt(null 또는 { not: null })
+      updateMany: async ({ where, data }: { where: { id: string; cancelledAt: null | { not: null } }; data: Partial<Sub> }) => {
+        const rows = subs.filter((s) => s.id === where.id && (where.cancelledAt === null ? s.cancelledAt === null : s.cancelledAt !== null));
+        rows.forEach((row) => Object.assign(row, data));
+        return { count: rows.length };
+      },
     },
     subscriptionEvent: {
       create: async ({ data }: { data: { actorId: string; type: string; priceCents?: number } }) => events.push(data),

@@ -1963,3 +1963,27 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   예전엔 프리뷰 빌드도 production으로 섞였음. 서버는 `SENTRY_ENVIRONMENT`(데모 `demo`).
 - 운영 DB 백업(`.github/actions/db-backup`): PGDG `postgresql-client-17` → `pg_dump -Fc --no-owner` | `gpg --encrypt`(공개키만 runner에) | `aws s3 cp -`(R2,
   region `auto`) → 크기 확인. 데이터 수정 워크플로는 `BEGIN; <file>; ROLLBACK;`으로 command tag(`UPDATE n`·`DELETE n`·`INSERT 0 n`) 합을 세고, 적용 직전에 한 번 더 센 뒤 COMMIT.
+
+## 코드 전수 점검 1차 (2026-10-27)
+
+자세한 목록·남은 일은 작업 로그 2026-10-27. 구조가 바뀐 것만:
+
+- **스토어 결제 = 앱 전체에 하나**(`app/src/hooks/use-store-purchase.ts`): `useIAP` 대신 모듈이 `initConnection`·`purchaseUpdatedListener`를 한 번만 걸고,
+  `useStorePurchaseSync()`(`_layout` SessionEffects, 팬 계정·네이티브만)가 로그인·앱 복귀(10분 간격) 때 `getAvailablePurchases` → `/me/purchases/restore` →
+  서버가 받은 거래만 `finishTransaction`. 결제 화면은 상품 ID별 waiter로 결과만 기다림(`STORE_PURCHASE_PENDING` = 안드로이드 결제 대기).
+  결제 화면이 기다리는 거래는 팬이 아닌 계정도 처리.
+- **서버 구글 acknowledge**: 확인·알림 처리 뒤 `acknowledgementState` 0이면 `purchases.subscriptions…:acknowledge`(실패는 경고만). `paymentState` 0은 `IAP_PAYMENT_PENDING`.
+- **애플 검증기 2개**: 운영 검증기 먼저, `INVALID_ENVIRONMENT`(알림은 `INVALID_APP_IDENTIFIER`도)면 샌드박스. `APPLE_IAP_ENVIRONMENT=SANDBOX`는 샌드박스만.
+  운영 검증엔 `APPLE_APP_ID` 필수(없으면 503). 샌드박스 거래는 `ChargeSource.SANDBOX`.
+- **환불된 거래로 재오픈 금지**: `reopensRefunded()` — 닫힌(또는 없는) 구매에 그 `storeTransactionId` 결제가 `refundedAt`이면 확인은 `IAP_EXPIRED`, 알림은 무시.
+- **회복 구독**: 애플 `DID_RENEW/BILLING_RECOVERY`·구글 RECOVERED(1)는 `recovered` → `syncAccess(…, resumeSince)`가 그 구매가 닫힌 뒤 닫힌 방만 `startedAt` 유지하고 엶.
+  `syncAccess`·`closePurchase`는 조건부 `updateMany`라 여러 서버가 동시에 돌아도 STARTED/CANCELLED 이력 한 번.
+- **정산 이월**: `compute()`가 전 달 마감 스냅샷에서 마이너스 지급(소속사 합계 / 무소속 아티스트 개별)을 `adjustmentCents`로 가져옴, 출력에 `carriedCents`.
+- **운영자 2단계 인증**: `RolesGuard`가 `@Roles` 유무와 관계없이 ADMIN 요청마다 확인. 코드 화면 전에 필요한 API만 `@SkipAdminMfa`(`/auth/me`, 푸시 기기 해제, 2단계 인증 API).
+  `PUT /auth/me/push-devices`는 일부러 예외 아님(코드 확인 전 토큰으로 운영자 알림 등록 금지 — 앱이 복귀 때 다시 등록).
+- **운영자 대상 조치**: `assertCanManageUser()`(admin-users.service) — 대상이 ADMIN이면 OWNER만, 자기 자신 제재 금지, 마지막 OWNER 정지·차단 금지.
+- **데모 초기화 이중 잠금**: `demoWipeBlocker()`(demo-mode.ts) — `NODE_ENV`에 더해 데모 시드 운영자 ID 존재 + 7일 넘은 APPLE/GOOGLE 결제 없음.
+- **번역**: 인용으로만 보이는 메시지는 120자만 번역하고 공용 캐시에 안 씀. `inFlight` 맵으로 메시지×언어 동시 호출 하나로(서버 간 잠금은 안 함 — 유료 호출 동안 DB 연결을 잡고 있게 돼서).
+- **파일 삭제 전 참조 확인**: 메시지 회수·문의 삭제·스토리 정리 때 같은 키를 쓰는 다른 줄이 있으면 파일을 지우지 않음.
+- **앱 세션 초기화**: `app/src/lib/session-reset.ts`의 `onSessionReset`에 모듈 상태(소속사 알림 숫자, 보내는 중 답장)를 등록 → 로그아웃·401 때 `resetSessionState()`.
+

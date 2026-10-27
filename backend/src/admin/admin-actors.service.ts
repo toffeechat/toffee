@@ -74,6 +74,8 @@ export class AdminActorsService {
   async setRetired(adminId: string, id: string, retired: boolean) {
     const actor = await this.ensureActor(id);
     const wasRetired = !!actor.retiredAt;
+    // 이미 종료된 아티스트에 종료를 또 보내면 아무것도 안 함(2026-10-27) — 예전엔 retiredAt이 지금으로 다시 찍혀 14일 환불 기간이 밀렸음
+    if (retired && wasRetired) return this.findOne(id);
     // 바로 종료·재개하면 예정은 지움. 예정 알림 시각은 종료면 남기고(그 뒤 결제는 활동 종료 환불 대상 아님), 재개면 지움
     await this.prisma.actor.update({
       where: { id },
@@ -158,7 +160,11 @@ export class AdminActorsService {
     const due = await this.prisma.actor.findMany({ where: { retireAt: { lte: now }, retiredAt: null }, select: { id: true, retireAt: true, chatDisplayName: true } });
     for (const actor of due) {
       // 동시에 두 번 돌아도 한 번만 알림이 가게 조건부로 선점
-      const { count } = await this.prisma.actor.updateMany({ where: { id: actor.id, retiredAt: null }, data: { retiredAt: actor.retireAt, retireAt: null } });
+      // retireAt도 같이 맞춰야 함(2026-10-27) — 조회와 선점 사이에 운영자가 예정을 취소·연기했으면 종료하지 않음
+      const { count } = await this.prisma.actor.updateMany({
+        where: { id: actor.id, retiredAt: null, retireAt: actor.retireAt },
+        data: { retiredAt: actor.retireAt, retireAt: null },
+      });
       if (count === 0) continue;
       await this.notifyRetired(actor.id, actor.chatDisplayName);
       void this.alerts.notify('RETIRE', `${actor.chatDisplayName} 예정된 활동 종료 처리됨`, '구글 구독은 서버가 갱신을 끊어요. 애플 상품은 운영자 홈 "애플 판매 중지 할 일"을 확인해 주세요.', { actorId: actor.id });
@@ -243,20 +249,22 @@ export class AdminActorsService {
     return this.findOne(couple.id);
   }
 
-  async create(dto: CreateActorDto) {
+  async create(adminId: string, dto: CreateActorDto) {
     const actor = await this.prisma.actor.create({
       data: { legalName: dto.legalName.trim(), chatDisplayName: dto.chatDisplayName.trim(), monthlyPriceCents: dto.monthlyPriceCents, gender: dto.gender ?? null },
       select: { id: true },
     });
     if (dto.agencyId) {
       try {
-        await this.agencies.assignActor(actor.id, dto.agencyId);
+        await this.agencies.assignActor(adminId, actor.id, dto.agencyId);
       } catch (error) {
         // 없는 소속사면 반쯤 만들어진 배우를 남기지 않음
         await this.prisma.actor.delete({ where: { id: actor.id } });
         throw error;
       }
     }
+    // 작업 기록(2026-10-27) — 가격이 붙은 판매 대상이 생기는 것이라 누가 만들었는지 남김
+    await this.audit.record(adminId, 'ACTOR_CREATE', 'ACTOR', actor.id, { legalName: dto.legalName.trim(), monthlyPriceCents: dto.monthlyPriceCents, agencyId: dto.agencyId ?? null });
     return this.findOne(actor.id);
   }
 
@@ -266,6 +274,8 @@ export class AdminActorsService {
     // 커플방은 성별이 없음(둘러보기 CP 줄로만)
     const gender = before.kind === ActorKind.COUPLE ? undefined : dto.gender;
     await ensureStoreProductIdFree(this.prisma, dto.storeProductId, { actorId: id });
+    const nextRelease = dto.releaseAt === undefined ? undefined : dto.releaseAt ? new Date(dto.releaseAt).toISOString() : null;
+    const releaseChanged = nextRelease !== undefined && nextRelease !== (before.releaseAt?.toISOString() ?? null);
     await this.prisma.actor.update({
       where: { id },
       data: {
@@ -275,12 +285,12 @@ export class AdminActorsService {
         verified: dto.verified,
         gender,
         storeProductId: dto.storeProductId,
-        // 공개 시각을 바꾸면 공개 알림을 다시 보낼 수 있게(미래로 미룬 경우 그 시각에 다시)
-        ...(dto.releaseAt !== undefined ? { releaseAt: dto.releaseAt ? new Date(dto.releaseAt) : null, releaseNotifiedAt: null } : {}),
+        // 공개 시각을 바꾸면 공개 알림을 다시 보낼 수 있게(미래로 미룬 경우 그 시각에 다시). 같은 값이 다시 오면(다른 칸만 고친 저장) 그대로 —
+        // 2026-10-27: 예전엔 매번 releaseNotifiedAt을 지워 이미 공개된 아티스트의 공개 알림이 또 나갈 수 있었음
+        ...(releaseChanged ? { releaseAt: nextRelease ? new Date(nextRelease) : null, releaseNotifiedAt: null } : {}),
       },
     });
-    const nextRelease = dto.releaseAt === undefined ? undefined : dto.releaseAt ? new Date(dto.releaseAt).toISOString() : null;
-    if (nextRelease !== undefined && nextRelease !== (before.releaseAt?.toISOString() ?? null)) {
+    if (releaseChanged) {
       await this.audit.record(adminId, 'ACTOR_RELEASE', 'ACTOR', id, { releaseAt: nextRelease });
     }
     // 가격·스토어 상품은 돈과 직결 — 바뀌면 운영자 작업 기록에
@@ -301,9 +311,10 @@ export class AdminActorsService {
   }
 
   // 배우 본인 계정 연결 — 이 계정이 스튜디오에서 메시지를 보내게 됨. 한 계정은 배우 한 명에만 연결
-  async linkUser(id: string, userId: string | null) {
+  // 작업 기록(2026-10-27) — 연결된 계정이 이 아티스트로 메시지를 보내고 정산·통계를 보게 되므로 from/to를 남김
+  async linkUser(adminId: string, id: string, userId: string | null) {
     await this.ensureActor(id);
-    const room = await this.prisma.actor.findUniqueOrThrow({ where: { id }, select: { kind: true } });
+    const room = await this.prisma.actor.findUniqueOrThrow({ where: { id }, select: { kind: true, selfUserId: true } });
     // 커플방은 본인 계정이 없음 — 멤버 배우 각자의 본인 계정이 커플방에도 보냄
     if (room.kind === ActorKind.COUPLE) throw new BadRequestException(appError('NOT_FOR_COUPLE'));
     if (userId) {
@@ -316,6 +327,7 @@ export class AdminActorsService {
       if (other && other.id !== id) throw new ConflictException(appError('ACCOUNT_ALREADY_LINKED'));
     }
     await this.prisma.actor.update({ where: { id }, data: { selfUserId: userId } });
+    if (room.selfUserId !== userId) await this.audit.record(adminId, 'ACTOR_SELF_LINK', 'ACTOR', id, { from: room.selfUserId, to: userId });
     return this.findOne(id);
   }
 

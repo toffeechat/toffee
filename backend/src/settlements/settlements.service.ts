@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ChargeSource, Role } from '../generated/prisma/enums.js';
-import type { Prisma } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { SettlementPayoutDto } from './dto.js';
@@ -46,6 +46,7 @@ interface ActorRow {
   chargeIds: Set<string>;
   grossCents: number;
   adjustmentCents: number;
+  carriedCents: number;
   refundedCents: number;
   rooms: Map<string, { roomId: string; name: string; kind: string; grossCents: number }>;
 }
@@ -53,6 +54,8 @@ interface ActorRow {
 export interface Amounts {
   grossCents: number;
   adjustmentCents: number;
+  // 조정 중 지난달 음수 지급액에서 넘어온 몫(2026-10-27, 수수료 떼기 전 금액) — adjustmentCents에 이미 포함. 옛 마감 표엔 없음
+  carriedCents: number;
   storeFeeCents: number;
   netCents: number;
   payoutCents: number;
@@ -96,6 +99,9 @@ type AllocationLine = Prisma.ChargeAllocationGetPayload<{ select: typeof ALLOCAT
  * / 토피 몫으로 나눔. 무소속 배우는 배우 본인에게 같은 비율. 환불된 결제는 빼고 따로 보여 줌.
  * 마감(SettlementClose): 마감한 달은 저장해 둔 표를 그대로 보여 주고, 마감 뒤에 생긴 일(환불·늦게 기록된 결제)은 그 일이 생긴 열린 달의
  * "조정"으로. 금액은 표시 가격(바트) 기준 추정 — 실제 입금액은 스토어 정산 보고서로 맞춰 봐야 함.
+ * 음수 지급액 이월(2026-10-27): 바로 앞 달이 마감됐고 그 달 받는 쪽(소속사 합계, 무소속은 배우 한 명)의 지급액이 음수면(= 보낸 돈 없음), 그 받는 쪽
+ * 배우들의 정산 대상 금액(결제액 + 조정, 수수료 떼기 전)을 이 달 조정으로 넘김 — 예전엔 음수가 그냥 사라져 다음 지급에서 빠지지 않았음.
+ * 앞 달 금액엔 그 앞 달에서 넘어온 몫이 이미 들어 있어서 앞 달 하나만 보면 연달아 음수여도 두 번 빼지 않음.
  */
 @Injectable()
 export class SettlementsService {
@@ -159,7 +165,7 @@ export class SettlementsService {
     const includeSandbox = options.includeSandbox ?? this.sandboxEnabled;
     const agencyWhere = options.agencyId ? { agencyId: options.agencyId } : {};
     const sourceWhere = includeSandbox ? {} : { source: { not: ChargeSource.SANDBOX } };
-    const [current, earlier, closes] = await Promise.all([
+    const [current, earlier, closes, previousClose] = await Promise.all([
       this.prisma.chargeAllocation.findMany({
         where: { ...agencyWhere, charge: { chargedAt: { gte: from, lt: to }, ...sourceWhere } },
         select: ALLOCATION_SELECT,
@@ -173,29 +179,30 @@ export class SettlementsService {
         select: ALLOCATION_SELECT,
       }),
       this.prisma.settlementClose.findMany({ select: { month: true, closedAt: true } }),
+      this.prisma.settlementClose.findUnique({ where: { month: previousMonth(month) }, select: { snapshot: true } }),
     ]);
     const closedAt = new Map(closes.map((close) => [close.month, close.closedAt]));
 
     const groups = new Map<string, { agencyId: string | null; name: string | null; sharePercent: number; actors: Map<string, ActorRow> }>();
-    const rowFor = (line: AllocationLine) => {
-      const key = line.agencyId ?? '';
+    const rowOf = (agency: { agencyId: string | null; name: string | null; sharePercent: number }, actorRef: { actorId: string; name: string }) => {
+      const key = agency.agencyId ?? '';
       let group = groups.get(key);
       if (!group) {
-        group = {
-          agencyId: line.agencyId,
-          name: line.agency?.name ?? null,
-          sharePercent: line.agency?.revenueSharePercent ?? this.defaultSharePercent,
-          actors: new Map(),
-        };
+        group = { ...agency, actors: new Map() };
         groups.set(key, group);
       }
-      let actor = group.actors.get(line.actor.id);
+      let actor = group.actors.get(actorRef.actorId);
       if (!actor) {
-        actor = { actorId: line.actor.id, name: line.actor.legalName, chargeIds: new Set(), grossCents: 0, adjustmentCents: 0, refundedCents: 0, rooms: new Map() };
-        group.actors.set(line.actor.id, actor);
+        actor = { ...actorRef, chargeIds: new Set(), grossCents: 0, adjustmentCents: 0, carriedCents: 0, refundedCents: 0, rooms: new Map() };
+        group.actors.set(actorRef.actorId, actor);
       }
       return actor;
     };
+    const rowFor = (line: AllocationLine) =>
+      rowOf(
+        { agencyId: line.agencyId, name: line.agency?.name ?? null, sharePercent: line.agency?.revenueSharePercent ?? this.defaultSharePercent },
+        { actorId: line.actor.id, name: line.actor.legalName },
+      );
 
     for (const line of current) {
       const actor = rowFor(line);
@@ -219,6 +226,15 @@ export class SettlementsService {
       if (late === 0 && refunded === 0) continue;
       rowFor(line).adjustmentCents += late - refunded;
     }
+    // 바로 앞 달(마감됨)의 음수 지급액 이월
+    if (previousClose) {
+      for (const carry of negativeCarries(previousClose.snapshot as unknown as LiveReport)) {
+        if (options.agencyId && carry.agency.agencyId !== options.agencyId) continue;
+        const actor = rowOf(carry.agency, carry.actor);
+        actor.adjustmentCents += carry.cents;
+        actor.carriedCents += carry.cents;
+      }
+    }
 
     const storeFeePercent = this.storeFeePercent;
     const agencies = [...groups.values()]
@@ -230,11 +246,12 @@ export class SettlementsService {
             chargeCount: actor.chargeIds.size,
             grossCents: actor.grossCents,
             adjustmentCents: actor.adjustmentCents,
+            carriedCents: actor.carriedCents,
             refundedCents: actor.refundedCents,
             ...splitRevenue(actor.grossCents + actor.adjustmentCents, storeFeePercent, group.sharePercent),
             rooms: [...actor.rooms.values()].sort((a, b) => b.grossCents - a.grossCents),
           }))
-          .sort((a, b) => b.grossCents - a.grossCents);
+          .sort((a, b) => b.grossCents - a.grossCents || b.adjustmentCents - a.adjustmentCents);
         return { agencyId: group.agencyId, name: group.name, sharePercent: group.sharePercent, ...sum(actors), actors };
       })
       // 소속사 이름순, 무소속은 맨 뒤
@@ -263,7 +280,13 @@ export class SettlementsService {
     const openBefore = await this.openMonthsBefore(from);
     if (openBefore.length > 0) throw new ConflictException(appError('SETTLEMENT_CLOSE_ORDER', { month: openBefore[0] }));
     const snapshot = await this.compute(month, { includeSandbox });
-    await this.prisma.settlementClose.create({ data: { month, closedById: adminId, snapshot: snapshot as unknown as Prisma.InputJsonValue } });
+    try {
+      await this.prisma.settlementClose.create({ data: { month, closedById: adminId, snapshot: snapshot as unknown as Prisma.InputJsonValue } });
+    } catch (error) {
+      // 두 번 눌러 동시에 마감하면 한쪽이 고유 제약에 걸림 — 예전엔 500(2026-10-27)
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new ConflictException(appError('SETTLEMENT_ALREADY_CLOSED'));
+      throw error;
+    }
     await this.audit.record(adminId, 'SETTLEMENT_CLOSE', 'SETTLEMENT', month, { month, payoutCents: snapshot.totals.payoutCents });
     return this.report(month);
   }
@@ -409,6 +432,28 @@ function payeeIn(snapshot: LiveReport, dto: { agencyId?: string; actorId?: strin
   return actor ? { name: actor.name, payoutCents: actor.payoutCents } : null;
 }
 
+/**
+ * 마감한 표에서 다음 달로 넘길 음수 지급액(2026-10-27) — 받는 쪽 단위(소속사는 합계, 무소속은 배우 한 명)로 지급액이 음수면 그 받는 쪽 배우들의
+ * 정산 대상 금액(결제액 + 조정)을 그대로. 소속사 합계가 양수면 소속사 안에서 이미 상계돼 넘길 것 없음.
+ */
+export function negativeCarries(snapshot: Pick<LiveReport, 'agencies'>) {
+  const carries: { agency: { agencyId: string | null; name: string | null; sharePercent: number }; actor: { actorId: string; name: string }; cents: number }[] = [];
+  for (const agency of snapshot.agencies) {
+    const info = { agencyId: agency.agencyId, name: agency.name, sharePercent: agency.sharePercent };
+    const payees = agency.agencyId ? (agency.payoutCents < 0 ? agency.actors : []) : agency.actors.filter((actor) => actor.payoutCents < 0);
+    for (const actor of payees) {
+      const cents = actor.grossCents + (actor.adjustmentCents ?? 0);
+      if (cents !== 0) carries.push({ agency: info, actor: { actorId: actor.actorId, name: actor.name }, cents });
+    }
+  }
+  return carries;
+}
+
+export function previousMonth(month: string): string {
+  const [year, mon] = month.split('-').map(Number);
+  return mon === 1 ? `${year - 1}-12` : `${year}-${String(mon - 1).padStart(2, '0')}`;
+}
+
 export function nextMonth(month: string): string {
   const [year, mon] = month.split('-').map(Number);
   return mon === 12 ? `${year + 1}-01` : `${year}-${String(mon + 1).padStart(2, '0')}`;
@@ -419,12 +464,13 @@ function sum(rows: Partial<Amounts>[]): Amounts {
     (acc, row) => ({
       grossCents: acc.grossCents + (row.grossCents ?? 0),
       adjustmentCents: acc.adjustmentCents + (row.adjustmentCents ?? 0),
+      carriedCents: acc.carriedCents + (row.carriedCents ?? 0),
       storeFeeCents: acc.storeFeeCents + (row.storeFeeCents ?? 0),
       netCents: acc.netCents + (row.netCents ?? 0),
       payoutCents: acc.payoutCents + (row.payoutCents ?? 0),
       platformCents: acc.platformCents + (row.platformCents ?? 0),
       refundedCents: acc.refundedCents + (row.refundedCents ?? 0),
     }),
-    { grossCents: 0, adjustmentCents: 0, storeFeeCents: 0, netCents: 0, payoutCents: 0, platformCents: 0, refundedCents: 0 },
+    { grossCents: 0, adjustmentCents: 0, carriedCents: 0, storeFeeCents: 0, netCents: 0, payoutCents: 0, platformCents: 0, refundedCents: 0 },
   );
 }
