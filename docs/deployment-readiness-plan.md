@@ -34,6 +34,9 @@
 라이브러리 매니페스트의 같은 항목(@color/white)이 부딪혀 manifest merger 실패. 10-15 두 플러그인을 같이 넣은 뒤 안드로이드 빌드를 한 번도 안 돌려서 처음 드러남.
 `plugins/with-fcm-notification-meta.js`(그 meta-data에 `tools:replace="android:resource"`)로 고침 — 매니페스트 수정은 나중에 적힌 플러그인부터 실행돼서
 `expo-notifications`보다 **앞에** 둬야 함(뒤에 두면 붙지 않는 걸 `expo prebuild`로 확인). 같은 빌드 로그의 expo-doctor 경고(패치 버전 15개 어긋남)는 빌드를 막지 않아 그대로.
+그 뒤 다시 돌린 안드로이드 빌드는 매니페스트를 통과했지만 `lintVitalRelease`에서 실패 — `app/locales/*.json`의 iOS 권한 문구(`NSCameraUsageDescription` 등
+4개 × 9개 언어 = 36건)를 Expo가 안드로이드 `values-b+<언어>/strings.xml`에도 넣는데 기본 `values/strings.xml`엔 없어서 `ExtraTranslation` 오류.
+언어 파일을 `{"ios": {...}}`로 감싸 iOS에만 넣게 함(prebuild로 안드로이드는 빈 문자열 파일·iOS `InfoPlist.strings`는 그대로인 것 확인).
 
 ## 2026-10-28 (이어서) — 코드 전수 점검 2차 + 전부 고침
 

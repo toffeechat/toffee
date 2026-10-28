@@ -1,6 +1,8 @@
 {
-  "NSCameraUsageDescription": "Toffee usa la cámara cuando haces una foto o un video para enviarlo a tus fans.",
-  "NSMicrophoneUsageDescription": "Toffee usa el micrófono para grabar mensajes de voz y el sonido de los videos que envías a tus fans.",
-  "NSPhotoLibraryUsageDescription": "Toffee abre tu fototeca cuando eliges una foto o un video para enviarlo a tus fans.",
-  "NSPhotoLibraryAddUsageDescription": "Toffee guarda en tu fototeca las fotos y los videos que recibiste cuando tocas Guardar."
+  "ios": {
+    "NSCameraUsageDescription": "Toffee usa la cámara cuando haces una foto o un video para enviarlo a tus fans.",
+    "NSMicrophoneUsageDescription": "Toffee usa el micrófono para grabar mensajes de voz y el sonido de los videos que envías a tus fans.",
+    "NSPhotoLibraryUsageDescription": "Toffee abre tu fototeca cuando eliges una foto o un video para enviarlo a tus fans.",
+    "NSPhotoLibraryAddUsageDescription": "Toffee guarda en tu fototeca las fotos y los videos que recibiste cuando tocas Guardar."
+  }
 }
