@@ -68,6 +68,14 @@ node scripts/deploy/plan.mjs --env preview --target HEAD     # 떠 있는 서버
 
 ## 5. 워크플로 실행
 
+**⚠️ 서버가 새 커밋으로 올라간 뒤에 실행**(2026-10-28 사고): Railway `toffee` 서비스는 "Wait for CI"가 켜져 있어 그 커밋의 **모든** GitHub
+작업이 끝나기를 기다린다. 합치자마자 `deploy-preview`를 돌리면 워크플로(서버를 기다림)와 Railway(워크플로를 기다림)가 서로 기다리다
+워크플로가 시간 초과로 **실패** → Railway는 "검사 실패" 커밋이라며 배포를 **건너뜀**(서버는 옛 커밋 그대로, 웹만 새 커밋).
+그래서 서버가 바뀌는 커밋(`backend/**`)이면 먼저
+`node scripts/deploy/wait-deployed.mjs --env preview --part server --target <머지 커밋>`(백그라운드)으로 서버 교체를 확인한 뒤 실행한다.
+이미 꼬였으면: 새 커밋이 있어야 Railway가 다시 배포함(watchPatterns `/backend/**`라 `backend/` 안 파일이 바뀌어야) — 사용자에게 Railway
+`toffee-demo` → 서비스 → Deployments에서 최신 커밋 배포를 부탁하거나, `backend/` 안의 실제 수정이 담긴 PR을 합침(빈 커밋 금지).
+
 ```
 mcp__github__actions_run_trigger  method=run_workflow  owner=toffeechat repo=toffee
   workflow_id=deploy-preview.yml  ref=main  inputs={"ref":"main","ota_message":"<한 줄 설명>"}

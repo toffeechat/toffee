@@ -66,6 +66,9 @@ node scripts/deploy/plan.mjs --env preview --server-base <커밋> --ota-base <�
 - 입력: `ref`(기본 main), `ota_message`, `build`(none·ios·android·all — 내부 배포 빌드, `--no-wait`), `skip_ota`, `override_window`.
 - `EXPO_TOKEN`이 없으면 OTA·빌드를 건너뛰고 요약에 "PC에서 `npm run ota -- preview`"를 남김. `PREVIEW_SMOKE_TEST_SECRET`이 없으면 로그인·메시지 점검은 ⚠️ 건너뜀(헬스·웹만).
 - 걸리는 시간: CI 대기(Railway "Wait for CI"를 켰다면) + 도커 빌드 3~5분, Pages 빌드 3~5분, OTA 2~3분, 점검 10초.
+- **순서 주의(2026-10-28)**: Railway "Wait for CI"는 그 커밋의 GitHub 작업 **전부**를 기다림 — `deploy-preview`도 포함. 서버가 바뀌는 커밋을
+  합치자마자 워크플로를 돌리면 서로 기다리다 워크플로가 시간 초과로 실패하고, Railway는 실패한 커밋이라 배포를 건너뜀. **서버가 새 커밋으로
+  바뀐 걸(`wait-deployed.mjs --part server`) 확인한 뒤** 워크플로를 실행. 꼬였으면 Railway에서 최신 커밋 배포 또는 `backend/` 수정이 든 새 커밋.
 
 ## 5. 마이그레이션 규칙 — 추가 먼저, 제거는 다음 배포
 

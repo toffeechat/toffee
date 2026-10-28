@@ -59,16 +59,12 @@ $ npm run test:cov
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+토피 서버는 `Dockerfile`로 Railway에 올린다(`railway.json` — watchPatterns `/backend/**`, 헬스체크 `/health/ready`, 켤 때 `prisma migrate deploy`).
+데모(프리뷰)는 main에 합치면 자동 배포, 운영은 `deploy-production.yml`이 커밋을 지정해 배포. 절차·되돌리기는
+[`docs/engineering/deploy-runbook.md`](../docs/engineering/deploy-runbook.md), Claude는 `.claude/skills/deploy/SKILL.md`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- 데모 서비스는 Railway "Wait for CI"가 켜져 있어 그 커밋의 GitHub 작업이 **모두** 끝나야 배포된다 — `deploy-preview` 워크플로는 서버가 새 커밋으로
+  올라간 **뒤에** 실행할 것(먼저 돌리면 서로 기다리다 실패하고 그 커밋은 배포되지 않음, 2026-10-28).
 
 ## Observability
 
