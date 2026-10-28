@@ -70,6 +70,16 @@ export function endsAtOf(purchases: Pick<PurchaseRow, 'iapExpiresAt' | 'willRene
   return new Date(Math.max(...purchases.map((purchase) => purchase.iapExpiresAt!.getTime())));
 }
 
+/**
+ * 다음 결제 예정일(참고용, 2026-10-28 버블 비교) — 이 방을 열어 주는 스토어 구매 중 자동 갱신 예정인 것의 가장 이른 만료일.
+ * 실제 청구일은 스토어가 정해서 하루쯤 다를 수 있음(앱에 "참고용" 표시). 테스트 구독·해지 예정만 있으면 null.
+ */
+export function renewsAtOf(purchases: Pick<PurchaseRow, 'iapExpiresAt' | 'willRenew'>[]): Date | null {
+  const renewing = purchases.filter((purchase) => purchase.willRenew && purchase.iapExpiresAt);
+  if (renewing.length === 0) return null;
+  return new Date(Math.min(...renewing.map((purchase) => purchase.iapExpiresAt!.getTime())));
+}
+
 function actorIdsOf(purchase: PurchaseRow): string[] {
   return purchase.actorId ? [purchase.actorId] : (purchase.bundle?.actors.map((item) => item.actorId) ?? []);
 }
@@ -142,6 +152,9 @@ export class SubscriptionsService {
           unreadCount,
           unreadQuotedReply: !!unreadQuote,
           endsAt: endsAtOf(covering),
+          renewsAt: renewsAtOf(covering),
+          // 자동 결제 실패로 유예 중인 구매가 있음(2026-10-28) — 앱이 결제 수단 확인 안내
+          billingIssue: covering.some((purchase) => !!purchase.billingIssueAt),
           coveredBy: covering.map((purchase) => ({
               purchaseId: purchase.id,
               // 스토어 결제면 해지는 스토어에서(앱이 바로 스토어 구독 관리로 안내)
@@ -476,7 +489,7 @@ export class SubscriptionsService {
       if (existing) {
         // 만료일은 늘리기만(늦게 온 옛 영수증이 줄이지 않게)
         const expiresAt = existing.iapExpiresAt && existing.iapExpiresAt > verified.expiresAt ? existing.iapExpiresAt : verified.expiresAt;
-        await tx.purchase.update({ where: { id: existing.id }, data: { ...iap, iapExpiresAt: expiresAt, cancelledAt: null } });
+        await tx.purchase.update({ where: { id: existing.id }, data: { ...iap, iapExpiresAt: expiresAt, cancelledAt: null, billingIssueAt: null } });
         id = existing.id;
       } else {
         const created = await tx.purchase.create({
@@ -510,7 +523,7 @@ export class SubscriptionsService {
       const credit = await this.ledger.creditUnused(tx, existing.id, verified.purchasedAt);
       await tx.purchase.update({
         where: { id: existing.id },
-        data: { ...iap, cancelledAt: null, actorId: target.actorId ?? null, bundleId: target.bundleId ?? null, priceCents: target.priceCents },
+        data: { ...iap, cancelledAt: null, billingIssueAt: null, actorId: target.actorId ?? null, bundleId: target.bundleId ?? null, priceCents: target.priceCents },
       });
       if (verified.platform === IapPlatform.ANDROID) {
         if (credit.totalCents > 0) {
@@ -579,8 +592,13 @@ export class SubscriptionsService {
       return { applied: true };
     }
     if (event.kind === 'GRACE') {
-      if (!purchase.iapExpiresAt || event.until > purchase.iapExpiresAt) {
-        await this.prisma.purchase.update({ where: { id: purchase.id }, data: { iapExpiresAt: event.until } });
+      const extend = !purchase.iapExpiresAt || event.until > purchase.iapExpiresAt;
+      if (extend || !purchase.billingIssueAt) {
+        await this.prisma.purchase.update({
+          where: { id: purchase.id },
+          data: { ...(extend ? { iapExpiresAt: event.until } : {}), billingIssueAt: purchase.billingIssueAt ?? new Date() },
+        });
+        this.accessChanged(purchase.userId);
       }
       return { applied: true };
     }

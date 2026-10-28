@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { loadPreference, savePreference } from '@/lib/preference-storage';
 import { uploadInquiryPhoto } from '@/lib/upload-media';
 
 export interface FaqSection {
@@ -34,6 +36,32 @@ export interface Notice {
 export function useNotices() {
   const { token } = useAuth();
   return useQuery({ queryKey: ['notices'], queryFn: () => apiClient.get<Notice[]>('/notices'), enabled: !!token });
+}
+
+// 공지 새 글 표시(2026-10-28, 버블 비교) — 마지막으로 공지 화면을 연 시각을 기기에 저장, 그 뒤에 올라온 공지가 있으면 마이페이지 탭·공지 줄에 표시.
+// 한 번도 안 열어 봤으면(새로 설치) 최근 14일 공지만 새 글로 — 가입하자마자 옛 공지가 전부 "새 글"로 뜨지 않게
+const NOTICES_SEEN_KEY = 'noticesSeenAt';
+const NEW_NOTICE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+export function useHasNewNotice(): boolean {
+  const { data: notices } = useNotices();
+  const { data: seenAt } = useQuery({
+    queryKey: ['noticesSeenAt'],
+    queryFn: async () => (await loadPreference(NOTICES_SEEN_KEY)) ?? new Date(Date.now() - NEW_NOTICE_WINDOW_MS).toISOString(),
+    staleTime: Infinity,
+  });
+  if (!notices || !seenAt) return false;
+  return notices.some((notice) => notice.createdAt > seenAt);
+}
+
+export function useMarkNoticesSeen(notices: Notice[] | undefined) {
+  const queryClient = useQueryClient();
+  const latest = notices?.reduce((max, notice) => (notice.createdAt > max ? notice.createdAt : max), '');
+  useEffect(() => {
+    if (!latest) return;
+    void savePreference(NOTICES_SEEN_KEY, latest).catch(() => {});
+    queryClient.setQueryData(['noticesSeenAt'], latest);
+  }, [latest, queryClient]);
 }
 
 /** 공지 번역(2026-10-20) — 한국어로 쓴 공지를 내 앱 언어로. 서버가 공지 × 언어마다 한 번 번역해 저장 */

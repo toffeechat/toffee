@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Sparkles } from 'lucide-react-native';
 
 import { BundleAvatars } from '@/components/bundle-card';
+import { ExpandableItem } from '@/components/expandable-item';
 import { RefundSection } from '@/components/refund-section';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -47,6 +48,10 @@ export default function ManageSubscriptionsScreen() {
         <>
           <PastSubscriptionsSection />
           {Platform.OS === 'web' ? null : <RestorePurchases />}
+          {/* 이용권 안내(2026-10-28, 버블 비교) — 결제일은 참고용·환불은 구매처·결제 실패·구매 복원 */}
+          <View style={styles.guide}>
+            <ExpandableItem title={t('manage.guideTitle')} body={t('manage.guideBody')} />
+          </View>
         </>
       }
       renderItem={({ item }) => <SubscriptionCard sub={item} onPress={() => router.push({ pathname: '/subscriptions/[actorId]', params: { actorId: item.actorId } })} />}
@@ -212,9 +217,9 @@ function SubscriptionCard({ sub, onPress }: { sub: Subscription; onPress: () => 
           {t('manage.since', { date: new Date(sub.startedAt).toLocaleDateString(i18n.language) })}
         </ThemedText>
       </View>
-      <View style={[styles.status, { backgroundColor: theme.tintSoft }]}>
-        <ThemedText type="captionBold" style={{ color: theme.tint }}>
-          {sub.endsAt ? t('inbox.endsOn', { date: new Date(sub.endsAt).toLocaleDateString(i18n.language, { month: 'long', day: 'numeric' }) }) : t('manage.active')}
+      <View style={[styles.status, { backgroundColor: sub.billingIssue ? `${theme.danger}1A` : theme.tintSoft }]}>
+        <ThemedText type="captionBold" style={{ color: sub.billingIssue ? theme.danger : theme.tint }}>
+          {sub.billingIssue ? t('manage.billingIssueShort') : sub.endsAt ? t('inbox.endsOn', { date: new Date(sub.endsAt).toLocaleDateString(i18n.language, { month: 'long', day: 'numeric' }) }) : t('manage.active')}
         </ThemedText>
       </View>
       <Icon as={ChevronRight} size={18} themeColor="textTertiary" />
@@ -228,6 +233,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, gap: 2 },
   status: { borderRadius: Radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
   loading: { marginTop: Spacing.six },
+  guide: { marginTop: Spacing.four },
   section: { gap: Spacing.three },
   bundleCard: { borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.two },
   bundleHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },

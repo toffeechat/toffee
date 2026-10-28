@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/icon';
 import { fontFor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
+import { useHasNewNotice } from '@/hooks/use-support';
 
 // DESIGN_GUIDE §2: 하단 탭은 Discover / Inbox / Profile 3개만(Home 탭 없음)
 export default function TabsLayout() {
@@ -14,6 +15,8 @@ export default function TabsLayout() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { data: subscriptions } = useMySubscriptions();
+  // 새 공지가 있으면 마이페이지 탭에 N(2026-10-28, 버블처럼) — 공지 화면을 열면 사라짐
+  const hasNewNotice = useHasNewNotice();
   // DESIGN_GUIDE §2: 구독 중인 배우가 있으면 앱을 열 때 Inbox부터, 없으면 Discover(첫 진입 한 번만)
   const decided = useRef(false);
   useEffect(() => {
@@ -49,6 +52,8 @@ export default function TabsLayout() {
         name="mypage"
         options={{
           title: t('tabs.profile'),
+          tabBarBadge: hasNewNotice ? 'N' : undefined,
+          tabBarBadgeStyle: { backgroundColor: theme.tint, color: '#ffffff', fontSize: 10 },
           tabBarIcon: ({ color, focused }) => <Icon as={UserRound} size={24} color={focused ? theme.tint : color} />,
         }}
       />

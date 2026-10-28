@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
 import { IconButton } from '@/components/ui/icon-button';
 import { membersOf, useActor } from '@/hooks/use-actors';
+import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -21,6 +22,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
  */
 export default function ChatProfileScreen() {
   const theme = useTheme();
+  // 프로필에서 캡처해도 경고(2026-10-28, 버블처럼) — 아티스트 사진·정보 무단 사용 안내
+  useScreenshotWarning(true, 'profile');
   const { t } = useTranslation();
   const router = useRouter();
   const { actorId, memberId } = useLocalSearchParams<{ actorId: string; memberId?: string }>();

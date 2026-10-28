@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ExpandableItem } from '@/components/expandable-item';
 import { confirm } from '@/lib/confirm';
 import { openStoreSubscriptions, storeName } from '@/lib/store-subscriptions';
 import { useCancelPurchase } from '@/hooks/use-bundles';
@@ -18,7 +19,8 @@ import { formatPrice } from '@/utils/price';
 
 /**
  * 구독 상세 — DESIGN_GUIDE §11: 상태·월 요금·다음 결제일·자동 갱신 안내·혜택·해지.
- * 다음 결제일·결제 수단은 스토어 결제가 붙으면 스토어 정보로(지금은 테스트 구독이라 "스토어에서 확인").
+ * 다음 결제일은 스토어 구독의 만료일을 "참고용"으로(2026-10-28 버블 비교 — 테스트 구독은 "스토어에서 확인"), 자동 결제 실패(유예 중)면
+ * 맨 위에 결제 수단 확인 안내, 맨 아래 이용권 안내(결제일·환불·결제 실패·구매 복원).
  */
 export default function SubscriptionDetailScreen() {
   const theme = useTheme();
@@ -83,7 +85,9 @@ export default function SubscriptionDetailScreen() {
     // 끊기지 않고 이어진 이번 구독의 시작일 + 며칠째(시작한 날이 1일째) — 장기 구독 혜택의 기준(2026-10-15 사용자 결정: 여러 번 나눠 구독한 걸
     // 합치지 않고 한 번 이어서 구독한 기간만). startedAt은 해지·만료 후 다시 구독하면 새로 시작되고 개인 → 묶음 전환처럼 안 끊기면 그대로
     [t('manage.started'), t('manage.startedDays', { date: new Date(sub.startedAt).toLocaleDateString(i18n.language), days: daysSince(sub.startedAt) })],
-    endsOn ? [t('manage.endsOn'), endsOn] : [t('manage.nextBilling'), t('manage.nextBillingStore')],
+    endsOn
+      ? [t('manage.endsOn'), endsOn]
+      : [t('manage.nextBilling'), sub.renewsAt ? t('manage.nextBillingDate', { date: new Date(sub.renewsAt).toLocaleDateString(i18n.language) }) : t('manage.nextBillingStore')],
   ];
 
   return (
@@ -92,6 +96,21 @@ export default function SubscriptionDetailScreen() {
         <Avatar uri={sub.actor.chatProfileImageUrl} size={72} />
         <ThemedText type="title">{sub.actor.chatDisplayName}</ThemedText>
       </View>
+
+      {/* 자동 결제 실패 — 스토어 유예 기간 동안은 그대로 이용, 끝나면 방이 닫힘(2026-10-28, 버블의 "구독 갱신 보류 중") */}
+      {sub.billingIssue ? (
+        <View style={[styles.card, { backgroundColor: `${theme.danger}1A` }]}>
+          <ThemedText type="smallBold" themeColor="danger">
+            {t('manage.billingIssueTitle')}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('manage.billingIssueBody')}
+          </ThemedText>
+          {storePlatform ? (
+            <Button title={t('manage.openStore', { store: storeName(storePlatform) })} variant="secondary" onPress={() => void openStoreSubscriptions().catch(() => {})} />
+          ) : null}
+        </View>
+      ) : null}
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
         {rows.map(([label, value]) => (
@@ -121,6 +140,8 @@ export default function SubscriptionDetailScreen() {
           onPress={cancel}
         />
       </View>
+
+      <ExpandableItem title={t('manage.guideTitle')} body={t('manage.guideBody')} />
     </ScrollView>
   );
 }

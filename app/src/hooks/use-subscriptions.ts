@@ -17,6 +17,10 @@ export interface Subscription {
   coveredBy: { purchaseId: string; iapPlatform?: 'IOS' | 'ANDROID' | null; bundle: { id: string; name: string; priceCents: number } | null }[];
   /** 스토어에서 자동 갱신을 끈 방의 이용 종료 시각(2026-10-02) — 계속 갱신되면 null. "○월 ○일까지 이용" 표시 */
   endsAt?: string | null;
+  /** 다음 결제 예정일(참고용, 2026-10-28) — 자동 갱신 예정인 스토어 구독의 만료일. 테스트 구독이면 null */
+  renewsAt?: string | null;
+  /** 자동 결제가 실패해 스토어 유예 기간 중(2026-10-28, 버블의 "구독 갱신 보류 중") — 결제 수단 확인 안내 */
+  billingIssue?: boolean;
   /** 마지막으로 채팅방을 본 시각 — 채팅방의 "여기까지 읽었어요" 줄(2026-10-13) */
   lastReadAt: string | null;
   /** 마지막으로 채팅방을 본 뒤 온 아티스트 메시지 수 */

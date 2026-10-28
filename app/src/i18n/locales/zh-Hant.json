@@ -381,7 +381,8 @@
     "discover": "探索藝人",
     "loadFailed": "訊息列表載入失敗",
     "endsOn": "可使用至 {{date}}",
-    "quotedReply": "↩︎ 回覆了你的訊息"
+    "quotedReply": "↩︎ 回覆了你的訊息",
+    "billingIssue": "請確認付款方式"
   },
   "actorProfile": {
     "back": "返回",
@@ -449,7 +450,8 @@
     "noEmail": "無電子郵件資訊",
     "exportData": "下載我的資料",
     "exportDataHint": "以檔案形式取得帳號、訂閱、付款、回覆和詢問紀錄",
-    "exportDataFailed": "無法產生檔案，請稍後再試。"
+    "exportDataFailed": "無法產生檔案，請稍後再試。",
+    "policy": "營運政策"
   },
   "manage": {
     "active": "訂閱中",
@@ -478,7 +480,13 @@
     "pastTitle": "過往訂閱",
     "pastHint": "重新訂閱也無法查看之前的聊天。",
     "endedOn": "{{date}} 結束",
-    "resubscribe": "重新訂閱"
+    "resubscribe": "重新訂閱",
+    "billingIssueShort": "付款需確認",
+    "billingIssueTitle": "自動付款未成功",
+    "billingIssueBody": "因信用卡過期等原因，商店扣款失敗。在商店的寬限期內可以照常使用，更換付款方式後商店會重新扣款。若寬限期結束時仍未付款成功，訂閱將會結束。",
+    "nextBillingDate": "{{date}}（僅供參考）",
+    "guideTitle": "訂閱說明",
+    "guideBody": "• 此頁面顯示你目前正在使用的訂閱。\n• 下次付款日期僅供參考，實際日期與金額由商店決定，可能相差約一天。詳細付款紀錄與退款請至付款的商店（App Store 或 Google Play）查看。\n• 「付款需確認」：因信用卡過期等原因自動付款失敗，請至商店更換付款方式。若商店寬限期結束時仍未付款成功，訂閱將會結束。\n• 恢復購買：讀取手機上登入的商店帳號的購買紀錄。以其他商店帳號購買的項目不會顯示，請先以付款時的帳號登入後再點選。"
   },
   "welcome": {
     "headline": "Closer to\nwhat matters",
@@ -688,7 +696,8 @@
   },
   "notices": {
     "title": "公告",
-    "empty": "目前沒有公告。"
+    "empty": "目前沒有公告。",
+    "new": "新公告"
   },
   "faq": {
     "title": "常見問題"
@@ -700,7 +709,8 @@
   "screenshot": {
     "title": "偵測到截圖",
     "body": "藝人的訊息、照片、語音和影片僅限訂閱者觀看。將截圖發布或分享到社群媒體等外部，可能會依使用條款被限制使用。",
-    "ok": "確定"
+    "ok": "確定",
+    "profileBody": "擷取藝人的照片或資訊並擅自使用，可能侵害其肖像權等權利。發布或分享至外部可能會依服務條款限制使用。"
   },
   "alerts": {
     "artistMessages": "藝人新訊息通知",

@@ -388,7 +388,8 @@
     "discover": "Descubrir artistas",
     "loadFailed": "No se pudo cargar tu bandeja",
     "endsOn": "Hasta el {{date}}",
-    "quotedReply": "↩︎ Respondió a tu mensaje"
+    "quotedReply": "↩︎ Respondió a tu mensaje",
+    "billingIssue": "Revisa tu método de pago"
   },
   "actorProfile": {
     "back": "Atrás",
@@ -456,7 +457,8 @@
     "noEmail": "No hay correo registrado",
     "exportData": "Descargar mis datos",
     "exportDataHint": "Recibe en un archivo tus datos de cuenta, suscripciones, pagos, respuestas y consultas",
-    "exportDataFailed": "No se pudo crear el archivo. Inténtalo de nuevo más tarde."
+    "exportDataFailed": "No se pudo crear el archivo. Inténtalo de nuevo más tarde.",
+    "policy": "Política de uso"
   },
   "manage": {
     "active": "Activa",
@@ -486,7 +488,13 @@
     "pastTitle": "Suscripciones anteriores",
     "pastHint": "Los chats anteriores no se recuperan si te vuelves a suscribir.",
     "endedOn": "Terminó el {{date}}",
-    "resubscribe": "Suscribirse de nuevo"
+    "resubscribe": "Suscribirse de nuevo",
+    "billingIssueShort": "Problema con el pago",
+    "billingIssueTitle": "No se pudo hacer el pago automático",
+    "billingIssueBody": "La tienda no pudo cobrarte (por ejemplo, por una tarjeta vencida). Puedes seguir usándolo durante el período de gracia de la tienda, y la tienda volverá a cobrar cuando actualices tu método de pago. Si el pago sigue fallando al terminar el período de gracia, tu suscripción terminará.",
+    "nextBillingDate": "{{date}} (referencia)",
+    "guideTitle": "Sobre tus suscripciones",
+    "guideBody": "• En esta pantalla ves las suscripciones que usas ahora.\n• La próxima fecha de pago es solo de referencia. La tienda fija la fecha y el importe reales, que pueden variar alrededor de un día. Consulta el historial de pagos y los reembolsos en la tienda donde pagaste (App Store o Google Play).\n• \"Problema con el pago\": el pago automático está fallando (por ejemplo, por una tarjeta vencida). Actualiza tu método de pago en la tienda. Si el pago sigue fallando al terminar el período de gracia de la tienda, tu suscripción terminará.\n• Restaurar compras: carga las compras de la cuenta de la tienda con la que iniciaste sesión en tu teléfono. Las compras hechas con otra cuenta no aparecerán, así que inicia sesión primero con la cuenta con la que pagaste."
   },
   "welcome": {
     "headline": "Más cerca de\nlo que importa",
@@ -698,7 +706,8 @@
   },
   "notices": {
     "title": "Avisos",
-    "empty": "Aún no hay avisos."
+    "empty": "Aún no hay avisos.",
+    "new": "Aviso nuevo"
   },
   "faq": {
     "title": "Preguntas frecuentes"
@@ -710,7 +719,8 @@
   "screenshot": {
     "title": "Captura de pantalla detectada",
     "body": "Los mensajes, fotos, audios y videos de los artistas son solo para suscriptores. Publicar o compartir capturas fuera de la app, por ejemplo en redes sociales, puede conllevar restricciones según los Términos del servicio.",
-    "ok": "Aceptar"
+    "ok": "Aceptar",
+    "profileBody": "Capturar fotos o información de un artista y usarlas sin permiso puede vulnerar sus derechos de imagen y otros derechos. Publicarlas o compartirlas fuera de la app puede restringir tu cuenta según los Términos."
   },
   "alerts": {
     "artistMessages": "Mensajes nuevos de artistas",

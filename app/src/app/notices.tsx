@@ -7,7 +7,7 @@ import { CloudOff, Megaphone } from 'lucide-react-native';
 import { ExpandableItem } from '@/components/expandable-item';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { useNotices, useTranslateNotice } from '@/hooks/use-support';
+import { useMarkNoticesSeen, useNotices, useTranslateNotice } from '@/hooks/use-support';
 import { ThemedText } from '@/components/themed-text';
 import { ApiError } from '@/lib/api-client';
 import { useTheme } from '@/hooks/use-theme';
@@ -18,6 +18,7 @@ export default function NoticesScreen() {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { data, isLoading, isError, refetch } = useNotices();
+  useMarkNoticesSeen(data);
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>

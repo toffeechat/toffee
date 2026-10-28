@@ -570,6 +570,9 @@ model Purchase {
   // 스토어 자동 갱신이 켜져 있나(2026-10-02) — 팬이 스토어에서 해지(자동 갱신 끔)하면 false, 기간(iapExpiresAt) 끝까지는 이용.
   // 앱 대화 목록·구독 관리의 "○월 ○일까지 이용" 표시용. 스토어 알림·영수증이 알려 줄 때만 바뀜(모르면 그대로)
   willRenew        Boolean      @default(true)
+  // 자동 결제가 실패해 스토어 유예 기간 중(2026-10-28, 버블의 "구독 갱신 보류 중") — 유예 알림 때 기록, 결제가 되면 지움.
+  // 앱이 "결제 수단을 확인해 주세요" + 스토어 구독 관리 바로가기를 보여 줌(이용은 유예 끝까지 그대로)
+  billingIssueAt   DateTime?
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   actor  Actor?  @relation(fields: [actorId], references: [id], onDelete: Cascade)

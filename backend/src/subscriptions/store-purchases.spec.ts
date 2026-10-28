@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { endsAtOf, SubscriptionsService } from './subscriptions.service.js';
+import { endsAtOf, renewsAtOf, SubscriptionsService } from './subscriptions.service.js';
 import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
 import { appleStoreEvent, googleStoreEvent } from './store-events.js';
 import { appleTransaction, googleTransaction, type IapVerificationService, type StoreTransaction } from './iap-verification.service.js';
@@ -300,6 +300,25 @@ describe('스토어 알림 반영', () => {
     const until = new Date(Date.now() + 45 * DAY);
     await t.service.applyStoreEvent({ kind: 'GRACE', originalTransactionId: 'orig-1', until });
     expect(t.purchases[0].iapExpiresAt).toEqual(until);
+  });
+
+  it('유예 중엔 결제 문제 표시(billingIssue), 결제가 되면 지움 + 다음 결제 예정일(2026-10-28)', async () => {
+    const t = setup();
+    t.receipt();
+    await t.service.verifyPurchase('u', 'a1', t.iosDto);
+    await t.service.applyStoreEvent({ kind: 'GRACE', originalTransactionId: 'orig-1', until: new Date(Date.now() + 45 * DAY) });
+    expect(t.purchases[0].billingIssueAt).toBeInstanceOf(Date);
+    t.receipt();
+    await t.service.verifyPurchase('u', 'a1', t.iosDto);
+    expect(t.purchases[0].billingIssueAt).toBeNull();
+  });
+
+  it('다음 결제 예정일은 자동 갱신 예정인 스토어 구매 중 가장 이른 만료일', () => {
+    const a = new Date('2026-11-01T00:00:00Z');
+    const b = new Date('2026-11-10T00:00:00Z');
+    expect(renewsAtOf([{ iapExpiresAt: b, willRenew: true }, { iapExpiresAt: a, willRenew: true }])).toEqual(a);
+    expect(renewsAtOf([{ iapExpiresAt: a, willRenew: false }, { iapExpiresAt: b, willRenew: true }])).toEqual(b);
+    expect(renewsAtOf([{ iapExpiresAt: null, willRenew: true }])).toBeNull();
   });
 
   it('만료 정리: 만료일이 유예(24시간)보다 더 지난 스토어 구매만 닫음', async () => {

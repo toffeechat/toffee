@@ -397,7 +397,8 @@
     "discover": "Descobrir artistas",
     "loadFailed": "Não foi possível carregar sua caixa de entrada",
     "endsOn": "Até {{date}}",
-    "quotedReply": "↩︎ Respondeu à sua mensagem"
+    "quotedReply": "↩︎ Respondeu à sua mensagem",
+    "billingIssue": "Confira sua forma de pagamento"
   },
   "actorProfile": {
     "back": "Voltar",
@@ -465,7 +466,8 @@
     "noEmail": "Nenhum e-mail cadastrado",
     "exportData": "Baixar meus dados",
     "exportDataHint": "Receba em um arquivo seus dados de conta, assinaturas, pagamentos, respostas e solicitações",
-    "exportDataFailed": "Não foi possível criar o arquivo. Tente novamente mais tarde."
+    "exportDataFailed": "Não foi possível criar o arquivo. Tente novamente mais tarde.",
+    "policy": "Política de uso"
   },
   "manage": {
     "active": "Ativa",
@@ -497,7 +499,13 @@
     "pastTitle": "Assinaturas anteriores",
     "pastHint": "As conversas anteriores não são recuperadas se você assinar de novo.",
     "endedOn": "Terminou em {{date}}",
-    "resubscribe": "Assinar de novo"
+    "resubscribe": "Assinar de novo",
+    "billingIssueShort": "Problema no pagamento",
+    "billingIssueTitle": "O pagamento automático não foi concluído",
+    "billingIssueBody": "A loja não conseguiu fazer a cobrança (por exemplo, cartão vencido). Você pode continuar usando durante o período de carência da loja, e a loja cobra de novo quando você atualizar a forma de pagamento. Se o pagamento ainda falhar quando o período de carência acabar, sua assinatura será encerrada.",
+    "nextBillingDate": "{{date}} (referência)",
+    "guideTitle": "Sobre suas assinaturas",
+    "guideBody": "• Esta tela mostra as assinaturas que você usa agora.\n• A próxima data de pagamento é só uma referência. A loja define a data e o valor reais, que podem variar cerca de um dia. Veja o histórico de pagamentos e reembolsos na loja em que você pagou (App Store ou Google Play).\n• \"Problema no pagamento\": o pagamento automático está falhando (por exemplo, cartão vencido). Atualize a forma de pagamento na loja. Se o pagamento ainda falhar quando o período de carência da loja acabar, sua assinatura será encerrada.\n• Restaurar compras: carrega as compras da conta da loja conectada no seu celular. Compras feitas com outra conta da loja não aparecem, então entre primeiro com a conta usada no pagamento."
   },
   "welcome": {
     "headline": "Mais perto do\nque importa",
@@ -711,7 +719,8 @@
   },
   "notices": {
     "title": "Avisos",
-    "empty": "Ainda não há avisos."
+    "empty": "Ainda não há avisos.",
+    "new": "Novo aviso"
   },
   "faq": {
     "title": "Perguntas frequentes"
@@ -723,7 +732,8 @@
   "screenshot": {
     "title": "Captura de tela detectada",
     "body": "Mensagens, fotos, áudios e vídeos dos artistas são exclusivos para assinantes. Postar ou compartilhar capturas fora do app, como em redes sociais, pode gerar restrições de acordo com os Termos de Serviço.",
-    "ok": "OK"
+    "ok": "OK",
+    "profileBody": "Capturar fotos ou informações de um artista e usá-las sem permissão pode violar o direito de imagem e outros direitos. Publicar ou compartilhar fora do app pode restringir sua conta de acordo com os Termos."
   },
   "alerts": {
     "artistMessages": "Novas mensagens dos artistas",

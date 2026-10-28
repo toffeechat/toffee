@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, CircleHelp, CreditCard, Download, FileText, Globe, KeyRound, LifeBuoy, LogOut, Megaphone, Moon, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { Bell, CircleHelp, CreditCard, Download, FileText, Globe, KeyRound, LifeBuoy, LogOut, Megaphone, Moon, Scale, ShieldCheck, Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -19,6 +19,7 @@ import { openStoreSubscriptions } from '@/lib/store-links';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { useDeleteAccount, useMe } from '@/hooks/use-onboarding';
 import { BUSINESS_FIELDS, useBusinessInfo } from '@/hooks/use-business-info';
+import { useHasNewNotice } from '@/hooks/use-support';
 import { useTheme } from '@/hooks/use-theme';
 import { LANGUAGE_NATIVE_NAMES } from '@/i18n/languages';
 import { PROVIDER_NAMES } from '@/components/social-button-style';
@@ -36,6 +37,7 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   // 전자상거래법 사업자 정보 표시 — 법인 설립 후 서버 설정값(BUSINESS_*)을 넣으면 나옴(2026-10-12)
   const { data: businessInfo } = useBusinessInfo();
+  const hasNewNotice = useHasNewNotice();
   const { logout } = useAuth();
   const { data: me } = useMe();
   const { data: subscriptions } = useMySubscriptions();
@@ -127,12 +129,18 @@ export default function ProfileScreen() {
         </Section>
 
         <Section label={t('profile.support')}>
-          <ListRow icon={Megaphone} title={t('notices.title')} onPress={() => router.push('/notices')} />
+          <ListRow
+            icon={Megaphone}
+            title={t('notices.title')}
+            trailing={hasNewNotice ? <View accessibilityLabel={t('notices.new')} style={[styles.newDot, { backgroundColor: theme.tint }]} /> : null}
+            onPress={() => router.push('/notices')}
+          />
           <ListRow icon={CircleHelp} title={t('faq.title')} onPress={() => router.push('/faq')} />
           {/* 앱 안 1:1 문의(2026-10-20) — 메일 주소는 문의 목록 화면에 같이 */}
           <ListRow icon={LifeBuoy} title={t('profile.help')} onPress={() => router.push('/support')} />
           <ListRow icon={FileText} title={t('profile.terms')} onPress={() => router.push('/terms')} />
           <ListRow icon={ShieldCheck} title={t('profile.privacy')} onPress={() => router.push('/privacy')} />
+          <ListRow icon={Scale} title={t('profile.policy')} onPress={() => router.push('/policy')} />
           {/* 내 정보 받기(2026-10-20, PDPA 열람·이동권) */}
           <ListRow
             icon={Download}
@@ -206,5 +214,6 @@ const styles = StyleSheet.create({
   sectionLabel: { paddingHorizontal: Spacing.four, marginBottom: Spacing.one, letterSpacing: 0.6 },
   center: { textAlign: 'center', marginTop: Spacing.three },
   delete: { alignSelf: 'center', marginTop: Spacing.three },
+  newDot: { width: 8, height: 8, borderRadius: 4 },
   business: { gap: 2, marginTop: Spacing.four, paddingHorizontal: Spacing.two },
 });

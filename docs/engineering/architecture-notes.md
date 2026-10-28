@@ -2004,3 +2004,16 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   운영자 API `admin/agencies/:id/share-rates`(GET·POST·DELETE `/:fromMonth`·POST `/founding`) — 마지막 마감 달 이하면 `SHARE_RATE_MONTH_CLOSED`, 바꿀 때마다
   `revenueSharePercent`를 이번 달 값으로 맞춤(옛 PATCH는 이번 달 줄로 저장).
 
+## 결제 실패 표시·다음 결제일·공지 새 글·운영정책 (2026-10-28, 버블 비교)
+
+- **결제 실패(유예 중)**: `Purchase.billingIssueAt`(마이그레이션 `20261028100000_purchase_billing_issue`). `applyStoreEvent`의 `GRACE`(애플
+  DID_FAIL_TO_RENEW+GRACE_PERIOD, 구글 type 6)가 처음일 때 기록, `writeStorePurchase`·`switchStorePurchase`(결제됨)가 null로. 애플 유예 없는 실패는 그대로
+  IGNORED(만료 정리가 닫음 — 스토어에서 유예 기간을 켜야 함, `store-submission.md` 6번). `listMine` 응답에 `billingIssue`(방을 여는 구매 중 하나라도).
+- **다음 결제일**: `renewsAtOf(covering)` — 자동 갱신 예정(willRenew) 스토어 구매의 가장 이른 `iapExpiresAt`. 테스트 구독이면 null(앱은 "스토어에서 확인").
+- **공지 새 글**: 서버 변경 없음 — 앱 `useHasNewNotice()`/`useMarkNoticesSeen()`(use-support.ts)이 마지막으로 본 공지 시각을 `preference-storage`
+  (`noticesSeenAt`)에 저장. 처음이면 최근 14일 공지만 새 글. 기기별(여러 기기면 기기마다 따로 사라짐).
+- **운영정책**: `LegalDoc`에 `policy` 추가(`legal-texts.ts` POLICY, 한국어 초안) → `/legal/policy`·`/legal/policy/sections`, 앱 `/policy`. 동의 버전
+  (`CURRENT_TERMS_VERSION`)은 안 올림 — 새 동의를 받지 않는 안내 문서.
+- **캡처 경고**: `useScreenshotWarning(enabled, 'profile')` — 아티스트 프로필·토피룸 프로필 카드.
+- **FAQ**: `faq-texts.ts` 9개 분류 43개(테스트가 언어별 개수 일치 확인).
+

@@ -291,6 +291,7 @@ function RootLayout() {
               <Stack.Screen name="onboarding/underage" options={{ headerShown: false }} />
               <Stack.Screen name="terms" options={{ headerShown: true, title: t('screens.terms') }} />
               <Stack.Screen name="privacy" options={{ headerShown: true, title: t('screens.privacy') }} />
+              <Stack.Screen name="policy" options={{ headerShown: true, title: t('profile.policy') }} />
               <Stack.Screen name="faq" options={{ headerShown: true, title: t('faq.title') }} />
               <Stack.Screen name="notices" options={{ headerShown: true, title: t('notices.title') }} />
             </Stack>
