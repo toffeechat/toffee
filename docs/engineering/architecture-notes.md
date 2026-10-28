@@ -2046,3 +2046,24 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - **앱**: `reportUnauthorized(code, message, usedToken)` — 지금 토큰과 다르면 무시. `PendingSends` 항목 10분 TTL. 구매 복원 20개씩. 결제 화면 `storeExpected`(네이티브 + 상품 ID)면
   스토어 결제만(연결 전엔 로딩).
 
+## 코드 전수 점검 3차 (2026-10-28)
+
+자세한 목록은 작업 로그 2026-10-28(3차). 구조·규칙이 바뀐 것만:
+
+- **구글 실제 청구 금액**: `googleCharged(body)` — `paymentState 2`(무료 체험)면 0, `introductoryPriceInfo`가 있고 결제 순번(첫 결제 0, `..N`이면 N+1)이
+  `introductoryPriceCycles`보다 작으면 도입 가격, 아니면 `priceAmountMicros`. v1 응답의 `priceAmountMicros`는 늘 정가.
+- **스토어 PAID 알림**: `expiresAt <= now`면 `ledger.record`(기존 구매가 있고 storeTransactionId가 있을 때)만 하고 방은 열지 않음.
+- **방 열고 닫기 직렬화**: `syncAccess()` 첫 줄에서 `pg_advisory_xact_lock(hashtext('subscription-access:<userId>'))` — 만료 닫기와 새 구매가 동시에 와도
+  한쪽이 다른 쪽 커밋을 본 뒤 판단. 모든 호출이 `$transaction` 안(테스트 목에 `$executeRaw` 필요).
+- **종료 대기**: `ChargeLedgerService.onApplicationBootstrap`의 `fillMissing()`, 공지 푸시(번역 포함)를 `ShutdownService.track()`에. e2e는 `drain()` 후 `app.close()`.
+- **권한**: `deleteBroadcast` 소속사 직원 — 보낸 배우(`senderActorId ?? actorId`)의 `agencyId`가 직원 소속사와 같아야(CP방 자체·운영자 발송은 거절).
+  `AdminUsersService.assertCanView()` — 상세·결제·활동·접속 기록 모두(본인 제외 `assertCanManageUser`). `BlocksService.block` — ADMIN·그 방을
+  `ensureCanViewActor`로 볼 수 있는 계정은 `BLOCK_FANS_ONLY`, 그 밖 역할은 차단 가능.
+- **기타 서버**: 생일 축하 저장 실패는 P2002만 조용히 넘김. `SENSITIVE_HEADERS`에 `x-smoke-secret`. `findMine(userId, { preview: false })` — 대시보드·기록은 방별
+  마지막 메시지 쿼리를 건너뜀.
+- **배포 스크립트·워크플로**: `plan.mjs`의 "기본값 없는 NOT NULL 컬럼" 검사는 쉼표까지(`(?![^;,]*DEFAULT)`). `db-data-fix-production.yml`의 `reason`,
+  `deploy-production.yml`의 `ota_base`는 `env:`로 받아 쓰고 `ota_base`는 `^[0-9a-f]{7,40}$` 확인.
+- **앱**: 채팅방 오류 화면은 `isError && !data`일 때만(403은 그대로). `loadToken()`의 SecureStore 읽기 실패 → null. `login()` 실패 시 이미 로그인한 상태였으면
+  앞 토큰으로 되돌림, `logoutAll()` 끝에 `signedOutReason` 비움. 화면 캡처 경고 표시 여부는 모듈 변수 하나. `restorePurchases()`는 `handling`·`waiters`에 있는
+  거래를 빼고 보내는 동안 `handling`에 넣음.
+

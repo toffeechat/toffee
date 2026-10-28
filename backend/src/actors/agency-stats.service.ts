@@ -233,7 +233,7 @@ export class AgencyStatsService {
    * 순위(구독자 많은 순 등)는 앱이 방별 표를 정렬해서 그림. agencyId를 주면 그 소속사 방만(CP방은 멤버 소속사 기준, 운영자 홈).
    */
   async dashboard(userId: string, range: StatsRange, kind: 'ALL' | 'SOLO' | 'COUPLE' = 'ALL', agencyId?: string) {
-    const actors = (await this.actors.findMine(userId)).filter(
+    const actors = (await this.actors.findMine(userId, { preview: false })).filter(
       (actor) =>
         (kind === 'ALL' || actor.kind === (kind === 'SOLO' ? ActorKind.SOLO : ActorKind.COUPLE)) &&
         (!agencyId || actor.agency?.id === agencyId || actor.coupleMembers.some(({ member }) => member.agency?.id === agencyId)),

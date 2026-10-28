@@ -5,6 +5,7 @@ import { TranslationService } from '../translation/translation.service.js';
 import { resolveLocale, SUPPORTED_LOCALES } from '../common/i18n/locales.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
+import { ShutdownService } from '../common/lifecycle/shutdown.service.js';
 import type { UpsertNoticeDto } from './dto/upsert-notice.dto.js';
 
 const SELECT = { id: true, title: true, body: true, pinned: true, pushedAt: true, createdAt: true, updatedAt: true } as const;
@@ -23,6 +24,7 @@ export class NoticesService {
     private readonly audit: AuditService,
     private readonly push: PushService,
     private readonly translation: TranslationService,
+    private readonly shutdown: ShutdownService,
   ) {}
 
   /**
@@ -33,7 +35,8 @@ export class NoticesService {
     const { count } = await this.prisma.notice.updateMany({ where: { id: notice.id, pushedAt: null }, data: { pushedAt: new Date() } });
     if (count === 0) return;
     await this.audit.record(adminId, 'NOTICE_PUSH', 'NOTICE', notice.id, { title: notice.title });
-    void (async () => {
+    // 번역(최대 8개 언어)까지 종료 대기에 넣음(2026-10-28) — 예전엔 발송만 넣어서, 번역하는 사이 배포로 꺼지면 pushedAt만 남고 푸시가 영영 안 감
+    void this.shutdown.track((async () => {
       const titles = new Map<string, string>([['ko', notice.title]]);
       for (const locale of SUPPORTED_LOCALES) {
         if (locale === 'ko' || !this.translation.enabled) continue;
@@ -47,7 +50,7 @@ export class NoticesService {
         },
         { type: 'notice', noticeId: notice.id },
       );
-    })().catch((error) => this.logger.warn(`공지 푸시 실패: ${String(error)}`));
+    })()).catch((error) => this.logger.warn(`공지 푸시 실패: ${String(error)}`));
   }
 
   list() {

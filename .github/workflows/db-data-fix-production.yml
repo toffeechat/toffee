@@ -36,6 +36,8 @@ jobs:
     env:
       SQL_FILE: ${{ inputs.sql_file }}
       EXPECTED: ${{ inputs.expected_rows }}
+      # 자유 글은 스크립트에 바로 넣지 않고 환경 변수로(따옴표·$( 가 들어가면 깨지거나 명령으로 실행됨, 2026-10-28)
+      REASON: ${{ inputs.reason }}
     steps:
       - uses: actions/checkout@v4
       - name: 파일 확인
@@ -46,7 +48,7 @@ jobs:
           if grep -Eiq '\b(BEGIN|COMMIT|ROLLBACK|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE)\b' "$SQL_FILE"; then
             echo "⛔ 트랜잭션 제어·구조 변경 문장은 넣지 않음(구조는 마이그레이션으로)"; exit 1
           fi
-          { echo "### 운영 데이터 수정 — \`$SQL_FILE\`"; echo "- 이유: ${{ inputs.reason }}"; echo '```sql'; cat "$SQL_FILE"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### 운영 데이터 수정 — \`$SQL_FILE\`"; echo "- 이유: $REASON"; echo '```sql'; cat "$SQL_FILE"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: 백업
         uses: ./.github/actions/db-backup
         with:

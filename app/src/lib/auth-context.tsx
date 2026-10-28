@@ -168,6 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const login = async (newToken: string) => {
+    // 운영자 2단계 인증처럼 이미 로그인한 상태에서 새 토큰으로 바꾸는 경우 — 실패하면 앞 토큰으로 되돌림
+    const previousToken = token;
     setSignedOutReason(null);
     await saveToken(newToken);
     // role까지 먼저 구해서 token/role을 한 틱에 같이 반영 — 안 그러면 AuthGate가
@@ -178,7 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       // 정지·차단 계정이면 /auth/me가 401 → onUnauthorized가 이미 로그아웃 처리하고 이유를 남김. 그 밖의 실패면 저장한 토큰을 지움.
       // 어느 쪽이든 던져서 화면이 오류를 보여 주게(2026-10-27 — 예전엔 조용히 끝나서 로그인 버튼·PC 웹 소셜 로그인 화면이 멈춘 듯 보였음)
-      if (!(error instanceof ApiError && error.status === 401)) await removeToken();
+      // 이미 로그인한 상태(2단계 인증)였으면 지우지 않고 앞 토큰으로 되돌림(2026-10-28 — 예전엔 저장된 토큰만 사라지고 화면은 로그인
+      // 상태라 모든 요청이 토큰 없이 나가 앱을 다시 켤 때까지 오류만 남)
+      if (!(error instanceof ApiError && error.status === 401)) await (previousToken ? saveToken(previousToken) : removeToken());
       throw error;
     }
     // 막 받은 토큰이라 바로 갱신하지 않음
@@ -230,6 +234,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiClient.post('/auth/logout-all');
     lastTokenRefreshAt = 0;
     await logout();
+    // 서버가 이 토큰을 먼저 끊어서, 그 사이 나가던 요청(5초 새로 고침 등)의 401이 "로그인이 만료됨" 같은 이유를 남길 수 있음 — 직접 로그아웃한 것이니 지움
+    setSignedOutReason(null);
   };
 
   return (

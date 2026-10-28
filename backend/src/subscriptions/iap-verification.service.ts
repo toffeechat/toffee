@@ -69,6 +69,25 @@ interface GooglePlaySubscriptionResponse {
   acknowledgementState?: number;
   // 0 테스트(라이선스 테스터), 1 프로모션, 2 보상형 — 실제 결제면 없음
   purchaseType?: number;
+  // 첫 달 할인(฿99) 같은 도입 가격으로 산 구독이면 있음 — priceAmountMicros는 늘 정가라 할인 기간 결제는 이 값이 실제 금액
+  introductoryPriceInfo?: { introductoryPriceAmountMicros?: string; introductoryPriceCurrencyCode?: string; introductoryPriceCycles?: number };
+}
+
+/**
+ * 이 주문에서 실제 청구된 금액(micros) — 첫 결제는 orderId에 꼬리가 없고, 갱신은 "..0"(두 번째 결제), "..1"(세 번째)…
+ * 도입 가격 횟수 안이면 도입 가격, 무료 체험(paymentState 2)은 0, 그 밖엔 정가(2026-10-28 — 예전엔 늘 정가라 첫 달 ฿99가 ฿149로 정산됨)
+ */
+export function googleCharged(body: GooglePlaySubscriptionResponse): { micros?: string; currency?: string } {
+  if (body.paymentState === 2) return { micros: '0', currency: body.priceCurrencyCode };
+  const intro = body.introductoryPriceInfo;
+  if (intro?.introductoryPriceAmountMicros) {
+    const renewal = body.orderId ? /\.\.(\d+)$/.exec(body.orderId) : null;
+    const paymentIndex = renewal ? Number(renewal[1]) + 1 : 0;
+    if (paymentIndex < (intro.introductoryPriceCycles ?? 1)) {
+      return { micros: intro.introductoryPriceAmountMicros, currency: intro.introductoryPriceCurrencyCode ?? body.priceCurrencyCode };
+    }
+  }
+  return { micros: body.priceAmountMicros, currency: body.priceCurrencyCode };
 }
 
 /**
@@ -306,6 +325,7 @@ export function appleTransaction(payload: {
 export function googleTransaction(purchaseToken: string, productId: string, body: GooglePlaySubscriptionResponse, now: Date): StoreTransaction {
   const renewal = !!body.orderId && /\.\.\d+$/.test(body.orderId);
   const renewedAt = addMonths(new Date(Number(body.expiryTimeMillis)), -1);
+  const charged = googleCharged(body);
   return {
     platform: 'ANDROID',
     originalTransactionId: purchaseToken,
@@ -314,8 +334,8 @@ export function googleTransaction(purchaseToken: string, productId: string, body
     purchasedAt: !renewal && body.startTimeMillis ? new Date(Number(body.startTimeMillis)) : renewal && renewedAt < now ? renewedAt : now,
     expiresAt: new Date(Number(body.expiryTimeMillis)),
     accountToken: body.obfuscatedExternalAccountId || undefined,
-    storeAmountMilli: body.priceAmountMicros ? Math.round(Number(body.priceAmountMicros) / 1000) : undefined,
-    storeCurrency: body.priceCurrencyCode,
+    storeAmountMilli: charged.micros ? Math.round(Number(charged.micros) / 1000) : undefined,
+    storeCurrency: charged.currency,
     willRenew: body.autoRenewing,
     replacesTransactionId: body.linkedPurchaseToken || undefined,
     replaced: body.cancelReason === 2 || undefined,

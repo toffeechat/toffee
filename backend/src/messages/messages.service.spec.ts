@@ -497,14 +497,25 @@ describe('MessagesService.listReplies 나눠 받기', () => {
 });
 
 describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', () => {
-  function setupDelete(role: Role, viewable: boolean) {
+  // senderAgencyId: 메시지를 보낸 배우의 소속사(CP방이면 멤버 배우 — 2026-10-28 다른 소속사 멤버 메시지 삭제 막기)
+  function setupDelete(role: Role, viewable: boolean, sender: { senderActorId: string | null; senderAgencyId: string | null } = { senderActorId: null, senderAgencyId: 'ag-1' }) {
     const update = vi.fn().mockResolvedValue({});
     const prisma = {
       user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'staff-1', role, agencyId: 'ag-1' }) },
-      actor: { findFirst: vi.fn().mockResolvedValue(viewable ? { id: 'actor-1' } : null) },
+      actor: {
+        findFirst: vi.fn().mockResolvedValue(viewable ? { id: 'actor-1' } : null),
+        findUnique: vi.fn().mockResolvedValue({ kind: 'SOLO', agencyId: sender.senderAgencyId }),
+      },
       message: {
-        findFirst: vi.fn((args: { where: { senderType?: string } }) => Promise.resolve(args.where.senderType === MessageSenderType.FAN ? null : { id: 'm1', deletedAt: null, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } })),
+        findFirst: vi.fn((args: { where: { senderType?: string } }) =>
+          Promise.resolve(
+            args.where.senderType === MessageSenderType.FAN
+              ? null
+              : { id: 'm1', deletedAt: null, senderActorId: sender.senderActorId, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } },
+          ),
+        ),
         update,
+        count: vi.fn().mockResolvedValue(0),
       },
     } as unknown as PrismaService;
     const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
@@ -522,6 +533,18 @@ describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', 
     const { service, update } = setupDelete(Role.AGENCY_STAFF, false);
     await expect(service.deleteBroadcast('staff-1', 'actor-1', 'm1')).rejects.toThrow();
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it('CP방이라도 다른 소속사 멤버가 보낸 메시지면 거절', async () => {
+    const { service, update } = setupDelete(Role.AGENCY_STAFF, true, { senderActorId: 'member-b', senderAgencyId: 'ag-2' });
+    await expect(service.deleteBroadcast('staff-1', 'cp-1', 'm1')).rejects.toThrow();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('CP방의 자기 소속 멤버가 보낸 메시지는 지움', async () => {
+    const { service, update } = setupDelete(Role.AGENCY_STAFF, true, { senderActorId: 'member-a', senderAgencyId: 'ag-1' });
+    await service.deleteBroadcast('staff-1', 'cp-1', 'm1');
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deletedByStaffId: 'staff-1' }) }));
   });
 });
 

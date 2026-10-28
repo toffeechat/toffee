@@ -125,8 +125,9 @@ export class ActorsService {
     return this.withImageUrls(actor);
   }
 
-  // 콘솔 진입점 — 스태프는 자기 소속사 배우 전원, 배우 본인은 자기 자신, ADMIN은 전체
-  async findMine(userId: string) {
+  // 콘솔 진입점 — 스태프는 자기 소속사 배우 전원, 배우 본인은 자기 자신, ADMIN은 전체.
+  // preview: false — 대화 미리보기 줄(방마다 쿼리 하나)을 안 읽음. 통계·기록처럼 방 목록만 필요한 곳(2026-10-28 점검 — 운영자는 방 수만큼 쿼리)
+  async findMine(userId: string, { preview = true }: { preview?: boolean } = {}) {
     const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const actors = await this.prisma.actor.findMany({
       where: requester.role === Role.ADMIN ? undefined : viewableActorsWhere(requester),
@@ -136,7 +137,7 @@ export class ActorsService {
     const ids = actors.map((actor) => actor.id);
     const [last, lastMessages, watchCounts, subscribers] = await Promise.all([
       this.lastBroadcastMap(ids),
-      this.lastMessageMap(ids),
+      preview ? this.lastMessageMap(ids) : new Map<string, never>(),
       this.releases.actorWatchCounts(ids),
       this.prisma.subscription.groupBy({ by: ['actorId'], where: { actorId: { in: ids }, cancelledAt: null }, _count: { _all: true } }),
     ]);

@@ -99,6 +99,8 @@ export default function ChatRoomScreen() {
     enabled: subscriptionsFetched,
   });
   const notSubscribed = error instanceof ApiError && error.status === 403;
+  // 불러온 메시지가 있으면 뒤에서 다시 불러오기·이전 메시지 불러오기가 실패해도(배포 중 잠깐 502 등) 대화·입력창을 그대로 둠(2026-10-28)
+  const loadFailed = isError && !data;
   // 들어오면 토피룸 목록의 이 방 안 읽음 숫자를 바로 0으로, 나가면 목록을 바로 새로(2026-10-15 실기기 — 서버는 대화를 불러올 때 읽음 처리하는데
   // 목록은 받아 둔 걸 보여 주다 30초마다 새로 받아서, 알림 눌러 보고 돌아와도 숫자가 한참 남아 있었음)
   const queryClient = useQueryClient();
@@ -368,7 +370,7 @@ export default function ChatRoomScreen() {
       body={t('chat.notSubscribed', { name: actor?.chatDisplayName ?? '' })}
       action={<Button title={t('chat.resubscribe')} onPress={() => router.replace({ pathname: '/actor/[id]', params: { id: actorId } })} />}
     />
-  ) : isError ? (
+  ) : loadFailed ? (
     <EmptyState
       icon={CloudOff}
       title={t('chat.loadFailed')}
@@ -476,7 +478,7 @@ export default function ChatRoomScreen() {
     </View>
   );
 
-  const showComposer = !isPending && !isError;
+  const showComposer = !isPending && !notSubscribed && !loadFailed;
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       {/* 토피룸 배경 사진(2026-10-14) — 아티스트·소속사가 정함 */}

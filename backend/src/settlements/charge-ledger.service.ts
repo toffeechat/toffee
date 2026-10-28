@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ShutdownService } from '../common/lifecycle/shutdown.service.js';
 import { ActorKind, ChargeKind, ChargeSource, IapPlatform } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { addMonths, allocateCharge, type ChargeRoom } from './allocate-charge.js';
@@ -73,11 +74,14 @@ function toChargeRoom(room: RoomRow): ChargeRoom {
 export class ChargeLedgerService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ChargeLedgerService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly shutdown: ShutdownService,
+  ) {}
 
   onApplicationBootstrap() {
-    // 시작을 늦추지 않게 기다리지 않음
-    void this.fillMissing().catch((error: unknown) => this.logger.error(`결제 기록 채우기 실패: ${String(error)}`));
+    // 시작을 늦추지 않게 기다리지 않음 — 켜자마자 꺼지면(재배포 반복) 끝날 때까지 DB 연결을 끊지 않게 종료 대기에 넣음(2026-10-28)
+    void this.shutdown.track(this.fillMissing()).catch((error: unknown) => this.logger.error(`결제 기록 채우기 실패: ${String(error)}`));
   }
 
   /** 결제 1건 기록 — 이미 있으면(같은 구매·시각 또는 같은 스토어 결제 id) 기존 것을 돌려줌 */

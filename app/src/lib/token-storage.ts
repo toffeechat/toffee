@@ -17,7 +17,9 @@ export function getCachedToken(): string | null {
  */
 export async function loadToken(): Promise<string | null> {
   loading ??= (async () => {
-    const stored = Platform.OS === 'web' ? readWebStorage() : await SecureStore.getItemAsync(KEY);
+    // 안드로이드 키스토어 "복호화 실패"(백업 복원·재설치 후)처럼 읽기가 실패하면 로그인 안 된 상태로 — 실패를 그대로 두면
+    // 이 약속이 계속 실패로 남아 모든 요청이 막히고 시작 화면에서 멈춤(2026-10-28)
+    const stored = Platform.OS === 'web' ? readWebStorage() : await SecureStore.getItemAsync(KEY).catch(() => null);
     // 읽는 사이에 로그인/로그아웃이 먼저 끝났으면 그 값을 유지
     if (!settled) cachedToken = stored;
   })();

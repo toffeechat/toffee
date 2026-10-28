@@ -156,8 +156,23 @@ const RESTORE_CHUNK = 20;
 
 /** 스토어 거래들을 서버에 복원 요청 → 서버가 받은 것만 거래 완료. 복원된 개수 */
 async function restorePurchases(purchases: Purchase[]): Promise<number> {
-  const usable = purchases.filter((purchase) => purchase.purchaseState !== 'pending' && purchase.purchaseToken);
+  // 지금 결제 화면이 기다리거나 처리 중인 거래는 뺌(2026-10-28) — 안드로이드는 결제 창이 닫히며 앱으로 돌아올 때 이 확인이 돌아서
+  // 같은 거래를 결제 확인·복원 두 요청이 동시에 보내 한쪽이 실패("결제 실패"로 보임)할 수 있었음
+  const usable = purchases.filter(
+    (purchase) =>
+      purchase.purchaseState !== 'pending' && purchase.purchaseToken && !handling.has(purchaseKey(purchase)) && !waiters.has(purchase.productId),
+  );
   if (!usable.length) return 0;
+  const keys = usable.map(purchaseKey);
+  for (const key of keys) handling.add(key);
+  try {
+    return await restoreUsable(usable);
+  } finally {
+    for (const key of keys) handling.delete(key);
+  }
+}
+
+async function restoreUsable(usable: Purchase[]): Promise<number> {
   // 서버는 한 번에 20개까지 받음(RestorePurchasesDto @ArrayMaxSize) — 거래가 많은 기기(오래 쓴 iOS 등)는 나눠서 보냄(2026-10-28)
   const results: { restored: boolean }[] = [];
   for (let start = 0; start < usable.length; start += RESTORE_CHUNK) {

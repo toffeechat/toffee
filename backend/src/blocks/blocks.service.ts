@@ -18,7 +18,16 @@ export class BlocksService {
     await ensureCanViewActor(this.prisma, requesterId, actorId);
     const fan = await this.prisma.user.findUnique({ where: { id: fanUserId }, select: { role: true } });
     if (!fan) throw new NotFoundException(appError('USER_NOT_FOUND'));
-    if (fan.role !== Role.USER) throw new BadRequestException(appError('BLOCK_FANS_ONLY'));
+    // 다른 방을 팬으로 구독한 아티스트·소속사 계정도 답장을 보낼 수 있어서 차단 대상(2026-10-28 점검 — 예전엔 팬 역할만이라 이 계정들이
+    // 괴롭혀도 서비스 전체 정지밖에 없었음). 운영자 계정과 이 방을 관리하는 계정(본인·같은 소속사)은 차단하지 않음
+    if (fan.role === Role.ADMIN) throw new BadRequestException(appError('BLOCK_FANS_ONLY'));
+    if (fan.role !== Role.USER) {
+      const managesRoom = await ensureCanViewActor(this.prisma, fanUserId, actorId).then(
+        () => true,
+        () => false,
+      );
+      if (managesRoom) throw new BadRequestException(appError('BLOCK_FANS_ONLY'));
+    }
     // 계기 답장은 이 방에 이 팬이 보낸 것만 남김(아니면 조용히 버림 — 차단 자체는 진행)
     const trigger = messageId
       ? await this.prisma.message.findFirst({ where: { id: messageId, actorId, fanUserId }, select: { id: true } })
