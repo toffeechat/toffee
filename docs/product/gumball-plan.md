@@ -1,5 +1,7 @@
 # 검볼(Gumball) — 예매·스트리밍권 플랫폼 기획 메모
 
+> **2026-10-28부터 원본은 검볼 저장소 [`toffeechat/gumball`](https://github.com/toffeechat/gumball) `docs/product/gumball-plan.md`.** 이 파일은 그날까지의 사본.
+
 디저트랩 아래 세 번째 서비스. 젤리(커뮤니티) → 토피(유료 1:1 메시지) → **검볼(예매)**.
 이 문서는 "지금 기준으로 정한 것"만 모아 둔다. 정하게 된 이야기는
 `STATUS.md` 아이디어 보관함(2026-10-22 방향 정리)과 `docs/deployment-readiness-plan.md` 2026-10-28 항목.

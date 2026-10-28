@@ -14,7 +14,7 @@
   이 숫자를 그대로 옮기지 않는다**(2026-10-19 사용자 결정). 단 **소속사 제안서는 2026-10-23 사용자 결정으로 정가(฿149·첫 달 ฿99·CP방 ฿199)와
   정산 비율(창립 파트너 3곳 첫 12개월 70% → 그 뒤 60%)을 공개**한다(2026-10-25 확인 — 제안서 13쪽 메모). `launch-roadmap.md`는 이 계획과 맞출 것.
 - **검볼(예매·스트리밍권, 별도 플랫폼)** — 2026-10-28부터 [검볼 사업 본부](https://claude.ai/artifact/BVRvrZuDAVb97eEvZp7qsX)(정한 것·할 일·정할 것·아이디어, db `tasks/<id>` `{done, doneAt, note}`·`ideas`)와
-  [검볼 디자인 시안](https://claude.ai/artifact/BRAJCEqErSo8ETKeCsHrfL)에서 따로 관리. 토피 사업 본부엔 링크만(아티팩트 6개 유지는 토피만). 기준 문서 `docs/product/gumball-plan.md`.
+  [검볼 디자인 시안](https://claude.ai/artifact/BRAJCEqErSo8ETKeCsHrfL)에서 따로 관리. 토피 사업 본부엔 링크만(아티팩트 6개 유지는 토피만). 코드·문서는 별도 저장소 `toffeechat/gumball`(그 저장소의 CLAUDE.md를 따름).
   검볼 결정이 바뀌면 이 페이지와 문서를 같이 고치고, 세션 시작 때 `ideas`의 `status: "new"`도 읽는다.
 - [`STATUS.md`](./STATUS.md) — **진행 현황 한눈에 보기**(1차 완성/2차/보류, 기능별 ✅🔶⬜👤).
   사용자가 "어디까지 됐지?"를 매번 묻지 않아도 되게 하는 게 목적(2026-09-28 도입). 기능을
