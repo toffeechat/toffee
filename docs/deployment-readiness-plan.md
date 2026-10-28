@@ -26,6 +26,15 @@
 
 ---
 
+## 2026-10-28 (이어서) — 프리뷰 배포·새 빌드, 안드로이드 빌드 실패(알림 색 매니페스트 충돌) 고침
+
+코드 점검 2차(PR #94)를 프리뷰에 올림 — 서버·DB(마이그레이션)·웹 반영, 자동 점검 8개·Sentry 통과. 앱은 마지막 OTA(a3a762b) 뒤에 `app.config.ts`·
+스페인어/포르투갈어 권한 문구(네이티브)가 이미 바뀌어 있어 OTA 불가 → preview 새 빌드(아이폰·안드로이드) 요청. **아이폰 성공, 안드로이드 실패**:
+`expo-notifications`가 넣는 `com.google.firebase.messaging.default_notification_color`(@color/notification_icon_color)와 `@react-native-firebase/messaging`
+라이브러리 매니페스트의 같은 항목(@color/white)이 부딪혀 manifest merger 실패. 10-15 두 플러그인을 같이 넣은 뒤 안드로이드 빌드를 한 번도 안 돌려서 처음 드러남.
+`plugins/with-fcm-notification-meta.js`(그 meta-data에 `tools:replace="android:resource"`)로 고침 — 매니페스트 수정은 나중에 적힌 플러그인부터 실행돼서
+`expo-notifications`보다 **앞에** 둬야 함(뒤에 두면 붙지 않는 걸 `expo prebuild`로 확인). 같은 빌드 로그의 expo-doctor 경고(패치 버전 15개 어긋남)는 빌드를 막지 않아 그대로.
+
 ## 2026-10-28 (이어서) — 코드 전수 점검 2차 + 전부 고침
 
 **계기**: 사용자 요청 "코드 전수 조사해서 에러·문제 있는지" → 결과를 보고 "순서대로 다 고쳐줘". 기본 검사(tsc·lint·테스트 389+52개·빌드·prisma validate·

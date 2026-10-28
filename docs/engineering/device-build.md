@@ -128,3 +128,8 @@ npm run ota -- production "무엇을 고쳤는지"  # 스토어 빌드에(출시
 
 `eas build -p android --profile preview` → APK. 그 뒤 `eas credentials`에서 서명 SHA-1을 확인해 구글 안드로이드 OAuth 클라이언트,
 카카오 키 해시, 네이버·LINE 안드로이드 앱(패키지 `com.toffeechat.app.dev`)에 등록해야 소셜 로그인이 된다.
+
+2026-10-28 첫 안드로이드 preview 빌드가 manifest merger에서 실패 — `expo-notifications`와 `@react-native-firebase/messaging`이 같은 알림 색 meta-data를
+서로 다른 값으로 넣음. `plugins/with-fcm-notification-meta.js`가 `tools:replace`를 붙여 해결(플러그인 목록에서 `expo-notifications`보다 앞에 둘 것).
+네이티브 설정을 바꾼 뒤엔 `CI=1 npx expo prebuild -p android --no-install --clean`으로 `android/app/src/main/AndroidManifest.xml`을 미리 확인할 수 있음
+(생긴 `android/` 폴더는 지우고, prebuild가 바꾼 `package.json` scripts는 되돌릴 것).

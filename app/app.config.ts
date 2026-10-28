@@ -126,6 +126,9 @@ const config: ExpoConfig = {
     ['@react-native-firebase/app', { ios: { disableSPM: true } }],
     '@react-native-firebase/messaging',
     // 안드로이드 상태 표시줄 알림 아이콘은 흰 실루엣이어야 함(없으면 앱 아이콘이 흰 네모로 뭉개져 보임)
+    // 아래 알림 색이 Firebase 메시징 라이브러리의 기본값(@color/white)과 부딪히지 않게(2026-10-28) — 매니페스트 수정은 나중에 적힌 플러그인부터
+    // 실행돼서 expo-notifications보다 앞에 둬야 그 값이 들어간 뒤에 붙음
+    './plugins/with-fcm-notification-meta',
     ['expo-notifications', { color: '#7C8CFF', icon: './assets/images/notification-icon.png' }],
     // 아이폰 푸시를 카톡처럼 "보낸 사람(아티스트) 사진이 있는 대화 알림"으로(2026-10-13) — 알림 확장 타깃 추가, 아래 extra.eas appExtensions와 짝
     './plugins/with-notification-service',
