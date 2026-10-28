@@ -28,6 +28,7 @@ import { useStorePurchaseSync } from '@/hooks/use-store-purchase';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { peekDemoLink } from '@/lib/demo-entry';
 import { getPendingActorLink, loadPendingActorLink } from '@/lib/actor-link';
+import { getPendingConnect, loadPendingConnect } from '@/lib/partner-connect';
 import { useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useRealtimeSync } from '@/lib/realtime';
 import { useConsoleWebAlerts } from '@/lib/console-alerts';
@@ -73,7 +74,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   // 아티스트 계정 연결 링크(2026-10-19) — 로그인 전에 열었던 링크를 기억해 둔 게 있는지(저장소에서 읽을 때까지 기다림)
   const [linkChecked, setLinkChecked] = useState(false);
   useEffect(() => {
-    void loadPendingActorLink().then(() => setLinkChecked(true));
+    void Promise.all([loadPendingActorLink(), loadPendingConnect()]).then(() => setLinkChecked(true));
   }, []);
 
   useEffect(() => {
@@ -82,8 +83,10 @@ function AuthGate({ children }: { children: ReactNode }) {
     const onLoginScreen = segments[0] === 'login' || segments[0] === 'oauth';
     // 연결 링크 화면은 로그인 전에도(누구의 링크인지), 로그인 후엔 온보딩보다 먼저(아티스트는 팬 온보딩을 거치지 않게)
     const onLinkScreen = segments[0] === 'link';
+    // 검볼 등 다른 서비스의 "토피로 로그인" 동의 화면(2026-10-28) — 로그인 전에도 열림(화면이 주소를 기억하고 로그인으로 보냄)
+    const onConnectScreen = segments[0] === 'connect';
     if (!token) {
-      if (!onLoginScreen && !onLinkScreen) router.replace('/login');
+      if (!onLoginScreen && !onLinkScreen && !onConnectScreen) router.replace('/login');
       return;
     }
     if (onLinkScreen) return;
@@ -116,6 +119,14 @@ function AuthGate({ children }: { children: ReactNode }) {
     if (onboardingStep) {
       if (onLegalScreen) return;
       if (!onOnboardingScreen || (segments as string[])[1] !== onboardingStep) router.replace(`/onboarding/${onboardingStep}`);
+      return;
+    }
+
+    // 다른 서비스 연결 중이었으면(로그인·온보딩을 거쳐 왔으면) 동의 화면으로 돌려보냄
+    if (onConnectScreen) return;
+    const pendingConnect = getPendingConnect();
+    if (pendingConnect) {
+      router.replace(pendingConnect as never);
       return;
     }
 
@@ -219,6 +230,8 @@ function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="login" />
               <Stack.Screen name="oauth/[provider]" options={{ headerShown: false }} />
+              <Stack.Screen name="connect/[clientId]" options={{ headerShown: false }} />
+              <Stack.Screen name="settings/connected" options={{ headerShown: true, title: t('connected.title') }} />
               <Stack.Screen name="actor/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="subscribe/[actorId]" options={{ headerShown: false }} />
               <Stack.Screen name="subscribe/bundle/[bundleId]" options={{ headerShown: false }} />

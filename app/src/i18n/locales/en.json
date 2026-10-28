@@ -992,5 +992,31 @@
     "failed": "Connection lost — couldn't confirm it was sent.",
     "action": "Resend",
     "dismiss": "Dismiss"
+  },
+  "connect": {
+    "title": "Sign in to {{name}} with Toffee",
+    "about": "{{name}} is a ticketing service by Dessert Lab, the team behind Toffee.",
+    "sharedTitle": "What {{name}} will receive",
+    "shared1": "Nickname and email",
+    "shared2": "Whether you subscribe to an artist and for how long (to check presale eligibility)",
+    "notShared": "Your payments, messages and real name are not shared.",
+    "revokeHint": "You can disconnect any time in My page > Connected services.",
+    "agree": "Agree and continue",
+    "cancel": "Cancel",
+    "loginTitle": "Sign in with Toffee",
+    "loginBody": "After signing in to Toffee, you'll return to the service you're connecting.",
+    "loginFirst": "Sign in to Toffee and continue",
+    "invalidTitle": "Can't connect",
+    "invalidBody": "This connection request is invalid. Please try again from the service you were connecting.",
+    "home": "Go to Toffee home"
+  },
+  "connected": {
+    "title": "Connected services",
+    "hint": "Dessert Lab services you signed in to with Toffee. If you disconnect, the service no longer receives your subscription info.",
+    "empty": "No connected services",
+    "since": "Connected {{date}}",
+    "revoke": "Disconnect",
+    "revokeTitle": "Disconnect {{name}}?",
+    "revokeBody": "You won't be able to use Toffee subscriber presales on {{name}}. To reconnect, sign in to {{name}} with Toffee again."
   }
 }

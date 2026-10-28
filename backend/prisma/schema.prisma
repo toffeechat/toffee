@@ -199,6 +199,7 @@ model User {
   adminActions       AdminAction[]       @relation("AdminActions")
   supportInquiries   SupportInquiry[]
   authSessions       AuthSession[]
+  partnerLinks       PartnerLink[]
 
   // 운영자 회원 검색(이름·닉네임·이메일 중간 글자) — 회원이 가장 많이 늘어나는 테이블이라 글자 조각 색인(pg_trgm, 2026-09-29)
   @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin, map: "User_displayName_trgm_idx")
@@ -639,6 +640,28 @@ model ActorLinkToken {
   actor Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
 
   @@index([actorId])
+}
+
+// 디저트랩 다른 서비스(검볼 등)와 토피 계정 연결(2026-10-28) — 팬이 "토피로 로그인"에 동의하면 한 줄. partner는 서비스 이름(gumball),
+// sub는 그 서비스에만 주는 무작위 id(토피 userId를 넘기지 않음 — 서비스끼리 같은 사람인지 맞춰 볼 수 없게). 공유 범위는 닉네임·이메일·
+// 아티스트 구독 여부·연속 구독 기간(검볼 선예매 판정). 팬이 설정에서 끊으면 revokedAt — 그 뒤로 그 서비스는 구독 정보를 못 받음.
+// 1회용 인가 코드(60초)는 해시만 이 줄에 잠깐 두었다가 교환하면 지움(PKCE S256 필수)
+model PartnerLink {
+  id              String    @id @default(uuid())
+  userId          String
+  partner         String
+  sub             String    @unique
+  consentedAt     DateTime  @default(now())
+  revokedAt       DateTime?
+  lastUsedAt      DateTime?
+  codeHash        String?   @unique
+  codeExpiresAt   DateTime?
+  codeChallenge   String?
+  codeRedirectUri String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, partner])
 }
 
 model BundleActor {

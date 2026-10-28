@@ -2004,3 +2004,17 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   운영자 API `admin/agencies/:id/share-rates`(GET·POST·DELETE `/:fromMonth`·POST `/founding`) — 마지막 마감 달 이하면 `SHARE_RATE_MONTH_CLOSED`, 바꿀 때마다
   `revenueSharePercent`를 이번 달 값으로 맞춤(옛 PATCH는 이번 달 줄로 저장).
 
+
+## 디저트랩 서비스 연결 — 검볼 "토피로 로그인" (2026-10-28)
+
+- 모듈 `src/partners/` — `partner-clients.ts`(환경 변수 `<PARTNER>_OAUTH_CLIENT_ID/SECRET/REDIRECT_URIS`, 비밀값은 sha256 후 timingSafeEqual, 돌아갈 주소는 정확히 일치),
+  `partner-subscriptions.ts`(순수 함수 `fullMonthsBetween`·`summarize`), `partners.service.ts`, `partners.controller.ts`.
+- 표 `PartnerLink(userId, partner, sub unique, consentedAt, revokedAt, lastUsedAt, codeHash unique, codeExpiresAt, codeChallenge, codeRedirectUri)`, `@@unique([userId, partner])`.
+- API: (로그인) `GET partners/:clientId/preview?redirectUri=`, `POST partners/authorize {clientId, redirectUri, state, codeChallenge}` → `{redirectTo}`(코드 60초, 해시만 저장),
+  `GET me/partner-links`, `DELETE me/partner-links/:partner` / (서비스 서버, @Public + 본문의 clientId·clientSecret) `POST partners/token {code, codeVerifier, redirectUri}` → `{sub, nickname, email, locale}`
+  (코드는 맞든 틀리든 한 번 보면 지움, 비밀값이 틀리면 코드는 그대로), `POST partners/subscriptions {sub, artistIds≤20}` → `{artists: {[id]: summary}}`(끊겼으면 404 `LINK_REVOKED`, 정지·차단 계정은 전부 inactive),
+  `POST partners/revoke {sub}`.
+- 구독 요약: 방 = 아티스트 개인방 + `CoupleMember.memberId = 아티스트`인 커플방, 열린 `Subscription`(cancelledAt null)의 가장 이른 startedAt 기준 꽉 찬 개월(재구독하면 startedAt이 새로 잡힘 — syncAccess).
+- 앱: `app/connect/[clientId].tsx`(파라미터 redirect_uri·state·code_challenge·code_challenge_method=S256), `lib/partner-connect.ts`(로그인 전 주소 기억), AuthGate가 `connect`를 로그인 전 허용 +
+  온보딩 끝난 뒤 기억한 주소로, `app/settings/connected.tsx`. 오류 코드 `PARTNER_INVALID_REQUEST`(9개 언어).
+- 검볼 쪽 구현은 `toffeechat/gumball` `backend/src/toffee/*`·`auth/toffee-auth.controller.ts`(구독 요약을 Redis에 60초만, DB엔 sub만).

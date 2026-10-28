@@ -979,5 +979,31 @@
     "failed": "連線中斷，無法確認是否已傳送。",
     "action": "重新傳送",
     "dismiss": "關閉"
+  },
+  "connect": {
+    "title": "使用 Toffee 帳號登入 {{name}}",
+    "about": "{{name}} 是 Toffee 開發團隊 Dessert Lab 的演出票務服務。",
+    "sharedTitle": "將提供給 {{name}} 的資訊",
+    "shared1": "暱稱和電子郵件",
+    "shared2": "是否訂閱藝人及連續訂閱時長（用於確認優先購票資格）",
+    "notShared": "不會提供付款紀錄、訊息和真實姓名。",
+    "revokeHint": "可隨時在 我的 > 已連結的服務 中解除連結。",
+    "agree": "同意並繼續",
+    "cancel": "取消",
+    "loginTitle": "使用 Toffee 登入",
+    "loginBody": "登入 Toffee 後將返回要連結的服務。",
+    "loginFirst": "登入 Toffee 並繼續",
+    "invalidTitle": "無法連結",
+    "invalidBody": "連結請求無效，請從要連結的服務重新嘗試。",
+    "home": "前往 Toffee 首頁"
+  },
+  "connected": {
+    "title": "已連結的服務",
+    "hint": "使用 Toffee 帳號登入的 Dessert Lab 服務。解除後，該服務將無法再取得訂閱資訊。",
+    "empty": "沒有已連結的服務",
+    "since": "{{date}} 連結",
+    "revoke": "解除連結",
+    "revokeTitle": "要解除與 {{name}} 的連結嗎？",
+    "revokeBody": "解除後將無法在 {{name}} 使用 Toffee 訂閱者優先購票。如需重新連結，請在 {{name}} 再次使用 Toffee 登入。"
   }
 }

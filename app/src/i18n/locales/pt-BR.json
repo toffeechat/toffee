@@ -1010,5 +1010,31 @@
     "failed": "A conexão caiu e não deu para confirmar o envio.",
     "action": "Reenviar",
     "dismiss": "Fechar"
+  },
+  "connect": {
+    "title": "Entrar no {{name}} com sua conta Toffee",
+    "about": "{{name}} é o serviço de ingressos da Dessert Lab, a equipe por trás do Toffee.",
+    "sharedTitle": "O que o {{name}} vai receber",
+    "shared1": "Apelido e e-mail",
+    "shared2": "Se você assina um artista e há quanto tempo (para verificar acesso à pré-venda)",
+    "notShared": "Seus pagamentos, mensagens e nome real não são compartilhados.",
+    "revokeHint": "Você pode desconectar quando quiser em Minha página > Serviços conectados.",
+    "agree": "Concordar e continuar",
+    "cancel": "Cancelar",
+    "loginTitle": "Entrar com Toffee",
+    "loginBody": "Depois de entrar no Toffee, você volta ao serviço que está conectando.",
+    "loginFirst": "Entrar no Toffee e continuar",
+    "invalidTitle": "Não foi possível conectar",
+    "invalidBody": "A solicitação de conexão é inválida. Tente novamente pelo serviço que você queria conectar.",
+    "home": "Ir para o início do Toffee"
+  },
+  "connected": {
+    "title": "Serviços conectados",
+    "hint": "Serviços da Dessert Lab em que você entrou com o Toffee. Ao desconectar, o serviço deixa de receber suas informações de assinatura.",
+    "empty": "Nenhum serviço conectado",
+    "since": "Conectado em {{date}}",
+    "revoke": "Desconectar",
+    "revokeTitle": "Desconectar {{name}}?",
+    "revokeBody": "Você não poderá usar as pré-vendas para assinantes do Toffee no {{name}}. Para reconectar, entre no {{name}} com o Toffee de novo."
   }
 }

@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { SmokeModule } from './smoke/smoke.module.js';
 import { AppSettingsModule } from './app-settings/app-settings.module.js';
 import { SupportModule } from './support/support.module.js';
+import { PartnersModule } from './partners/partners.module.js';
 import { PrivacyModule } from './privacy/privacy.module.js';
 import { MaintenanceGuard } from './app-settings/maintenance.guard.js';
 import { SentryModule } from '@sentry/nestjs/setup';
@@ -44,6 +45,7 @@ import { LifecycleModule } from './common/lifecycle/shutdown.service.js';
   imports: [
     AppSettingsModule,
     SupportModule,
+    PartnersModule,
     PrivacyModule,
     SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),

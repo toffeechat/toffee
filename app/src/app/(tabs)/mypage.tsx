@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, CircleHelp, CreditCard, Download, FileText, Globe, KeyRound, LifeBuoy, LogOut, Megaphone, Moon, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { Bell, CircleHelp, CreditCard, Download, FileText, Globe, KeyRound, LifeBuoy, Link2, LogOut, Megaphone, Moon, ShieldCheck, Sparkles } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -122,6 +122,8 @@ export default function ProfileScreen() {
             value={t(`themeMode.${themePreference}`)}
             onPress={() => router.push('/settings/theme')}
           />
+          {/* 토피 계정으로 로그인한 디저트랩 서비스(검볼, 2026-10-28) */}
+          <ListRow icon={Link2} title={t('connected.title')} onPress={() => router.push('/settings/connected')} />
           {providers ? <ListRow icon={KeyRound} title={t('profile.loginInfo')} value={providers} subtitle={me?.email ?? t('profile.noEmail')} showChevron={false} /> : null}
           <ListRow icon={CreditCard} title={t('profile.paymentMethod')} subtitle={t('profile.paymentMethodHint')} onPress={() => void openStoreSubscriptions().catch(() => {})} />
         </Section>

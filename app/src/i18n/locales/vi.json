@@ -979,5 +979,31 @@
     "failed": "Mất kết nối, chưa xác nhận được đã gửi hay chưa.",
     "action": "Gửi lại",
     "dismiss": "Đóng"
+  },
+  "connect": {
+    "title": "Đăng nhập {{name}} bằng tài khoản Toffee",
+    "about": "{{name}} là dịch vụ đặt vé biểu diễn của Dessert Lab, đội ngũ tạo ra Toffee.",
+    "sharedTitle": "Thông tin cung cấp cho {{name}}",
+    "shared1": "Biệt danh và email",
+    "shared2": "Bạn có đăng ký nghệ sĩ hay không và thời gian đăng ký liên tục (để kiểm tra quyền mua trước)",
+    "notShared": "Không chia sẻ lịch sử thanh toán, tin nhắn và tên thật.",
+    "revokeHint": "Bạn có thể hủy liên kết bất cứ lúc nào tại Trang của tôi > Dịch vụ đã liên kết.",
+    "agree": "Đồng ý và tiếp tục",
+    "cancel": "Hủy",
+    "loginTitle": "Đăng nhập bằng Toffee",
+    "loginBody": "Sau khi đăng nhập Toffee, bạn sẽ quay lại dịch vụ muốn liên kết.",
+    "loginFirst": "Đăng nhập Toffee và tiếp tục",
+    "invalidTitle": "Không thể liên kết",
+    "invalidBody": "Yêu cầu liên kết không hợp lệ. Vui lòng thử lại từ dịch vụ bạn muốn liên kết.",
+    "home": "Về trang chủ Toffee"
+  },
+  "connected": {
+    "title": "Dịch vụ đã liên kết",
+    "hint": "Các dịch vụ của Dessert Lab bạn đã đăng nhập bằng Toffee. Nếu hủy liên kết, dịch vụ đó sẽ không nhận được thông tin đăng ký nữa.",
+    "empty": "Chưa có dịch vụ liên kết",
+    "since": "Liên kết ngày {{date}}",
+    "revoke": "Hủy liên kết",
+    "revokeTitle": "Hủy liên kết {{name}}?",
+    "revokeBody": "Bạn sẽ không dùng được quyền mua trước dành cho người đăng ký Toffee trên {{name}}. Để liên kết lại, hãy đăng nhập {{name}} bằng Toffee."
   }
 }

@@ -1368,6 +1368,18 @@ export const ERROR_MESSAGES = {
     es: 'Solo se pueden vincular cuentas con el rol de artista (ACTOR). Primero cambia el rol en la gestión de usuarios.',
     'pt-BR': 'Só é possível vincular contas com a função de artista (ACTOR). Mude a função primeiro na gestão de usuários.',
   },
+  // 검볼 등 다른 서비스 연결 요청이 등록된 주소·서비스가 아님(2026-10-28)
+  PARTNER_INVALID_REQUEST: {
+    ko: '연결 요청이 올바르지 않아요. 연결하려던 서비스에서 다시 시도해 주세요.',
+    en: 'This connection request is invalid. Please try again from the service you were connecting.',
+    th: 'คำขอเชื่อมต่อไม่ถูกต้อง กรุณาลองใหม่จากบริการที่ต้องการเชื่อมต่อ',
+    ja: '連携リクエストが正しくありません。連携しようとしたサービスからもう一度お試しください。',
+    'zh-Hans': '关联请求无效，请从要关联的服务重新尝试。',
+    'zh-Hant': '連結請求無效，請從要連結的服務重新嘗試。',
+    vi: 'Yêu cầu liên kết không hợp lệ. Vui lòng thử lại từ dịch vụ bạn muốn liên kết.',
+    es: 'La solicitud de conexión no es válida. Vuelve a intentarlo desde el servicio que querías conectar.',
+    'pt-BR': 'A solicitação de conexão é inválida. Tente novamente pelo serviço que você queria conectar.',
+  },
   ACCOUNT_ALREADY_LINKED: {
     ko: '이미 다른 아티스트에 연결된 계정이에요.',
     en: 'This account is already linked to another artist.',

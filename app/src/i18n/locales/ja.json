@@ -979,5 +979,31 @@
     "failed": "接続が切れたため、送信を確認できませんでした。",
     "action": "再送信",
     "dismiss": "閉じる"
+  },
+  "connect": {
+    "title": "Toffeeアカウントで{{name}}にログイン",
+    "about": "{{name}}はToffeeをつくったDessert Labの公演チケットサービスです。",
+    "sharedTitle": "{{name}}に提供する情報",
+    "shared1": "ニックネーム・メールアドレス",
+    "shared2": "アーティストの購読状況と連続購読期間（先行販売の対象確認用）",
+    "notShared": "決済履歴・メッセージ・本名は提供しません。",
+    "revokeHint": "マイページ ＞ 連携中のサービスからいつでも連携を解除できます。",
+    "agree": "同意して続ける",
+    "cancel": "キャンセル",
+    "loginTitle": "Toffeeでログイン",
+    "loginBody": "Toffeeにログインすると、連携するサービスに戻ります。",
+    "loginFirst": "Toffeeにログインして続ける",
+    "invalidTitle": "連携できません",
+    "invalidBody": "連携リクエストが正しくありません。連携しようとしたサービスからもう一度お試しください。",
+    "home": "Toffeeのホームへ"
+  },
+  "connected": {
+    "title": "連携中のサービス",
+    "hint": "ToffeeアカウントでログインしたDessert Labのサービスです。解除すると、そのサービスは購読情報を受け取れなくなります。",
+    "empty": "連携中のサービスはありません",
+    "since": "{{date}}に連携",
+    "revoke": "連携を解除",
+    "revokeTitle": "{{name}}との連携を解除しますか？",
+    "revokeBody": "{{name}}でToffee購読者向け先行販売を利用できなくなります。再連携するには{{name}}でもう一度Toffeeでログインしてください。"
   }
 }
