@@ -45,8 +45,11 @@ export class ReportsService {
     if (message.fanUserId === reportedById) throw new BadRequestException(appError('REPORT_OWN_MESSAGE'));
     if (reporter.role !== Role.ADMIN) {
       if (message.senderType === MessageSenderType.ARTIST) {
-        if (reporter.role !== Role.USER) throw new ForbiddenException(appError('REPORT_NOT_ALLOWED'));
-        const subscription = await ensureActiveSubscription(this.prisma, reportedById, message.actorId);
+        // 다른 방을 팬으로 구독한 아티스트·소속사 계정도 그 방 메시지는 신고 가능(2026-10-28 — 예전엔 USER만). 구독 안 했으면 예전처럼 REPORT_NOT_ALLOWED
+        const subscription = await ensureActiveSubscription(this.prisma, reportedById, message.actorId).catch((error: unknown) => {
+          if (reporter.role === Role.USER) throw error;
+          throw new ForbiddenException(appError('REPORT_NOT_ALLOWED'));
+        });
         if (message.createdAt < subscription.startedAt) throw new ForbiddenException(appError('REPORT_NOT_ALLOWED'));
       } else {
         if (reporter.role !== Role.ACTOR && reporter.role !== Role.AGENCY_STAFF) {
@@ -61,9 +64,17 @@ export class ReportsService {
         data: { messageId, reportedById, category, reason: reason?.trim() || null },
         select: { id: true, category: true, status: true, createdAt: true },
       });
-      // 운영자 알림(2026-10-20) — 메시지마다 처리 대기 중 첫 신고일 때만(같은 메시지에 신고가 몰려도 한 번)
-      const pending = await this.prisma.report.count({ where: { messageId, status: ReportStatus.PENDING } });
-      if (pending === 1) {
+      // 운영자 알림(2026-10-20) — 메시지마다 처리 대기 중 첫 신고일 때만(같은 메시지에 신고가 몰려도 한 번).
+      // "대기 중 신고가 1개"로 보면 동시에 두 건이 들어올 때 둘 다 2개로 세서 알림이 0건이 될 수 있어서, 이 신고보다 먼저 들어온
+      // 대기 신고가 없을 때로 판단(2026-10-28) — 가장 먼저 들어온 신고는 늘 0을 보므로 적어도 한 번은 감
+      const earlierPending = await this.prisma.report.count({
+        where: {
+          messageId,
+          status: ReportStatus.PENDING,
+          OR: [{ createdAt: { lt: report.createdAt } }, { createdAt: report.createdAt, id: { lt: report.id } }],
+        },
+      });
+      if (earlierPending === 0) {
         const room = await this.prisma.actor.findUnique({ where: { id: message.actorId }, select: { chatDisplayName: true } });
         void this.alerts.notify(
           'REPORT',

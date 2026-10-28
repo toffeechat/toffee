@@ -24,7 +24,9 @@ export async function assertCanManageUser(
 ) {
   if (opts.sanction && caller.id === targetId) throw new ForbiddenException(appError('FORBIDDEN'));
   const target = await prisma.user.findUnique({ where: { id: targetId }, select: { role: true, adminLevel: true, deletedAt: true } });
-  if (!target || target.role !== Role.ADMIN) return;
+  // 없는 계정이면 404(2026-10-28 — 예전엔 그대로 지나가 정지·차단·복구의 update가 P2025로 500이 됐음)
+  if (!target) throw new NotFoundException(appError('USER_NOT_FOUND'));
+  if (target.role !== Role.ADMIN) return;
   if (levelOf(caller) !== AdminLevel.OWNER) throw new ForbiddenException(appError('ADMIN_OWNER_ONLY'));
   if (opts.lockout && levelOf(target) === AdminLevel.OWNER) {
     const owners = await prisma.user.count({ where: { role: Role.ADMIN, deletedAt: null, OR: [{ adminLevel: null }, { adminLevel: AdminLevel.OWNER }] } });

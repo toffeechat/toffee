@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ErrorEvent } from '@sentry/nestjs';
-import { scrubEvent } from './scrub-event.js';
+import { scrubEvent, scrubText } from './scrub-event.js';
 
 describe('scrubEvent', () => {
   it('민감 헤더·바디 필드·쿼리스트링·쿠키를 가리고 user는 id만 남긴다', () => {
@@ -34,5 +34,17 @@ describe('scrubEvent', () => {
 
     const raw = scrubEvent({ type: undefined, request: { data: 'email=a@b.c' } });
     expect(raw.request?.data).toBe('[redacted]');
+  });
+
+  it('오류 문구 속 JWT·이메일과 입장 코드(code)도 가린다(2026-10-28)', () => {
+    const event: ErrorEvent = {
+      type: undefined,
+      request: { data: { code: 'demo-admin-code', email: 'x' } },
+      exception: { values: [{ type: 'Error', value: 'Token used too late, {"email":"fan@example.com"} eyJhbGciOi.eyJzdWIiOi.sig' }] },
+    };
+    const scrubbed = scrubEvent(event);
+    expect(scrubbed.request?.data).toEqual({ code: '[redacted]', email: '[redacted]' });
+    expect(scrubbed.exception?.values?.[0].value).toBe('Token used too late, {"email":"[redacted-email]"} [redacted-jwt]');
+    expect(scrubText('plain message')).toBe('plain message');
   });
 });

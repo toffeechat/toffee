@@ -1,26 +1,29 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, ChevronLeft, Sparkle } from 'lucide-react-native';
+import { ArrowRight, ChevronLeft, SearchX, Sparkle } from 'lucide-react-native';
 
 import { MembershipBenefits } from '@/components/membership-benefits';
 import { PurchaseDisclosure } from '@/components/purchase-disclosure';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { IconButton } from '@/components/ui/icon-button';
 import { ApiError } from '@/lib/api-client';
-import { useActor } from '@/hooks/use-actors';
+import { membersOf, useActor } from '@/hooks/use-actors';
+import { useUpcoming } from '@/hooks/use-release';
 import { useSubscribe } from '@/hooks/use-subscriptions';
 import { STORE_PURCHASE_PENDING, useStorePurchase } from '@/hooks/use-store-purchase';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
+import { formatReleaseAt } from '@/utils/release';
 
 /**
  * 구독 확인 → 완료 — 시안 P-2 Actor-focused Subscription(docs/product/brand/exploration/p2-subscription-flow.png) +
@@ -31,12 +34,12 @@ import { formatPrice } from '@/utils/price';
  */
 export default function SubscribeScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const { actorId } = useLocalSearchParams<{ actorId: string }>();
-  const { data: actor } = useActor(actorId);
+  const { data: actor, isLoading, isError } = useActor(actorId);
   const subscribe = useSubscribe(actorId);
   const store = useStorePurchase({ kind: 'actor', id: actorId, sku: actor?.storeProductId });
   const storeBuy = useMutation({
@@ -49,20 +52,43 @@ export default function SubscribeScreen() {
   const failure = storeBuy.error ?? subscribe.error;
   const [done, setDone] = useState<{ discount?: string } | null>(null);
   const back = () => (router.canGoBack() ? router.back() : router.replace({ pathname: '/actor/[id]', params: { id: actorId } }));
+  const upcoming = useUpcoming(actor?.releaseAt);
 
-  if (!actor) {
+  if (isLoading) {
     return (
       <SafeAreaView style={[styles.flex, { backgroundColor: theme.background }]}>
         <ActivityIndicator style={styles.loading} color={theme.tint} />
       </SafeAreaView>
     );
   }
+  // 불러오기 실패·없는 배우(2026-10-28) — 예전엔 로딩만 계속 돌았음
+  if (isError || !actor) {
+    return (
+      <SafeAreaView style={[styles.flex, { backgroundColor: theme.background }]}>
+        <IconButton icon={ChevronLeft} label={t('actorProfile.back')} onPress={back} style={styles.backPlain} />
+        <EmptyState icon={SearchX} title={t('actorProfile.notFound')} />
+      </SafeAreaView>
+    );
+  }
   const photo = actor.officialProfileImageUrl ?? actor.chatProfileImageUrl;
   const price = store.displayPrice ?? formatPrice(actor.monthlyPriceCents);
+  // 프로필 화면(actor/[id])과 같은 구독 가능 확인(2026-10-28) — 링크·뒤로 가기로 이 화면에 바로 와도 활동 종료(예정, CP방은 멤버 포함)·공개 전이면
+  // 결제하지 않고 안내만
+  const retireAt = [actor.retireAt, ...membersOf(actor).map((member) => member.retireAt)].filter((value): value is string => !!value).sort()[0] ?? null;
+  const blockedTitle = actor.retiredAt
+    ? t('actorProfile.retired')
+    : retireAt
+      ? t('actorProfile.retiringNoNew')
+      : upcoming
+        ? t('release.opensAt', { date: formatReleaseAt(actor.releaseAt!, i18n.language) })
+        : null;
+  // 앱에서 스토어 상품이 있으면 스토어 결제만 — 스토어 연결이 아직이면 테스트 구독으로 넘어가지 않고 기다림(2026-10-28)
+  const storeExpected = Platform.OS !== 'web' && !!actor.storeProductId;
+  const storeLoading = storeExpected && !store.available;
 
   const confirm = () =>
-    store.available
-      ? storeBuy.mutate()
+    storeExpected
+      ? store.available && storeBuy.mutate()
       : subscribe.mutate(undefined, {
       onSuccess: (result) =>
         setDone({
@@ -138,9 +164,13 @@ export default function SubscribeScreen() {
               {t('subscribeFlow.storePending')}
             </ThemedText>
           ) : null}
-          <Button title={t('subscribeFlow.cta', { price })} variant="accent" loading={busy} onPress={confirm} />
+          {blockedTitle ? (
+            <Button title={blockedTitle} variant="secondary" disabled />
+          ) : (
+            <Button title={t('subscribeFlow.cta', { price })} variant="accent" loading={busy || storeLoading} onPress={confirm} />
+          )}
           <PurchaseDisclosure />
-          {store.available ? null : (
+          {storeExpected ? null : (
             <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
               {t('subscribeFlow.sandboxNote')}
             </ThemedText>
@@ -174,6 +204,7 @@ const styles = StyleSheet.create({
   benefits: { marginVertical: Spacing.three },
   center: { textAlign: 'center' },
   back: { position: 'absolute', left: Spacing.three, backgroundColor: 'rgba(15,17,21,0.35)' },
+  backPlain: { margin: Spacing.three },
   loading: { marginTop: Spacing.six },
   doneWrap: { backgroundColor: '#0F1115', justifyContent: 'flex-end' },
   doneBody: { paddingHorizontal: Spacing.four, gap: Spacing.two, alignItems: 'center', width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },

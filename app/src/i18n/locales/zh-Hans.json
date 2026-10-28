@@ -202,6 +202,7 @@
     "noReplies": "暂无回复",
     "repliesEmpty": "这条消息还没有回复。",
     "permissionDenied": "需要权限，请在设置中允许。",
+    "recordFailed": "无法录音，请重试。",
     "media": {
       "PHOTO": "📷 照片",
       "AUDIO": "🎧 语音消息",
@@ -991,7 +992,9 @@
     "photoUnavailable": "无法加载照片",
     "delete": "删除咨询",
     "deleteTitle": "删除咨询",
-    "deleteConfirm": "此咨询的所有内容和照片都将被删除，且无法恢复。"
+    "deleteConfirm": "此咨询的所有内容和照片都将被删除，且无法恢复。",
+    "notFound": "找不到该咨询",
+    "backToList": "返回咨询列表"
   },
   "sendRetry": {
     "failed": "连接中断，无法确认是否已发送。",

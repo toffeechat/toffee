@@ -73,6 +73,22 @@ describe('PushService', () => {
     expect(prisma.pushDevice.deleteMany).toHaveBeenCalledWith({ where: { token: { in: ['t0', 't500', 't1000'] } } });
   });
 
+  it('전체 공지는 id > 마지막 id로 이어 읽는다 — 마지막 기기가 죽은 토큰으로 지워져도 다음 묶음이 끊기지 않음(2026-10-28)', async () => {
+    const { service, prisma } = setup(0);
+    const page = (from: number, n: number) =>
+      Array.from({ length: n }, (_, i) => ({ id: `d${from + i}`, token: `t${from + i}`, userId: 'u', user: { locale: 'ko', displayName: 'f', nickname: null } }));
+    prisma.pushDevice.findMany.mockReset();
+    prisma.pushDevice.findMany.mockResolvedValueOnce(page(0, 2)).mockResolvedValueOnce(page(2, 1)).mockResolvedValueOnce([]);
+    sendEach.mockImplementation((batch: unknown[]) => Promise.resolve({ failureCount: 0, responses: batch.map(() => ({ success: true })) }));
+    await service.sendToEveryone(() => ({ title: 't', body: 'b' }));
+    const calls = prisma.pushDevice.findMany.mock.calls.map((call) => call[0] as { where: { id?: unknown }; skip?: number; cursor?: unknown });
+    expect(calls).toHaveLength(3);
+    expect(calls[0].where.id).toBeUndefined();
+    expect(calls[1].where.id).toEqual({ gt: 'd1' });
+    expect(calls[2].where.id).toEqual({ gt: 'd2' });
+    expect(calls.every((call) => call.cursor === undefined && call.skip === undefined)).toBe(true);
+  });
+
   it('발송 자체가 실패해도 예외를 던지지 않는다(best-effort)', async () => {
     const { service } = setup(3);
     sendEach.mockRejectedValue(new Error('network'));

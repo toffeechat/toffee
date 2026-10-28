@@ -29,7 +29,7 @@ export function RefundSection() {
     setError(null);
     request.mutate(item.chargeId, {
       onSuccess: (result) => {
-        if (result.url) void Linking.openURL(result.url);
+        if (result.url) void Linking.openURL(result.url).catch(() => {});
         setNotice(result.status === 'REFUNDED' ? t('idleRefund.refunded') : t('idleRefund.guided'));
       },
       onError: (e) => setError({ chargeId: item.chargeId, message: e instanceof ApiError ? e.message : t('idleRefund.failed') }),

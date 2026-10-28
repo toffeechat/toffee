@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, HttpException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
-import { localizeHttpException } from './localized-exception.filter.js';
+import { asNotFound, localizeHttpException } from './localized-exception.filter.js';
+import { Prisma } from '../../generated/prisma/client.js';
 import { appError } from '../i18n/app-error.js';
 import { ERROR_MESSAGES, translateError } from '../i18n/error-messages.js';
 import { localeFromAcceptLanguage, SUPPORTED_LOCALES } from '../i18n/locales.js';
@@ -30,6 +31,14 @@ describe('오류 문구 다국어', () => {
       code: 'INTERNAL',
       message: '일시적인 오류가 생겼어요. 잠시 후 다시 시도해 주세요.',
     });
+  });
+
+  it('Prisma "찾을 수 없음"(P2025)은 500이 아니라 404 NOT_FOUND로(2026-10-28)', () => {
+    const notFound = asNotFound(new Prisma.PrismaClientKnownRequestError('No record was found', { code: 'P2025', clientVersion: 'test' }));
+    expect(notFound?.getStatus()).toBe(404);
+    expect(body(localizeHttpException(notFound!, 'ko'))).toMatchObject({ statusCode: 404, code: 'NOT_FOUND' });
+    expect(asNotFound(new Prisma.PrismaClientKnownRequestError('unique', { code: 'P2002', clientVersion: 'test' }))).toBeNull();
+    expect(asNotFound(new Error('boom'))).toBeNull();
   });
 
   it('날짜 파라미터는 받는 사람 언어로(태국 시간)', () => {

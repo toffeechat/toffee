@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ExpandableItem } from '@/components/expandable-item';
+import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { openStoreSubscriptions, storeName } from '@/lib/store-subscriptions';
 import { useCancelPurchase } from '@/hooks/use-bundles';
@@ -31,6 +33,7 @@ export default function SubscriptionDetailScreen() {
   const sub = subscriptions?.find((s) => s.actorId === actorId);
   const unsubscribe = useUnsubscribe(actorId);
   const cancelPurchase = useCancelPurchase();
+  const [error, setError] = useState<string | null>(null);
 
   if (!sub) {
     return <EmptyState icon={SearchX} title={t('manage.notFound')} />;
@@ -45,7 +48,10 @@ export default function SubscriptionDetailScreen() {
 
   // 해지하면 목록으로 — 주소로 바로 열었거나 새로고침한 웹이면 돌아갈 곳이 없어 "구독 정보를 찾을 수 없어요"만 남았음(2026-10-20)
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/subscriptions'));
+  // 해지 실패(2026-10-28) — 예전엔 버튼 로딩만 끝나고 아무 안내가 없었음(구독 관리 목록과 같은 문구)
+  const onError = (e: unknown) => setError(e instanceof ApiError ? e.message : t('bundle.cancelFailed'));
   const cancel = async () => {
+    setError(null);
     if (storePlatform) {
       const ok = await confirm(
         t('manage.cancelInStore'),
@@ -53,7 +59,7 @@ export default function SubscriptionDetailScreen() {
         t('manage.openStore', { store: storeName(storePlatform) }),
         t('common.cancel'),
       );
-      if (ok) void openStoreSubscriptions();
+      if (ok) void openStoreSubscriptions().catch(() => {});
       return;
     }
     if (bundleCover?.bundle) {
@@ -63,7 +69,7 @@ export default function SubscriptionDetailScreen() {
         t('bundle.cancel'),
         t('common.cancel'),
       );
-      if (ok) cancelPurchase.mutate(bundleCover.purchaseId, { onSuccess: leave });
+      if (ok) cancelPurchase.mutate(bundleCover.purchaseId, { onSuccess: leave, onError });
       return;
     }
     const ok = await confirm(
@@ -72,7 +78,7 @@ export default function SubscriptionDetailScreen() {
       t('mypage.unsubscribe'),
       t('common.cancel'),
     );
-    if (ok) unsubscribe.mutate(undefined, { onSuccess: leave });
+    if (ok) unsubscribe.mutate(undefined, { onSuccess: leave, onError });
   };
 
   // 스토어에서 자동 갱신을 끈 방(2026-10-02) — "해지 예정" + 이용 종료일
@@ -139,6 +145,11 @@ export default function SubscriptionDetailScreen() {
           loading={cancelling}
           onPress={cancel}
         />
+        {error ? (
+          <ThemedText type="small" themeColor="danger" style={styles.center}>
+            {error}
+          </ThemedText>
+        ) : null}
       </View>
 
       <ExpandableItem title={t('manage.guideTitle')} body={t('manage.guideBody')} />
@@ -153,6 +164,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
   sectionTitle: { marginTop: Spacing.three },
   actions: { gap: Spacing.two, marginTop: Spacing.four },
+  center: { textAlign: 'center' },
 });
 
 const DAY_MS = 24 * 60 * 60 * 1000;

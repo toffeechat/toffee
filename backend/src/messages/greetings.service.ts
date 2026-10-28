@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -56,14 +56,18 @@ export class GreetingsService {
   /** 스튜디오 "환영·생일 메시지" 편집 화면 */
   async settings(selfUserId: string, actorId: string) {
     await ensureIsActorSelf(this.prisma, selfUserId, actorId);
-    return this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { welcomeMessage: true, birthdayMessage: true } });
+    // 운영자는 없는 방 id로도 ensureIsActorSelf를 통과 — 500 대신 404(2026-10-28)
+    const actor = await this.prisma.actor.findUnique({ where: { id: actorId }, select: { welcomeMessage: true, birthdayMessage: true } });
+    if (!actor) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
+    return actor;
   }
 
   // CP방은 환영 메시지만(2026-10-14 사용자 결정) — 생일 축하는 개인방에서만 보내서 둘 다 구독한 팬이 두 번 받지 않게. CP방에 온 생일 문구는 버림
   async updateSettings(selfUserId: string, actorId: string, dto: UpdateGreetingsDto) {
     await ensureIsActorSelf(this.prisma, selfUserId, actorId);
-    const { kind } = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { kind: true } });
-    const couple = kind === ActorKind.COUPLE;
+    const actor = await this.prisma.actor.findUnique({ where: { id: actorId }, select: { kind: true } });
+    if (!actor) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
+    const couple = actor.kind === ActorKind.COUPLE;
     if (!couple && !clean(dto.birthdayMessage)) throw new BadRequestException(appError('GREETINGS_REQUIRED'));
     return this.prisma.actor.update({
       where: { id: actorId },
@@ -100,12 +104,13 @@ export class GreetingsService {
       },
       select: {
         actorId: true,
+        notificationsMuted: true,
         user: { select: { id: true, nickname: true, displayName: true } },
         actor: { select: { chatDisplayName: true, birthdayMessage: true } },
       },
     });
     let created = 0;
-    for (const { actorId, user, actor } of subscriptions) {
+    for (const { actorId, notificationsMuted, user, actor } of subscriptions) {
       try {
         await this.prisma.birthdayGreeting.create({
           data: { userId: user.id, actorId, year: today.year, body: personalize(actor.birthdayMessage ?? '', user.nickname ?? user.displayName) },
@@ -114,14 +119,19 @@ export class GreetingsService {
         continue; // 이미 보냄(같은 해) — 다른 서버가 먼저 만들었거나 다시 돌린 경우
       }
       created += 1;
-      await this.push.sendToUser(
-        user.id,
-        (recipient) => {
-          const t = pushStrings(recipient.locale);
-          return { title: t.birthdayTitle(actor.chatDisplayName), body: t.birthdayBody };
-        },
-        { type: 'birthday', actorId },
-      );
+      // 이 방 알림을 끈 팬은 축하 메시지만 대화방에 남기고 푸시는 안 보냄(2026-10-28)
+      if (notificationsMuted) continue;
+      // 푸시 실패가 나머지 팬의 축하 메시지를 막지 않게(2026-10-28 — 예전엔 한 번 실패하면 그 뒤 팬은 전부 빠졌음)
+      await this.push
+        .sendToUser(
+          user.id,
+          (recipient) => {
+            const t = pushStrings(recipient.locale);
+            return { title: t.birthdayTitle(actor.chatDisplayName), body: t.birthdayBody };
+          },
+          { type: 'birthday', actorId },
+        )
+        .catch((error: unknown) => this.logger.warn(`생일 축하 푸시 실패: ${error instanceof Error ? error.message : String(error)}`));
     }
     return created;
   }

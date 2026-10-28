@@ -33,28 +33,44 @@ export const SEND_RETRY = {
 } as const;
 
 /**
+ * 못 보낸 내용의 키를 기억하는 시간(2026-10-28) — 이보다 오래 지나 같은 글을 보내면 새 메시지로. 예전엔 끝없이 기억해서 다음 날 같은 글을
+ * 보내면 옛 키 그대로 → 서버가 (그때 사실 저장됐던) 옛 메시지를 돌려줘서 아무것도 안 보내짐
+ */
+export const PENDING_SEND_TTL_MS = 10 * 60 * 1000;
+
+/**
  * 같은 내용을 다시 보낼 때 같은 키를 쓰게 기억해 두는 곳 — 화면을 나갔다 와도(앱이 켜져 있는 동안) 남음.
  * 보내기에 성공하거나 서버가 거절하면(다시 보내도 소용없음) 지움. 사진·영상은 이미 올린 파일 키도 같이 기억해서 다시 올리지 않음.
  */
 export class PendingSends<Extra = undefined> {
-  private readonly entries = new Map<string, { clientMessageId: string; extra?: Extra }>();
+  private readonly entries = new Map<string, { clientMessageId: string; createdAt: number; extra?: Extra }>();
 
-  /** 이 내용의 키 — 지난번에 못 보낸 같은 내용이면 그 키 그대로 */
+  /** 아직 유효한 항목 — 오래된 건 지우고 없는 셈 */
+  private live(signature: string) {
+    const entry = this.entries.get(signature);
+    if (entry && Date.now() - entry.createdAt > PENDING_SEND_TTL_MS) {
+      this.entries.delete(signature);
+      return undefined;
+    }
+    return entry;
+  }
+
+  /** 이 내용의 키 — 지난번(10분 안)에 못 보낸 같은 내용이면 그 키 그대로 */
   keyFor(signature: string): string {
-    let entry = this.entries.get(signature);
+    let entry = this.live(signature);
     if (!entry) {
-      entry = { clientMessageId: newClientMessageId() };
+      entry = { clientMessageId: newClientMessageId(), createdAt: Date.now() };
       this.entries.set(signature, entry);
     }
     return entry.clientMessageId;
   }
 
   extra(signature: string): Extra | undefined {
-    return this.entries.get(signature)?.extra;
+    return this.live(signature)?.extra;
   }
 
   setExtra(signature: string, extra: Extra) {
-    const entry = this.entries.get(signature);
+    const entry = this.live(signature);
     if (entry) entry.extra = extra;
   }
 

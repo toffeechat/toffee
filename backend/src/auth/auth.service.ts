@@ -1,10 +1,11 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { AdminLevel, AuthProvider, Role, SubscriptionEventType, UserStatus } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 import { ModerationService } from '../moderation/moderation.service.js';
@@ -100,6 +101,8 @@ export class AuthService {
    */
   async refreshAccessToken(user: AuthenticatedUser, client?: ClientInfo): Promise<{ accessToken: string }> {
     const opts: IssueTokenOptions = { demoCode: user.demoCode, mfaAt: user.mfaAt, client };
+    // 배포 점검용 짧은 토큰(short)은 30일 세션으로 바꿔 주지 않음 — 워크플로 로그에서 본 토큰으로 아티스트 계정을 계속 쓸 수 있었음(2026-10-28 점검)
+    if (user.shortLived) throw new UnauthorizedException(appError('SESSION_EXPIRED'));
     if (!user.sessionId) return this.issueAccessToken(user, opts);
     const now = new Date();
     const { count } = await this.prisma.authSession.updateMany({
@@ -130,7 +133,7 @@ export class AuthService {
   async issueShortAccessToken(user: { id: string; role: Role }, expiresIn: `${number}m`): Promise<string> {
     // 세션 없이 tv만(짧게 살아서 따로 끊을 일이 없음, 2026-10-27)
     const { tokenVersion } = await this.prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { tokenVersion: true } });
-    return this.jwtService.signAsync({ sub: user.id, role: user.role, tv: tokenVersion }, { expiresIn });
+    return this.jwtService.signAsync({ sub: user.id, role: user.role, tv: tokenVersion, short: true }, { expiresIn });
   }
 
   // Google/Apple/Naver/Kakao/LINE 자격증명 없이 앱을 끝까지 테스트하기 위한 개발용 로그인.
@@ -192,8 +195,9 @@ export class AuthService {
 
   async verifyGoogleToken(idToken: string): Promise<ExternalIdentity> {
     // 구글은 앱(iOS·안드로이드)도 웹 클라이언트 ID를 audience로 쓰게 설정함(social-sign-in의 webClientId) — 웹 로그인도 같은 값
-    const ticket = await this.googleClient.verifyIdToken({ idToken, audience: this.audiences('GOOGLE_CLIENT_ID') });
-    const payload = ticket.getPayload();
+    // 만료·서명 오류는 라이브러리가 일반 Error로 던짐 — 그대로 두면 500 + 오류 문구(토큰·이메일 포함)가 Sentry·로그로 나갔음(2026-10-28 점검)
+    const ticket = await this.googleClient.verifyIdToken({ idToken, audience: this.audiences('GOOGLE_CLIENT_ID') }).catch(() => null);
+    const payload = ticket?.getPayload();
     if (!payload?.sub) throw new UnauthorizedException(appError('SOCIAL_TOKEN_INVALID', { provider: 'Google' }));
     return {
       providerId: payload.sub,
@@ -205,7 +209,7 @@ export class AuthService {
   }
 
   async verifyAppleToken(idToken: string): Promise<ExternalIdentity> {
-    const payload = await appleSignin.verifyIdToken(idToken, { audience: this.audiences('APPLE_CLIENT_ID') });
+    const payload = await appleSignin.verifyIdToken(idToken, { audience: this.audiences('APPLE_CLIENT_ID') }).catch(() => null);
     if (!payload?.sub) throw new UnauthorizedException(appError('SOCIAL_TOKEN_INVALID', { provider: 'Apple' }));
     // 애플은 email_verified를 boolean 또는 "true" 문자열로 줌
     const verified = (payload as { email_verified?: boolean | string }).email_verified;
@@ -277,6 +281,8 @@ export class AuthService {
         body: new URLSearchParams({ id_token: idToken, client_id: clientId }),
         signal: controller.signal,
       });
+    } catch {
+      throw providerUnavailable();
     } finally {
       clearTimeout(timeout);
     }
@@ -428,6 +434,9 @@ export class AuthService {
         headers: { Authorization: `Bearer ${accessToken}` },
         signal: controller.signal,
       });
+    } catch {
+      // 제공자 서버가 느리거나(5초) 연결이 끊김 — 토큰 문제가 아니라 503(예전엔 500 + Sentry 오류, 2026-10-28 점검)
+      throw providerUnavailable();
     } finally {
       clearTimeout(timeout);
     }
@@ -440,6 +449,7 @@ export class AuthService {
   async findOrCreateUser(
     provider: AuthProvider,
     identity: ExternalIdentity,
+    retried = false,
   ): Promise<AuthenticatedUser> {
     const existingIdentity = await this.prisma.authIdentity.findUnique({
       where: { provider_providerId: { provider, providerId: identity.providerId } },
@@ -457,20 +467,25 @@ export class AuthService {
 
     // 약관 동의는 로그인 방식과 상관없이 앱 온보딩 첫 단계에서 받고 기록함(POST /me/terms-agreement)
 
-    const user =
-      existingUserByEmail ??
-      (await this.prisma.user.create({
-        data: {
-          email: verifiedEmail ?? undefined,
-          displayName: identity.name ?? this.generateFallbackName(),
-        },
-      }));
-
-    await this.prisma.authIdentity.create({
-      data: { userId: user.id, provider, providerId: identity.providerId },
-    });
-
-    return { id: user.id, role: user.role };
+    // 계정·연결을 한 트랜잭션으로 — 버튼 두 번·재시도로 같은 첫 로그인이 동시에 오면 한쪽이 고유 제약(P2002)에 걸림. 예전엔 500에
+    // 로그인 수단 없는 계정이 남았음(2026-10-28 점검). 걸리면 먼저 끝난 쪽의 연결로 다시 찾음
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const user =
+          existingUserByEmail ??
+          (await tx.user.create({
+            data: {
+              email: verifiedEmail ?? undefined,
+              displayName: identity.name ?? this.generateFallbackName(),
+            },
+          }));
+        await tx.authIdentity.create({ data: { userId: user.id, provider, providerId: identity.providerId } });
+        return { id: user.id, role: user.role };
+      });
+    } catch (error) {
+      if (!retried && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return this.findOrCreateUser(provider, identity, true);
+      throw error;
+    }
   }
 
   /**
@@ -493,6 +508,8 @@ export class AuthService {
     const active = await this.prisma.subscription.findMany({ where: { userId, cancelledAt: null }, select: { actorId: true } });
     // 문의 사진(영수증·화면 캡처 — 운영자가 답에 붙인 것 포함)은 행과 파일을 지움(2026-10-25). 문의 글은 분쟁 대응용으로 남김
     const supportPhotos = await this.prisma.supportAttachment.findMany({ where: { message: { inquiry: { userId } } }, select: { objectKey: true } });
+    // 프로필 사진 파일도 지움(예전엔 키만 지워서 저장소에 영영 남았음 — 2026-10-28 점검)
+    const { profileImageUrl } = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { profileImageUrl: true } });
     await this.prisma.$transaction([
       this.prisma.supportAttachment.deleteMany({ where: { message: { inquiry: { userId } } } }),
       this.prisma.subscription.updateMany({ where: { userId, cancelledAt: null }, data: { cancelledAt: now } }),
@@ -519,7 +536,7 @@ export class AuthService {
         },
       }),
     ]);
-    await Promise.all(supportPhotos.map((photo) => this.media.deleteQuietly(photo.objectKey)));
+    await Promise.all([...supportPhotos.map((photo) => photo.objectKey), ...(profileImageUrl ? [profileImageUrl] : [])].map((key) => this.media.deleteQuietly(key)));
   }
 
   private generateFallbackName(): string {
@@ -675,4 +692,9 @@ function decodeJwtAudience(token: string): string | undefined {
 /** 환경변수 켜짐 여부 — true/1/on만 켜짐, 비었거나 그 밖이면 꺼짐 */
 export function isOn(value: string | undefined): boolean {
   return ['true', '1', 'on'].includes(value?.trim().toLowerCase() ?? '');
+}
+
+// 소셜 제공자 서버 응답 없음 — 사용자 토큰 문제가 아님(잠시 뒤 다시)
+function providerUnavailable() {
+  return new ServiceUnavailableException(appError('SERVICE_UNAVAILABLE'));
 }

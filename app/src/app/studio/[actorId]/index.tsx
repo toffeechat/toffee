@@ -357,27 +357,33 @@ export default function StudioChannelScreen() {
   };
 
   const toggleRecording = async () => {
-    if (recorderState.isRecording) {
-      const durationMs = recorderState.durationMillis;
-      await recorder.stop();
-      // 녹음이 끝나면 듣기 모드(무음 모드·백그라운드 재생)로 되돌림
-      await setAudioModeAsync(PLAYBACK_AUDIO_MODE);
-      if (recorder.uri) {
-        const waveform = resample(levels.current, WAVEFORM_BARS).map((level) => Math.round(level * 100) / 100);
-        setAttachment({ mediaType: 'AUDIO', uri: recorder.uri, durationMs, waveform });
+    // 녹음 시작·끝 실패(마이크를 다른 앱이 쓰는 중 등, 2026-10-28) — 예전엔 조용히 멈춰서 녹음 모드로 남았음. 안내하고 듣기 모드로 되돌림
+    try {
+      if (recorderState.isRecording) {
+        const durationMs = recorderState.durationMillis;
+        await recorder.stop();
+        // 녹음이 끝나면 듣기 모드(무음 모드·백그라운드 재생)로 되돌림
+        await setAudioModeAsync(PLAYBACK_AUDIO_MODE);
+        if (recorder.uri) {
+          const waveform = resample(levels.current, WAVEFORM_BARS).map((level) => Math.round(level * 100) / 100);
+          setAttachment({ mediaType: 'AUDIO', uri: recorder.uri, durationMs, waveform });
+        }
+        return;
       }
-      return;
+      const permission = await requestRecordingPermissionsAsync();
+      if (!permission.granted) {
+        setNotice({ text: t('studio.permissionDenied'), error: true });
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      levels.current = [];
+      recorder.record();
+      setAttachment(null);
+    } catch {
+      setNotice({ text: t('studio.recordFailed'), error: true });
+      await setAudioModeAsync(PLAYBACK_AUDIO_MODE).catch(() => {});
     }
-    const permission = await requestRecordingPermissionsAsync();
-    if (!permission.granted) {
-      setNotice({ text: t('studio.permissionDenied'), error: true });
-      return;
-    }
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    await recorder.prepareToRecordAsync();
-    levels.current = [];
-    recorder.record();
-    setAttachment(null);
   };
 
   // 여러 개: 사진·영상을 고른 순서대로 하나씩 보내고(앞쪽은 푸시 없음, 마지막 사진·영상이 "N개를 보냈어요" 알림 한 건), 글이 있으면 맨 뒤에

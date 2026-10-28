@@ -30,6 +30,7 @@ export function checkEnv(env: Env): EnvCheckResult {
     if (!has(env, 'KAKAO_APP_ID')) errors.push('KAKAO_APP_ID 필요(카카오 토큰 앱 확인 — 없으면 카카오 로그인이 전부 거절됨)');
     // 프록시(Railway 등) 뒤에서 TRUST_PROXY가 없으면 req.ip가 프록시 주소 — IP별 요청 제한이 모든 사용자를 한 사람으로 묶고 접속 기록 IP도 틀림
     if (!has(env, 'TRUST_PROXY')) warnings.push('TRUST_PROXY 없음 — 프록시 뒤라면 1로(없으면 요청 제한·접속 기록 IP가 프록시 주소 하나로 잡힘)');
+    else if (!/^\d+$/.test(env.TRUST_PROXY!.trim())) warnings.push('TRUST_PROXY는 프록시 단계 수(숫자)로 — "true"는 1로 처리함');
   }
 
   if (env.ENABLE_DEV_LOGIN === 'true' && !has(env, 'DEV_LOGIN_CODE')) {

@@ -69,8 +69,24 @@ export async function registerThisDevice(): Promise<void> {
  * 지우기 전 로그인 토큰(authToken)과 짧은 제한 시간(signal)을 받아서 보냄
  */
 export async function unregisterThisDevice(options?: { authToken?: string; signal?: AbortSignal }): Promise<void> {
-  if (!registeredToken) return;
-  const token = registeredToken;
+  // 이번 실행에서 등록을 안 거쳤으면(앱을 켠 뒤 권한 요청 전·등록 실패 등) FCM에서 토큰을 직접 읽어서 해제 — 안 하면 다음 사람에게 앞 사람
+  // 알림이 감. 오프라인에서 getToken이 오래 걸릴 수 있어 제한 시간(signal)이 끝나면 포기
+  let token = registeredToken;
+  if (!token && Device.isDevice) {
+    try {
+      const signal = options?.signal;
+      token = await Promise.race([
+        getToken(getMessaging()),
+        new Promise<null>((resolve) => {
+          if (signal?.aborted) resolve(null);
+          signal?.addEventListener('abort', () => resolve(null));
+        }),
+      ]);
+    } catch {
+      token = null;
+    }
+  }
+  if (!token) return;
   registeredToken = null;
   await apiClient.post('/auth/me/push-devices/remove', { token }, options).catch(() => {});
 }

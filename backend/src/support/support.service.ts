@@ -224,6 +224,9 @@ export class SupportService {
   }
 
   async adminClose(adminId: string, id: string) {
+    // 없는 문의면 404(2026-10-28 — 예전엔 update가 P2025로 500)
+    const inquiry = await this.prisma.supportInquiry.findUnique({ where: { id }, select: { id: true } });
+    if (!inquiry) throw new NotFoundException(appError('NOT_FOUND'));
     await this.prisma.supportInquiry.update({ where: { id }, data: { status: InquiryStatus.CLOSED } });
     await this.audit.record(adminId, 'INQUIRY_CLOSE', 'INQUIRY', id);
     return this.adminFind(id);

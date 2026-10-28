@@ -46,6 +46,8 @@ export default function SubscribeBundleScreen() {
   const { data: switchFrom } = useBundleSwitchInfo(bundleId);
   const switchSandbox = useSwitchBundle(bundleId);
   const [done, setDone] = useState(false);
+  // 바꾸기를 시작할 때의 지금 묶음 — 바꾸고 나면 switch-from 조회가 다시 불러와져 비므로 완료 문구는 이 값으로(2026-10-28)
+  const [switchedFrom, setSwitchedFrom] = useState<typeof switchFrom | null>(null);
   const store = useStorePurchase({ kind: 'bundle', id: bundleId, sku: bundle?.storeProductId });
   const storeBuy = useMutation({
     mutationFn: store.buy,
@@ -96,8 +98,12 @@ export default function SubscribeBundleScreen() {
           ? t('bundle.switchNowGoogle')
           : t('bundle.switchNow')
     : null;
+  // 앱에서 스토어 상품이 있으면 스토어 결제만 — 스토어 연결이 아직이면 테스트 구독으로 넘어가지 않고 기다림(2026-10-28)
+  const storeExpected = Platform.OS !== 'web' && !!bundle.storeProductId;
+  const storeLoading = storeExpected && !store.available;
   const startSwitch = () => {
     if (!switchFrom) return;
+    setSwitchedFrom(switchFrom);
     if (switchFrom.platform) storeBuy.mutate({ replaceSku: switchFrom.bundle.storeProductId });
     else switchSandbox.mutate(undefined, { onSuccess: () => setDone(true) });
   };
@@ -113,8 +119,8 @@ export default function SubscribeBundleScreen() {
             {t('subscribeFlow.doneTitle')}
           </ThemedText>
           <ThemedText style={styles.onDarkSoft}>
-            {switching
-              ? switchFrom!.timing === 'next-renewal'
+            {switchedFrom
+              ? switchedFrom.timing === 'next-renewal'
                 ? t('bundle.switchDoneLater', { name: bundle.name })
                 : t('bundle.switchDone', { name: bundle.name })
               : t('bundle.doneBody', { name: bundle.name })}
@@ -228,12 +234,12 @@ export default function SubscribeBundleScreen() {
           <Button
             title={t('subscribeFlow.cta', { price })}
             variant="accent"
-            loading={subscribe.isPending || storeBuy.isPending}
-            onPress={() => (store.available ? storeBuy.mutate() : subscribe.mutate(undefined, { onSuccess: () => setDone(true) }))}
+            loading={subscribe.isPending || storeBuy.isPending || storeLoading}
+            onPress={() => (storeExpected ? store.available && storeBuy.mutate() : subscribe.mutate(undefined, { onSuccess: () => setDone(true) }))}
           />
         )}
         <PurchaseDisclosure bundle />
-        {store.available ? null : (
+        {storeExpected ? null : (
           <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
             {t('subscribeFlow.sandboxNote')}
           </ThemedText>

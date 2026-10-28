@@ -98,7 +98,11 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
     if (existing) return existing;
 
     const rooms = purchase.actor ? [purchase.actor] : (purchase.bundle?.actors.map((item) => item.actor) ?? []);
-    const amountCents = input.amountCents ?? purchase.priceCents ?? purchase.bundle?.priceCents ?? purchase.actor?.monthlyPriceCents ?? 0;
+    const currency = input.currency ?? 'THB';
+    // 스토어가 같은 통화로 실제 청구한 금액이 있으면 그것으로(첫 달 ฿99 할인·프로모션이 정가 ฿149로 정산되던 문제, 2026-10-28 점검).
+    // 다른 통화(해외 가격)는 아직 표시 가격 기준 — 실제 금액 기준 정산은 STATUS 할 일
+    const storeCents = input.storeAmountMilli != null && input.storeCurrency === currency ? Math.round(input.storeAmountMilli / 10) : undefined;
+    const amountCents = input.amountCents ?? storeCents ?? purchase.priceCents ?? purchase.bundle?.priceCents ?? purchase.actor?.monthlyPriceCents ?? 0;
     const lines = allocateCharge(amountCents, rooms.map(toChargeRoom));
     const agencies = await this.agenciesAt(db, [...new Set(lines.map((line) => line.actorId))], input.chargedAt);
     try {
@@ -109,7 +113,7 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
           bundleId: purchase.bundleId,
           productName: `${purchase.bundle?.name ?? purchase.actor?.legalName ?? ''}${input.productNote ? ` ${input.productNote}` : ''}`,
           amountCents,
-          currency: input.currency ?? 'THB',
+          currency,
           chargedAt: input.chargedAt,
           periodEnd: input.periodEnd ?? addMonths(input.chargedAt, 1),
           source: input.source,
@@ -204,15 +208,26 @@ export class ChargeLedgerService implements OnApplicationBootstrap {
     return result;
   }
 
-  /** 스토어 환불 — 그 결제를 정산에서 빼고 환불 칸으로(이미 환불 표시된 건 그대로). 몇 건 바뀌었는지 */
+  /**
+   * 스토어 환불 — 그 결제를 정산에서 빼고 환불 칸으로(이미 환불 표시된 건 그대로). 몇 건 바뀌었는지.
+   * 그 결제를 가리키는 갈아타기 차감·이월 줄도 같이(2026-10-28 점검 — 원래 결제만 빠지고 차감 −145가 남아 소속사가 받은 적 없는 돈을 떠안았음)
+   */
   async markRefunded(db: Db, storeTransactionId: string, at = new Date()) {
     const { count } = await db.purchaseCharge.updateMany({ where: { storeTransactionId, refundedAt: null }, data: { refundedAt: at } });
+    if (count > 0) {
+      const ids = (await db.purchaseCharge.findMany({ where: { storeTransactionId }, select: { id: true } })).map((row) => row.id);
+      await db.purchaseCharge.updateMany({ where: { switchOfChargeId: { in: ids }, refundedAt: null }, data: { refundedAt: at } });
+    }
     return count;
   }
 
-  /** 애플 환불 취소(REFUND_REVERSED, 2026-10-27) — 환불 표시를 지워 다시 정산에 넣음(마감한 달이면 지운 달의 조정으로 들어가지 않으니 운영자가 확인) */
+  /** 애플 환불 취소(REFUND_REVERSED, 2026-10-27) — 환불 표시를 지워 다시 정산에 넣음(마감한 달이면 지운 달의 조정으로 들어가지 않으니 운영자가 확인). 같이 뺀 갈아타기 줄도 되돌림 */
   async unmarkRefunded(db: Db, storeTransactionId: string) {
     const { count } = await db.purchaseCharge.updateMany({ where: { storeTransactionId, refundedAt: { not: null } }, data: { refundedAt: null } });
+    if (count > 0) {
+      const ids = (await db.purchaseCharge.findMany({ where: { storeTransactionId }, select: { id: true } })).map((row) => row.id);
+      await db.purchaseCharge.updateMany({ where: { switchOfChargeId: { in: ids }, refundedAt: { not: null } }, data: { refundedAt: null } });
+    }
     return count;
   }
 

@@ -13,4 +13,6 @@ export interface AuthenticatedUser {
   sessionId?: string;
   tokenVersion?: number;
   demoCode?: string;
+  /** 배포 점검용 짧은 토큰(2026-10-28) — 토큰 갱신(30일 세션) 불가 */
+  shortLived?: boolean;
 }

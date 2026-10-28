@@ -1,9 +1,22 @@
-import { Catch, HttpException, HttpStatus, Logger, type ArgumentsHost } from '@nestjs/common';
+import { Catch, HttpException, HttpStatus, Logger, NotFoundException, type ArgumentsHost } from '@nestjs/common';
 import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { captureException } from '@sentry/nestjs';
 import type { Request } from 'express';
 import { isErrorCode, translateError, type ErrorCode, type ErrorParams } from '../i18n/error-messages.js';
 import { localeFromAcceptLanguage, type SupportedLocale } from '../i18n/locales.js';
+import { Prisma } from '../../generated/prisma/client.js';
+import { scrubText } from '../sentry/scrub-event.js';
+
+/**
+ * Prisma "찾을 수 없음"(findUniqueOrThrow·없는 행 update/delete — P2025)은 404로(2026-10-28 — 예전엔 없는 id를 넣기만 해도
+ * 500 + Sentry 보고가 쌓였음). 그 밖의 예외는 그대로
+ */
+export function asNotFound(exception: unknown): HttpException | null {
+  if (exception instanceof Prisma.PrismaClientKnownRequestError && exception.code === 'P2025') {
+    return new NotFoundException(undefined, { cause: exception });
+  }
+  return null;
+}
 
 // 코드 없이 던져진 예외(프레임워크 기본 예외 포함)는 상태 코드로 기본 문구를 고름
 const CODE_BY_STATUS: Partial<Record<number, ErrorCode>> = {
@@ -56,10 +69,13 @@ export class LocalizedExceptionFilter extends SentryGlobalFilter {
     if (host.getType() !== 'http') return super.catch(exception, host);
     const locale = localeFromAcceptLanguage(host.switchToHttp().getRequest<Request>().headers['accept-language']);
     if (exception instanceof HttpException) return super.catch(localizeHttpException(exception, locale), host);
+    const notFound = asNotFound(exception);
+    if (notFound) return super.catch(localizeHttpException(notFound, locale), host);
 
     // 처리 안 된 예외 — 아래에서 HttpException으로 바꾸면 Sentry 필터가 "예상된 오류"로 보고 건너뛰므로 여기서 직접 보고
     captureException(exception, { mechanism: { handled: false, type: 'auto.http.nestjs.global_filter' } });
-    this.errorLogger.error(exception instanceof Error ? exception.message : String(exception), exception instanceof Error ? exception.stack : undefined);
+    // 로그에도 오류 문구 속 토큰·이메일은 가림(2026-10-28 점검)
+    this.errorLogger.error(scrubText(exception instanceof Error ? exception.message : String(exception)), exception instanceof Error && exception.stack ? scrubText(exception.stack) : undefined);
     return super.catch(localizeHttpException(new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR), locale), host);
   }
 }

@@ -14,6 +14,7 @@ function setup(user: Record<string, unknown>, owners = 1) {
       findMany: vi.fn().mockResolvedValue([]),
       count: vi.fn().mockResolvedValue(owners),
       update: vi.fn().mockResolvedValue(user),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
   };
   const auth = { issueAccessToken: vi.fn().mockResolvedValue({ accessToken: 't' }) };
@@ -39,6 +40,20 @@ describe('운영자 2단계 인증·권한 단계(2026-10-20)', () => {
     await expect(service.verify('a1', '000000' === totpCode(SECRET) ? '111111' : '000000')).rejects.toBeInstanceOf(BadRequestException);
     await service.verify('a1', totpCode(SECRET));
     expect(auth.issueAccessToken.mock.calls[0][1]).toEqual({ mfaAt: expect.any(Number), sessionId: undefined });
+  });
+
+  it('코드를 10번 틀리면 15분 잠금, 이미 쓴 코드는 다시 못 씀(2026-10-28)', async () => {
+    const wrong = '000000' === totpCode(SECRET) ? '111111' : '000000';
+    const locked = setup({ id: 'a1', role: 'ADMIN', totpSecret: SECRET, totpEnabledAt: new Date(), totpFailedCount: 9 });
+    await expect(locked.service.verify('a1', wrong)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(locked.prisma.user.update.mock.calls[0][0].data).toMatchObject({ totpFailedCount: 0, totpLockedUntil: expect.any(Date) });
+    const during = setup({ id: 'a1', role: 'ADMIN', totpSecret: SECRET, totpEnabledAt: new Date(), totpLockedUntil: new Date(Date.now() + 60_000) });
+    await expect(during.service.verify('a1', totpCode(SECRET))).rejects.toBeInstanceOf(ForbiddenException);
+    // 같은 시간 칸 코드를 이미 썼으면(조건부 갱신이 0건) 틀린 것으로
+    const replay = setup({ id: 'a1', role: 'ADMIN', totpSecret: SECRET, totpEnabledAt: new Date(), totpFailedCount: 0 });
+    replay.prisma.user.updateMany.mockResolvedValue({ count: 0 });
+    await expect(replay.service.verify('a1', totpCode(SECRET))).rejects.toBeInstanceOf(BadRequestException);
+    expect(replay.auth.issueAccessToken).not.toHaveBeenCalled();
   });
 
   it('2단계 인증 확인은 지금 세션을 이어 씀(새 세션 안 만듦, 2026-10-27)', async () => {

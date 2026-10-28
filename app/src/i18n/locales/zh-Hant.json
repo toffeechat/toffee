@@ -202,6 +202,7 @@
     "noReplies": "尚無回覆",
     "repliesEmpty": "這則訊息還沒有回覆。",
     "permissionDenied": "需要權限，請在設定中允許。",
+    "recordFailed": "無法錄音，請再試一次。",
     "media": {
       "PHOTO": "📷 照片",
       "AUDIO": "🎧 語音訊息",
@@ -991,7 +992,9 @@
     "photoUnavailable": "無法載入照片",
     "delete": "刪除諮詢",
     "deleteTitle": "刪除諮詢",
-    "deleteConfirm": "此諮詢的所有內容與照片都會被刪除，且無法復原。"
+    "deleteConfirm": "此諮詢的所有內容與照片都會被刪除，且無法復原。",
+    "notFound": "找不到此諮詢",
+    "backToList": "返回諮詢列表"
   },
   "sendRetry": {
     "failed": "連線中斷，無法確認是否已傳送。",

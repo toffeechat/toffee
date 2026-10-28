@@ -6,6 +6,7 @@ import { appleTransaction, googleTransaction, type IapVerificationService, type 
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { MediaService } from '../storage/media.service.js';
 import type { RealtimeService } from '../realtime/realtime.service.js';
+import type { AdminAlertService } from '../notifications/admin-alert.service.js';
 import type { ChargeLedgerService } from '../settlements/charge-ledger.service.js';
 import type { ConfigService } from '@nestjs/config';
 
@@ -14,6 +15,7 @@ type Row = Record<string, unknown> & { id: string };
 // where 조건 흉내: 같은 값, { in }, { not: null }, { lt }
 function matches(row: Row, where: Record<string, unknown> = {}): boolean {
   return Object.entries(where).every(([key, cond]) => {
+    if (key === 'OR') return (cond as Record<string, unknown>[]).some((branch) => matches(row, branch));
     const value = row[key];
     if (cond && typeof cond === 'object' && !(cond instanceof Date)) {
       const c = cond as { in?: unknown[]; not?: unknown; lt?: Date };
@@ -45,6 +47,7 @@ function setup() {
   const refunded: string[] = [];
   const events: string[] = [];
   const acknowledged: string[] = [];
+  const alerts: string[] = [];
   const actorOut = (a: Row) => a && { ...a, actors: undefined };
   const bundleOut = (b: Row) =>
     b && { ...b, actors: (b.actorIds as string[]).map((id) => ({ actorId: id, actor: actors.find((a) => a.id === id)! })) };
@@ -135,6 +138,7 @@ function setup() {
     { publish: () => Promise.resolve() } as unknown as RealtimeService,
     ledger as unknown as ChargeLedgerService,
     { get: () => undefined } as unknown as ConfigService,
+    { notify: async (_kind: string, title: string) => alerts.push(title) } as unknown as AdminAlertService,
   );
   const receipt = (overrides: Partial<StoreTransaction> = {}) => {
     nextTransaction = {
@@ -151,7 +155,7 @@ function setup() {
   };
   const open = (actorId: string, userId = 'u') => subs.find((s) => s.actorId === actorId && s.userId === userId && !s.cancelledAt);
   const iosDto = { platform: 'IOS' as const, signedTransaction: 'jws' };
-  return { service, purchases, subs, charges, refunded, events, acknowledged, receipt, open, iosDto };
+  return { service, users, actors, purchases, subs, charges, refunded, events, acknowledged, alerts, receipt, open, iosDto };
 }
 
 describe('스토어 결제 확인', () => {
@@ -232,6 +236,41 @@ describe('스토어 알림 반영', () => {
     const t2 = setup();
     expect(await t2.service.applyStoreEvent({ kind: 'PAID', transaction: t2.receipt({ accountToken: undefined }) })).toEqual({ applied: false });
     expect(await t2.service.applyStoreEvent({ kind: 'PAID', transaction: t2.receipt({ accountToken: 'ghost' }) })).toEqual({ applied: false });
+  });
+
+  it('스토어 알림은 판매 중지·종료 예정이어도 이미 결제된 구매를 엶(앱 확인 요청만 막음, 2026-10-28)', async () => {
+    const t = setup();
+    t.actors[0].retireAt = new Date(Date.now() + 10 * DAY);
+    t.receipt();
+    await expect(t.service.verifyPurchase('u', 'a1', t.iosDto)).rejects.toThrow();
+    expect(await t.service.applyStoreEvent({ kind: 'PAID', transaction: t.receipt() })).toEqual({ applied: true });
+    expect(t.open('a1')).toBeTruthy();
+  });
+
+  it('알림으로 처음 만드는 구매도 부모 동의 대기·성년 미만이면 방을 열지 않고 운영자에게 알림(2026-10-28)', async () => {
+    const t = setup();
+    t.users[0].parentalConsentStatus = 'UNDERAGE';
+    expect(await t.service.applyStoreEvent({ kind: 'PAID', transaction: t.receipt() })).toEqual({ applied: false });
+    expect(t.open('a1')).toBeUndefined();
+    expect(t.alerts).toHaveLength(1);
+  });
+
+  it('기록에 없는 결제의 환불 알림은 지금 이용 중인 구매를 닫지 않고 운영자에게 알림(2026-10-28)', async () => {
+    const t = setup();
+    t.receipt();
+    await t.service.verifyPurchase('u', 'a1', t.iosDto);
+    await t.service.applyStoreEvent({ kind: 'REFUNDED', originalTransactionId: 'orig-1', storeTransactionId: 'tx-unknown' });
+    expect(t.open('a1')).toBeDefined();
+    expect(t.alerts).toHaveLength(1);
+  });
+
+  it('약관 버전이 바뀐 뒤 다시 동의하기 전에도 구매 복원은 됨(새 결제 확인은 막음, 2026-10-28)', async () => {
+    const t = setup();
+    t.users[0].termsVersion = '2000-01-01';
+    t.receipt();
+    await expect(t.service.verifyPurchase('u', 'a1', t.iosDto)).rejects.toThrow();
+    const { results } = await t.service.restorePurchases('u', [t.iosDto]);
+    expect(results).toEqual([{ productId: 'toffee.a1', restored: true }]);
   });
 
   it('만료되면 방이 닫히고, 환불되면 결제 기록이 환불로 바뀌고 방도 닫힘', async () => {
@@ -485,5 +524,8 @@ describe('스토어 알림 해석', () => {
     expect(first.storeAmountMilli).toBe(99000);
     const renewal = googleTransaction('pt', 'p', { orderId: 'GPA.1..0', startTimeMillis: '1790000000000', expiryTimeMillis: '1794000000000' }, now);
     expect(renewal.purchasedAt).toBe(now);
+    // 며칠 늦게 처음 기록된 갱신 — 만료일 한 달 전으로 추정(지금 시각이면 정산 달이 바뀜)
+    const late = googleTransaction('pt', 'p', { orderId: 'GPA.1..1', expiryTimeMillis: String(Date.parse('2026-10-25T00:00:00Z')) }, now);
+    expect(late.purchasedAt.toISOString()).toBe('2026-09-25T00:00:00.000Z');
   });
 });

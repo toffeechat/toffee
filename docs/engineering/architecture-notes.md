@@ -2022,3 +2022,27 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - `Actor.profileBackgroundUrl` — `ActorsService.setBackground(userId, actorId, field, key)`가 `chatBackgroundUrl`·`profileBackgroundUrl` 공용(권한 `ensureCanViewActor`, 키는 `checkImageKey` = 배우 프로필 업로드 자리). 바뀐 옛 파일은 네 이미지 칸(공식·대화방·두 배경) 어디에도 안 남을 때만 지움. 앱 `ChatPhotoEditor target="profileBackground"`.
 - `UploadCleanupService.referencedKeys`에 두 배경 칸 추가 — 전엔 `chatBackgroundUrl`이 빠져 배경 파일이 하루 뒤 고아로 지워졌음. **배우 이미지 칸을 새로 만들면 여기도 꼭 넣을 것.**
 
+## 코드 전수 점검 2차 (2026-10-28)
+
+자세한 목록은 작업 로그 2026-10-28. 구조·규칙이 바뀐 것만:
+
+- **환불은 갈아타기 줄까지**: `ChargeLedgerService.markRefunded/unmarkRefunded`가 `switchOfChargeId`로 그 결제를 가리키는 SWITCH_CREDIT·SWITCH_CARRY도 같이 표시.
+  `compute()`의 `refundedCents`는 실제 결제만, SWITCH_CREDIT 배분율은 원래 결제(`switchOfChargeId`)의 달(`rateMonthOf`).
+- **마감 시각**: `close()`가 `closedAt: now`(호출 시각)를 직접 저장 — DB 기본값(저장 시점)과 계산 시작 사이 공백 제거.
+- **결제 금액**: `recordFor()`는 `amountCents` 지정 > 같은 통화의 `storeAmountMilli / 10` > 정가 순.
+- **스토어 알림 경로**: `upsertStorePurchase(…, { fromStore: true })`는 판매 가능 확인을 건너뜀. 알림으로 처음 만드는 구매는 `subscribeBlockReason()`(PENDING·UNDERAGE)이면
+  방을 안 열고 `AdminAlertService.notify('REFUND', …)`. 기록에 없는 `storeTransactionId` 환불은 열린 구매를 닫지 않고 알림. 만료일은 `updateMany(where iapExpiresAt < new)`로만 늘림.
+  구매 복원은 `ensureCanSubscribe(…, { allowOldTerms: true })`. 구글 갱신 `purchasedAt` = min(지금, 만료 − 1개월).
+- **토큰**: `issueShortAccessToken`은 `short: true` → `AuthenticatedUser.shortLived` → `/auth/refresh` 거절. `revokeAllSessionsData()`(keepSessionId 없을 때)는
+  `pushDevices.deleteMany`도.
+- **2단계 인증**: `matchTotpStep()`이 맞은 30초 칸 번호를 돌려줌. `AdminSecurityService.checkCode()` — `totpLockedUntil`이면 `ADMIN_MFA_LOCKED`(403), 맞으면
+  `updateMany(where totpLastStep < step)`(재사용·동시 사용 1번만), 틀리면 `totpFailedCount` +1, 10번이면 15분 잠금 + 작업 기록. `adminMfaTtlMs()`는 요청 때 읽음.
+- **오류 처리**: 소셜 검증 라이브러리 오류 → 401, fetch 실패 → 503 `SERVICE_UNAVAILABLE`. `asNotFound()`가 Prisma P2025를 404로. `scrubText()`(JWT·이메일)를 Sentry 이벤트의
+  exception value·message와 처리 안 된 예외 로그에 적용, 바디 가리기에 `code`·`state`·`secret`.
+- **나이**: `localNowFor(countryCode)`(나라 시차, 모르면 +14)로 `calculateAge`. 생년월일 저장은 `updateMany(where birthDate null)`. `TRUST_PROXY`는 숫자만(`true` → 1).
+- **푸시 전체 발송·메시지 나눠 받기**: Prisma `cursor + skip: 1` 대신 키셋(`id > 마지막`, 메시지는 `(createdAt, id)` 기준 `olderThan()`). 기준 줄이 지워져도 빠지거나 멈추지 않음.
+  목록 기본 한도: `listForFan`(limit 없음) 500, `listReplies` 200, `listBroadcasts` 200(`limit`/`before` 선택).
+- **실시간**: 첫 `loadAudience` 실패면 스트림을 닫음(앱이 다시 연결), 주기 새로고침 실패는 지난 목록 유지. 데모 코드는 `DemoAccessService.assertActive`로 다시 확인.
+- **앱**: `reportUnauthorized(code, message, usedToken)` — 지금 토큰과 다르면 무시. `PendingSends` 항목 10분 TTL. 구매 복원 20개씩. 결제 화면 `storeExpected`(네이티브 + 상품 ID)면
+  스토어 결제만(연결 전엔 로딩).
+

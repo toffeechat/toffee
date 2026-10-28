@@ -8,7 +8,7 @@ export class ListRepliesQueryDto {
   @IsNotEmpty()
   messageId?: string;
 
-  // 나눠 받기(스타 답장 화면: 최근 N개 → 위로 올리면 before로 이전 N개). 없으면 전부(콘솔 기존 동작)
+  // 나눠 받기(스타 답장 화면: 최근 N개 → 위로 올리면 before로 이전 N개). 없으면 최근 200개(콘솔, 2026-10-28 — 예전엔 전부)
   @IsOptional()
   @Type(() => Number)
   @IsInt()

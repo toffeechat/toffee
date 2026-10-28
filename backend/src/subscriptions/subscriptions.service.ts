@@ -12,6 +12,7 @@ import { roomRetireAt, roomRetired } from '../common/authorization/actor-access.
 import { bundleOpensAt, isReleased } from '../common/release/release.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { ChargeLedgerService, sourceOf } from '../settlements/charge-ledger.service.js';
+import { AdminAlertService } from '../notifications/admin-alert.service.js';
 import type { StoreTransaction } from './iap-verification.service.js';
 import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { ConfigService } from '@nestjs/config';
@@ -101,6 +102,7 @@ export class SubscriptionsService {
     private readonly realtime: RealtimeService,
     private readonly ledger: ChargeLedgerService,
     private readonly config: ConfigService,
+    private readonly alerts?: AdminAlertService,
   ) {}
 
   /**
@@ -310,8 +312,8 @@ export class SubscriptionsService {
    * 막는 것: 다른 계정의 영수증(appAccountToken/계정 id가 다르거나 이미 다른 계정에 연결됨), 만료된 영수증, 등록 안 된 상품,
    * 이 배우·묶음의 상품이 아닌 영수증(예전엔 싼 상품 영수증으로 비싼 배우 방을 열 수 있었음).
    */
-  async verifyStorePurchase(userId: string, dto: VerifyPurchaseDto, expected: { actorId?: string; bundleId?: string } = {}) {
-    await this.ensureCanSubscribe(userId);
+  async verifyStorePurchase(userId: string, dto: VerifyPurchaseDto, expected: { actorId?: string; bundleId?: string } = {}, options: { restore?: boolean } = {}) {
+    await this.ensureCanSubscribe(userId, { allowOldTerms: options.restore });
     const verified =
       dto.platform === 'IOS'
         ? await this.iapVerificationService.verifyApple(dto.signedTransaction!)
@@ -371,7 +373,8 @@ export class SubscriptionsService {
     const results: { productId?: string; restored: boolean; code?: string }[] = [];
     for (const item of items) {
       try {
-        const { target } = await this.verifyStorePurchase(userId, item);
+        // 약관 버전이 바뀐 뒤 다시 동의하기 전에도 이미 결제한 구독은 복원돼야 함(2026-10-28 점검)
+        const { target } = await this.verifyStorePurchase(userId, item, {}, { restore: true });
         results.push({ productId: target.productId, restored: true });
       } catch (error) {
         const code = (error as { response?: { code?: string } }).response?.code;
@@ -409,7 +412,7 @@ export class SubscriptionsService {
     userId: string,
     verified: StoreTransaction,
     target: StoreTargetInfo,
-    retried = false,
+    options: { fromStore?: boolean; retried?: boolean } = {},
   ): Promise<{ purchaseId: string; actorIds: string[]; target: StoreTargetInfo }> {
     let existing = await this.prisma.purchase.findUnique({ where: { iapTransactionId: verified.originalTransactionId } });
     if (existing && existing.userId !== userId) throw new ConflictException(appError('IAP_RECEIPT_IN_USE'));
@@ -429,7 +432,8 @@ export class SubscriptionsService {
       // 늦게 온 옛 알림(예전 묶음의 갱신) — 이미 새 묶음으로 바뀐 구매를 되돌리지 않음
       if (latest && verified.purchasedAt < latest.chargedAt) return { purchaseId: existing.id, actorIds: [], target };
     }
-    if (!existing) {
+    // 판매 가능 확인은 앱의 결제 확인 요청에서만 — 스토어 알림은 이미 돈이 빠진 결제라 막으면 방도 안 열리고 400에 같은 알림만 계속 다시 옴(2026-10-28 점검)
+    if (!existing && !options.fromStore) {
       if (target.actorId) await this.ensureActorAvailable(target.actorId);
       if (target.bundleId) await this.ensureBundleAvailable(target.bundleId);
     }
@@ -457,8 +461,8 @@ export class SubscriptionsService {
           : await this.writeStorePurchase(userId, verified, target, existing, iap, charge);
     } catch (error) {
       // 같은 영수증 확인이 동시에 두 번 오면(앱 재시도·스토어 알림과 겹침) 한쪽이 고유 제약에 걸림 — 예전엔 500. 이미 생긴 구매로 다시 처리
-      if (!retried && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return this.upsertStorePurchase(userId, verified, target, true);
+      if (!options.retried && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return this.upsertStorePurchase(userId, verified, target, { ...options, retried: true });
       }
       throw error;
     }
@@ -487,9 +491,14 @@ export class SubscriptionsService {
         if (!last?.refundedAt) resumeSince = existing.cancelledAt;
       }
       if (existing) {
-        // 만료일은 늘리기만(늦게 온 옛 영수증이 줄이지 않게)
-        const expiresAt = existing.iapExpiresAt && existing.iapExpiresAt > verified.expiresAt ? existing.iapExpiresAt : verified.expiresAt;
-        await tx.purchase.update({ where: { id: existing.id }, data: { ...iap, iapExpiresAt: expiresAt, cancelledAt: null, billingIssueAt: null } });
+        // 만료일은 늘리기만(늦게 온 옛 영수증이 줄이지 않게) — DB의 지금 값과 비교하는 조건부 갱신이라 새 갱신 알림과 옛 영수증 확인이
+        // 동시에 와도 줄지 않음(예전엔 트랜잭션 밖에서 읽은 값으로 덮어써서 뒤에 쓴 옛 값이 이겼음, 2026-10-28 점검)
+        const { iapExpiresAt, ...rest } = iap;
+        await tx.purchase.update({ where: { id: existing.id }, data: { ...rest, cancelledAt: null, billingIssueAt: null } });
+        await tx.purchase.updateMany({
+          where: { id: existing.id, OR: [{ iapExpiresAt: null }, { iapExpiresAt: { lt: iapExpiresAt } }] },
+          data: { iapExpiresAt },
+        });
         id = existing.id;
       } else {
         const created = await tx.purchase.create({
@@ -571,7 +580,16 @@ export class SubscriptionsService {
         if (event.transaction.expiresAt.getTime() <= Date.now()) return { applied: true };
       }
       if (await this.reopensRefunded(existing, event.transaction)) return { applied: false };
-      await this.upsertStorePurchase(userId, event.transaction, target);
+      // 앱 확인 없이 알림으로 처음 만드는 구매도 미성년자 확인(2026-10-28 점검 — 부모 동의 대기·성년 미만이 이 경로로 방을 열 수 있었음).
+      // 이미 결제된 건이라 방은 열지 않고 운영자에게 환불 처리를 알림(잠정 정책, STATUS "출시 전 확정할 정책")
+      if (!existing) {
+        const blocked = await this.subscribeBlockReason(userId);
+        if (blocked) {
+          await this.alerts?.notify('REFUND', '가입 조건 미충족 계정의 결제', `${blocked} 계정(${userId})의 스토어 결제가 들어왔어요(상품 ${event.transaction.productId}). 방은 열지 않았어요 — 스토어에서 환불해 주세요.`, { userId });
+          return { applied: false };
+        }
+      }
+      await this.upsertStorePurchase(userId, event.transaction, target, { fromStore: true });
       this.accessChanged(userId);
       await this.acknowledgeIfNeeded(event.transaction);
       return { applied: true };
@@ -582,6 +600,11 @@ export class SubscriptionsService {
       // 이미 끝난 기간의 결제만 환불된 것(예: 스타 미발송 환불로 지난달만 돌려줌)이면 지금 이용 중인 기간은 그대로 둠(2026-09-29)
       const charge = await this.prisma.purchaseCharge.findUnique({ where: { storeTransactionId: event.storeTransactionId }, select: { periodEnd: true } });
       if (charge && charge.periodEnd <= new Date()) return { applied: true };
+      // 우리 기록에 없는 결제의 환불(알림을 놓친 지난 결제일 수 있음) — 지금 이용 중인 구매를 닫지 않고 운영자가 확인(2026-10-28 점검)
+      if (!charge && purchase && !purchase.cancelledAt) {
+        await this.alerts?.notify('REFUND', '기록에 없는 결제의 환불', `구매 ${purchase.id}의 스토어 결제 ${event.storeTransactionId}가 환불됐는데 결제 기록이 없어요. 방은 그대로 뒀어요 — 스토어에서 이용 기간을 확인해 주세요.`, { userId: purchase.userId });
+        return { applied: true };
+      }
     }
     if (!purchase) return { applied: event.kind === 'REFUNDED' };
     if (event.kind === 'RENEWAL') {
@@ -852,12 +875,12 @@ export class SubscriptionsService {
   // 구독(결제) 전 가입 절차를 서버에서도 강제 — 예전엔 앱 화면에서만 막아서, API를 직접 부르면 약관 동의·생년월일을
   // 건너뛰고(= 미성년자 부모 동의 우회) 구독할 수 있었음(2026-09-28 점검). 미성년자(국가별 기준)인데 법정대리인 동의를
   // 아직 못 받은 계정, 성인만 가입일 때 성년 미만 계정도 막음.
-  private async ensureCanSubscribe(userId: string): Promise<void> {
+  private async ensureCanSubscribe(userId: string, options: { allowOldTerms?: boolean } = {}): Promise<void> {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { termsVersion: true, birthDate: true, parentalConsentStatus: true },
     });
-    if (user.termsVersion !== CURRENT_TERMS_VERSION) throw new ForbiddenException(appError('ONBOARDING_REQUIRED'));
+    if (user.termsVersion !== CURRENT_TERMS_VERSION && !(options.allowOldTerms && user.termsVersion)) throw new ForbiddenException(appError('ONBOARDING_REQUIRED'));
     if (!user.birthDate) throw new ForbiddenException(appError('ONBOARDING_REQUIRED'));
     if (user.parentalConsentStatus === ParentalConsentStatus.PENDING) {
       throw new ForbiddenException(appError('CONSENT_REQUIRED_TO_SUBSCRIBE'));
@@ -865,5 +888,13 @@ export class SubscriptionsService {
     if (user.parentalConsentStatus === ParentalConsentStatus.UNDERAGE) {
       throw new ForbiddenException(appError('UNDERAGE'));
     }
+  }
+
+  /** 스토어 알림으로 구매를 새로 만들 때 막을 계정인지(부모 동의 대기·성년 미만) — 운영자 알림 문구용 이유, 괜찮으면 null */
+  private async subscribeBlockReason(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { parentalConsentStatus: true } });
+    if (user?.parentalConsentStatus === ParentalConsentStatus.PENDING) return '부모 동의 대기';
+    if (user?.parentalConsentStatus === ParentalConsentStatus.UNDERAGE) return '성년 미만';
+    return null;
   }
 }

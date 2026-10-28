@@ -60,7 +60,10 @@ export function InAppBanner() {
     const native = Platform.OS !== 'web';
     Animated.spring(offset, { toValue: 0, useNativeDriver: native, bounciness: 4 }).start();
     const timer = setTimeout(() => {
-      Animated.timing(offset, { toValue: -160, duration: 220, useNativeDriver: native }).start(() => setPayload(null));
+      Animated.timing(offset, { toValue: -160, duration: 220, useNativeDriver: native }).start(({ finished }) => {
+        // 사라지는 중에 새 알림이 오면 위 spring이 이 애니메이션을 멈춤(finished=false) — 그땐 새 알림을 지우지 않음(2026-10-28)
+        if (finished) setPayload(null);
+      });
     }, VISIBLE_MS);
     return () => clearTimeout(timer);
   }, [payload, offset]);

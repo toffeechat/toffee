@@ -26,8 +26,10 @@ export class StoriesService {
   async create(actorSelfUserId: string, actorId: string, dto: CreateStoryDto) {
     await ensureIsActorSelf(this.prisma, actorSelfUserId, actorId);
     // 스토리는 1인 방에만(커플방엔 없음 — 2026-09-21 스펙)
-    const room = await this.prisma.actor.findUnique({ where: { id: actorId }, select: { kind: true } });
-    if (room?.kind === ActorKind.COUPLE) throw new BadRequestException(appError('STORY_NOT_FOR_COUPLE'));
+    const room = await this.prisma.actor.findUnique({ where: { id: actorId }, select: { kind: true, chatDisplayName: true } });
+    // 운영자는 없는 방 id로도 ensureIsActorSelf를 통과 — 500 대신 404(2026-10-28)
+    if (!room) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
+    if (room.kind === ActorKind.COUPLE) throw new BadRequestException(appError('STORY_NOT_FOR_COUPLE'));
     await this.mediaService.verifyForAttach(actorId, 'story', dto.mediaType as UploadableMediaType, dto.mediaKey);
     const created = await this.prisma.story.create({
       data: {
@@ -39,7 +41,7 @@ export class StoriesService {
     });
 
     // 소속사 모니터링용 알림 — 실패해도 업로드 자체엔 영향 없음
-    const actor = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { chatDisplayName: true } });
+    const actor = room;
     await this.pushService
       .notifyActorStaff(actorId, ({ locale }) => {
         const strings = pushStrings(locale);

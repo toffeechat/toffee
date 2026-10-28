@@ -202,6 +202,7 @@
     "noReplies": "Chưa có câu trả lời",
     "repliesEmpty": "Chưa có câu trả lời nào cho tin nhắn này.",
     "permissionDenied": "Cần cấp quyền. Vui lòng cho phép trong Cài đặt.",
+    "recordFailed": "Không ghi âm được. Vui lòng thử lại.",
     "media": {
       "PHOTO": "📷 Ảnh",
       "AUDIO": "🎧 Tin nhắn thoại",
@@ -991,7 +992,9 @@
     "photoUnavailable": "Không tải được ảnh",
     "delete": "Xóa yêu cầu",
     "deleteTitle": "Xóa yêu cầu",
-    "deleteConfirm": "Toàn bộ tin nhắn và ảnh trong yêu cầu này sẽ bị xóa và không thể khôi phục."
+    "deleteConfirm": "Toàn bộ tin nhắn và ảnh trong yêu cầu này sẽ bị xóa và không thể khôi phục.",
+    "notFound": "Không tìm thấy yêu cầu",
+    "backToList": "Quay lại danh sách yêu cầu"
   },
   "sendRetry": {
     "failed": "Mất kết nối, chưa xác nhận được đã gửi hay chưa.",

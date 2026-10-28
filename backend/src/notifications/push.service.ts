@@ -125,11 +125,11 @@ export class PushService implements OnModuleInit {
     let cursor: string | undefined;
     for (;;) {
       const devices = await this.prisma.pushDevice.findMany({
-        where: { user: this.reachableUser() },
+        // Prisma cursor 대신 id > 마지막 id — 직전 묶음의 마지막 기기가 죽은 토큰으로 지워지면 cursor 행이 없어 빈 결과로 발송이 멈췄음(2026-10-28)
+        where: { user: this.reachableUser(), ...(cursor ? { id: { gt: cursor } } : {}) },
         select: { id: true, ...DEVICE_SELECT },
         orderBy: { id: 'asc' },
         take: 1000,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       });
       if (devices.length === 0) return;
       await this.deliver(devices, compose, data);

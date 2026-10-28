@@ -15,7 +15,7 @@ vi.mock('@/lib/upload-media', () => ({ UploadCancelledError: class UploadCancell
 
 const { ApiError } = await import('@/lib/api-client');
 const { UploadCancelledError } = await import('@/lib/upload-media');
-const { PendingSends, SEND_RETRY, isRetryableSendError, newClientMessageId } = await import('./send-retry');
+const { PENDING_SEND_TTL_MS, PendingSends, SEND_RETRY, isRetryableSendError, newClientMessageId } = await import('./send-retry');
 
 describe('메시지 다시 보내기(2026-10-25)', () => {
   it('키는 서버 형식(영문·숫자·-·_ 8~64자)이고 매번 다름', () => {
@@ -75,5 +75,22 @@ describe('메시지 다시 보내기(2026-10-25)', () => {
     expect(pending.extra('photo-1')).toEqual({ mediaKey: 'actors/a/message/x.jpg' });
     pending.settle('photo-1');
     expect(pending.extra('photo-1')).toBeUndefined();
+  });
+
+  it('못 보낸 키도 10분이 지나면 잊음 — 다음 날 같은 글은 새 메시지(2026-10-28)', () => {
+    vi.useFakeTimers();
+    try {
+      const pending = new PendingSends<{ mediaKey: string }>();
+      const first = pending.keyFor('a|안녕');
+      pending.setExtra('a|안녕', { mediaKey: 'x' });
+      pending.settle('a|안녕', new TypeError('offline'));
+      vi.advanceTimersByTime(PENDING_SEND_TTL_MS - 1000);
+      expect(pending.keyFor('a|안녕')).toBe(first);
+      vi.advanceTimersByTime(2000);
+      expect(pending.extra('a|안녕')).toBeUndefined();
+      expect(pending.keyFor('a|안녕')).not.toBe(first);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
