@@ -896,6 +896,14 @@
     "removeTitle": "Dùng hình nền mặc định",
     "removeConfirm": "Xóa ảnh nền và dùng hình nền mặc định."
   },
+  "profileBackground": {
+    "title": "Ảnh nền hồ sơ",
+    "hint": "Ảnh nằm sau thẻ hồ sơ mà fan thấy (mở khi chạm vào tên trong Toffee Room). Đặt riêng với ảnh nền Toffee Room. Nếu không đặt sẽ dùng nền mặc định.",
+    "change": "Đổi ảnh nền hồ sơ",
+    "remove": "Dùng nền mặc định",
+    "removeTitle": "Dùng nền mặc định",
+    "removeConfirm": "Xóa ảnh nền hồ sơ và quay lại nền mặc định."
+  },
   "appVersion": {
     "version": "Phiên bản {{version}}",
     "embedded": "gốc",

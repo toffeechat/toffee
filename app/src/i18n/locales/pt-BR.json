@@ -927,6 +927,14 @@
     "removeTitle": "Usar o fundo padrão",
     "removeConfirm": "A foto de fundo será removida e o fundo padrão será usado."
   },
+  "profileBackground": {
+    "title": "Fundo do perfil",
+    "hint": "A foto atrás do seu cartão de perfil (abre quando os fãs tocam no seu nome na Toffee Room). É definida separadamente do fundo da Toffee Room. Se você não definir, o fundo padrão é usado.",
+    "change": "Mudar fundo do perfil",
+    "remove": "Usar fundo padrão",
+    "removeTitle": "Usar fundo padrão",
+    "removeConfirm": "Remove a foto de fundo do perfil e volta ao fundo padrão."
+  },
   "appVersion": {
     "version": "Versão {{version}}",
     "embedded": "integrada",

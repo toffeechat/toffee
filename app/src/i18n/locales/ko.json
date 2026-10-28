@@ -896,6 +896,14 @@
     "removeTitle": "기본 배경으로 바꾸기",
     "removeConfirm": "배경 사진을 지우고 기본 배경으로 바꿔요."
   },
+  "profileBackground": {
+    "title": "프로필 배경",
+    "hint": "팬이 보는 프로필 카드(토피룸에서 이름을 누르면 열리는 화면) 뒤에 깔리는 사진이에요. 토피룸 배경과 따로 정해요. 안 정하면 기본 배경이에요.",
+    "change": "프로필 배경 바꾸기",
+    "remove": "기본 배경으로",
+    "removeTitle": "기본 배경으로 바꾸기",
+    "removeConfirm": "프로필 배경 사진을 지우고 기본 배경으로 바꿔요."
+  },
   "appVersion": {
     "version": "버전 {{version}}",
     "embedded": "기본",

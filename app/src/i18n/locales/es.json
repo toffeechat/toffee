@@ -910,6 +910,14 @@
     "removeTitle": "Usar el fondo predeterminado",
     "removeConfirm": "Se quitará la foto de fondo y se usará el fondo predeterminado."
   },
+  "profileBackground": {
+    "title": "Fondo del perfil",
+    "hint": "La foto detrás de tu tarjeta de perfil (se abre cuando los fans tocan tu nombre en la Toffee Room). Se elige aparte del fondo de la Toffee Room. Si no eliges una, se usa el fondo predeterminado.",
+    "change": "Cambiar fondo del perfil",
+    "remove": "Usar fondo predeterminado",
+    "removeTitle": "Usar fondo predeterminado",
+    "removeConfirm": "Quita la foto de fondo del perfil y vuelve al fondo predeterminado."
+  },
   "appVersion": {
     "version": "Versión {{version}}",
     "embedded": "integrada",

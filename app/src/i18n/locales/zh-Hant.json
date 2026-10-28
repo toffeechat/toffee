@@ -896,6 +896,14 @@
     "removeTitle": "恢復預設背景",
     "removeConfirm": "刪除背景照片並恢復預設背景。"
   },
+  "profileBackground": {
+    "title": "個人資料背景",
+    "hint": "粉絲看到的個人資料卡（在 Toffee Room 點選名字時開啟）後面的照片。與 Toffee Room 背景分開設定。不設定則使用預設背景。",
+    "change": "更換個人資料背景",
+    "remove": "恢復預設背景",
+    "removeTitle": "恢復預設背景",
+    "removeConfirm": "刪除個人資料背景照片，恢復為預設背景。"
+  },
   "appVersion": {
     "version": "版本 {{version}}",
     "embedded": "初始",

@@ -896,6 +896,14 @@
     "removeTitle": "恢复默认背景",
     "removeConfirm": "删除背景照片并恢复默认背景。"
   },
+  "profileBackground": {
+    "title": "个人资料背景",
+    "hint": "粉丝看到的个人资料卡（在 Toffee Room 点击名字时打开）后面的照片。与 Toffee Room 背景分开设置。不设置则使用默认背景。",
+    "change": "更换个人资料背景",
+    "remove": "恢复默认背景",
+    "removeTitle": "恢复默认背景",
+    "removeConfirm": "删除个人资料背景照片，恢复为默认背景。"
+  },
   "appVersion": {
     "version": "版本 {{version}}",
     "embedded": "初始",

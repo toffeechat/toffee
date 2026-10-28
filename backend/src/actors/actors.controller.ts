@@ -105,4 +105,12 @@ export class ActorsController {
   setChatBackground(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetChatProfileImageDto) {
     return this.actorsService.setChatBackground(user.id, id, dto.key);
   }
+
+  // 프로필 카드 배경(2026-10-28, 카톡처럼) — 토피룸 배경과 같은 권한·본문·업로드 자리
+  @Roles(Role.AGENCY_STAFF, Role.ACTOR, Role.ADMIN)
+  @AdminOwnerOnly()
+  @Patch(':id/profile-background')
+  setProfileBackground(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: SetChatProfileImageDto) {
+    return this.actorsService.setProfileBackground(user.id, id, dto.key);
+  }
 }

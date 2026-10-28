@@ -2017,3 +2017,8 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - **캡처 경고**: `useScreenshotWarning(enabled, 'profile')` — 아티스트 프로필·토피룸 프로필 카드.
 - **FAQ**: `faq-texts.ts` 9개 분류 43개(테스트가 언어별 개수 일치 확인).
 
+## 프로필 카드 배경·업로드 정리 대상 (2026-10-28)
+
+- `Actor.profileBackgroundUrl` — `ActorsService.setBackground(userId, actorId, field, key)`가 `chatBackgroundUrl`·`profileBackgroundUrl` 공용(권한 `ensureCanViewActor`, 키는 `checkImageKey` = 배우 프로필 업로드 자리). 바뀐 옛 파일은 네 이미지 칸(공식·대화방·두 배경) 어디에도 안 남을 때만 지움. 앱 `ChatPhotoEditor target="profileBackground"`.
+- `UploadCleanupService.referencedKeys`에 두 배경 칸 추가 — 전엔 `chatBackgroundUrl`이 빠져 배경 파일이 하루 뒤 고아로 지워졌음. **배우 이미지 칸을 새로 만들면 여기도 꼭 넣을 것.**
+

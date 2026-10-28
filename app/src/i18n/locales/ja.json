@@ -896,6 +896,14 @@
     "removeTitle": "デフォルトの背景に戻す",
     "removeConfirm": "背景写真を削除してデフォルトの背景に戻します。"
   },
+  "profileBackground": {
+    "title": "プロフィール背景",
+    "hint": "ファンが見るプロフィールカード（Toffee Roomで名前をタップすると開く画面）の背景写真です。Toffee Roomの背景とは別に設定します。設定しない場合はデフォルトの背景です。",
+    "change": "プロフィール背景を変更",
+    "remove": "デフォルトの背景に戻す",
+    "removeTitle": "デフォルトの背景に戻す",
+    "removeConfirm": "プロフィール背景の写真を削除して、デフォルトの背景に戻します。"
+  },
   "appVersion": {
     "version": "バージョン {{version}}",
     "embedded": "初期",

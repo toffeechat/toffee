@@ -909,6 +909,14 @@
     "removeTitle": "Use default background",
     "removeConfirm": "Remove the background photo and use the default background."
   },
+  "profileBackground": {
+    "title": "Profile background",
+    "hint": "The photo behind your profile card (opens when fans tap your name in the Toffee Room). Set separately from the Toffee Room background. If you don't set one, the default background is used.",
+    "change": "Change profile background",
+    "remove": "Use default background",
+    "removeTitle": "Use default background",
+    "removeConfirm": "Remove the profile background photo and go back to the default background."
+  },
   "appVersion": {
     "version": "Version {{version}}",
     "embedded": "built-in",

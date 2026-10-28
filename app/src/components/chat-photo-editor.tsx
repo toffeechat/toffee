@@ -18,15 +18,23 @@ import { Spacing } from '@/constants/theme';
  * 메신저 프로필처럼 자유롭게 바꿈(2026-09-28 사용자 결정).
  */
 // target 'background'(2026-10-14): 토피룸 배경 사진 — 같은 업로드 자리, 저장만 PATCH /actors/:id/chat-background. 자르지 않고 그대로
-export function ChatPhotoEditor({ actorId, hasPhoto, target = 'profile' }: { actorId: string; hasPhoto: boolean; target?: 'profile' | 'background' }) {
-  const background = target === 'background';
+// target 'profileBackground'(2026-10-28): 프로필 카드 배경 — 토피룸 배경과 따로(카톡처럼), PATCH /actors/:id/profile-background
+const TARGETS = {
+  profile: { path: 'chat-profile-image', keys: 'chatPhoto' },
+  background: { path: 'chat-background', keys: 'chatBackground' },
+  profileBackground: { path: 'profile-background', keys: 'profileBackground' },
+} as const;
+
+export function ChatPhotoEditor({ actorId, hasPhoto, target = 'profile' }: { actorId: string; hasPhoto: boolean; target?: keyof typeof TARGETS }) {
+  const background = target !== 'profile';
+  const { path, keys } = TARGETS[target];
   const theme = useTheme();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   // 실패 사유 — 서버가 보낸 문구(예: 파일 저장소 미설정)가 있으면 그대로, 없으면 일반 안내(2026-10-12 실기기 테스트: 이유를 몰라 답답했음)
   const [error, setError] = useState<string | null>(null);
   const save = useMutation({
-    mutationFn: (key: string | null) => apiClient.patch(`/actors/${actorId}/${background ? 'chat-background' : 'chat-profile-image'}`, { key }),
+    mutationFn: (key: string | null) => apiClient.patch(`/actors/${actorId}/${path}`, { key }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['actors'] });
       void queryClient.invalidateQueries({ queryKey: ['my-actors'] });
@@ -55,7 +63,6 @@ export function ChatPhotoEditor({ actorId, hasPhoto, target = 'profile' }: { act
   };
 
   const remove = async () => {
-    const keys = background ? 'chatBackground' : 'chatPhoto';
     if (await confirm(t(`${keys}.removeTitle`), t(`${keys}.removeConfirm`), t(`${keys}.remove`), t('common.cancel'))) {
       setError(null);
       save.mutate(null, { onError: (e) => setError(failureText(e)) });
@@ -70,7 +77,7 @@ export function ChatPhotoEditor({ actorId, hasPhoto, target = 'profile' }: { act
           disabled={busy}
           onPress={change}
           style={[styles.chip, { borderColor: theme.backgroundSelected }, busy && styles.disabled]}>
-          <ThemedText type="small">{busy ? t('chatPhoto.uploading') : t(background ? 'chatBackground.change' : 'chatPhoto.change')}</ThemedText>
+          <ThemedText type="small">{busy ? t('chatPhoto.uploading') : t(`${keys}.change`)}</ThemedText>
         </Pressable>
         {hasPhoto && (
           <Pressable
@@ -79,7 +86,7 @@ export function ChatPhotoEditor({ actorId, hasPhoto, target = 'profile' }: { act
             onPress={remove}
             style={[styles.chip, { borderColor: theme.backgroundSelected }, busy && styles.disabled]}>
             <ThemedText type="small" themeColor="danger">
-              {t(background ? 'chatBackground.remove' : 'chatPhoto.remove')}
+              {t(`${keys}.remove`)}
             </ThemedText>
           </Pressable>
         )}
