@@ -174,6 +174,15 @@ export default function StudioProfileScreen() {
           {statusTarget ? (
             <StatusMessageForm key={`status-${actor.id}`} actorId={actor.id} current={statusTarget.current} couple={couple} />
           ) : null}
+          {/* 프로필 카드 배경(2026-10-28, 카톡처럼) — 토피룸 배경과 따로, 안 정하면 기본 카드 */}
+          <ThemedView style={[styles.section, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold">{t('profileBackground.title')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('profileBackground.hint')}
+            </ThemedText>
+            <ChatBackgroundPreview uri={actor.profileBackgroundUrl} />
+            <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.profileBackgroundUrl} target="profileBackground" />
+          </ThemedView>
           <ThemedText type="smallBold" themeColor="textSecondary" style={[styles.groupTitle, styles.spaced]}>
             {t('studioProfile.sectionRoom')}
           </ThemedText>

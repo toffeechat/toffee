@@ -10,7 +10,7 @@ function setup(objects: { key: string; lastModified: Date }[]) {
   const prisma = {
     message: { findMany: vi.fn().mockResolvedValue([{ mediaKey: 'actors/a1/message/used.jpg', thumbnailKey: 'actors/a1/message/thumb.jpg' }]) },
     story: { findMany: vi.fn().mockResolvedValue([]) },
-    actor: { findMany: vi.fn().mockResolvedValue([{ officialProfileImageUrl: 'https://placehold.co/x', chatProfileImageUrl: 'actors/a1/profile/p.jpg' }]) },
+    actor: { findMany: vi.fn().mockResolvedValue([{ officialProfileImageUrl: 'https://placehold.co/x', chatProfileImageUrl: 'actors/a1/profile/p.jpg', chatBackgroundUrl: 'actors/a1/profile/room-bg.jpg', profileBackgroundUrl: 'actors/a1/profile/card-bg.jpg' }]) },
     agency: { findMany: vi.fn().mockResolvedValue([{ logoUrl: null }]) },
     user: { findMany: vi.fn().mockResolvedValue([{ profileImageUrl: 'users/u1/profile/me.jpg' }]) },
     supportAttachment: { findMany: vi.fn().mockResolvedValue([{ objectKey: 'users/u1/support/receipt.jpg' }]) },
@@ -38,6 +38,9 @@ describe('UploadCleanupService', () => {
       { key: 'actors/a1/message/orphan.jpg', lastModified: hoursAgo(48) },
       { key: 'actors/a1/message/fresh.jpg', lastModified: hoursAgo(2) },
       { key: 'actors/a1/profile/p.jpg', lastModified: hoursAgo(72) },
+      // 토피룸·프로필 카드 배경(2026-10-28 — 예전엔 토피룸 배경이 여기 빠져서 다음 날 지워졌음)
+      { key: 'actors/a1/profile/room-bg.jpg', lastModified: hoursAgo(72) },
+      { key: 'actors/a1/profile/card-bg.jpg', lastModified: hoursAgo(72) },
       { key: 'agencies/g1/logo/old.png', lastModified: hoursAgo(30) },
       // 팬 프로필 사진(2026-10-12) — 쓰는 사진은 남기고, 바꾸고 남은 옛 사진은 지움
       { key: 'users/u1/profile/me.jpg', lastModified: hoursAgo(72) },

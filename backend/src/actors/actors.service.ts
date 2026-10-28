@@ -23,6 +23,8 @@ const LIST_SELECT = {
   chatProfileImageUrl: true,
   // 토피룸 배경 사진(2026-10-14) — 팬 토피룸 뒤에 깔림
   chatBackgroundUrl: true,
+  // 프로필 카드 배경 사진(2026-10-28) — 없으면 기본 카드
+  profileBackgroundUrl: true,
   // 상태메시지(2026-10-25) — 토피룸 프로필 카드 한 줄, 없으면 null
   statusMessage: true,
   monthlyPriceCents: true,
@@ -186,14 +188,16 @@ export class ActorsService {
       officialProfileImageUrl: string | null;
       chatProfileImageUrl: string | null;
       chatBackgroundUrl?: string | null;
+      profileBackgroundUrl?: string | null;
       agency: { logoUrl: string | null } | null;
       coupleMembers?: { member: { officialProfileImageUrl: string | null; chatProfileImageUrl: string | null } }[];
     },
   >(actor: T): Promise<T> {
-    const [officialProfileImageUrl, chatProfileImageUrl, chatBackgroundUrl, logoUrl, coupleMembers] = await Promise.all([
+    const [officialProfileImageUrl, chatProfileImageUrl, chatBackgroundUrl, profileBackgroundUrl, logoUrl, coupleMembers] = await Promise.all([
       this.media.resolveImageUrl(actor.officialProfileImageUrl),
       this.media.resolveImageUrl(actor.chatProfileImageUrl),
       actor.chatBackgroundUrl === undefined ? undefined : this.media.resolveImageUrl(actor.chatBackgroundUrl),
+      actor.profileBackgroundUrl === undefined ? undefined : this.media.resolveImageUrl(actor.profileBackgroundUrl),
       this.media.resolveImageUrl(actor.agency?.logoUrl ?? null),
       // 커플방 멤버 사진도 같은 방식으로
       actor.coupleMembers &&
@@ -212,6 +216,7 @@ export class ActorsService {
       officialProfileImageUrl,
       chatProfileImageUrl,
       ...(chatBackgroundUrl !== undefined ? { chatBackgroundUrl } : {}),
+      ...(profileBackgroundUrl !== undefined ? { profileBackgroundUrl } : {}),
       agency: actor.agency && { ...actor.agency, logoUrl },
       ...(coupleMembers ? { coupleMembers } : {}),
     };
@@ -277,18 +282,23 @@ export class ActorsService {
    * 토피룸 배경 사진(2026-10-14 사용자 결정, 1차) — 대화방 사진과 같은 권한(아티스트 본인·소속사·운영자), 같은 업로드 자리.
    * null이면 기본 배경. 바뀐 이전 파일은 다른 칸에서 안 쓰면 지움
    */
-  async setChatBackground(userId: string, actorId: string, key: string | null) {
+  setChatBackground(userId: string, actorId: string, key: string | null) {
+    return this.setBackground(userId, actorId, 'chatBackgroundUrl', key);
+  }
+
+  /** 프로필 카드 배경 사진(2026-10-28 사용자 결정, 카톡처럼) — 토피룸 배경과 따로, 권한·업로드 자리는 같음. null이면 기본 카드 */
+  setProfileBackground(userId: string, actorId: string, key: string | null) {
+    return this.setBackground(userId, actorId, 'profileBackgroundUrl', key);
+  }
+
+  private async setBackground(userId: string, actorId: string, field: 'chatBackgroundUrl' | 'profileBackgroundUrl', key: string | null) {
     await ensureCanViewActor(this.prisma, userId, actorId);
-    const actor = await this.prisma.actor.findUniqueOrThrow({
-      where: { id: actorId },
-      select: { chatBackgroundUrl: true, officialProfileImageUrl: true, chatProfileImageUrl: true },
-    });
+    const select = { chatBackgroundUrl: true, profileBackgroundUrl: true, officialProfileImageUrl: true, chatProfileImageUrl: true } as const;
+    const actor = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select });
     const next = await this.checkImageKey(actorId, key);
-    await this.prisma.actor.update({ where: { id: actorId }, data: { chatBackgroundUrl: next } });
-    const old = actor.chatBackgroundUrl;
-    if (isStorageKey(old) && old !== next && old !== actor.officialProfileImageUrl && old !== actor.chatProfileImageUrl) {
-      await this.media.deleteQuietly(old);
-    }
+    const updated = await this.prisma.actor.update({ where: { id: actorId }, data: { [field]: next }, select });
+    const old = actor[field];
+    if (isStorageKey(old) && !Object.values(updated).includes(old)) await this.media.deleteQuietly(old);
     return this.findOne(actorId);
   }
 

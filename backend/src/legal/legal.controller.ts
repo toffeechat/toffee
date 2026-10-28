@@ -9,7 +9,7 @@ import { faqPage, legalPage, supportPage } from './legal-page.js';
 import { readBusinessInfo } from './business-info.js';
 import { FAQ, FAQ_TITLES } from './faq-texts.js';
 
-const DOCS: readonly LegalDoc[] = ['terms', 'privacy'];
+const DOCS: readonly LegalDoc[] = ['terms', 'privacy', 'policy'];
 
 function pickLocale(lang: string | undefined, acceptLanguage: string | undefined): SupportedLocale {
   if (lang && (SUPPORTED_LOCALES as readonly string[]).includes(lang)) return lang as SupportedLocale;

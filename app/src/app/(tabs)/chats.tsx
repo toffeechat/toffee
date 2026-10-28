@@ -130,6 +130,12 @@ function InboxRow({ sub, onPress, locale }: { sub: Subscription; onPress: () => 
             {t('inbox.quotedReply')}
           </ThemedText>
         ) : null}
+        {/* 자동 결제 실패 — 스토어 유예 기간 중(2026-10-28). 유예가 끝나면 방이 닫히니 먼저 알림 */}
+        {sub.billingIssue ? (
+          <ThemedText type="captionBold" themeColor="danger">
+            {t('inbox.billingIssue')}
+          </ThemedText>
+        ) : null}
         {/* 스토어에서 해지(자동 갱신 끔)한 방 — 기간 끝까지 이용, 언제 닫히는지 미리(2026-10-02) */}
         {sub.endsAt ? (
           <ThemedText type="caption" style={{ color: theme.tint }}>

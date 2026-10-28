@@ -386,7 +386,8 @@
     "discover": "Discover artists",
     "loadFailed": "Couldn't load your inbox",
     "endsOn": "Until {{date}}",
-    "quotedReply": "↩︎ Replied to your message"
+    "quotedReply": "↩︎ Replied to your message",
+    "billingIssue": "Please check your payment method"
   },
   "actorProfile": {
     "back": "Back",
@@ -454,7 +455,8 @@
     "noEmail": "No email on file",
     "exportData": "Download my data",
     "exportDataHint": "Get your account, subscription, payment, reply and inquiry records as a file",
-    "exportDataFailed": "Couldn't create the file. Please try again later."
+    "exportDataFailed": "Couldn't create the file. Please try again later.",
+    "policy": "Community policy"
   },
   "manage": {
     "active": "Active",
@@ -485,7 +487,13 @@
     "pastTitle": "Past subscriptions",
     "pastHint": "Previous chats aren't restored if you subscribe again.",
     "endedOn": "Ended {{date}}",
-    "resubscribe": "Subscribe again"
+    "resubscribe": "Subscribe again",
+    "billingIssueShort": "Payment issue",
+    "billingIssueTitle": "Your automatic payment didn’t go through",
+    "billingIssueBody": "The store couldn’t charge you (for example, an expired card). You can keep using it during the store’s grace period, and the store will charge again once you update your payment method. If payment still fails when the grace period ends, your subscription will end.",
+    "nextBillingDate": "{{date}} (for reference)",
+    "guideTitle": "About your subscriptions",
+    "guideBody": "• This screen shows the subscriptions you’re using now.\n• The next payment date is for reference only. The store sets the actual date and amount, which may differ by about a day. For full payment history and refunds, check the store you paid with (App Store or Google Play).\n• \"Payment issue\": automatic payment is failing (for example, an expired card). Update your payment method in the store. If payment still fails when the store’s grace period ends, your subscription will end.\n• Restore purchases: loads purchases from the store account signed in on your phone. Purchases made with another store account won’t appear, so sign in with the account you paid with first."
   },
   "welcome": {
     "headline": "Closer to\nwhat matters",
@@ -697,7 +705,8 @@
   },
   "notices": {
     "title": "Notices",
-    "empty": "No notices yet."
+    "empty": "No notices yet.",
+    "new": "New notice"
   },
   "faq": {
     "title": "FAQ"
@@ -709,7 +718,8 @@
   "screenshot": {
     "title": "Screenshot detected",
     "body": "Artist messages, photos, voice and videos are for subscribers only. Posting or sharing screenshots outside the app, such as on social media, may lead to restrictions under the Terms of Service.",
-    "ok": "OK"
+    "ok": "OK",
+    "profileBody": "Capturing an artist’s photos or information and using them without permission may violate their portrait and other rights. Posting or sharing them elsewhere may restrict your account under our Terms."
   },
   "alerts": {
     "artistMessages": "New artist messages",
@@ -898,6 +908,14 @@
     "remove": "Use default",
     "removeTitle": "Use default background",
     "removeConfirm": "Remove the background photo and use the default background."
+  },
+  "profileBackground": {
+    "title": "Profile background",
+    "hint": "The photo behind your profile card (opens when fans tap your name in the Toffee Room). Set separately from the Toffee Room background. If you don't set one, the default background is used.",
+    "change": "Change profile background",
+    "remove": "Use default background",
+    "removeTitle": "Use default background",
+    "removeConfirm": "Remove the profile background photo and go back to the default background."
   },
   "appVersion": {
     "version": "Version {{version}}",

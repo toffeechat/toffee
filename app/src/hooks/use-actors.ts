@@ -19,6 +19,8 @@ export interface Actor {
   chatProfileImageUrl: string | null;
   /** 토피룸 배경 사진(2026-10-14) — 없으면 기본 배경 */
   chatBackgroundUrl?: string | null;
+  /** 프로필 카드 배경 사진(2026-10-28, 카톡처럼) — 토피룸 배경과 따로, 없으면 기본 카드 */
+  profileBackgroundUrl?: string | null;
   /** 상태메시지(2026-10-25) — 토피룸 프로필 카드 한 줄. 없으면 줄을 숨김. 커플방은 늘 null(멤버별 값을 씀) */
   statusMessage?: string | null;
   monthlyPriceCents: number;

@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
 
 /** 약관·개인정보처리방침 화면 공통 — 초안 안내(앱 언어) + 서버에서 받은 본문(초안은 한국어만) */
-export function LegalDocument({ doc }: { doc: 'terms' | 'privacy' }) {
+export function LegalDocument({ doc }: { doc: 'terms' | 'privacy' | 'policy' }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const { data, isLoading, isError, refetch } = useLegalSections(doc);

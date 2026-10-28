@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { membersOf, useActor, useActorCouples } from '@/hooks/use-actors';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
+import { useScreenshotWarning } from '@/hooks/use-screenshot-warning';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { formatPrice } from '@/utils/price';
@@ -32,6 +33,8 @@ import { ApiError } from '@/lib/api-client';
  */
 export default function ActorProfileScreen() {
   const theme = useTheme();
+  // 프로필에서 캡처해도 경고(2026-10-28, 버블처럼) — 아티스트 사진·정보 무단 사용 안내
+  useScreenshotWarning(true, 'profile');
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

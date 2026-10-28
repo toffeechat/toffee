@@ -381,7 +381,8 @@
     "discover": "Khám phá nghệ sĩ",
     "loadFailed": "Không tải được hộp thư",
     "endsOn": "Đến {{date}}",
-    "quotedReply": "↩︎ Đã trả lời tin nhắn của bạn"
+    "quotedReply": "↩︎ Đã trả lời tin nhắn của bạn",
+    "billingIssue": "Vui lòng kiểm tra phương thức thanh toán"
   },
   "actorProfile": {
     "back": "Quay lại",
@@ -449,7 +450,8 @@
     "noEmail": "Không có email",
     "exportData": "Tải dữ liệu của tôi",
     "exportDataHint": "Nhận hồ sơ tài khoản, gói đăng ký, thanh toán, trả lời và yêu cầu hỗ trợ dưới dạng tệp",
-    "exportDataFailed": "Không thể tạo tệp. Vui lòng thử lại sau."
+    "exportDataFailed": "Không thể tạo tệp. Vui lòng thử lại sau.",
+    "policy": "Chính sách vận hành"
   },
   "manage": {
     "active": "Đang hoạt động",
@@ -478,7 +480,13 @@
     "pastTitle": "Gói đăng ký trước đây",
     "pastHint": "Cuộc trò chuyện trước đó sẽ không được khôi phục nếu bạn đăng ký lại.",
     "endedOn": "Đã kết thúc {{date}}",
-    "resubscribe": "Đăng ký lại"
+    "resubscribe": "Đăng ký lại",
+    "billingIssueShort": "Thanh toán có vấn đề",
+    "billingIssueTitle": "Thanh toán tự động không thành công",
+    "billingIssueBody": "Cửa hàng không thể thu tiền (ví dụ thẻ đã hết hạn). Bạn vẫn dùng bình thường trong thời gian gia hạn của cửa hàng, và cửa hàng sẽ thu lại khi bạn đổi phương thức thanh toán. Nếu đến hết thời gian gia hạn vẫn chưa thanh toán được, gói đăng ký sẽ kết thúc.",
+    "nextBillingDate": "{{date}} (tham khảo)",
+    "guideTitle": "Thông tin gói đăng ký",
+    "guideBody": "• Màn hình này hiển thị các gói đăng ký bạn đang dùng.\n• Ngày thanh toán tiếp theo chỉ để tham khảo. Ngày và số tiền thực tế do cửa hàng quyết định và có thể lệch khoảng một ngày. Lịch sử thanh toán chi tiết và hoàn tiền xem tại cửa hàng bạn đã thanh toán (App Store hoặc Google Play).\n• \"Thanh toán có vấn đề\": thanh toán tự động đang thất bại (ví dụ thẻ hết hạn). Hãy đổi phương thức thanh toán trong cửa hàng. Nếu đến hết thời gian gia hạn của cửa hàng vẫn chưa thanh toán được, gói đăng ký sẽ kết thúc.\n• Khôi phục giao dịch: tải lịch sử mua của tài khoản cửa hàng đang đăng nhập trên điện thoại. Giao dịch bằng tài khoản cửa hàng khác sẽ không hiện, vì vậy hãy đăng nhập tài khoản đã thanh toán trước."
   },
   "welcome": {
     "headline": "Closer to\nwhat matters",
@@ -688,7 +696,8 @@
   },
   "notices": {
     "title": "Thông báo",
-    "empty": "Chưa có thông báo."
+    "empty": "Chưa có thông báo.",
+    "new": "Thông báo mới"
   },
   "faq": {
     "title": "Câu hỏi thường gặp"
@@ -700,7 +709,8 @@
   "screenshot": {
     "title": "Đã phát hiện chụp màn hình",
     "body": "Tin nhắn, ảnh, giọng nói và video của nghệ sĩ là nội dung chỉ dành cho người đăng ký. Đăng hoặc chia sẻ ảnh chụp màn hình ra bên ngoài như mạng xã hội có thể bị hạn chế sử dụng theo Điều khoản dịch vụ.",
-    "ok": "OK"
+    "ok": "OK",
+    "profileBody": "Chụp màn hình ảnh hoặc thông tin của nghệ sĩ rồi sử dụng khi chưa được phép có thể vi phạm quyền hình ảnh và các quyền khác. Đăng hoặc chia sẻ ra bên ngoài có thể khiến tài khoản bị hạn chế theo Điều khoản dịch vụ."
   },
   "alerts": {
     "artistMessages": "Tin nhắn mới của nghệ sĩ",
@@ -885,6 +895,14 @@
     "remove": "Dùng mặc định",
     "removeTitle": "Dùng hình nền mặc định",
     "removeConfirm": "Xóa ảnh nền và dùng hình nền mặc định."
+  },
+  "profileBackground": {
+    "title": "Ảnh nền hồ sơ",
+    "hint": "Ảnh nằm sau thẻ hồ sơ mà fan thấy (mở khi chạm vào tên trong Toffee Room). Đặt riêng với ảnh nền Toffee Room. Nếu không đặt sẽ dùng nền mặc định.",
+    "change": "Đổi ảnh nền hồ sơ",
+    "remove": "Dùng nền mặc định",
+    "removeTitle": "Dùng nền mặc định",
+    "removeConfirm": "Xóa ảnh nền hồ sơ và quay lại nền mặc định."
   },
   "appVersion": {
     "version": "Phiên bản {{version}}",

@@ -23,7 +23,8 @@ export class UploadCleanupService {
     const [messages, stories, actors, agencies, users, supportPhotos] = await Promise.all([
       this.prisma.message.findMany({ where: { mediaKey: { not: null } }, select: { mediaKey: true, thumbnailKey: true } }),
       this.prisma.story.findMany({ where: { mediaKey: { not: null } }, select: { mediaKey: true } }),
-      this.prisma.actor.findMany({ select: { officialProfileImageUrl: true, chatProfileImageUrl: true } }),
+      // 배경 사진 두 칸도 — 2026-10-28 전엔 토피룸 배경이 빠져 있어서 올린 다음 날 새벽에 지워졌음
+      this.prisma.actor.findMany({ select: { officialProfileImageUrl: true, chatProfileImageUrl: true, chatBackgroundUrl: true, profileBackgroundUrl: true } }),
       this.prisma.agency.findMany({ select: { logoUrl: true } }),
       this.prisma.user.findMany({ where: { profileImageUrl: { not: null } }, select: { profileImageUrl: true } }),
       this.prisma.supportAttachment.findMany({ select: { objectKey: true } }),
@@ -31,7 +32,7 @@ export class UploadCleanupService {
     const keys = [
       ...messages.flatMap((m) => [m.mediaKey, m.thumbnailKey]),
       ...stories.map((s) => s.mediaKey),
-      ...actors.flatMap((a) => [a.officialProfileImageUrl, a.chatProfileImageUrl]),
+      ...actors.flatMap((a) => [a.officialProfileImageUrl, a.chatProfileImageUrl, a.chatBackgroundUrl, a.profileBackgroundUrl]),
       ...agencies.map((a) => a.logoUrl),
       ...users.map((u) => u.profileImageUrl),
       ...supportPhotos.map((p) => p.objectKey),

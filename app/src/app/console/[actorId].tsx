@@ -498,6 +498,8 @@ export default function ConsoleActorScreen() {
               <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatProfileImageUrl} />
               {/* 토피룸 배경 사진(2026-10-14) — 소속사도 바꾸기·기본으로 */}
               <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.chatBackgroundUrl} target="background" />
+              {/* 프로필 카드 배경(2026-10-28) — 소속사도 바꾸기·기본으로 */}
+              <ChatPhotoEditor actorId={actor.id} hasPhoto={!!actor.profileBackgroundUrl} target="profileBackground" />
             </View>
           </ThemedView>
         </ThemedView>
