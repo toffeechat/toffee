@@ -133,3 +133,6 @@ npm run ota -- production "무엇을 고쳤는지"  # 스토어 빌드에(출시
 서로 다른 값으로 넣음. `plugins/with-fcm-notification-meta.js`가 `tools:replace`를 붙여 해결(플러그인 목록에서 `expo-notifications`보다 앞에 둘 것).
 네이티브 설정을 바꾼 뒤엔 `CI=1 npx expo prebuild -p android --no-install --clean`으로 `android/app/src/main/AndroidManifest.xml`을 미리 확인할 수 있음
 (생긴 `android/` 폴더는 지우고, prebuild가 바꾼 `package.json` scripts는 되돌릴 것).
+같은 날 두 번째 실패: `lintVitalRelease` `ExtraTranslation` — `app/locales/*.json`(iOS 권한 문구)이 안드로이드 언어별 strings.xml에도 들어감. 이 파일들은
+`{"ios": {...}}`로 감싸서 iOS에만(안드로이드 문구가 필요하면 같은 파일에 `"android": {...}`).
+
