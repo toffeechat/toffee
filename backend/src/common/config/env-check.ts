@@ -80,7 +80,26 @@ export function checkEnv(env: Env): EnvCheckResult {
   if (has(env, 'STORAGE_ENDPOINT') && !isHttpUrl(env.STORAGE_ENDPOINT!.trim())) {
     warnings.push('STORAGE_ENDPOINT가 주소 형식이 아님(https://<계정ID>.r2.cloudflarestorage.com 모양이어야 함) — 업로드가 전부 실패함');
   }
+  // 검볼 "토피로 로그인"(2026-11-25, src/partners) — 셋 다 비면 꺼진 것(경고 없음, 운영은 아직 이 상태). 일부만 넣었거나 모양이 틀리면 경고만
+  // (운영 서버가 이것 때문에 안 켜지면 안 됨 — 검볼만 연결이 안 될 뿐)
+  const gumball = ['GUMBALL_OAUTH_CLIENT_ID', 'GUMBALL_OAUTH_CLIENT_SECRET', 'GUMBALL_OAUTH_REDIRECT_URIS'];
+  const gumballMissing = gumball.filter((key) => !has(env, key));
+  if (gumballMissing.length && gumballMissing.length < gumball.length) warnings.push(`검볼 연동(토피로 로그인) 꺼짐 — ${gumballMissing.join(', ')} 없음`);
+  if (!gumballMissing.length) {
+    if (env.GUMBALL_OAUTH_CLIENT_SECRET!.trim().length < 32) warnings.push('GUMBALL_OAUTH_CLIENT_SECRET은 32자 이상 무작위 값으로(검볼 서버 TOFFEE_CLIENT_SECRET과 같은 값)');
+    const bad = env.GUMBALL_OAUTH_REDIRECT_URIS!.split(',').map((u) => u.trim()).filter((u) => u && !isUrl(u));
+    if (bad.length) warnings.push(`GUMBALL_OAUTH_REDIRECT_URIS에 주소 형식이 아닌 값 ${bad.length}개 — 그 주소로는 로그인이 거절됨(예: https://웹주소/auth/toffee, 앱주소://auth/toffee)`);
+  }
   return { errors, warnings };
+}
+
+function isUrl(value: string): boolean {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isHttpUrl(value: string): boolean {

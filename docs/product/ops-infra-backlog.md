@@ -161,6 +161,17 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 
 - 안 하기로 한 것: 운영과 같은 데이터로 마이그레이션을 미리 시험하는 별도 환경 — 1인 초기 규모엔 과함("추가 먼저" 규칙 + 배포 전 백업으로 충분).
 
+## 검볼 연동 — 토피 쪽 설정 (2026-10-28, 2026-11-25 main 반영 — 검볼을 데모에 올릴 때)
+
+토피 서버 환경 변수(Railway `toffee-demo`, 나중에 운영) — 셋 다 비어 있으면 "토피로 로그인"이 꺼져 있음(지금 상태, 서버는 그대로 켜짐). 일부만 넣으면 켤 때 경고 로그만 남음.
+👤 할 일: 검볼 데모 서버를 만들 때 아래 셋을 `toffee-demo` Railway 변수에 넣고, 같은 값을 검볼 서버(`TOFFEE_CLIENT_ID`·`TOFFEE_CLIENT_SECRET`, `TOFFEE_API_URL`=토피 데모 API 주소, `TOFFEE_WEB_URL`=토피 데모 웹 주소, `TOFFEE_PROVIDER=oauth`)에 맞춰 넣기. 값은 이 문서에 적지 않음.
+
+| 값 | 내용 |
+|---|---|
+| `GUMBALL_OAUTH_CLIENT_ID` | 검볼에 주는 이름표(예: `gumball-demo`) — 비밀 아님 |
+| `GUMBALL_OAUTH_CLIENT_SECRET` | 32자 이상 무작위 값. **검볼 서버의 `TOFFEE_CLIENT_SECRET`과 같은 값** — 저장소·대화에 적지 말고 두 Railway 화면에만 |
+| `GUMBALL_OAUTH_REDIRECT_URIS` | 검볼이 돌아올 주소를 쉼표로, 글자 하나까지 같아야 함. 검볼 데모: `https://gumball-demo.toffeechat.app/auth/toffee,gumball-dev://auth/toffee`(운영은 검볼 운영 웹 주소 + `gumball://auth/toffee`) |
+
 ## 3. 사업·법무
 
 **가입 연령(성인만) 보완 — 결정(2026-09-29)**: 생년월일 자기 신고는 속이면 못 막아서, 비용 없는 것부터 겹겹이:
