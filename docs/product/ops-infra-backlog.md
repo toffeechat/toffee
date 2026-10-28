@@ -194,4 +194,5 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 - 페이지는 저장소 `landing/`(빌드 없는 정적 HTML). **Cloudflare Pages 새 프로젝트 `toffee-landing`**(무료) — 지금은 파일 올리기(Direct Upload), main에 들어간 뒤엔 GitHub 연결
   (출력 폴더 `landing`, watch path `landing/*`, 웹 데모 프로젝트엔 Exclude `landing/*`). 도메인 `toffeechat.app`·`www` 연결, 메일 전달(MX)은 영향 없음. 절차 `landing/README.md`.
 - 약관·개인정보 링크는 당분간 데모 서버 초안(`api-demo…/legal/…`) — 운영 서버 생기면 바꿈.
+- **자동 배포(2026-10-28 준비, 사용자 할 일 1번)**: `landing/wrangler.jsonc` 넣어 둠. Cloudflare → `toffee-landing` → Settings → Build → GitHub 연결(main, Root directory `landing`, Deploy command `npx wrangler deploy`, watch `landing/*`) 한 번만 하면 이후 main 반영 시 자동. 절차 `landing/README.md`.
 

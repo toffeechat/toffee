@@ -14,6 +14,11 @@
 (정적 파일만이라 요청 비용 없음). **고칠 때**: `toffee-landing` → Deployments(또는 Overview) → **New deployment** → 이 폴더(`index.html`과
 `assets/`가 바로 들어 있는 상태)를 다시 올림.
 
+**자동 배포 준비(2026-10-28)**: `wrangler.jsonc`(Worker 이름 `toffee-landing`, 이 폴더를 정적 파일로)와 `.assetsignore`(README 등은 안 올림)를 넣어 둠
+(`wrangler deploy --dry-run` 통과). **사용자가 한 번 할 일**: Cloudflare → Workers & Pages → `toffee-landing` → Settings → **Build** → Connect →
+GitHub `toffeechat/toffee`, Branch `main`, **Root directory `landing`**, Build command 비움, Deploy command `npx wrangler deploy`,
+Build watch paths Include `landing/*`. 그 뒤로는 main에 `landing/` 변경이 합쳐지면 자동으로 올라감(무료, GitHub Actions 시간 안 씀).
+
 **나중 방법 — GitHub 연결**(main에 이 폴더가 들어간 뒤, 원하면 Worker 설정 Builds에서 연결하거나 Pages로 옮김): Create → Pages → Connect to Git → `toffeechat/toffee` →
 Production branch `main`, Framework preset `None`, Build command 비움, Build output directory `landing` →
 Settings → Builds → Build watch paths에 Include `landing/*`(다른 폴더 변경으로 빌드되지 않게).
