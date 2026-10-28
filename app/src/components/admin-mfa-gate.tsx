@@ -29,6 +29,12 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
     return () => onMfaRequired(null);
   }, []);
 
+  // 로그아웃(401 등)으로 토큰이 사라지면 코드 화면 상태도 끔(2026-10-28) — 안 그러면 다음에 로그인한 사람에게 이 화면이 뜸
+  if (!token && needed) {
+    setNeeded(false);
+    setCode('');
+  }
+
   if (!needed || !token) return <>{children}</>;
 
   const submit = () => {

@@ -52,9 +52,18 @@ export function totpCode(secret: string, at = Date.now(), step = 30): string {
 
 /** 앞뒤 한 칸(±30초)까지 허용 — 폰 시계가 조금 틀려도 */
 export function verifyTotp(secret: string, code: string, at = Date.now()): boolean {
+  return matchTotpStep(secret, code, at) !== null;
+}
+
+/** 맞은 코드의 시간 칸 번호(30초 단위) — 같은 칸 이하의 코드를 다시 못 쓰게 저장(2026-10-28). 틀리면 null */
+export function matchTotpStep(secret: string, code: string, at = Date.now()): number | null {
   const given = code.replace(/\s/g, '');
-  if (!/^\d{6}$/.test(given)) return false;
-  return [-1, 0, 1].some((drift) => timingSafeEqual(Buffer.from(totpCode(secret, at + drift * 30_000)), Buffer.from(given)));
+  if (!/^\d{6}$/.test(given)) return null;
+  for (const drift of [-1, 0, 1]) {
+    const when = at + drift * 30_000;
+    if (timingSafeEqual(Buffer.from(totpCode(secret, when)), Buffer.from(given))) return Math.floor(when / 30_000);
+  }
+  return null;
 }
 
 /** 인증 앱에 넣는 주소(QR 대신 이 글을 그대로 넣거나, 키를 직접 입력) */

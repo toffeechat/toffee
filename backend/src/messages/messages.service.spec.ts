@@ -10,8 +10,10 @@ import type { ModerationService } from '../moderation/moderation.service.js';
 import type { MediaService } from '../storage/media.service.js';
 import type { ConfigService } from '@nestjs/config';
 import type { RealtimeService } from '../realtime/realtime.service.js';
+import type { AuditService } from '../audit/audit.service.js';
 
 const realtime = { publish: vi.fn().mockResolvedValue(undefined) } as unknown as RealtimeService;
+const audit = { record: vi.fn().mockResolvedValue(undefined) } as unknown as AuditService;
 
 const config = (values: Record<string, string> = {}) => ({ get: (key: string) => values[key] }) as unknown as ConfigService;
 
@@ -49,7 +51,7 @@ function setup() {
     withReadUrl: vi.fn((item: object) => Promise.resolve(item)),
     resolveImageUrl: vi.fn((value: string | null) => Promise.resolve(value)),
   } as unknown as MediaService;
-  const service = new MessagesService(prisma, push, {} as ModerationService, media, config(), realtime);
+  const service = new MessagesService(prisma, push, {} as ModerationService, media, config(), realtime, audit);
   return { service, fanPushes, staffPushes, prisma, push };
 }
 
@@ -268,7 +270,7 @@ function replySetup(alreadySent: number, settings: Record<string, string> = {}) 
   // 트랜잭션 안에서도 같은 가짜 DB를 씀
   (prisma as unknown as { $transaction: unknown }).$transaction = vi.fn((work: (tx: PrismaService) => Promise<unknown>) => work(prisma));
   const moderation = { assertNoBannedWords: vi.fn().mockResolvedValue(undefined) } as unknown as ModerationService;
-  const service = new MessagesService(prisma, {} as PushService, moderation, {} as MediaService, config(settings), realtime);
+  const service = new MessagesService(prisma, {} as PushService, moderation, {} as MediaService, config(settings), realtime, audit);
   return { service, created, prisma };
 }
 
@@ -420,7 +422,7 @@ describe('MessagesService.listBroadcasts 팬 답장 흐름 미리보기', () => 
       message: { findMany },
     } as unknown as PrismaService;
     const media = { withReadUrls: vi.fn((items: object[]) => Promise.resolve(items)) } as unknown as MediaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, audit);
     return { service, findMany };
   }
 
@@ -456,28 +458,40 @@ describe('MessagesService.listBroadcasts 팬 답장 흐름 미리보기', () => 
 describe('MessagesService.listReplies 나눠 받기', () => {
   function listSetup() {
     const findMany = vi.fn().mockResolvedValue([]);
+    const findUnique = vi.fn().mockResolvedValue(null);
     const prisma = {
       user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ role: Role.ADMIN }) },
       actor: { findFirst: vi.fn().mockResolvedValue(null) },
-      message: { findMany },
+      message: { findMany, findUnique },
     } as unknown as PrismaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, {} as MediaService, config(), realtime);
-    return { service, findMany };
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, {} as MediaService, config(), realtime, audit);
+    return { service, findMany, findUnique };
   }
 
-  it('limit·before를 주면 그 답장 이전 N개(같은 시각은 id로 순서 고정)', async () => {
-    const { service, findMany } = listSetup();
+  it('limit·before를 주면 그 답장보다 오래된 N개 — cursor+skip 대신 (시각, id)로 비교(2026-10-28)', async () => {
+    const { service, findMany, findUnique } = listSetup();
+    const at = new Date('2026-10-01T00:00:00Z');
+    findUnique.mockResolvedValue({ id: 'r50', createdAt: at });
     await service.listReplies('admin', 'actor-1', 'm1', { limit: 100, before: 'r50' });
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 100, cursor: { id: 'r50' }, skip: 1, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] }),
-    );
+    const args = findMany.mock.calls[0][0] as { take: number; cursor?: unknown; skip?: number; orderBy: unknown; where: { AND: unknown[] } };
+    expect(args).toMatchObject({ take: 100, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
+    expect(args.cursor).toBeUndefined();
+    expect(args.skip).toBeUndefined();
+    expect(args.where.AND).toEqual([{ OR: [{ createdAt: { lt: at } }, { createdAt: at, id: { lt: 'r50' } }] }]);
   });
 
-  it('안 주면 전부(콘솔 기존 동작)', async () => {
+  it('before 메시지가 아예 없으면 빈 결과(처음부터 다시 주지 않음)', async () => {
+    const { service, findMany } = listSetup();
+    await service.listReplies('admin', 'actor-1', 'm1', { limit: 100, before: 'gone' });
+    const args = findMany.mock.calls[0][0] as { where: { AND: unknown[] } };
+    expect(args.where.AND).toEqual([{ id: { in: [] } }]);
+  });
+
+  it('안 주면 최근 200개(콘솔, 2026-10-28 — 예전엔 전부)', async () => {
     const { service, findMany } = listSetup();
     await service.listReplies('admin', 'actor-1');
     const args = findMany.mock.calls[0][0] as Record<string, unknown>;
-    expect(args.take).toBeUndefined();
+    expect(args.take).toBe(200);
     expect(args.cursor).toBeUndefined();
   });
 });
@@ -489,12 +503,12 @@ describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', 
       user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'staff-1', role, agencyId: 'ag-1' }) },
       actor: { findFirst: vi.fn().mockResolvedValue(viewable ? { id: 'actor-1' } : null) },
       message: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'm1', deletedAt: null, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } }),
+        findFirst: vi.fn((args: { where: { senderType?: string } }) => Promise.resolve(args.where.senderType === MessageSenderType.FAN ? null : { id: 'm1', deletedAt: null, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } })),
         update,
       },
     } as unknown as PrismaService;
     const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, audit);
     return { service, update };
   }
 
@@ -508,6 +522,47 @@ describe('MessagesService.deleteBroadcast 소속사 대신 삭제(2026-10-12)', 
     const { service, update } = setupDelete(Role.AGENCY_STAFF, false);
     await expect(service.deleteBroadcast('staff-1', 'actor-1', 'm1')).rejects.toThrow();
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('MessagesService.deleteBroadcast 운영자 삭제·구독한 아티스트 계정의 답장 회수(2026-10-28)', () => {
+  function setupAdmin(role: Role, ownFanReply: boolean) {
+    const update = vi.fn().mockResolvedValue({});
+    const record = vi.fn().mockResolvedValue(undefined);
+    const prisma = {
+      user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'req', role }) },
+      actor: { findUnique: vi.fn().mockResolvedValue({ kind: 'SOLO', selfUserId: 'star', coupleMembers: [] }) },
+      message: {
+        findFirst: vi.fn((args: { where: { senderType?: string } }) =>
+          Promise.resolve(
+            args.where.senderType === MessageSenderType.FAN
+              ? ownFanReply
+                ? { id: 'm1', deletedAt: null }
+                : null
+              : { id: 'm1', deletedAt: null, senderActorId: null, mediaKey: null, thumbnailKey: null, _count: { reports: 0 } },
+          ),
+        ),
+        update,
+        count: vi.fn().mockResolvedValue(0),
+      },
+    } as unknown as PrismaService;
+    const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, { record } as unknown as AuditService);
+    return { service, update, record };
+  }
+
+  it('운영자가 지우면 운영자 숨김(deletedByAdmin)으로 + 작업 기록', async () => {
+    const { service, update, record } = setupAdmin(Role.ADMIN, false);
+    await service.deleteBroadcast('admin-1', 'actor-1', 'm1');
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ deletedByAdmin: true }) }));
+    expect(record).toHaveBeenCalledWith('admin-1', 'MESSAGE_DELETE', 'ACTOR', 'actor-1', expect.objectContaining({ messageId: 'm1' }));
+  });
+
+  it('다른 방을 구독한 아티스트 계정이 자기 답장을 지우면 회수(예전엔 ACTOR_SELF_ONLY)', async () => {
+    const { service, update, record } = setupAdmin(Role.ACTOR, true);
+    await service.deleteBroadcast('req', 'other-room', 'm1');
+    expect(update).toHaveBeenCalledWith({ where: { id: 'm1' }, data: { deletedAt: expect.any(Date) } });
+    expect(record).not.toHaveBeenCalled();
   });
 });
 
@@ -525,13 +580,13 @@ describe('MessagesService.deleteBroadcast CP방 본인 메시지만(2026-10-27)'
         }),
       },
       message: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'm1', deletedAt: null, senderActorId, mediaKey: 'actors/c1/message/a.jpg', thumbnailKey: null, _count: { reports: 0 } }),
+        findFirst: vi.fn((args: { where: { senderType?: string } }) => Promise.resolve(args.where.senderType === MessageSenderType.FAN ? null : { id: 'm1', deletedAt: null, senderActorId, mediaKey: 'actors/c1/message/a.jpg', thumbnailKey: null, _count: { reports: 0 } })),
         update,
         count,
       },
     } as unknown as PrismaService;
     const media = { deleteQuietly: vi.fn().mockResolvedValue(undefined) } as unknown as MediaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, audit);
     return { service, update, media };
   }
 
@@ -578,14 +633,15 @@ describe('MessagesService 팬 화면 응답(2026-10-27)', () => {
       actor: { findFirst: vi.fn().mockResolvedValue(managesRoom ? { id: 'a1' } : null), findMany: vi.fn().mockResolvedValue([]) },
       message: {
         findMany: vi.fn().mockResolvedValue([
-          { id: 'm1', senderType: 'ARTIST', senderActorId: null, body: '안녕', deletedAt: null, deletedByAdmin: false, deletedByStaffId: null, clientMessageId: 'star-key', replyTo: null },
+          // DB는 최신 → 오래된 순으로 주고 limit 없는 예전 방식은 뒤집어서 시간순으로 내려줌(2026-10-28)
           { id: 'm2', senderType: 'FAN', fanUserId: 'fan', body: '응', deletedAt: null, deletedByAdmin: false, deletedByStaffId: null, clientMessageId: 'my-key', replyTo: null },
+          { id: 'm1', senderType: 'ARTIST', senderActorId: null, body: '안녕', deletedAt: null, deletedByAdmin: false, deletedByStaffId: null, clientMessageId: 'star-key', replyTo: null },
         ]),
         count: vi.fn().mockResolvedValue(0),
       },
     } as unknown as PrismaService;
     const media = { withReadUrls: vi.fn((items: object[]) => Promise.resolve(items)) } as unknown as MediaService;
-    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime);
+    const service = new MessagesService(prisma, {} as PushService, {} as ModerationService, media, config(), realtime, audit);
     return { service, prisma };
   }
 
@@ -595,6 +651,14 @@ describe('MessagesService 팬 화면 응답(2026-10-27)', () => {
     for (const field of ['deletedByAdmin', 'deletedByStaffId', 'clientMessageId']) expect(artist).not.toHaveProperty(field);
     expect(mine).not.toHaveProperty('deletedByStaffId');
     expect(mine.clientMessageId).toBe('my-key');
+  });
+
+  it('limit 없는 예전 방식도 최근 500개까지만 읽어 시간순으로(2026-10-28 — 예전엔 끝없이 전부)', async () => {
+    const { service, prisma } = setupFan();
+    const messages = (await service.listForFan('fan', 'a1')) as { id: string }[];
+    const args = vi.mocked(prisma.message.findMany).mock.calls[0][0]!;
+    expect(args).toMatchObject({ take: 500, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
+    expect(messages.map((message) => message.id)).toEqual(['m1', 'm2']);
   });
 
   it('다른 방을 구독한 아티스트·소속사 계정은 사진 모아보기를 구독자 범위로(예전엔 403)', async () => {

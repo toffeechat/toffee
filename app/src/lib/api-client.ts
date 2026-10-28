@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { API_URL } from './env';
-import { loadToken } from './token-storage';
+import { getCachedToken, loadToken } from './token-storage';
 import i18n from '@/i18n';
 
 export class ApiError extends Error {
@@ -32,8 +32,13 @@ export function onMaintenance(handler: (() => void) | null) {
   maintenanceHandler = handler;
 }
 
-/** 401 처리 공통(2026-10-27) — 일반 요청과 실시간 연결(/realtime)이 같이 씀. 운영자 2단계 인증이면 코드 화면, 아니면 로그아웃 */
-export function reportUnauthorized(code: string | undefined, message: string) {
+/**
+ * 401 처리 공통(2026-10-27) — 일반 요청과 실시간 연결(/realtime)이 같이 씀. 운영자 2단계 인증이면 코드 화면, 아니면 로그아웃.
+ * usedToken: 그 요청에 쓴 토큰 — 그 사이 로그아웃·다른 계정 로그인으로 지금 토큰이 바뀌었으면 늦게 온 옛 토큰의 401은 무시
+ * (2026-10-28 — 안 그러면 새로 로그인한 사람이 로그아웃되거나 로그인 화면에 엉뚱한 이유가 뜸)
+ */
+export function reportUnauthorized(code: string | undefined, message: string, usedToken: string | null) {
+  if (usedToken !== getCachedToken()) return;
   if (code === 'ADMIN_MFA_REQUIRED') mfaRequiredHandler?.();
   else unauthorizedHandler?.(message);
 }
@@ -70,7 +75,7 @@ async function request<T>(path: string, options: RequestInit = {}, as: 'json' | 
     const body = (await res.json().catch(() => ({}))) as { message?: string | string[]; code?: string };
     const message = Array.isArray(body.message) ? body.message.join(', ') : body.message;
     const error = new ApiError(res.status, message ?? i18n.t('common.requestFailed', { status: res.status }), body.code);
-    if (res.status === 401 && !authToken && (token || body.code === 'ADMIN_MFA_REQUIRED')) reportUnauthorized(body.code, error.message);
+    if (res.status === 401 && !authToken && (token || body.code === 'ADMIN_MFA_REQUIRED')) reportUnauthorized(body.code, error.message, token);
     if (res.status === 503 && body.code === 'MAINTENANCE') maintenanceHandler?.();
     throw error;
   }

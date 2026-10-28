@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CircleCheck, Link2Off } from 'lucide-react-native';
+import { CircleCheck, CloudOff, Link2Off } from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
@@ -75,6 +75,17 @@ export default function ActorLinkScreen() {
           title={t('actorLink.doneTitle')}
           body={t('actorLink.doneBody', { name: data?.actor?.legalName ?? '' })}
           action={<Button title={t('actorLink.start')} onPress={() => void finish()} />}
+        />
+      );
+    }
+    // 불러오기 실패(오프라인·요청 너무 많음 등, 2026-10-28) — 예전엔 "잘못된 링크"로 보여서 아티스트가 링크를 다시 받아야 하는 줄 알았음
+    if (preview.isError && !data) {
+      return (
+        <EmptyState
+          icon={CloudOff}
+          title={t('discover.loadFailedTitle')}
+          body={preview.error instanceof ApiError && preview.error.status !== 404 ? preview.error.message : undefined}
+          action={<Button title={t('discover.retry')} variant="secondary" loading={preview.isFetching} onPress={() => void preview.refetch()} />}
         />
       );
     }

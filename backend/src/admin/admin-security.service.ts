@@ -5,7 +5,11 @@ import { AuthService } from '../auth/auth.service.js';
 import { AdminLevel, Role } from '../generated/prisma/enums.js';
 import { appError } from '../common/i18n/app-error.js';
 import { revokeAllSessions, revokeAllSessionsData } from '../auth/auth-sessions.js';
-import { generateTotpSecret, otpauthUrl, verifyTotp } from '../common/utils/totp.js';
+import { generateTotpSecret, matchTotpStep, otpauthUrl, verifyTotp } from '../common/utils/totp.js';
+
+// 코드 실패 잠금(2026-10-28 점검) — 예전엔 분당 5번씩 무한히 맞혀 볼 수 있어서 한 달이면 절반 가까운 확률로 뚫렸음
+const MFA_MAX_FAILURES = 10;
+const MFA_LOCK_MS = 15 * 60 * 1000;
 
 /**
  * 운영자 2단계 인증(인증 앱 6자리 코드)·권한 단계(2026-10-20).
@@ -46,16 +50,47 @@ export class AdminSecurityService {
 
   /** 코드 확인 → mfaAt이 담긴 새 토큰 */
   async verify(userId: string, code: string, sessionId?: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, role: true, totpSecret: true, totpEnabledAt: true } });
-    if (!user.totpEnabledAt || !user.totpSecret || !verifyTotp(user.totpSecret, code)) throw new BadRequestException(appError('ADMIN_MFA_INVALID'));
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, role: true, totpEnabledAt: true } });
+    if (!user.totpEnabledAt) throw new BadRequestException(appError('ADMIN_MFA_INVALID'));
+    await this.checkCode(userId, code);
     return this.auth.issueAccessToken(user, { mfaAt: Date.now(), sessionId });
+  }
+
+  /**
+   * 켜진 2단계 인증 코드 확인 — 잠겨 있으면 거절, 틀리면 실패 횟수(10번이면 15분 잠금), 맞으면 그 코드의 시간 칸을 저장해서 같은 코드(±30초 창이라
+   * 최대 90초 동안 유효)를 다시 못 쓰게. 저장은 조건부라 같은 코드로 동시에 두 번 와도 한 번만 통과
+   */
+  private async checkCode(userId: string, code: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { totpSecret: true, totpFailedCount: true, totpLockedUntil: true, totpLastStep: true } });
+    const now = new Date();
+    if (user.totpLockedUntil && user.totpLockedUntil > now) throw new ForbiddenException(appError('ADMIN_MFA_LOCKED'));
+    const step = user.totpSecret ? matchTotpStep(user.totpSecret, code, now.getTime()) : null;
+    if (step !== null) {
+      const { count } = await this.prisma.user.updateMany({
+        where: { id: userId, OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }] },
+        data: { totpLastStep: step, totpFailedCount: 0, totpLockedUntil: null },
+      });
+      if (count === 1) return;
+    }
+    const failures = user.totpFailedCount + 1;
+    const locked = failures >= MFA_MAX_FAILURES;
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: locked ? { totpFailedCount: 0, totpLockedUntil: new Date(now.getTime() + MFA_LOCK_MS) } : { totpFailedCount: { increment: 1 } },
+    });
+    if (locked) {
+      await this.audit.record(userId, 'ADMIN_MFA', 'USER', userId, { locked: true });
+      throw new ForbiddenException(appError('ADMIN_MFA_LOCKED'));
+    }
+    throw new BadRequestException(appError('ADMIN_MFA_INVALID'));
   }
 
   /** 끄기 — 지금 코드를 한 번 더 확인(토큰을 훔쳐도 끌 수 없게). 다른 기기 로그인은 모두 끊고 이 기기만 새 토큰으로(2026-10-27) */
   async disable(userId: string, code: string, sessionId?: string) {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, role: true, totpSecret: true } });
-    if (!user.totpSecret || !verifyTotp(user.totpSecret, code)) throw new BadRequestException(appError('ADMIN_MFA_INVALID'));
-    await this.prisma.user.update({ where: { id: userId }, data: { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null } });
+    if (!user.totpSecret) throw new BadRequestException(appError('ADMIN_MFA_INVALID'));
+    await this.checkCode(userId, code);
+    await this.prisma.user.update({ where: { id: userId }, data: { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null, totpLastStep: null } });
     await revokeAllSessions(this.prisma, userId, sessionId);
     await this.audit.record(userId, 'ADMIN_MFA', 'USER', userId, { enabled: false });
     return this.auth.issueAccessToken(user, { sessionId });
@@ -90,7 +125,7 @@ export class AdminSecurityService {
     // 폰을 잃어버린 경우라 그 운영자의 모든 로그인도 끊음(2026-10-27) — 다시 로그인해서 새로 설정
     await this.prisma.user.update({
       where: { id: targetId },
-      data: { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null, ...revokeAllSessionsData() },
+      data: { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null, totpLastStep: null, totpFailedCount: 0, totpLockedUntil: null, ...revokeAllSessionsData() },
     });
     await this.audit.record(actorId, 'ADMIN_MFA', 'USER', targetId, { reset: true });
     return this.listAdmins();

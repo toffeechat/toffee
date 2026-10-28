@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { SearchX } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { TextField } from '@/components/ui/text-field';
 import { InquiryPhotoPicker, InquiryPhotoStrip } from '@/components/inquiry-photos';
 import { useAddInquiryMessage, useDeleteInquiry, useMyInquiry, type PickedPhoto } from '@/hooks/use-support';
@@ -27,7 +29,20 @@ export default function InquiryScreen() {
   const remove = useDeleteInquiry(id);
   const [body, setBody] = useState('');
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
-  if (isLoading || !data) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
+  const backToList = () => (router.canGoBack() ? router.back() : router.replace('/support'));
+  if (isLoading) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
+  // 지운 문의(404)·불러오기 실패(2026-10-28) — 예전엔 로딩만 계속 돌았음
+  if (!data) {
+    return (
+      <View style={[styles.flex, { backgroundColor: theme.background }]}>
+        <EmptyState
+          icon={SearchX}
+          title={t('inquiry.notFound')}
+          action={<Button title={t('inquiry.backToList')} variant="secondary" onPress={backToList} />}
+        />
+      </View>
+    );
+  }
   const closed = data.status === 'CLOSED';
   const send = () =>
     add.mutate(
@@ -41,7 +56,7 @@ export default function InquiryScreen() {
     );
   const onDelete = async () => {
     if (!(await confirm(t('inquiry.deleteTitle'), t('inquiry.deleteConfirm'), t('inquiry.delete'), t('common.cancel')))) return;
-    remove.mutate(undefined, { onSuccess: () => (router.canGoBack() ? router.back() : router.replace('/support')) });
+    remove.mutate(undefined, { onSuccess: backToList });
   };
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -97,6 +112,7 @@ export default function InquiryScreen() {
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   content: { padding: Spacing.four, gap: Spacing.two, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   bubble: { maxWidth: '85%', borderRadius: Radius.lg, padding: Spacing.three, gap: 4 },
   center: { textAlign: 'center', marginTop: Spacing.three },

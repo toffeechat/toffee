@@ -214,6 +214,7 @@
     "noReplies": "Ainda não há respostas",
     "repliesEmpty": "Esta mensagem ainda não tem respostas.",
     "permissionDenied": "É necessária permissão. Ative em Ajustes.",
+    "recordFailed": "Não foi possível gravar. Tente novamente.",
     "media": {
       "PHOTO": "📷 Foto",
       "AUDIO": "🎧 Mensagem de voz",
@@ -1022,7 +1023,9 @@
     "photoUnavailable": "Não foi possível carregar a foto",
     "delete": "Excluir solicitação",
     "deleteTitle": "Excluir solicitação",
-    "deleteConfirm": "Todas as mensagens e fotos desta solicitação serão excluídas. Isso não pode ser desfeito."
+    "deleteConfirm": "Todas as mensagens e fotos desta solicitação serão excluídas. Isso não pode ser desfeito.",
+    "notFound": "Solicitação não encontrada",
+    "backToList": "Voltar para as solicitações"
   },
   "sendRetry": {
     "failed": "A conexão caiu e não deu para confirmar o envio.",

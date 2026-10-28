@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Compass, MessageCircle, UserRound } from 'lucide-react-native';
 
@@ -14,16 +14,18 @@ export default function TabsLayout() {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
   const { data: subscriptions } = useMySubscriptions();
   // 새 공지가 있으면 마이페이지 탭에 N(2026-10-28, 버블처럼) — 공지 화면을 열면 사라짐
   const hasNewNotice = useHasNewNotice();
-  // DESIGN_GUIDE §2: 구독 중인 배우가 있으면 앱을 열 때 Inbox부터, 없으면 Discover(첫 진입 한 번만)
+  // DESIGN_GUIDE §2: 구독 중인 배우가 있으면 앱을 열 때 Inbox부터, 없으면 Discover(첫 진입 한 번만). 첫 탭(Discover, '/')에 있을 때만 —
+  // 웹에서 /mypage 등을 새로고침했거나 그 사이 다른 탭으로 옮겼으면 그대로 둠(2026-10-28)
   const decided = useRef(false);
   useEffect(() => {
     if (decided.current || !subscriptions) return;
     decided.current = true;
-    if (subscriptions.length > 0) router.replace('/chats');
-  }, [subscriptions, router]);
+    if (subscriptions.length > 0 && pathname === '/') router.replace('/chats');
+  }, [subscriptions, router, pathname]);
 
   return (
     <Tabs

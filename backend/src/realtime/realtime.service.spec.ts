@@ -62,7 +62,7 @@ describe('RealtimeService LISTEN 재연결(2026-10-25)', () => {
 describe('RealtimeController 배포·재동기화(2026-10-25)', () => {
   function controller(realtime: InstanceType<typeof RealtimeService>) {
     const prisma = {
-      user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'fan', role: 'USER', agencyId: null }) },
+      user: { findUnique: vi.fn().mockResolvedValue({ id: 'fan', role: 'USER', agencyId: null, status: 'ACTIVE', deletedAt: null, suspendedUntil: null, tokenVersion: 0, authSessions: [] }) },
       subscription: { findMany: vi.fn().mockResolvedValue([]) },
     } as unknown as PrismaService;
     return new RealtimeController(realtime, prisma);

@@ -17,13 +17,18 @@ export function jwtLifetimeMs(value: string | undefined | null): number {
   return ms > 0 ? ms : DEFAULT_LIFETIME_MS;
 }
 
-/** user.update data에 끼워 넣는 "모든 로그인 끊기" — tv를 올려 세션 없는 옛 토큰까지 막고, 세션 기록도 끊긴 것으로(keepSessionId는 남김) */
+/**
+ * user.update data에 끼워 넣는 "모든 로그인 끊기" — tv를 올려 세션 없는 옛 토큰까지 막고, 세션 기록도 끊긴 것으로(keepSessionId는 남김).
+ * 푸시 기기도 지움(2026-10-28 점검) — 세션만 끊으면 잃어버린 폰 잠금화면에 메시지 미리보기 푸시가 계속 갔음. 로그아웃된 앱은 토큰이 무효라
+ * 스스로 해제할 수 없음. 이 기기 세션을 남기는 경우(keepSessionId)는 어느 기기가 이 기기인지 몰라서 그대로(앱이 다음 실행 때 다시 등록)
+ */
 export function revokeAllSessionsData(now = new Date(), keepSessionId?: string) {
   return {
     tokenVersion: { increment: 1 },
     authSessions: {
       updateMany: { where: { revokedAt: null, ...(keepSessionId ? { id: { not: keepSessionId } } : {}) }, data: { revokedAt: now } },
     },
+    ...(keepSessionId ? {} : { pushDevices: { deleteMany: {} } }),
   } satisfies Prisma.UserUpdateInput;
 }
 

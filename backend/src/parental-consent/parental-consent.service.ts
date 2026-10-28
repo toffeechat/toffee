@@ -2,7 +2,7 @@ import { ConflictException, BadRequestException, Injectable } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'node:crypto';
 import { calculateAge, parseBirthDate } from './birth-date.js';
-import { adultAgeFor, consentAgeFor, normalizeCountryCode } from './minor-age.js';
+import { adultAgeFor, consentAgeFor, localNowFor, normalizeCountryCode } from './minor-age.js';
 import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EmailService } from '../notifications/email.service.js';
@@ -112,7 +112,7 @@ export class ParentalConsentService {
     if (existing.birthDate) {
       throw new ConflictException(appError('BIRTH_DATE_ONCE'));
     }
-    const age = calculateAge(birthDate, new Date());
+    const age = calculateAge(birthDate, localNowFor(existing.countryCode));
     const status = this.adultsOnly
       ? age < adultAgeFor(existing.countryCode)
         ? ParentalConsentStatus.UNDERAGE
@@ -120,12 +120,10 @@ export class ParentalConsentService {
       : age < consentAgeFor(existing.countryCode)
         ? ParentalConsentStatus.PENDING
         : ParentalConsentStatus.NOT_REQUIRED;
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { birthDate, parentalConsentStatus: status },
-      select: { parentalConsentStatus: true },
-    });
-    return user;
+    // 아직 비어 있을 때만 — 성인 날짜와 미성년 날짜를 동시에 보내 둘 다 성공하던 것 막음(2026-10-28 점검)
+    const { count } = await this.prisma.user.updateMany({ where: { id: userId, birthDate: null }, data: { birthDate, parentalConsentStatus: status } });
+    if (count === 0) throw new ConflictException(appError('BIRTH_DATE_ONCE'));
+    return { parentalConsentStatus: status };
   }
 
   async requestConsent(userId: string, parentEmail: string): Promise<void> {

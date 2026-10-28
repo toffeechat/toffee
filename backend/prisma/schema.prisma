@@ -171,6 +171,10 @@ model User {
   totpSecret               String?
   totpPendingSecret        String?
   totpEnabledAt            DateTime?
+  // 2단계 인증 코드 실패 잠금·재사용 방지(2026-10-28 점검) — 10번 틀리면 15분 잠금, 마지막으로 쓴 코드의 시간 칸(30초 단위)
+  totpFailedCount          Int                   @default(0)
+  totpLockedUntil          DateTime?
+  totpLastStep             Int?
   // 로그인 토큰 세대(2026-10-27) — 토큰에 tv로 담고 매 요청 비교. 올리면 이 계정의 모든 기기 토큰이 바로 무효(2단계 인증 초기화·끄기,
   // 정지·영구차단, 운영자의 "모든 기기 로그아웃"). 예전 토큰(tv 없음)은 0으로 봄
   tokenVersion             Int                   @default(0)

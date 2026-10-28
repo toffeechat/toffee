@@ -152,13 +152,22 @@ function ensureConnection(): Promise<boolean> {
   return connection;
 }
 
+const RESTORE_CHUNK = 20;
+
 /** 스토어 거래들을 서버에 복원 요청 → 서버가 받은 것만 거래 완료. 복원된 개수 */
 async function restorePurchases(purchases: Purchase[]): Promise<number> {
   const usable = purchases.filter((purchase) => purchase.purchaseState !== 'pending' && purchase.purchaseToken);
   if (!usable.length) return 0;
-  const { results } = await apiClient.post<{ results: { restored: boolean }[] }>('/me/purchases/restore', {
-    items: usable.map(receiptOf),
-  });
+  // 서버는 한 번에 20개까지 받음(RestorePurchasesDto @ArrayMaxSize) — 거래가 많은 기기(오래 쓴 iOS 등)는 나눠서 보냄(2026-10-28)
+  const results: { restored: boolean }[] = [];
+  for (let start = 0; start < usable.length; start += RESTORE_CHUNK) {
+    const chunk = await apiClient.post<{ results: { restored: boolean }[] }>('/me/purchases/restore', {
+      items: usable.slice(start, start + RESTORE_CHUNK).map(receiptOf),
+    });
+    // 덜 돌아와도 순서가 밀리지 않게 보낸 개수만큼 채움
+    const sent = Math.min(RESTORE_CHUNK, usable.length - start);
+    for (let index = 0; index < sent; index++) results.push(chunk.results[index] ?? { restored: false });
+  }
   // 결과는 보낸 순서 그대로(서버 restorePurchases). 이미 완료된 안드로이드 거래는 다시 완료하지 않음
   await Promise.all(usable.map((purchase, index) => (results[index]?.restored && !isAcknowledged(purchase) ? finish(purchase) : undefined)));
   refresh();

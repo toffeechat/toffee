@@ -19,9 +19,10 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   // 호스팅 프록시(로드밸런서) 뒤에서 실제 접속 IP를 읽도록 — 로그인 요청 횟수 제한이 IP 기준이라, 안 하면 모든 사람이
-  // 프록시 IP 하나로 보여 서로의 한도를 나눠 씀. 값은 프록시 단계 수(보통 1) 또는 "true"(호스팅 문서 확인)
+  // 프록시 IP 하나로 보여 서로의 한도를 나눠 씀. 값은 프록시 단계 수(보통 1). "true"는 1로 봄 — Express의 true는 X-Forwarded-For 맨 왼쪽
+  // (접속하는 쪽이 마음대로 적는 값)을 IP로 믿어서 요청 제한을 피하고 접속 기록 IP를 위조할 수 있었음(2026-10-28 점검)
   const trustProxy = process.env.TRUST_PROXY;
-  if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true');
+  if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? 1 : false);
   // 배포·재시작 때(SIGTERM) 하던 일을 끝내고 끔 — enableShutdownHooks()는 DB 연결을 먼저 끊어서 처리 중인 요청·푸시·cron이
   // 중간에 실패했음(2026-10-25). 순서는 ShutdownService 설명 참고
   const shutdown = app.get(ShutdownService);

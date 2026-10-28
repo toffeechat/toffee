@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { apiClient } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
+import { onSessionReset } from '@/lib/session-reset';
 import { UploadCancelledError, uploadMedia, type UploadMediaType, type UploadOptions } from '@/lib/upload-media';
 import { createVideoThumbnail } from '@/lib/video-thumbnail';
 import { thumbhashFor } from '@/lib/thumbhash';
@@ -97,6 +98,8 @@ interface UploadedMedia {
 // 못 보낸 메시지의 중복 방지 키 + 이미 올린 파일(2026-10-25) — 앱이 켜져 있는 동안 남음(화면을 나갔다 와도). 저장소는 하루가
 // 지나야 붙이지 않은 파일을 지우므로(UploadCleanupService) 그 안에 다시 보내면 올린 파일을 그대로 씀
 const pendingBroadcasts = new PendingSends<UploadedMedia>();
+// 로그아웃하면 비움(2026-10-28) — use-messages와 같게, 같은 기기의 다음 계정이 앞 사람의 키·올린 파일을 쓰지 않게
+onSessionReset(() => pendingBroadcasts.clear());
 
 // 미디어가 있으면 먼저 저장소에 올리고(uploadMedia) 받은 키로 발송 — 영상이면 첫 장면 썸네일도 같이.
 // onProgress로 올라간 정도(0~1)를, signal로 취소를 받음(큰 영상이 멈춘 것처럼 보이지 않게, 2026-09-28 점검).

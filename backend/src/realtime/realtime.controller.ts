@@ -1,6 +1,7 @@
 import { Controller, Header, MessageEvent, ServiceUnavailableException, Sse } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Observable } from 'rxjs';
+import { DemoAccessService } from '../demo/demo-access.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Role, UserStatus } from '../generated/prisma/enums.js';
 import { viewableActorsWhere } from '../common/authorization/actor-access.js';
@@ -33,6 +34,7 @@ export class RealtimeController {
   constructor(
     private readonly realtime: RealtimeService,
     private readonly prisma: PrismaService,
+    private readonly demoAccess?: DemoAccessService,
   ) {}
 
   /**
@@ -49,22 +51,26 @@ export class RealtimeController {
       let audience: Audience | null = null;
       // 연결 중에 정지·영구 정지·탈퇴됐으면 다음 새로고침 때 닫음(2026-10-27 — 예전엔 연결할 때만 확인해서 계속 신호를 받았음)
       // 로그아웃·모든 기기 로그아웃으로 이 토큰이 끊겨도 닫음(같은 날 로그인 세션)
-      const refresh = () =>
-        this.loadAudience(user)
-          .then((next) => {
-            if (!next) subscriber.complete();
-            else audience = next;
-          })
-          .catch(() => {});
+      const load = () =>
+        this.loadAudience(user).then((next) => {
+          if (!next) subscriber.complete();
+          else audience = next;
+        });
+      // 주기 새로고침이 실패하면 지난 목록 그대로
+      const refresh = () => load().catch(() => {});
       const close = () => subscriber.complete();
       const mine = this.streams.get(user.id) ?? [];
       mine.push(close);
       this.streams.set(user.id, mine);
       while (mine.length > MAX_STREAMS_PER_USER) mine.shift()!();
       // 볼 수 있는 방 목록을 다 읽은 뒤에 "준비됨" — 예전엔 먼저 보내서, 읽는 사이에 온 신호가 조용히 버려질 수 있었음
-      void refresh().then(() => {
-        if (!subscriber.closed) subscriber.next({ type: 'ready', data: '' });
-      });
+      // 처음 읽기가 실패하면(DB 순간 끊김) 닫아서 앱이 다시 연결하게 — 예전엔 목록 없이 ready를 보내 10분 넘게 신호를 하나도 못 받았음(2026-10-28 점검)
+      void load().then(
+        () => {
+          if (!subscriber.closed) subscriber.next({ type: 'ready', data: '' });
+        },
+        () => subscriber.complete(),
+      );
       const refreshTimer = setInterval(() => void refresh(), AUDIENCE_REFRESH_MS + Math.floor(Math.random() * 60_000));
       const heartbeat = setInterval(() => subscriber.next({ type: 'ping', data: '' }), HEARTBEAT_MS);
       const subscription = this.realtime.events$.subscribe({
@@ -118,6 +124,14 @@ export class RealtimeController {
       },
     });
     if (!user || !accountUsable(user) || !tokenSessionValid(auth, user)) return null;
+    // 데모 입장 코드가 만료·중지됐으면 닫음(로그인 확인과 같게 — 예전엔 열린 연결이 계속 신호를 받았음, 2026-10-28 점검)
+    if (auth.demoCode && this.demoAccess) {
+      const active = await this.demoAccess.assertActive(auth.demoCode).then(
+        () => true,
+        () => false,
+      );
+      if (!active) return null;
+    }
     if (user.role === Role.ADMIN) return { admin: true, subscribed: new Set(), staff: new Set() };
     const [subscriptions, actors] = await Promise.all([
       this.prisma.subscription.findMany({ where: { userId, cancelledAt: null }, select: { actorId: true } }),

@@ -202,6 +202,7 @@
     "noReplies": "まだ返信はありません",
     "repliesEmpty": "このメッセージへの返信はまだありません。",
     "permissionDenied": "許可が必要です。設定から許可してください。",
+    "recordFailed": "録音できませんでした。もう一度お試しください。",
     "media": {
       "PHOTO": "📷 写真",
       "AUDIO": "🎧 ボイスメッセージ",
@@ -991,7 +992,9 @@
     "photoUnavailable": "写真を読み込めません",
     "delete": "問い合わせを削除",
     "deleteTitle": "問い合わせを削除",
-    "deleteConfirm": "この問い合わせのメッセージと写真がすべて削除され、元に戻せません。"
+    "deleteConfirm": "この問い合わせのメッセージと写真がすべて削除され、元に戻せません。",
+    "notFound": "問い合わせが見つかりません",
+    "backToList": "問い合わせ一覧へ"
   },
   "sendRetry": {
     "failed": "接続が切れたため、送信を確認できませんでした。",

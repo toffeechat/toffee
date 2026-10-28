@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ChargeSource, Role } from '../generated/prisma/enums.js';
+import { ChargeKind, ChargeSource, Role } from '../generated/prisma/enums.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -89,7 +89,7 @@ const ALLOCATION_SELECT = {
   chargeId: true,
   amountCents: true,
   agencyId: true,
-  charge: { select: { chargedAt: true, createdAt: true, refundedAt: true } },
+  charge: { select: { chargedAt: true, createdAt: true, refundedAt: true, kind: true, switchOfChargeId: true } },
   actor: { select: { id: true, legalName: true } },
   room: { select: { id: true, legalName: true, kind: true } },
   agency: { select: { id: true, name: true, revenueSharePercent: true } },
@@ -190,7 +190,18 @@ export class SettlementsService {
     const closedAt = new Map(closes.map((close) => [close.month, close.closedAt]));
     const book = shareRateBook(rateRows);
     const defaultSharePercent = this.defaultSharePercent;
-    const rateOfLine = (line: AllocationLine, lineMonth: string) => shareRateAt(book, line.agencyId, lineMonth, defaultSharePercent, line.agency?.revenueSharePercent);
+    // 갈아타기 차감 줄은 원래 결제 달의 배분율로 빼야 맞음(70% 달 결제를 60% 달에 갈아타면 70%로 줬던 걸 70%로 뺌, 2026-10-28 점검)
+    const creditOrigins = [...new Set([...current, ...earlier].filter((line) => line.charge.kind === ChargeKind.SWITCH_CREDIT && line.charge.switchOfChargeId).map((line) => line.charge.switchOfChargeId!))];
+    const originChargedAt = new Map(
+      creditOrigins.length === 0
+        ? []
+        : (await this.prisma.purchaseCharge.findMany({ where: { id: { in: creditOrigins } }, select: { id: true, chargedAt: true } })).map((row) => [row.id, row.chargedAt]),
+    );
+    const rateMonthOf = (line: AllocationLine) => {
+      const origin = line.charge.kind === ChargeKind.SWITCH_CREDIT && line.charge.switchOfChargeId ? originChargedAt.get(line.charge.switchOfChargeId) : undefined;
+      return monthOf(origin ?? line.charge.chargedAt);
+    };
+    const rateOfLine = (line: AllocationLine) => shareRateAt(book, line.agencyId, rateMonthOf(line), defaultSharePercent, line.agency?.revenueSharePercent);
 
     // fallbackPercent: 이력이 없는 소속사의 표시용 비율(결제 줄의 revenueSharePercent, 이월로만 생긴 그룹이면 앞 달 표의 비율)
     const groups = new Map<string, { agencyId: string | null; name: string | null; fallbackPercent: number; actors: Map<string, ActorRow> }>();
@@ -223,12 +234,13 @@ export class SettlementsService {
     for (const line of current) {
       const actor = rowFor(line);
       if (line.charge.refundedAt) {
-        actor.refundedCents += line.amountCents;
+        // 환불 칸엔 실제 결제만(원래 결제가 환불돼 같이 빠진 갈아타기 차감·이월 줄은 숫자만 빠짐)
+        if (line.charge.kind !== ChargeKind.SWITCH_CREDIT && line.charge.kind !== ChargeKind.SWITCH_CARRY) actor.refundedCents += line.amountCents;
         continue;
       }
       actor.chargeIds.add(line.chargeId);
       actor.grossCents += line.amountCents;
-      addAt(actor, rateOfLine(line, month), line.amountCents);
+      addAt(actor, rateOfLine(line), line.amountCents);
       const room = actor.rooms.get(line.room.id) ?? { roomId: line.room.id, name: line.room.legalName, kind: line.room.kind, grossCents: 0 };
       room.grossCents += line.amountCents;
       actor.rooms.set(line.room.id, room);
@@ -244,7 +256,7 @@ export class SettlementsService {
       const actor = rowFor(line);
       actor.adjustmentCents += late - refunded;
       // 마감한 달 결제의 조정은 그 결제 달의 배분율로(바꾼 뒤에 환불돼도 70% 달 몫은 70%로 빼야 맞음)
-      addAt(actor, rateOfLine(line, monthOf(line.charge.chargedAt)), late - refunded);
+      addAt(actor, rateOfLine(line), late - refunded);
     }
     // 바로 앞 달(마감됨)의 음수 지급액 이월
     if (previousClose) {
@@ -312,9 +324,10 @@ export class SettlementsService {
     if (await this.prisma.settlementClose.findUnique({ where: { month } })) throw new ConflictException(appError('SETTLEMENT_ALREADY_CLOSED'));
     const openBefore = await this.openMonthsBefore(from);
     if (openBefore.length > 0) throw new ConflictException(appError('SETTLEMENT_CLOSE_ORDER', { month: openBefore[0] }));
+    // 마감 시각 = 계산을 시작한 시각 — 계산하는 몇 초 사이에 기록·환불된 결제가 마감표에도, 다음 달 조정(closedAt 이후)에도 안 잡히던 문제(2026-10-28 점검)
     const snapshot = await this.compute(month, { includeSandbox });
     try {
-      await this.prisma.settlementClose.create({ data: { month, closedById: adminId, snapshot: snapshot as unknown as Prisma.InputJsonValue } });
+      await this.prisma.settlementClose.create({ data: { month, closedById: adminId, closedAt: now, snapshot: snapshot as unknown as Prisma.InputJsonValue } });
     } catch (error) {
       // 두 번 눌러 동시에 마감하면 한쪽이 고유 제약에 걸림 — 예전엔 500(2026-10-27)
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new ConflictException(appError('SETTLEMENT_ALREADY_CLOSED'));

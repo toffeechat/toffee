@@ -45,11 +45,14 @@ export class ParentalConsentController {
   @Public()
   @Get('parental-consent/confirm')
   async confirmPage(
-    @Query('token') token: string | undefined,
-    @Query('lang') lang: string | undefined,
+    @Query('token') rawToken: unknown,
+    @Query('lang') rawLang: unknown,
     @Headers('accept-language') acceptLanguage: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
+    // ?token=a&token=b처럼 같은 이름이 여럿이면 배열로 옴 — 그대로 DB 조회에 넣어 500이 났음(2026-10-28 점검)
+    const token = typeof rawToken === 'string' ? rawToken : undefined;
+    const lang = typeof rawLang === 'string' ? rawLang : undefined;
     const { state, childLocale } = await this.parentalConsentService.consentPageState(token);
     const locale = pickLocale(lang, acceptLanguage, childLocale);
     sendPage(res, state === 'invalid' ? 400 : 200, consentPage(state, locale, state === 'ask' ? token : undefined));

@@ -97,10 +97,17 @@ export function useSetNotificationsMuted(actorId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (muted: boolean) => apiClient.patch(`/actors/${actorId}/subscribe/notifications`, { muted }),
-    onMutate: (muted) => {
+    onMutate: async (muted) => {
+      // 진행 중인 목록 요청이 늦게 도착해 바꾼 값을 덮지 않게 먼저 멈춤 + 실패하면 되돌릴 값(2026-10-28)
+      await queryClient.cancelQueries({ queryKey: ['my-subscriptions'] });
+      const previous = queryClient.getQueryData<Subscription[]>(['my-subscriptions']);
       queryClient.setQueryData<Subscription[]>(['my-subscriptions'], (list) =>
         list?.map((s) => (s.actorId === actorId ? { ...s, notificationsMuted: muted } : s)),
       );
+      return { previous };
+    },
+    onError: (_error, _muted, context) => {
+      if (context?.previous) queryClient.setQueryData(['my-subscriptions'], context.previous);
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] }),
   });

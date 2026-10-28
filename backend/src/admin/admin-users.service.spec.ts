@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AdminUsersService } from './admin-users.service.js';
 import { translateError } from '../common/i18n/error-messages.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
@@ -128,6 +128,14 @@ describe('운영자 계정 보호(2026-10-27)', () => {
     const many = setup({ role: 'ADMIN', adminLevel: 'OWNER' }, 2);
     await many.service.ban(owner, 'owner-2', { category: 'ABUSE' });
     expect(many.update).toHaveBeenCalled();
+  });
+
+  it('없는 계정이면 정지·차단·복구 대신 404(2026-10-28 — 예전엔 500)', async () => {
+    const { service, update } = setup(null);
+    await expect(service.suspend(owner, 'nobody', new Date(), { category: 'ABUSE' })).rejects.toThrow(NotFoundException);
+    await expect(service.ban(owner, 'nobody', { category: 'ABUSE' })).rejects.toThrow(NotFoundException);
+    await expect(service.reactivate(owner, 'nobody')).rejects.toThrow(NotFoundException);
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('OWNER는 고객 응대 운영자를 정지할 수 있음', async () => {

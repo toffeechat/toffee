@@ -16,6 +16,7 @@ function setup() {
       findUnique: vi.fn().mockResolvedValue({ id: 'victim', role: 'USER' }),
       create: vi.fn().mockResolvedValue({ id: 'new', role: 'USER' }),
     },
+    $transaction: (fn: (tx: unknown) => unknown) => fn(prisma),
   };
   const service = new AuthService({ get: () => undefined } as unknown as ConfigService, {} as JwtService, prisma as unknown as PrismaService, {} as ModerationService, {} as MediaService);
   return { service, prisma };

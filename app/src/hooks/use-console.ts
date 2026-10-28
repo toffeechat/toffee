@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
+import { onSessionReset } from '@/lib/session-reset';
 import { PendingSends, SEND_RETRY } from '@/utils/send-retry';
 import type { Actor } from './use-actors';
 import type { ChatMessage } from './use-messages';
@@ -217,6 +218,8 @@ interface SendBroadcastInput {
 
 // 못 보낸 메시지의 중복 방지 키(2026-10-25) — use-studio의 useStudioSend와 같은 방식
 const pendingBroadcasts = new PendingSends();
+// 로그아웃하면 비움(2026-10-28) — use-messages와 같게, 같은 기기의 다음 계정이 앞 사람의 키·올린 파일을 쓰지 않게
+onSessionReset(() => pendingBroadcasts.clear());
 
 // 배우 본인 전용 — 소속사 콘솔에서는 안 씀(발송 권한 없음). 배우용 화면 만들 때 재사용(지금 화면은 use-studio의 useStudioSend).
 // 중복 방지 키를 붙여서 끊겨 실패하면 자동으로 2번 더 — 서버가 이미 저장했으면 같은 메시지를 돌려줌

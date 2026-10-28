@@ -56,6 +56,8 @@ const ACTION_LABELS: Record<string, string> = {
   ACTOR_AGENCY: '아티스트 소속사 변경',
   STAFF_AGENCY: '소속사 직원 지정·해제',
   ACTOR_SELF_LINK: '아티스트 계정 직접 연결·해제',
+  // 2026-10-28 점검
+  MESSAGE_DELETE: '아티스트 메시지 삭제',
 };
 
 function detailText(entry: AdminActionEntry): string {

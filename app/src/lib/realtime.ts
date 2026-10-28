@@ -151,7 +151,7 @@ export function useRealtimeSync(token: string | null) {
           const body = (await res.json().catch(() => ({}))) as { message?: string | string[]; code?: string };
           stopped = true;
           const message = Array.isArray(body.message) ? body.message.join(', ') : body.message;
-          reportUnauthorized(body.code, message ?? i18n.t('common.requestFailed', { status: 401 }));
+          reportUnauthorized(body.code, message ?? i18n.t('common.requestFailed', { status: 401 }), token);
           return;
         }
         if (!res.ok || !res.body) throw new Error(`realtime ${res.status}`);

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import { Environment, SignedDataVerifier, VerificationException, VerificationStatus } from '@apple/app-store-server-library';
 import { appError } from '../common/i18n/app-error.js';
+import { addMonths } from '../settlements/allocate-charge.js';
 
 // Apple이 공개하는 루트 인증서 — StoreKit2 JWS(서명된 트랜잭션·서버 알림) 검증에 필요.
 // 자주 안 바뀌는 값이라 프로세스 실행 중엔 한 번만 받아서 메모리에 캐싱(받기에 실패하면 캐싱하지 않고 다음 호출에서 다시, 2026-10-27).
@@ -300,15 +301,17 @@ export function appleTransaction(payload: {
   };
 }
 
-// 구글 orderId는 첫 결제 "GPA.1234-...", 갱신마다 뒤에 "..0", "..1"이 붙음 — 갱신이면 결제 시각을 따로 안 주므로 지금 시각으로
+// 구글 orderId는 첫 결제 "GPA.1234-...", 갱신마다 뒤에 "..0", "..1"이 붙음 — 갱신이면 결제 시각을 따로 안 주므로 만료일 한 달 전(월 구독)으로
+// 추정하되 지금보다 늦으면 지금. 예전엔 늘 지금 시각이라, 알림을 놓쳐 며칠 뒤 복원으로 처음 기록되면 정산 달·이용 기간이 틀어졌음(2026-10-28 점검)
 export function googleTransaction(purchaseToken: string, productId: string, body: GooglePlaySubscriptionResponse, now: Date): StoreTransaction {
   const renewal = !!body.orderId && /\.\.\d+$/.test(body.orderId);
+  const renewedAt = addMonths(new Date(Number(body.expiryTimeMillis)), -1);
   return {
     platform: 'ANDROID',
     originalTransactionId: purchaseToken,
     storeTransactionId: body.orderId,
     productId,
-    purchasedAt: !renewal && body.startTimeMillis ? new Date(Number(body.startTimeMillis)) : now,
+    purchasedAt: !renewal && body.startTimeMillis ? new Date(Number(body.startTimeMillis)) : renewal && renewedAt < now ? renewedAt : now,
     expiresAt: new Date(Number(body.expiryTimeMillis)),
     accountToken: body.obfuscatedExternalAccountId || undefined,
     storeAmountMilli: body.priceAmountMicros ? Math.round(Number(body.priceAmountMicros) / 1000) : undefined,

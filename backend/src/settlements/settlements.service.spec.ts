@@ -73,6 +73,8 @@ interface Charge {
   createdAt: Date;
   refundedAt: Date | null;
   amountCents: number;
+  kind?: 'PAYMENT' | 'SWITCH_CREDIT' | 'SWITCH_CARRY';
+  switchOfChargeId?: string;
 }
 
 type Range = { gte?: Date; lt?: Date };
@@ -110,7 +112,7 @@ function setup(charges: Charge[], rates: { agencyId: string; fromMonth: string; 
             chargeId: c.id,
             amountCents: c.amountCents,
             agencyId: 'ag',
-            charge: { chargedAt: c.chargedAt, createdAt: c.createdAt, refundedAt: c.refundedAt },
+            charge: { chargedAt: c.chargedAt, createdAt: c.createdAt, refundedAt: c.refundedAt, kind: c.kind ?? 'PAYMENT', switchOfChargeId: c.switchOfChargeId ?? null },
             actor: { id: 'a1', legalName: 'Nawin' },
             room: { id: 'a1', legalName: 'Nawin', kind: 'SOLO' },
             agency: { id: 'ag', name: 'A', revenueSharePercent: 70 },
@@ -120,14 +122,15 @@ function setup(charges: Charge[], rates: { agencyId: string; fromMonth: string; 
       findUnique: async ({ where }: { where: { month: string } }) => closes.find((c) => c.month === where.month) ?? null,
       findMany: async () => closes,
       findFirst: async ({ where }: { where: { month: { gt: string } } }) => closes.filter((c) => c.month > where.month.gt).sort()[0] ?? null,
-      create: async ({ data }: { data: { month: string; closedById: string; snapshot: unknown } }) => {
-        closes.push({ ...data, closedAt: new Date(clock.now) });
+      create: async ({ data }: { data: { month: string; closedById: string; closedAt?: Date; snapshot: unknown } }) => {
+        closes.push({ ...data, closedAt: data.closedAt ?? new Date(clock.now) });
       },
       delete: async ({ where }: { where: { month: string } }) => closes.splice(closes.findIndex((c) => c.month === where.month), 1),
     },
     purchaseCharge: {
       findFirst: async ({ where }: { where: { chargedAt: { lt: Date } } }) =>
         charges.filter((c) => c.chargedAt < where.chargedAt.lt).sort((a, b) => +a.chargedAt - +b.chargedAt)[0] ?? null,
+      findMany: async ({ where }: { where: { id: { in: string[] } } }) => charges.filter((c) => where.id.in.includes(c.id)),
     },
     user: { findUnique: async () => ({ displayName: '운영자' }) },
     agencyShareRate: { findMany: async ({ where }: { where: { agencyId?: string } }) => rates.filter((r) => !where.agencyId || r.agencyId === where.agencyId) },
@@ -323,6 +326,25 @@ describe('배분율 이력(2026-10-27)', () => {
     // 20,000 → 수수료 3,000, 17,000의 60% = 10,200 / -10,000 → 수수료 -1,500, -8,500의 70% = -5,950
     expect(february.agencies[0]).toMatchObject({ sharePercent: 60, sharePercentsUsed: [70, 60], adjustmentCents: -10000, storeFeeCents: 1500, payoutCents: 4250 });
     expect(february.totals.payoutCents + february.totals.platformCents + february.totals.storeFeeCents).toBe(10000);
+  });
+
+  it('갈아타기 차감 줄은 원래 결제 달(70%) 비율로 빼고, 원래 결제가 환불되면 차감 줄도 같이 빠짐(2026-10-28)', async () => {
+    const t = setup(
+      [
+        { id: 'c1', chargedAt: at('2028-01-20T00:00:00Z'), createdAt: at('2028-01-20T00:00:00Z'), refundedAt: null, amountCents: 10000 },
+        { id: 'cr', chargedAt: at('2028-02-05T00:00:00Z'), createdAt: at('2028-02-05T00:00:00Z'), refundedAt: null, amountCents: -5000, kind: 'SWITCH_CREDIT', switchOfChargeId: 'c1' },
+      ],
+      founding,
+    );
+    let february = await t.service.report('2028-02');
+    // -5,000 → 수수료 -750, -4,250의 70% = -2,975(이 달 비율 60%였다면 -2,550)
+    expect(february.agencies[0]).toMatchObject({ grossCents: -5000, payoutCents: -2975, refundedCents: 0 });
+    t.charges[0].refundedAt = at('2028-02-10T00:00:00Z');
+    t.charges[1].refundedAt = at('2028-02-10T00:00:00Z');
+    february = await t.service.report('2028-02');
+    // 환불 칸엔 실제 결제만(차감 줄 -5,000이 환불 금액을 줄이지 않게)
+    expect(february.totals).toMatchObject({ grossCents: 0, refundedCents: 0 });
+    expect((await t.service.report('2028-01')).totals).toMatchObject({ grossCents: 0, refundedCents: 10000 });
   });
 
   it('비율이 하나뿐이면 이력이 있든 없든(옛 revenueSharePercent) 결과가 같음', async () => {

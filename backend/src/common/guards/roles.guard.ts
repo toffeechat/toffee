@@ -6,8 +6,13 @@ import { AdminLevel, Role } from '../../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../types/authenticated-user.js';
 import { appError } from '../i18n/app-error.js';
 
-/** 운영자 2단계 인증 확인이 유효한 시간(기본 12시간) — 지나면 코드를 다시 */
-export const ADMIN_MFA_TTL_MS = Math.max(1, Number(process.env.ADMIN_MFA_HOURS ?? 12) || 12) * 60 * 60 * 1000;
+/**
+ * 운영자 2단계 인증 확인이 유효한 시간(기본 12시간) — 지나면 코드를 다시. 요청 때 읽음(2026-10-28 점검 — 모듈을 불러올 때 계산해서
+ * .env 파일(ConfigModule이 나중에 읽음)로 준 값이 무시됐음)
+ */
+export function adminMfaTtlMs(): number {
+  return Math.max(1, Number(process.env.ADMIN_MFA_HOURS ?? 12) || 12) * 60 * 60 * 1000;
+}
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -28,7 +33,7 @@ export class RolesGuard implements CanActivate {
       // 서비스 안에서 "운영자면 전체" 권한을 주는 API가 많아서, 코드 확인 전 토큰으로 그쪽을 다 쓸 수 있었음.
       // 코드 화면 전에 꼭 필요한 것(/auth/me·푸시 기기 등록·해제·2단계 인증 API)만 @SkipAdminMfa
       if (user.mfaEnabled && !this.reflector.getAllAndOverride<boolean>(SKIP_MFA_KEY, targets)) {
-        if (!user.mfaAt || Date.now() - user.mfaAt > ADMIN_MFA_TTL_MS) throw new UnauthorizedException(appError('ADMIN_MFA_REQUIRED'));
+        if (!user.mfaAt || Date.now() - user.mfaAt > adminMfaTtlMs()) throw new UnauthorizedException(appError('ADMIN_MFA_REQUIRED'));
       }
       // 권한 단계 — 고객 응대 운영자는 정산·소속사·아티스트 등록/가격·앱 설정·운영자 관리 같은 API를 못 씀
       if (user.adminLevel === AdminLevel.SUPPORT && this.reflector.getAllAndOverride<boolean>(ADMIN_OWNER_KEY, targets)) {

@@ -28,7 +28,9 @@ import { DemoAccessService } from '../demo/demo-access.service.js';
 import { AccessLogService } from '../access-log/access-log.service.js';
 import { Client, type ClientInfo } from '../access-log/client-info.js';
 
-const LOGIN_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
+// 로그인은 토큰이 없어 IP 단위로 셈 — 태국 모바일망은 여러 사람을 한 공인 IP로 묶어서 5회/분이면 출시일 같은 때 정상 로그인이 막힘(2026-10-28 점검).
+// 소셜 토큰은 맞혀 볼 수 있는 값이 아니라 한도를 넉넉히
+const LOGIN_THROTTLE = { default: { limit: 30, ttl: 60_000 } };
 
 @Controller('auth')
 export class AuthController {

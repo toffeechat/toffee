@@ -208,6 +208,7 @@
     "noReplies": "Aún no hay respuestas",
     "repliesEmpty": "Este mensaje aún no tiene respuestas.",
     "permissionDenied": "Se necesita permiso. Actívalo en Ajustes.",
+    "recordFailed": "No se pudo grabar. Inténtalo de nuevo.",
     "media": {
       "PHOTO": "📷 Foto",
       "AUDIO": "🎧 Mensaje de voz",
@@ -1005,7 +1006,9 @@
     "photoUnavailable": "No se pudo cargar la foto",
     "delete": "Eliminar consulta",
     "deleteTitle": "Eliminar consulta",
-    "deleteConfirm": "Se eliminarán todos los mensajes y fotos de esta consulta. No se puede deshacer."
+    "deleteConfirm": "Se eliminarán todos los mensajes y fotos de esta consulta. No se puede deshacer.",
+    "notFound": "No se encontró la consulta",
+    "backToList": "Volver a las consultas"
   },
   "sendRetry": {
     "failed": "Se perdió la conexión y no pudimos confirmar el envío.",

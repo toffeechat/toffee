@@ -207,6 +207,7 @@
     "noReplies": "No replies yet",
     "repliesEmpty": "No replies to this message yet.",
     "permissionDenied": "Permission is required. Please allow it in Settings.",
+    "recordFailed": "Couldn't record. Please try again.",
     "media": {
       "PHOTO": "📷 Photo",
       "AUDIO": "🎧 Voice message",
@@ -1004,7 +1005,9 @@
     "photoUnavailable": "Couldn't load photo",
     "delete": "Delete inquiry",
     "deleteTitle": "Delete inquiry",
-    "deleteConfirm": "All messages and photos in this inquiry will be deleted. This can't be undone."
+    "deleteConfirm": "All messages and photos in this inquiry will be deleted. This can't be undone.",
+    "notFound": "Inquiry not found",
+    "backToList": "Back to inquiries"
   },
   "sendRetry": {
     "failed": "Connection lost — couldn't confirm it was sent.",

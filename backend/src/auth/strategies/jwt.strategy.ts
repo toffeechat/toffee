@@ -21,6 +21,8 @@ interface JwtPayload {
   // 로그인 세션 id·계정 토큰 버전(2026-10-27) — 로그아웃·모든 기기 로그아웃·제재 때 이미 나간 토큰을 막음(auth-sessions.ts)
   sid?: string;
   tv?: number;
+  // 배포 점검용 짧은 토큰(2026-10-28) — /auth/refresh로 30일 세션을 받지 못하게
+  short?: boolean;
 }
 
 @Injectable()
@@ -78,6 +80,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       tokenVersion,
       ...(sessionId ? { sessionId } : {}),
       ...(typeof payload.dac === 'string' ? { demoCode: payload.dac } : {}),
+      ...(payload.short === true ? { shortLived: true } : {}),
       ...(user.role === Role.ADMIN ? { adminLevel: user.adminLevel ?? AdminLevel.OWNER, mfaEnabled: !!user.totpEnabledAt, mfaAt: payload.mfaAt } : {}),
     };
   }

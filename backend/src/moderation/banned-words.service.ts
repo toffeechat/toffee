@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateBannedWordDto } from './dto/create-banned-word.dto.js';
 import { appError } from '../common/i18n/app-error.js';
@@ -28,6 +28,9 @@ export class BannedWordsService {
   }
 
   async remove(adminId: string, id: string) {
+    // 이미 지워졌거나 없는 id면 404(2026-10-28 — 예전엔 delete가 P2025로 500)
+    const existing = await this.prisma.bannedWord.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException(appError('NOT_FOUND'));
     const word = await this.prisma.bannedWord.delete({ where: { id } });
     await this.audit.record(adminId, 'BANNED_WORD_DELETE', 'BANNED_WORD', id, { term: word.term, language: word.language });
   }

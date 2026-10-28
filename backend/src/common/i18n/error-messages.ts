@@ -1480,6 +1480,18 @@ export const ERROR_MESSAGES = {
     es: 'El código no es correcto. Introduce el código actual de tu app de autenticación.',
     'pt-BR': 'Código incorreto. Digite o código atual do seu app autenticador.',
   },
+  // 2026-10-28 점검 — 코드를 계속 맞혀 보는 것을 막음(10번 틀리면 15분 잠금)
+  ADMIN_MFA_LOCKED: {
+    ko: '인증 코드를 여러 번 틀려서 잠시 잠겼어요. 15분 뒤 다시 시도해 주세요.',
+    en: 'Too many incorrect codes. Try again in 15 minutes.',
+    th: 'ใส่รหัสผิดหลายครั้งเกินไป กรุณาลองใหม่ใน 15 นาที',
+    ja: 'コードを何度も間違えたため、一時的にロックされました。15分後にもう一度お試しください。',
+    'zh-Hans': '验证码错误次数过多，请 15 分钟后再试。',
+    'zh-Hant': '驗證碼錯誤次數過多，請 15 分鐘後再試。',
+    vi: 'Bạn đã nhập sai mã quá nhiều lần. Hãy thử lại sau 15 phút.',
+    es: 'Demasiados códigos incorrectos. Vuelve a intentarlo en 15 minutos.',
+    'pt-BR': 'Muitos códigos incorretos. Tente novamente em 15 minutos.',
+  },
   ADMIN_OWNER_ONLY: {
     ko: '전체 권한 운영자만 할 수 있어요.',
     en: 'Only full-access administrators can do this.',

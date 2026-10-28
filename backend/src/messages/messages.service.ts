@@ -14,6 +14,7 @@ import type { SendReplyDto } from './dto/send-reply.dto.js';
 import type { SendBroadcastDto } from './dto/send-broadcast.dto.js';
 import { appError } from '../common/i18n/app-error.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
+import { AuditService } from '../audit/audit.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
 
 const NAME_PLACEHOLDER = '{{name}}';
@@ -155,6 +156,9 @@ const RETRACTED_BY_SENDER = { deletedByAdmin: false, deletedByStaffId: null } as
 const PUSH_PREVIEW_LENGTH = 60;
 // 스타 화면 "팬 답장 흐름" 미리보기 — 최근 스타 메시지 몇 개에만, 메시지당 최근 답장 몇 개만(오래된 메시지는 숫자만)
 const REPLY_PREVIEW_MESSAGES = 10;
+// 목록을 한 번에 너무 많이 읽지 않게(2026-10-28) — limit 없이 부르는 예전 앱·콘솔 화면도 최근 이만큼까지만
+const LEGACY_FAN_LIST_LIMIT = 500;
+const STAFF_LIST_DEFAULT_LIMIT = 200;
 const REPLY_PREVIEW_PER_MESSAGE = 20;
 const REPLY_PREVIEW_LENGTH = 80;
 
@@ -181,6 +185,7 @@ export class MessagesService {
     private readonly mediaService: MediaService,
     private readonly config: ConfigService,
     private readonly realtime: RealtimeService,
+    private readonly audit: AuditService,
   ) {}
 
   // 스타 메시지 하나당 팬 1명이 보낼 수 있는 답장 수(버블 방식, 잠정 3 — STATUS.md 출시 전 확정 정책). 설정값으로 조정
@@ -215,25 +220,43 @@ export class MessagesService {
     return { messageId: target?.id ?? null, limit, used, remaining: target && !blocked ? Math.max(limit - used, 0) : 0, blocked };
   }
 
+  /**
+   * 나눠 받기 조건 — before 메시지보다 오래된 것(정렬 [createdAt desc, id desc]와 같은 기준). Prisma cursor + skip 1은
+   * cursor 행이 그 사이 조건에서 빠지면(회수·차단 등) 진짜 한 줄을 건너뛰거나 빈 결과가 돼서 시각·id로 직접 비교(2026-10-28).
+   * before 메시지가 아예 없으면 빈 결과(엉뚱하게 처음부터 다시 주지 않게)
+   */
+  private async olderThan(before?: string): Promise<Prisma.MessageWhereInput> {
+    if (!before) return {};
+    const row = await this.prisma.message.findUnique({ where: { id: before }, select: { id: true, createdAt: true } });
+    if (!row) return { id: { in: [] } };
+    return { OR: [{ createdAt: { lt: row.createdAt } }, { createdAt: row.createdAt, id: { lt: row.id } }] };
+  }
+
   // 팬 본인의 대화방: 구독 시작일 이후의 방송 메시지 + 본인이 보낸 답장만. page.limit를 주면 최신 → 오래된 순으로
   // N개(before 이전), 안 주면 전부 시간순(예전 방식). 오래 구독할수록 대화가 길어져서 앱은 나눠 받음(2026-09-28 점검)
   async listForFan(userId: string, actorId: string, page: { limit?: number; before?: string } = {}) {
     const subscription = await ensureActiveSubscription(this.prisma, userId, actorId);
-    const messages = await this.prisma.message.findMany({
+    // limit 없는 예전 방식도 끝없이 읽지 않게 최근 LEGACY_FAN_LIST_LIMIT개만 읽어 시간순으로 뒤집어 줌(2026-10-28)
+    const found = await this.prisma.message.findMany({
       where: {
-        actorId,
-        createdAt: { gte: subscription.startedAt },
-        // 소속사가 지웠거나 운영자가 가린 스타 메시지는 팬에게 안 보임. 아티스트가 직접 회수한 것·내가 회수한 답장은 "회수된 메시지"로 자리만(2026-10-14)
-        OR: [
-          { senderType: MessageSenderType.ARTIST, OR: [{ deletedAt: null }, RETRACTED_BY_SENDER] },
-          { fanUserId: userId },
+        AND: [
+          {
+            actorId,
+            createdAt: { gte: subscription.startedAt },
+            // 소속사가 지웠거나 운영자가 가린 스타 메시지는 팬에게 안 보임. 아티스트가 직접 회수한 것·내가 회수한 답장은 "회수된 메시지"로 자리만(2026-10-14)
+            OR: [
+              { senderType: MessageSenderType.ARTIST, OR: [{ deletedAt: null }, RETRACTED_BY_SENDER] },
+              { fanUserId: userId },
+            ],
+          },
+          page.limit ? await this.olderThan(page.before) : {},
         ],
       },
       include: quoteInclude(actorId),
-      orderBy: page.limit ? [{ createdAt: 'desc' }, { id: 'desc' }] : { createdAt: 'asc' },
-      ...(page.limit ? { take: page.limit } : {}),
-      ...(page.limit && page.before ? { cursor: { id: page.before }, skip: 1 } : {}),
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: page.limit ?? LEGACY_FAN_LIST_LIMIT,
     });
+    const messages = page.limit ? found : found.reverse();
 
     const fan = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     // 채팅방을 보고 있으면 읽음 처리(인박스 안 읽은 개수 기준) — 응답은 기다리지 않음
@@ -311,11 +334,10 @@ export class MessagesService {
     const limit = page.limit ?? 60;
     const [items, total] = await Promise.all([
       this.prisma.message.findMany({
-        where,
+        where: { ...where, AND: [await this.olderThan(page.before)] },
         select: { id: true, mediaType: true, mediaUrl: true, mediaKey: true, thumbnailKey: true, thumbhash: true, mediaDurationMs: true, createdAt: true },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: limit,
-        ...(page.before ? { cursor: { id: page.before }, skip: 1 } : {}),
       }),
       this.prisma.message.count({ where }),
     ]);
@@ -347,12 +369,12 @@ export class MessagesService {
               ...(matchesName ? [{ senderType: MessageSenderType.ARTIST, body: { contains: NAME_PLACEHOLDER } }] : []),
             ],
           },
+          await this.olderThan(page.before),
         ],
       },
       select: { id: true, senderType: true, senderActorId: true, body: true, mediaType: true, createdAt: true },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: page.limit ?? 30,
-      ...(page.before ? { cursor: { id: page.before }, skip: 1 } : {}),
     });
     return this.withSenders(
       messages.map((message) => ({
@@ -452,6 +474,7 @@ export class MessagesService {
     if (resent) return this.presentSent(resent);
     // 환영·생일 메시지를 써 둬야 보낼 수 있음(2026-10-13 사용자 결정 — 앱은 첫 화면에서 먼저 쓰게 함, 여긴 우회 방지)
     // CP방은 환영 메시지만 필수(2026-10-14 사용자 결정)
+    // 운영자는 없는 방 id로도 ensureIsActorSelf를 통과 — 여기 findUniqueOrThrow(P2025)는 오류 필터가 404로 바꿈(2026-10-28)
     const greetings = await this.prisma.actor.findUniqueOrThrow({ where: { id: actorId }, select: { kind: true, welcomeMessage: true, birthdayMessage: true } });
     if (!greetings.welcomeMessage || (greetings.kind !== ActorKind.COUPLE && !greetings.birthdayMessage)) {
       throw new BadRequestException(appError('GREETINGS_REQUIRED'));
@@ -620,12 +643,13 @@ export class MessagesService {
         // 신고가 승인된(운영자가 문제 있다고 판단한) 답장은 스타·소속사 화면에서 뺌 — 예전엔 신고 처리만 되고 그대로 보였음
         reports: { none: { status: ReportStatus.RESOLVED } },
         ...(messageId ? { replyToMessageId: messageId } : {}),
+        AND: [await this.olderThan(page.before)],
       },
       include: { fanUser: { select: { id: true, nickname: true, deletedAt: true, profileImageUrl: true, statusMessage: true } } },
       // 최신 → 오래된 순. 같은 시각이면 id로 순서를 고정해야 나눠 받을 때 빠지거나 겹치지 않음
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      ...(page.limit ? { take: page.limit } : {}),
-      ...(page.before ? { cursor: { id: page.before }, skip: 1 } : {}),
+      // limit 없이 부르는 콘솔 "답장 모아보기"도 최근 STAFF_LIST_DEFAULT_LIMIT개까지만(2026-10-28)
+      take: page.limit ?? STAFF_LIST_DEFAULT_LIMIT,
     });
     // 스타·소속사에겐 실명일 수 있는 로그인 이름 대신 닉네임 + 같은 닉네임 구분용 태그만. 탈퇴한 팬은 null
     // (앱이 "탈퇴한 팬"으로 표시)
@@ -649,13 +673,15 @@ export class MessagesService {
   }
 
   // 소속사 모니터링 — 배우가 실제로 보낸 메시지를 읽기 전용으로 확인(개인화 치환 없이 원문 그대로)
-  async listBroadcasts(requesterId: string, actorId: string) {
+  // limit 없으면 최근 STAFF_LIST_DEFAULT_LIMIT개(2026-10-28 — 예전엔 방의 모든 메시지를 매 5초 폴링마다 읽었음). before로 이전 것
+  async listBroadcasts(requesterId: string, actorId: string, page: { limit?: number; before?: string } = {}) {
     await ensureCanViewActor(this.prisma, requesterId, actorId);
     // 보는 사람이 아티스트 본인이면 자기 배우 id — CP방에서 내 메시지/상대 메시지 구분(상대 메시지엔 "답장", 2026-10-15)
     const selfActor = await this.prisma.actor.findFirst({ where: { selfUserId: requesterId }, select: { id: true } });
     const messages = await this.prisma.message.findMany({
-      where: { actorId, senderType: MessageSenderType.ARTIST },
-      orderBy: { createdAt: 'desc' },
+      where: { actorId, senderType: MessageSenderType.ARTIST, AND: [await this.olderThan(page.before)] },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: page.limit ?? STAFF_LIST_DEFAULT_LIMIT,
       include: {
         ...quoteInclude(actorId),
         // 이 채널에서 차단된 팬의 답장은 세지 않음
@@ -732,9 +758,16 @@ export class MessagesService {
     // 팬은 자기 답장만 회수(2026-10-14) — 같은 주소(DELETE …/messages/:id)를 씀
     const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true } });
     if (requester.role === Role.USER) return this.retractReply(requesterId, actorId, messageId);
+    // 다른 방을 팬으로 구독한 아티스트·소속사·운영자 계정이 자기 답장을 회수하는 것도 같은 길로(2026-10-28 — 예전엔 USER만이라 ACTOR_SELF_ONLY로 막혔음)
+    const ownReply = await this.prisma.message.findFirst({
+      where: { id: messageId, actorId, senderType: MessageSenderType.FAN, fanUserId: requesterId },
+      select: { id: true },
+    });
+    if (ownReply) return this.retractReply(requesterId, actorId, messageId);
     // 소속사 직원도 자기 소속 아티스트 메시지를 대신 지울 수 있음(2026-10-12 사용자 결정 — 아티스트 사고 시 급히 내리기).
     // 팬 화면에선 아티스트가 지운 것과 똑같이 사라지고, 아티스트·소속사 화면엔 "소속사가 삭제한 메시지"로 남음
     const byStaff = requester.role === Role.AGENCY_STAFF;
+    const byAdmin = requester.role === Role.ADMIN;
     const selfActorId = byStaff ? null : await ensureIsActorSelf(this.prisma, requesterId, actorId);
     if (byStaff) await ensureCanViewActor(this.prisma, requesterId, actorId);
     const message = await this.prisma.message.findFirst({
@@ -743,7 +776,7 @@ export class MessagesService {
     });
     if (!message) throw new NotFoundException(appError('MESSAGE_NOT_FOUND'));
     // 아티스트는 자기가 보낸 것만(2026-10-27 — CP방에서 상대 멤버 메시지·파일까지 지울 수 있었음). 1인 방의 예전 메시지(보낸 배우 없음)는 그 방 본인 것
-    if (requester.role !== Role.ADMIN && !byStaff) {
+    if (!byAdmin && !byStaff) {
       const own = message.senderActorId ? message.senderActorId === selfActorId : selfActorId === actorId;
       if (!own) throw new ForbiddenException(appError('ACTOR_SELF_ONLY'));
     }
@@ -754,9 +787,12 @@ export class MessagesService {
       data: {
         deletedAt: new Date(),
         ...(byStaff ? { deletedByStaffId: requesterId } : {}),
+        // 운영자가 지운 건 운영자 숨김으로(2026-10-28 — 예전엔 아티스트가 회수한 것처럼 팬에게 "회수된 메시지" 자리가 남고 소속사 기록도 "아티스트가 삭제")
+        ...(byAdmin ? { deletedByAdmin: true } : {}),
         ...(keepFile ? {} : { mediaKey: null, thumbnailKey: null }),
       },
     });
+    if (byAdmin) await this.audit.record(requesterId, 'MESSAGE_DELETE', 'ACTOR', actorId, { messageId, keepFile });
     void this.realtime.publish({ kind: 'message-removed', actorId });
     if (!keepFile) {
       await this.deleteUnusedFile(message.mediaKey);

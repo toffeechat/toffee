@@ -85,7 +85,7 @@ function MyBundlesSection({ bundles }: { bundles: MyBundle[] }) {
     if (item.iapPlatform) {
       const store = storeName(item.iapPlatform);
       if (await confirm(t('manage.cancelInStore'), t('manage.cancelInStoreBody', { store }), t('manage.openStore', { store }), t('common.cancel'))) {
-        void openStoreSubscriptions();
+        void openStoreSubscriptions().catch(() => {});
       }
       return;
     }
