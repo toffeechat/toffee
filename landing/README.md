@@ -1,6 +1,6 @@
 # toffeechat.app 랜딩 페이지
 
-2026-10-19 첫 버전. 빌드 없는 정적 페이지 하나(`index.html`) + `assets/`. 태국어·영어·한국어(주소 `?lang=th|en|ko`, 없으면 브라우저 언어,
+2026-10-19 첫 버전, 2026-10-28 소속사 문구를 "창립 파트너"로·커플방 한 문장 추가. 빌드 없는 정적 페이지 하나(`index.html`) + `assets/`. 태국어·영어·한국어(주소 `?lang=th|en|ko`, 없으면 브라우저 언어,
 고르면 기억). 문구는 `docs/product/agency-outreach.md` 한국어 기준본과 같은 내용이고 **태국어는 원어민 검수 전 초안**.
 
 - 앱 화면: `scripts/pitch-screens/capture.cjs`로 찍은 태국어 화면(둘러보기·채팅방·프로필)을 JPG로 줄인 것. 화면이 바뀌면 다시 찍어 교체.
