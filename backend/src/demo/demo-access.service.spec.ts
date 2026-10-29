@@ -13,7 +13,8 @@ const DAY = 24 * 60 * 60 * 1000;
 function make(
   options: { env?: Record<string, string>; code?: Record<string, unknown> | null; roleSeen?: Record<string, unknown> | null; pastVisits?: Record<string, unknown>[] } = {},
 ) {
-  const env = { DEMO_ALERT_EMAIL: 'ops@example.com', ...options.env };
+  // 알림을 기다리지 않고 바로(실제 서버는 2분 기다렸다가 다시 확인)
+  const env = { DEMO_ALERT_EMAIL: 'ops@example.com', DEMO_ALERT_DELAY_SECONDS: '0', ...options.env };
   const code = options.code === undefined ? { id: 'c1', code: 'gmm-7k3p', agencyName: 'GMM', expiresAt: new Date(Date.now() + DAY), revokedAt: null, visitCount: 1 } : options.code;
   const prisma = {
     demoAccessCode: {
@@ -28,6 +29,7 @@ function make(
       deleteMany: vi.fn().mockReturnValue('events'),
       // 지난 접속 줄(첫 접속을 사람 접속만으로 다시 셀 때) — 기본은 없음
       findMany: vi.fn().mockResolvedValue(options.pastVisits ?? []),
+      update: vi.fn().mockResolvedValue({}),
     },
     // 화면별 요약 — 기본은 이 화면으로 처음 들어옴(줄 없음)
     demoAccessRoleSeen: {
@@ -211,7 +213,7 @@ describe('소속사별 데모 입장 코드', () => {
       code: { id: 'c1', code: 'gmm-7k3p', agencyName: 'GMM', visitCount: 2 },
       roleSeen: { lastSeenAt: new Date(Date.now() - 2 * NEW_VISIT_GAP_MS), visitCount: 1 },
       // 예전 기록: 인스타 DM 미리보기(Meta IP) — 그때는 자동 검사 표시가 없었음
-      pastVisits: [{ role: 'agency', automated: null, ip: '31.13.115.2', userAgent: null, timeZone: null }],
+      pastVisits: [{ codeId: 'c1', role: 'agency', automated: null, ip: '31.13.115.2', userAgent: null, timeZone: null, createdAt: new Date(Date.now() - DAY) }],
     });
     prisma.demoAccessCode.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
     await service.record('c1', 'c1:agency', 'agency', 'LOGIN', CLIENT, new Date());
@@ -234,5 +236,65 @@ describe('소속사별 데모 입장 코드', () => {
     Object.assign(prisma.demoAccessEvent, { aggregate: vi.fn().mockResolvedValue({ _min: {}, _max: {} }), count: vi.fn().mockResolvedValue(0) });
     const { codes } = await service.list();
     expect(codes[0]).toMatchObject({ roleCounts: { fan: 1 }, automatedCount: 1, firstHumanSeenAt: rows[1].createdAt });
+  });
+
+  it('IP 대역에 없는 검사 서버도 패턴으로 — 짧은 시간 여러 IP, 다른 소속사 코드에 같은 IP(2026-10-29 Becky·North Star 실제 기록)', async () => {
+    const { service, prisma } = make();
+    const t = (hhmm: string) => new Date(`2026-10-29T${hhmm}:00+07:00`);
+    const row = (id: string, codeId: string, ip: string, at: Date) => ({
+      id, codeId, ip, createdAt: at, role: 'artist', kind: 'LOGIN', newVisit: true, automated: null, userAgent: null, timeZone: null,
+      platform: 'web', deviceModel: 'Chrome · Windows', osVersion: 'Windows 10', appVersion: null,
+    });
+    const rows = [
+      // Becky: 13:40 IP 2개 → 13:42 하나 더(3분 안 3개) / 14:39 1분 안 IP 2개(그중 하나는 North Star에도 찍힌 대역)
+      row('b1', 'becky', '203.0.113.9', t('13:40')),
+      row('b2', 'becky', '203.0.113.15', t('13:40')),
+      row('b3', 'becky', '203.0.113.98', t('13:42')),
+      row('b4', 'becky', '79.127.177.114', t('14:39')),
+      row('b5', 'becky', '198.51.100.245', t('14:39')),
+      // North Star: 14:24 IP 4개(그중 203.0.113.98은 Becky 13:42와 같음) → 14:26 하나 더
+      row('n1', 'north', '84.17.44.226', t('14:24')),
+      row('n2', 'north', '203.0.113.98', t('14:24')),
+      row('n3', 'north', '198.51.100.10', t('14:24')),
+      row('n4', 'north', '198.51.100.164', t('14:24')),
+      row('n5', 'north', '198.51.100.11', t('14:26')),
+      // 사람: 다른 날 IP 하나로 여러 번
+      row('h1', 'becky', '1.2.3.4', t('16:00')),
+      row('h2', 'becky', '1.2.3.4', t('16:01')),
+    ];
+    prisma.demoAccessEvent.findMany.mockImplementation(({ where }: { where: { codeId?: unknown } }) =>
+      Promise.resolve(typeof where.codeId === 'string' ? rows.filter((r) => r.codeId === where.codeId) : rows),
+    );
+    const becky = await service.events('becky');
+    expect(Object.fromEntries(becky.map((e) => [e.id, e.automated]))).toEqual({
+      b1: '짧은 시간에 여러 IP',
+      b2: '짧은 시간에 여러 IP',
+      b3: '여러 소속사 코드에 같은 IP',
+      b4: '짧은 시간에 여러 IP',
+      b5: '짧은 시간에 여러 IP',
+      h1: null,
+      h2: null,
+    });
+    const north = await service.events('north');
+    expect(north.every((e) => e.automated)).toBe(true);
+  });
+
+  it('첫 줄은 사람처럼 보여도 기다리는 사이 다른 IP가 몰리면 메일 대신 기록에 "자동 검사"', async () => {
+    const at = new Date();
+    const { service, prisma, email } = make({
+      pastVisits: [
+        { codeId: 'c1', ip: '1.2.3.4', createdAt: at },
+        { codeId: 'c1', ip: '5.6.7.8', createdAt: new Date(at.getTime() + 5_000) },
+      ],
+    });
+    // 기록할 때(지금까지)는 아직 다른 IP가 없고, 기다린 뒤 다시 볼 때 5초 뒤 줄이 보임
+    const all = prisma.demoAccessEvent.findMany.getMockImplementation()!;
+    prisma.demoAccessEvent.findMany.mockImplementation(async (args: { where: { createdAt?: { lte: Date } } }) =>
+      ((await all(args)) as { createdAt: Date }[]).filter((r) => !args.where.createdAt || r.createdAt <= args.where.createdAt.lte),
+    );
+    await service.record('c1', 'c1:artist', 'artist', 'LOGIN', CLIENT, at);
+    expect(email.send).not.toHaveBeenCalled();
+    expect(prisma.demoAccessEvent.create.mock.calls[0][0].data).toMatchObject({ newVisit: true });
+    expect(prisma.demoAccessEvent.update).toHaveBeenCalledWith({ where: { id: 'e-now' }, data: { automated: '짧은 시간에 여러 IP' } });
   });
 });

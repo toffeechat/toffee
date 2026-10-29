@@ -42,6 +42,8 @@ const RANGES: Record<string, string[]> = {
     '2001:4860:4801::/48',
   ],
   LINE: ['147.92.128.0/17', '203.104.128.0/19'],
+  // 2026-10-29 Becky·North Star에 인스타 DM을 보낸 순간 여러 IP로 몰려 들어온 검사 서버(소유자 확인 못 함 — 두 소속사 코드에 같은 IP가 찍힘)
+  '링크 검사': ['152.233.0.0/16'],
 };
 
 const blocks = Object.entries(RANGES).map(([owner, cidrs]) => {
@@ -89,3 +91,40 @@ function normalizeIp(raw: string | null): string | null {
   const ip = raw?.trim().replace(/^::ffff:/i, '');
   return ip && isIP(ip) ? ip : null;
 }
+
+// ── 패턴으로 거르기(2026-10-29) — IP 대역 표에 없는 검사 서버(Becky·North Star: 1~2분에 IP 5개, 두 소속사에 같은 IP) ──
+// 서로 다른 소속사 코드에 같은 IP가 이 시간 안에 찍히면 — 다른 회사 사람이 같은 IP일 리 없음(링크를 여러 곳에 보낸 순간 검사 서버가 다 열어 봄)
+export const SHARED_IP_WINDOW_MS = 2 * 60 * 60 * 1000;
+// 같은 코드에 짧은 시간 서로 다른 IP가 몰리면 — 사람 한 명은 IP가 보통 하나(검사기는 여러 서버로 동시에 열어 봄)
+const BURSTS = [
+  { windowMs: 60 * 1000, ips: 2 },
+  { windowMs: 3 * 60 * 1000, ips: 3 },
+];
+export const PATTERN_WINDOW_MS = Math.max(SHARED_IP_WINDOW_MS, ...BURSTS.map((burst) => burst.windowMs));
+
+export interface PatternRow {
+  codeId: string | null;
+  ip: string | null;
+  createdAt: Date;
+}
+
+/** 주변 기록(다른 코드 포함, 앞뒤 PATTERN_WINDOW_MS)과 견줘 자동 검사 패턴이면 이유. 공용 코드(codeId null)는 내부 테스트라 안 봄 */
+export function patternReason(row: PatternRow, neighbors: readonly PatternRow[]): string | null {
+  if (!row.codeId || !row.ip) return null;
+  const at = row.createdAt.getTime();
+  const near = (other: PatternRow, windowMs: number) => Math.abs(other.createdAt.getTime() - at) <= windowMs;
+  if (neighbors.some((other) => other.codeId && other.codeId !== row.codeId && other.ip === row.ip && near(other, SHARED_IP_WINDOW_MS))) {
+    return '여러 소속사 코드에 같은 IP';
+  }
+  const sameCode = neighbors.filter((other) => other !== row && other.codeId === row.codeId && other.ip);
+  for (const burst of BURSTS) {
+    // 이 줄이 들어가는 길이 windowMs 창 하나라도 서로 다른 IP가 burst.ips개 이상이면 — 창의 시작은 이 줄 또는 앞쪽 기록
+    const starts = [at, ...sameCode.map((other) => other.createdAt.getTime()).filter((t) => t <= at && at - t <= burst.windowMs)];
+    for (const from of starts) {
+      const inWindow = sameCode.filter((other) => other.createdAt.getTime() >= from && other.createdAt.getTime() <= from + burst.windowMs);
+      if (new Set([row.ip, ...inWindow.map((other) => other.ip)]).size >= burst.ips) return '짧은 시간에 여러 IP';
+    }
+  }
+  return null;
+}
+
