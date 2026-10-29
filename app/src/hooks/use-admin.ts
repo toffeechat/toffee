@@ -816,8 +816,12 @@ export interface DemoCodeSummary {
   lastSeenAt: string | null;
   /** 30분 넘게 쉬었다가 새로 들어온 횟수(= 알림 메일 수) */
   visitCount: number;
-  /** 역할별 횟수(로그인 + 새 접속) */
+  /** 역할별 횟수(로그인 + 새 접속) — 링크 자동 검사는 빼고(2026-10-29) */
   roleCounts: Partial<Record<DemoRoleKey, number>>;
+  /** 링크 자동 검사(메신저 미리보기 등)로 본 접속 수 — 공용 코드엔 없음 */
+  automatedCount?: number;
+  /** 사람이 처음 들어온 때(자동 검사만 있었으면 null) */
+  firstHumanSeenAt?: string | null;
 }
 
 export interface DemoCode extends DemoCodeSummary {
@@ -842,6 +846,9 @@ export interface DemoAccessEvent {
   appVersion: string | null;
   ip: string | null;
   createdAt: string;
+  /** 링크 자동 검사로 본 접속이면 이유("Meta 서버" 등, 2026-10-29) — 알림 메일 없이 기록만 */
+  automated?: string | null;
+  timeZone?: string | null;
 }
 
 export function useDemoCodes() {

@@ -2089,3 +2089,17 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 테스트: `streak.spec.ts`(단계·배지·다음 단계·글자 세기), `messages.service.spec`(100자/300자 한도·태국어), `subscriptions.service.spec`(23시간 이어짐·25시간 처음부터),
   앱 `reply-length.test.ts`, e2e 답장 단계에 `N/100` 확인.
 
+## 데모 접속 링크 자동 검사 거르기 (2026-10-29)
+
+- `backend/src/demo/automated-client.ts` `automatedReason({ ip, userAgent, automationHint, timeZone })` → 이유 문자열 | null. IP는 `node:net` `BlockList`
+  (Meta AS32934·Google 크롤러/사용자 요청 fetcher·LINE AS38631 대역, IPv4-mapped IPv6 처리), UA는 봇 이름 정규식(인앱 브라우저 Instagram·Line·KAKAOTALK은 제외),
+  `automationHint`(웹 `navigator.webdriver` → 헤더 `X-Client-Automation: 1`), `timeZone`(헤더 `X-Client-TZ`, UTC 계열이면 자동).
+- `ClientInfo`에 `automationHint?`·`timeZone?` 추가(`clientInfoFromRequest`) — `AccessLog`엔 칸이 없어서 `withoutAutomationSignals`로 빼고 저장.
+- 스키마(`20261029130000_demo_access_automated`): `DemoAccessEvent.automated String?`(이유), `timeZone String?`.
+- `DemoAccessService.record`: 자동이면 `markSeen`·`markRoleSeen`·`notify`를 건너뛰고 이벤트 줄만(`newVisit false`, 한 시간 한 줄 규칙). 사람이면 예전대로 +
+  `humanSeen` — 지난 LOGIN/newVisit 줄 중 자동 검사(저장된 이유 또는 IP·UA로 재판단)가 섞였을 때만 첫 접속·N번째를 사람 줄로 다시 셈.
+- `list()`: groupBy 대신 LOGIN/newVisit 줄을 읽어 JS로 셈 — `roleCounts`(사람만)·`automatedCount`·`firstHumanSeenAt`. `events()`: `automated`를 재판단해서 내려줌(UA는 안 내려줌).
+- 앱: `api-client.ts` 헤더 2개, 운영자 `admin/demo-codes.tsx` 요약 줄("링크 자동 검사 N번(메일 안 보냄)", 자동만 있으면 "아직 안 들어옴")·기록 줄 `[자동 검사 · 이유]`·시간대.
+- 테스트: `demo-access.service.spec`(봇 5종 — Meta IP·Google IPv4-mapped·봇 UA·webdriver·UTC는 메일·요약 없음, 인스타 인앱+태국 시간대는 사람, 예전 Meta 줄만 있던 코드의
+  첫 사람 접속은 "첫 접속", 목록·기록 표시). 로컬 서버에서 봇 UA+UTC / webdriver 로그인 → 메일 없음·자동 2, 사람 로그인 → "첫 접속" 로그 확인.
+

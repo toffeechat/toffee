@@ -9,6 +9,15 @@ export interface ClientInfo {
   appVersion: string | null;
   userAgent: string | null;
   ip: string | null;
+  /** 데모 접속 자동 검사 거르기용(2026-10-29, demo/automated-client.ts) — 브라우저가 "자동 조종 중"(navigator.webdriver)이라고 밝힘 */
+  automationHint?: boolean;
+  /** 브라우저 시간대(X-Client-TZ) */
+  timeZone?: string | null;
+}
+
+/** 접속 기록 표(AccessLog)에 없는 칸은 빼고 */
+export function withoutAutomationSignals({ automationHint: _hint, timeZone: _zone, ...rest }: ClientInfo) {
+  return rest;
 }
 
 // 헤더는 누구나 아무 값이나 보낼 수 있어서 길이만 자르고 그대로 기록(화면 표시용, 판단 근거로 쓰지 않음)
@@ -29,6 +38,8 @@ export function clientInfoFromRequest(req: Request): ClientInfo {
     userAgent,
     // TRUST_PROXY를 켜야 호스팅 프록시 뒤의 실제 IP(main.ts)
     ip: req.ip?.slice(0, 64) ?? null,
+    automationHint: header(req, 'x-client-automation', 5) === '1',
+    timeZone: header(req, 'x-client-tz', 64),
   };
 }
 

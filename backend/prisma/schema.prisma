@@ -359,6 +359,10 @@ model DemoAccessEvent {
   appVersion  String?
   userAgent   String?
   ip          String?
+  // 링크 자동 검사(메신저 미리보기·검색 회사 서버 등)로 본 접속(2026-10-29) — 알림 메일 없이 기록만, 이유는 "Meta 서버" 등
+  automated   String?
+  // 브라우저 시간대(데모 웹이 보냄) — 자동 검사 판단 근거를 운영자 화면에서 보려고
+  timeZone    String?
   createdAt   DateTime @default(now())
 
   code DemoAccessCode? @relation(fields: [codeId], references: [id], onDelete: Cascade)

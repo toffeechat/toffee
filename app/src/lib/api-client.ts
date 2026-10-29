@@ -52,8 +52,18 @@ function clientHeaders(): Record<string, string> {
     ['X-Client-Device', Platform.OS === 'web' ? undefined : clean(Device.modelName)],
     ['X-Client-OS', clean([Device.osName, Device.osVersion].filter(Boolean).join(' '))],
     ['X-Client-Version', clean(Constants.expoConfig?.version)],
+    // 데모 링크 자동 검사 거르기(2026-10-29) — 검사용 브라우저는 "자동 조종 중"(navigator.webdriver)이라고 밝히고 시간대가 세계 표준시인 경우가 많음
+    ['X-Client-Automation', Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.webdriver ? '1' : undefined],
+    ['X-Client-TZ', clean(timeZone())],
   ];
   return Object.fromEntries(entries.filter((entry): entry is [string, string] => Boolean(entry[1])));
+}
+function timeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
 }
 const CLIENT_HEADERS = clientHeaders();
 

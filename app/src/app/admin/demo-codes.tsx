@@ -90,25 +90,32 @@ function rolesText(counts: DemoCodeSummary['roleCounts']): string {
 
 function eventText(event: DemoAccessEvent): string {
   const what = event.kind === 'LOGIN' ? '로그인' : event.newVisit ? '다시 들어옴' : '사용 중';
-  const device = [event.platform ? (PLATFORM_LABELS[event.platform] ?? event.platform) : null, event.deviceModel, event.osVersion, event.ip]
+  const device = [event.platform ? (PLATFORM_LABELS[event.platform] ?? event.platform) : null, event.deviceModel, event.osVersion, event.ip, event.timeZone]
     .filter(Boolean)
     .join(' · ');
-  return `${dateTime(event.createdAt)} · ${ROLE_LABELS[event.role] ?? event.role} ${what}${device ? ` · ${device}` : ''}`;
+  // 링크 자동 검사(2026-10-29) — 메일은 안 갔고 사람 접속이 아님
+  const bot = event.automated ? `[자동 검사 · ${event.automated}] ` : '';
+  return `${bot}${dateTime(event.createdAt)} · ${ROLE_LABELS[event.role] ?? event.role} ${what}${device ? ` · ${device}` : ''}`;
 }
 
 function SeenLine({ summary }: { summary: DemoCodeSummary }) {
-  if (!summary.lastSeenAt) {
+  const bots = summary.automatedCount ? `링크 자동 검사 ${summary.automatedCount}번(메일 안 보냄)` : '';
+  // 자동 검사만 있었음(2026-10-29 — 인스타 DM 미리보기가 "첫 접속"으로 보이던 것)
+  const onlyBots = !!summary.automatedCount && summary.firstHumanSeenAt === null;
+  if (!summary.lastSeenAt || onlyBots) {
     return (
       <ThemedText type="small" themeColor="danger">
-        아직 안 들어옴
+        아직 안 들어옴{bots ? ` · ${bots}` : ''}
       </ThemedText>
     );
   }
   const roles = rolesText(summary.roleCounts);
+  const first = summary.firstHumanSeenAt ?? summary.firstSeenAt;
   return (
     <ThemedText type="small" themeColor="textSecondary">
-      마지막 접속 {timeAgo(summary.lastSeenAt)} · 첫 접속 {summary.firstSeenAt ? dateTime(summary.firstSeenAt) : '-'} · {summary.visitCount}번 들어옴
+      마지막 접속 {timeAgo(summary.lastSeenAt)} · 첫 접속 {first ? dateTime(first) : '-'} · {summary.visitCount}번 들어옴
       {roles ? `\n${roles}` : ''}
+      {bots ? `\n${bots}` : ''}
     </ThemedText>
   );
 }
@@ -133,7 +140,7 @@ function EventList({ id }: { id: string }) {
   return (
     <ThemedView style={styles.events}>
       {events.map((event) => (
-        <ThemedText key={event.id} type="small" themeColor={event.kind === 'LOGIN' || event.newVisit ? 'text' : 'textSecondary'}>
+        <ThemedText key={event.id} type="small" themeColor={event.automated ? 'textTertiary' : event.kind === 'LOGIN' || event.newVisit ? 'text' : 'textSecondary'}>
           {eventText(event)}
         </ThemedText>
       ))}

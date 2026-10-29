@@ -1,0 +1,91 @@
+import { BlockList, isIP } from 'node:net';
+
+/**
+ * 링크 자동 검사 거르기(2026-10-29 사용자 요청) — 인스타그램 DM으로 데모 링크를 보내면 Meta 서버가 링크를 미리 열어 봐서 "첫 접속" 메일이
+ * 갔음(Becky·North Star). 메신저·검색 회사의 미리보기·검사 서버를 IP 대역·브라우저 정보로 알아보고, 그런 접속은 기록만 남기고 알림은 안 보냄.
+ * 처음 보는 검사 서버나 대역이 바뀐 경우는 놓칠 수 있음 — 그땐 운영자 화면 기록의 IP로 다시 확인.
+ */
+
+// 회사별 공개 IP 대역(2026-10 기준). Meta: AS32934 공개 대역 / Google: 크롤러·사용자 요청 가져오기(googlebot·special-crawlers·
+// user-triggered-fetchers JSON) / LINE: AS38631. 대역을 더하려면 여기에만
+const RANGES: Record<string, string[]> = {
+  Meta: [
+    '31.13.24.0/21',
+    '31.13.64.0/18',
+    '45.64.40.0/22',
+    '66.220.144.0/20',
+    '69.63.176.0/20',
+    '69.171.224.0/19',
+    '74.119.76.0/22',
+    '102.132.96.0/20',
+    '103.4.96.0/22',
+    '129.134.0.0/16',
+    '157.240.0.0/16',
+    '163.70.128.0/17',
+    '173.252.64.0/18',
+    '179.60.192.0/22',
+    '185.60.216.0/22',
+    '185.89.216.0/22',
+    '204.15.20.0/22',
+    '2a03:2880::/32',
+    '2620:0:1c00::/40',
+  ],
+  Google: [
+    '64.233.160.0/19',
+    '66.102.0.0/20',
+    '66.249.64.0/19',
+    '72.14.192.0/18',
+    '74.125.0.0/16',
+    '108.177.0.0/17',
+    '172.217.0.0/16',
+    '209.85.128.0/17',
+    '2001:4860:4801::/48',
+  ],
+  LINE: ['147.92.128.0/17', '203.104.128.0/19'],
+};
+
+const blocks = Object.entries(RANGES).map(([owner, cidrs]) => {
+  const list = new BlockList();
+  for (const cidr of cidrs) {
+    const [address, prefix] = cidr.split('/');
+    list.addSubnet(address, Number(prefix), isIP(address) === 6 ? 'ipv6' : 'ipv4');
+  }
+  return { owner, list };
+});
+
+// 미리보기·검사 봇이 스스로 밝히는 이름. 메신저 앱 안 브라우저(Instagram·Line·KAKAOTALK·DaumApps 등)는 실제 사람이라 넣지 않음
+const BOT_AGENT =
+  /facebookexternalhit|facebot|meta-external(agent|fetcher)|googlebot|google-inspectiontool|googleother|adsbot-google|mediapartners-google|apis-google|feedfetcher-google|google-read-aloud|bingbot|slackbot|twitterbot|linkedinbot|whatsapp\/|telegrambot|discordbot|kakaotalk-scrap|yeti\/|headlesschrome|lighthouse|phantomjs|python-requests|curl\/|\b(bot|crawler|spider)\b/i;
+
+// 검사용 브라우저는 서버 시간대(세계 표준시)인 경우가 많음 — 태국·한국 소속사는 아님
+const UTC_ZONES = new Set(['UTC', 'Etc/UTC', 'Etc/GMT', 'GMT', 'Etc/Universal', 'Universal']);
+
+export interface AutomationSignals {
+  ip: string | null;
+  userAgent: string | null;
+  /** 브라우저가 "자동 조종 중"이라고 밝힘(navigator.webdriver) — 데모 웹이 X-Client-Automation 헤더로 보냄 */
+  automationHint?: boolean;
+  /** 브라우저 시간대(X-Client-TZ) */
+  timeZone?: string | null;
+}
+
+/** 자동 검사로 보이면 이유("Meta 서버" 등), 사람이면 null */
+export function automatedReason(signals: AutomationSignals): string | null {
+  const ip = normalizeIp(signals.ip);
+  if (ip) {
+    const type = isIP(ip) === 6 ? 'ipv6' : 'ipv4';
+    const hit = blocks.find(({ list }) => list.check(ip, type));
+    if (hit) return `${hit.owner} 서버`;
+  }
+  const agent = signals.userAgent?.match(BOT_AGENT)?.[0];
+  if (agent) return `검사 봇(${agent})`;
+  if (signals.automationHint) return '자동 조종 브라우저';
+  if (signals.timeZone && UTC_ZONES.has(signals.timeZone)) return '세계 표준시 브라우저';
+  return null;
+}
+
+// "::ffff:1.2.3.4"(IPv6 안의 IPv4) → "1.2.3.4". 모르는 모양이면 null
+function normalizeIp(raw: string | null): string | null {
+  const ip = raw?.trim().replace(/^::ffff:/i, '');
+  return ip && isIP(ip) ? ip : null;
+}
