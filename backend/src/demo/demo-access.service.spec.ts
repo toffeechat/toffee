@@ -151,14 +151,16 @@ describe('소속사별 데모 입장 코드', () => {
   });
 
   it('등록: 비우면 코드를 만들어 주고, 형식이 틀리거나 공용·운영자 코드와 같으면 거절', async () => {
-    const { service, prisma } = make({ code: null, env: { DEV_LOGIN_CODE: 'Shared', DEV_LOGIN_ADMIN_CODE: 'admin-secret' } });
+    const { service, prisma } = make({ code: null, env: { DEV_LOGIN_CODE: 'Shared-Code', DEV_LOGIN_ADMIN_CODE: 'admin-secret' } });
     const created = await service.create({ agencyName: ' GMM ', expiresAt: '2026-12-31T00:00:00.000Z' });
     expect(created).toMatchObject({ agencyName: 'GMM' });
     expect(prisma.demoAccessCode.create.mock.calls[0][0].data.code).toMatch(/^[a-z2-9]{4}-[a-z2-9]{4}$/);
 
     await expect(service.create({ agencyName: 'A', code: 'ab', expiresAt: '2026-12-31' })).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.create({ agencyName: 'A', code: 'has space', expiresAt: '2026-12-31' })).rejects.toBeInstanceOf(BadRequestException);
-    await expect(service.create({ agencyName: 'A', code: 'SHARED', expiresAt: '2026-12-31' })).rejects.toBeInstanceOf(ConflictException);
+    // 직접 정하는 코드도 8자 이상(2026-10-29)
+    await expect(service.create({ agencyName: 'A', code: 'abcdefg', expiresAt: '2026-12-31' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.create({ agencyName: 'A', code: 'SHARED-CODE', expiresAt: '2026-12-31' })).rejects.toBeInstanceOf(ConflictException);
     await expect(service.create({ agencyName: 'A', code: 'admin-secret', expiresAt: '2026-12-31' })).rejects.toBeInstanceOf(ConflictException);
   });
 

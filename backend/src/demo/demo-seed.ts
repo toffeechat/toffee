@@ -79,6 +79,10 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
     select: { userId: true, token: true, platform: true },
   });
   await prisma.pushDevice.deleteMany();
+  // 로그인도 그대로 유지(2026-10-29) — 2026-10-27 토큰마다 로그인 세션(sid)·토큰 버전(tv)을 보게 된 뒤로, 계정을 지우면 세션이 같이 지워져
+  // 초기화할 때마다 데모 계정 전부가 로그아웃됐음(소속사가 다음 날 데모를 열면 로그인 화면). 고정 ID 계정의 세션·토큰 버전을 기억했다가 되살림
+  const keptSessions = await prisma.authSession.findMany({ where: { userId: { in: demoUserIds }, revokedAt: null } });
+  const keptTokenVersions = await prisma.user.findMany({ where: { id: { in: demoUserIds }, tokenVersion: { gt: 0 } }, select: { id: true, tokenVersion: true } });
   await prisma.parentalConsent.deleteMany();
   await prisma.report.deleteMany();
   await prisma.messageTranslation.deleteMany();
@@ -97,6 +101,9 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   await prisma.user.deleteMany();
   await prisma.agency.deleteMany();
   await prisma.bannedWord.deleteMany();
+  // 데모에서 시험 삼아 쓴 공지·켜 둔 점검 모드·앱 최소 버전도 초기화(2026-10-29 — 남아 있으면 다음 날 미팅 때 데모가 점검 중일 수 있었음)
+  await prisma.notice.deleteMany();
+  await prisma.appSetting.deleteMany();
 
   // 가상의 소속사 2곳 — 현 소속사 + 이적 이력 데모용 이전 소속사
   const demoAgency = await prisma.agency.create({
@@ -119,7 +126,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       chatProfileImageUrl: demoImage('caramel-chat'),
       gender: 'FEMALE',
       ...DEMO_GREETINGS,
-      monthlyPriceCents: 9900, // 데모 가격 — 실제 태국 시장 가격은 별도 검증 필요
+      monthlyPriceCents: 14900, // 태국 정가 ฿149(feature-decisions "상품별 태국 가격", 2026-10-29 데모를 지금 가격으로)
       agencyId: demoAgency.id,
     },
   });
@@ -133,7 +140,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       chatDisplayName: 'Nougat',
       chatProfileImageUrl: demoImage('nougat-chat'),
       gender: 'FEMALE',
-      monthlyPriceCents: 9900,
+      monthlyPriceCents: 14900,
       agencyId: demoAgency.id,
     },
   });
@@ -165,7 +172,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
         chatProfileImageUrl: demoImage(`${extra.image}-chat`),
         gender: extra.gender,
         ...DEMO_GREETINGS,
-        monthlyPriceCents: 9900,
+        monthlyPriceCents: 14900,
         agencyId: extra.agencyId,
       },
     });
@@ -189,7 +196,7 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       chatDisplayName: 'Caramel & Macaron',
       officialProfileImageUrl: demoImage('couple-caramel-macaron'),
       chatProfileImageUrl: demoImage('couple-caramel-macaron'),
-      monthlyPriceCents: 6900,
+      monthlyPriceCents: 19900,
       coupleMembers: { create: [{ memberId: caramel.id }, { memberId: DEMO_IDS.macaron }] },
     },
   });
@@ -244,19 +251,20 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       ...AGREED, ...ADULT, id: DEMO_IDS.fan2, role: Role.USER, displayName: 'Ploy', nickname: 'nougat_lover', email: 'fan2@toffee.demo', countryCode: 'TH', locale: 'th' },
   });
 
-  // 묶음 상품 — CP(캐러멜·마카롱·CP방)마다 3종(2026-10-15 사용자 결정): 개인방 + CP방 2종(따로 ฿168 → ฿139)과 전체(따로 ฿267 → ฿199).
+  // 묶음 상품 — CP(캐러멜·마카롱·CP방)마다 3종(2026-10-15 사용자 결정): 개인방 + CP방 2종(따로 ฿348 → ฿289)과 전체(따로 ฿497 → ฿349).
+  // 가격은 feature-decisions "상품별 태국 가격"(2026-10-29 데모를 지금 가격으로 — 예전 ฿99·CP ฿69라 소속사 제안서와 달랐음).
   // 많이 묶을수록 더 싸게 해서 "전체"로 유도. 예전 "캐러멜 + 누가"(CP 없는 A+B)는 헷갈려서 뺌
   const caramelCpBundle = await prisma.bundle.create({
-    data: { id: DEMO_IDS.caramelCpBundle, name: 'Caramel + Caramel & Macaron', priceCents: 13900, actors: { create: [{ actorId: caramel.id }, { actorId: DEMO_IDS.couple }] } },
+    data: { id: DEMO_IDS.caramelCpBundle, name: 'Caramel + Caramel & Macaron', priceCents: 28900, actors: { create: [{ actorId: caramel.id }, { actorId: DEMO_IDS.couple }] } },
   });
   await prisma.bundle.create({
-    data: { id: DEMO_IDS.macaronCpBundle, name: 'Macaron + Caramel & Macaron', priceCents: 13900, actors: { create: [{ actorId: DEMO_IDS.macaron }, { actorId: DEMO_IDS.couple }] } },
+    data: { id: DEMO_IDS.macaronCpBundle, name: 'Macaron + Caramel & Macaron', priceCents: 28900, actors: { create: [{ actorId: DEMO_IDS.macaron }, { actorId: DEMO_IDS.couple }] } },
   });
   const cpAllBundle = await prisma.bundle.create({
     data: {
       id: DEMO_IDS.cpAllBundle,
       name: 'Caramel & Macaron — All',
-      priceCents: 19900,
+      priceCents: 34900,
       actors: { create: [{ actorId: caramel.id }, { actorId: DEMO_IDS.macaron }, { actorId: DEMO_IDS.couple }] },
     },
   });
@@ -426,10 +434,17 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   await seedStatsCrowd(prisma, { staffId: staff.id, caramelId: caramel.id, nougatId: nougat.id });
   await seedDailyStats(prisma);
 
+  const recreatedDemo = new Set((await prisma.user.findMany({ where: { id: { in: demoUserIds } }, select: { id: true } })).map((user) => user.id));
   // 데모 계정이 다시 만들어진 뒤 푸시 기기 되살리기(위에서 기억해 둔 것 — 소셜 로그인 계정 것은 계정과 함께 사라짐)
   const recreated = new Set((await prisma.user.findMany({ where: { id: { in: keptDevices.map((device) => device.userId) } }, select: { id: true } })).map((user) => user.id));
   const restorable = keptDevices.filter((device) => recreated.has(device.userId));
   if (restorable.length > 0) await prisma.pushDevice.createMany({ data: restorable, skipDuplicates: true });
+  // 로그인 세션·토큰 버전 되살리기(위에서 기억해 둔 것)
+  for (const { id, tokenVersion } of keptTokenVersions) {
+    if (recreatedDemo.has(id)) await prisma.user.update({ where: { id }, data: { tokenVersion } });
+  }
+  const sessions = keptSessions.filter((session) => recreatedDemo.has(session.userId));
+  if (sessions.length > 0) await prisma.authSession.createMany({ data: sessions, skipDuplicates: true });
 
   console.log('시드 완료:', {
     actors: [caramel.chatDisplayName, nougat.chatDisplayName],
@@ -495,7 +510,7 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
       await prisma.subscription.create({
         data: { userId: id, actorId, startedAt: daysAgo(startedDays), cancelledAt: cancelledDays === null ? null : daysAgo(cancelledDays) },
       });
-      events.push({ userId: id, actorId, type: 'STARTED', priceCents: 9900, createdAt: daysAgo(startedDays) });
+      events.push({ userId: id, actorId, type: 'STARTED', priceCents: actorId === DEMO_IDS.couple ? 19900 : 14900, createdAt: daysAgo(startedDays) });
       if (cancelledDays !== null) events.push({ userId: id, actorId, type: 'CANCELLED', createdAt: daysAgo(cancelledDays) });
       // 구독 중인 동안 답장 몇 개
       const until = cancelledDays ?? 0;
