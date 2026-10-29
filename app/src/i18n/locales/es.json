@@ -825,7 +825,8 @@
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
       "apply": "Aplicar"
-    }
+    },
+    "loadFailed": "No se pudieron cargar las estadísticas"
   },
   "consoleNav": {
     "dashboard": "Panel",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminChip, AdminField, AdminMessage, AdminSection, formatBaht, parseBahtToCents } from '@/components/admin-ui';
 import { membersOf, useActor, useCoupleRooms, type Actor } from '@/hooks/use-actors';
-import { useCreateBundle } from '@/hooks/use-admin';
+import { useAdminBundles, useCreateBundle } from '@/hooks/use-admin';
 import { ApiError } from '@/lib/api-client';
 import { Spacing } from '@/constants/theme';
 
@@ -14,6 +14,11 @@ import { Spacing } from '@/constants/theme';
 // 확정 가격(개인방 ฿149·CP방 ฿199)이면 2개 묶음 ฿289·전체 ฿349가 나오게(2026-10-22 — 예전 25%는 ฿369가 나와 10-12 확정 ฿349와 달랐음)
 const PAIR_DISCOUNT = 0.17;
 const ALL_DISCOUNT = 0.29;
+// 서버 CreateBundleDto.name @MaxLength(60)과 같게(2026-10-29 — 긴 이름이면 둘째 묶음에서 400이 나 반쯤만 만들어졌음)
+const NAME_MAX = 60;
+// 같은 아티스트 구성인지 비교용(순서 무관)
+const actorSetKey = (ids: string[]) => [...ids].sort().join(',');
+
 const suggest = (regularCents: number, discount: number) => {
   const target = Math.round((regularCents * (1 - discount)) / 100);
   const nine = Math.floor(target / 10) * 10 + 9;
@@ -35,6 +40,9 @@ export default function AdminCpBundleSetScreen() {
   const { data: a } = useActor(memberA?.id ?? '');
   const { data: b } = useActor(memberB?.id ?? '');
   const create = useCreateBundle();
+  const { data: bundles } = useAdminBundles();
+  // 이 화면에서 이미 만든 구성(목록 새로고침이 늦어도 다시 만들지 않게)
+  const createdKeys = useRef(new Set<string>());
   const [pairPrice, setPairPrice] = useState('');
   const [allPrice, setAllPrice] = useState('');
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
@@ -59,18 +67,36 @@ export default function AdminCpBundleSetScreen() {
     const pairCents = parseBahtToCents(pairValue);
     const allCents = parseBahtToCents(allValue);
     if (pairCents === null || allCents === null) return setMessage({ text: '가격을 숫자로 입력해 주세요(예: 139).', error: true });
-    setSaving(true);
-    setMessage(null);
     const plans = [
       { name: `${a.legalName} + ${room.legalName}`, priceCents: pairCents, actorIds: [a.id, room.id] },
       { name: `${b.legalName} + ${room.legalName}`, priceCents: pairCents, actorIds: [b.id, room.id] },
       { name: `${room.legalName} — All`, priceCents: allCents, actorIds: [a.id, b.id, room.id] },
     ];
+    // 만들기 전에 이름 길이를 다 확인(2026-10-29) — 하나라도 길면 아무것도 안 만듦
+    const tooLong = plans.find((plan) => plan.name.length > NAME_MAX);
+    if (tooLong) {
+      return setMessage({
+        text: `묶음 이름 "${tooLong.name}"이(가) ${NAME_MAX}자를 넘어요(${tooLong.name.length}자). 묶음 목록의 [직접 고르기]에서 이름을 줄여 하나씩 만들어 주세요.`,
+        error: true,
+      });
+    }
+    // 다시 누를 때 이미 있는 구성은 건너뜀(2026-10-29 — 세 번 만들기가 한 번에 묶이지 않아, 중간에 실패한 뒤 다시 누르면 앞 묶음이 두 개씩 생겼음)
+    const existing = new Set([...(bundles ?? []).map((bundle) => actorSetKey(bundle.actors.map((item) => item.id))), ...createdKeys.current]);
+    const todo = plans.filter((plan) => !existing.has(actorSetKey(plan.actorIds)));
+    setSaving(true);
+    setMessage(null);
+    let made = 0;
     try {
-      for (const plan of plans) await create.mutateAsync({ ...plan, storeProductId: null });
+      for (const plan of todo) {
+        await create.mutateAsync({ ...plan, storeProductId: null });
+        createdKeys.current.add(actorSetKey(plan.actorIds));
+        made += 1;
+      }
       router.replace('/admin/bundles');
     } catch (e) {
-      setMessage({ text: e instanceof ApiError ? e.message : '만들지 못했어요. 이미 만든 묶음은 목록에서 확인해 주세요.', error: true });
+      const done = plans.length - todo.length + made;
+      const reason = e instanceof ApiError ? e.message : '만들지 못했어요.';
+      setMessage({ text: done > 0 ? `${reason} (3개 중 ${done}개는 이미 있어요 — 다시 누르면 나머지만 만들어요.)` : reason, error: true });
     } finally {
       setSaving(false);
     }

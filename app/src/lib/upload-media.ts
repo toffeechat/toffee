@@ -61,11 +61,24 @@ function putWithProgress(ticket: UploadTicket, file: Blob, options: UploadOption
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) options.onProgress?.(event.loaded / event.total);
     };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new UploadError(`upload failed (${xhr.status})`)));
-    xhr.onerror = () => reject(new UploadError('upload failed (network)'));
-    xhr.onabort = () => reject(new UploadCancelledError('upload cancelled'));
+    // 끝나면 취소 신호 구독을 뗌(2026-10-29) — 여러 장 보내기는 한 신호로 장마다 올려서 예전엔 끝난 요청의 구독이 계속 쌓였음
+    const onAbort = () => xhr.abort();
+    const done = () => options.signal?.removeEventListener('abort', onAbort);
+    xhr.onload = () => {
+      done();
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new UploadError(`upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => {
+      done();
+      reject(new UploadError('upload failed (network)'));
+    };
+    xhr.onabort = () => {
+      done();
+      reject(new UploadCancelledError('upload cancelled'));
+    };
     if (options.signal?.aborted) return xhr.abort();
-    options.signal?.addEventListener('abort', () => xhr.abort());
+    options.signal?.addEventListener('abort', onAbort, { once: true });
     xhr.send(file);
   });
 }

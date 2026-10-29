@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
-import { AdminButton, AdminButtonRow, AdminMessage, AdminSection } from '@/components/admin-ui';
+import { AdminButton, AdminButtonRow, AdminLoadError, AdminMessage, AdminSection } from '@/components/admin-ui';
 import { AccessHistory, ActivitySection, BillingSection, FanSummaryCard, ProfileSection, ROLE_LABELS, RoleSection, SanctionSection, SignOutSection, statusText } from '@/components/admin-user-panels';
 import { useAdminUser } from '@/hooks/use-admin';
 import { useMe } from '@/hooks/use-onboarding';
@@ -17,13 +17,16 @@ import { Spacing } from '@/constants/theme';
 export default function AdminUserDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: user, isLoading } = useAdminUser(id);
+  const { data: user, isLoading, error } = useAdminUser(id);
   const { data: me } = useMe();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen options={{ title: user ? (user.nickname ?? user.displayName) : '회원' }} />
-      {isLoading || !user ? (
+      {/* 403(운영자 계정은 전체 권한만)·404면 오류 문구 + 뒤로(2026-10-29 — 예전엔 스피너만 계속) */}
+      {!user && !isLoading && error ? (
+        <AdminLoadError error={error} fallback="/admin/users" />
+      ) : isLoading || !user ? (
         <ActivityIndicator style={styles.loading} color={theme.tint} />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>

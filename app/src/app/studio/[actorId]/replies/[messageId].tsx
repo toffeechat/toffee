@@ -1,5 +1,5 @@
 import { TranslatableText } from '@/components/translatable-text';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -36,9 +36,13 @@ export default function MessageRepliesScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { actorId, messageId } = useLocalSearchParams<{ actorId: string; messageId: string }>();
-  const { data: messages } = useStudioMessages(actorId);
+  const studio = useStudioMessages(actorId);
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessageReplies(actorId, messageId);
-  const original = messages?.find((message) => message.id === messageId);
+  const original = studio.data?.find((message) => message.id === messageId);
+  // 원래 메시지가 아직 안 불러온 이전 페이지에 있으면 찾을 때까지 더 불러옴(2026-10-29 — 메시지 목록이 페이지로 바뀜). 끝까지 없으면 위 고정만 안 보임
+  useEffect(() => {
+    if (studio.data && !original && studio.hasNextPage && !studio.isFetchingNextPage && !studio.isFetchNextPageError) void studio.fetchNextPage();
+  }, [studio, original]);
 
   // 최신 → 오래된 순(서버 순서 그대로) — 뒤집힌(inverted) 목록이라 첫 항목이 맨 아래에 그려짐
   const replies = useMemo(() => {

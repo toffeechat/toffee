@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api-client';
 import { useLiveInterval } from '@/lib/realtime';
@@ -28,12 +28,25 @@ export interface StudioMessage extends ChatMessage {
   recentReplies?: ReplyPreview[];
 }
 
+const BROADCASTS_PAGE_SIZE = 100;
+
+// 서버가 limit 없이는 최근 200개만 줌(2026-10-29) — 예전엔 전부 받았는데 이제 페이지로: 최신 100개부터, 위로 올리면(fetchNextPage)
+// 이전 100개씩(before=마지막 id). data는 예전처럼 펼친 목록(최신순, 중복 제거)이라 쓰는 쪽은 그대로
 export function useStudioMessages(actorId: string) {
   const interval = useLiveInterval(5000);
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['actor-broadcasts', actorId],
     // 서버는 최신순으로 줌 — 화면은 inverted 리스트라 그대로 씀
-    queryFn: () => apiClient.get<StudioMessage[]>(`/actors/${actorId}/messages/broadcasts`),
+    queryFn: ({ pageParam }) =>
+      apiClient.get<StudioMessage[]>(
+        `/actors/${actorId}/messages/broadcasts?limit=${BROADCASTS_PAGE_SIZE}` + (pageParam ? `&before=${encodeURIComponent(pageParam)}` : ''),
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.length === BROADCASTS_PAGE_SIZE ? lastPage[lastPage.length - 1].id : undefined),
+    select: (data) => {
+      const seen = new Set<string>();
+      return data.pages.flat().filter((message) => !seen.has(message.id) && seen.add(message.id));
+    },
     enabled: !!actorId,
     // 팬 답장은 실시간 신호로 바로 반영, 연결이 끊겨 있을 때만 5초 폴링
     refetchInterval: interval,
@@ -49,7 +62,8 @@ const REPLIES_PAGE_SIZE = 100;
 export function useMessageReplies(actorId: string, messageId: string) {
   const interval = useLiveInterval(3000);
   return useInfiniteQuery({
-    queryKey: ['actor-replies', actorId, messageId],
+    // 끝의 'paged' — 콘솔 "답장 모아보기"(use-console)의 일반 쿼리와 키가 겹치면 모양이 달라 화면이 깨짐(2026-10-29). 무효화는 앞부분으로 그대로 됨
+    queryKey: ['actor-replies', actorId, messageId, 'paged'],
     queryFn: ({ pageParam }) =>
       apiClient.get<FanReply[]>(
         `/actors/${actorId}/messages/replies?messageId=${encodeURIComponent(messageId)}&limit=${REPLIES_PAGE_SIZE}` +

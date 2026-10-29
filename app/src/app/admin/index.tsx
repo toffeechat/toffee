@@ -86,9 +86,11 @@ export default function AdminHomeScreen() {
   const { data: overview, refetch: refetchOverview } = useAdminStatsOverview(selection);
   const { data: breakdown } = useAdminStatsBreakdown();
   const { data: dashboard, isLoading, isFetching, refetch: refetchDashboard } = useAgencyDashboard(selection, kind, agencyId || null);
-  const { data: agencies } = useAdminAgencies();
+  // 소속사 목록·애플 할 일은 전체 권한 전용 API(2026-10-29 — SUPPORT 운영자는 부르지 않음)
+  const isOwner = !!me && me.adminLevel !== 'SUPPORT';
+  const { data: agencies } = useAdminAgencies(isOwner);
   const { data: actors } = useAdminActors('');
-  const { data: appleTodo } = useAppleStoreTodo();
+  const { data: appleTodo } = useAppleStoreTodo(isOwner);
   const { data: openInquiries } = useAdminInquiries('OPEN');
   const { data: contracts } = useContractsEnding();
   const { refreshing, onRefresh } = useManualRefresh(() => Promise.all([refetchSummary(), refetchOverview(), refetchDashboard()]));

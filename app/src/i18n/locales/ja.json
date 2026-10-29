@@ -812,7 +812,8 @@
       "prevMonth": "前の月",
       "nextMonth": "次の月",
       "apply": "適用"
-    }
+    },
+    "loadFailed": "統計を読み込めませんでした"
   },
   "consoleNav": {
     "dashboard": "ダッシュボード",

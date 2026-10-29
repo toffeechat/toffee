@@ -5,7 +5,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AdminBundleForm } from '@/components/admin-bundle-form';
-import { AdminChip, AdminSection } from '@/components/admin-ui';
+import { AdminChip, AdminLoadError, AdminSection } from '@/components/admin-ui';
 import { storeGroupText, useAdminBundle, useUpdateBundle } from '@/hooks/use-admin';
 import { useTheme } from '@/hooks/use-theme';
 import { ApiError } from '@/lib/api-client';
@@ -17,9 +17,11 @@ import { formatBangkokDateTime, isUpcoming } from '@/utils/release';
 export default function AdminBundleScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: bundle } = useAdminBundle(id);
+  const { data: bundle, error } = useAdminBundle(id);
   const update = useUpdateBundle(id);
 
+  // 없는 묶음·권한 없음이면 오류 문구 + 뒤로(2026-10-29 — 예전엔 스피너만 계속)
+  if (!bundle && error) return <AdminLoadError error={error} fallback="/admin/bundles" />;
   if (!bundle) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
 
   // 판매 중지: 새로 살 수 없게만(이미 산 팬은 유지) — 스토어 결제가 붙으면 스토어 상품 판매도 같이 멈춰야 갱신이 안 됨

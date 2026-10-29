@@ -841,7 +841,8 @@
       "prevMonth": "Mês anterior",
       "nextMonth": "Próximo mês",
       "apply": "Aplicar"
-    }
+    },
+    "loadFailed": "Não foi possível carregar as estatísticas"
   },
   "consoleNav": {
     "dashboard": "Painel",

@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Bundle } from './use-bundles';
 import type { ArtistGender, CoupleMemberActor } from './use-actors';
-import { apiClient } from '@/lib/api-client';
+import { ApiError, apiClient } from '@/lib/api-client';
 import { selectionQuery, type StatsSelection } from './use-console';
 import { uploadInquiryPhotos, type InquiryCategory, type InquiryPhoto, type PickedPhoto } from './use-support';
+
+/** 상세 조회 재시도 — 4xx(권한 없음·없는 항목)는 다시 해도 같으니 바로 오류 표시, 5xx·네트워크만 3번까지(2026-10-29) */
+const detailRetry = (count: number, error: unknown) => !(error instanceof ApiError && error.status < 500) && count < 3;
 
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
 
@@ -201,7 +204,7 @@ export function useAdminUsers(query: string, role?: AdminUser['role'], sort?: Ad
 
 /** 회원 한 명(회원 상세 화면, 신고에서 바로 제재) */
 export function useAdminUser(id: string) {
-  return useQuery({ queryKey: ['admin', 'users', 'one', id], queryFn: () => apiClient.get<AdminUser>(`/admin/users/${id}`), enabled: !!id });
+  return useQuery({ queryKey: ['admin', 'users', 'one', id], queryFn: () => apiClient.get<AdminUser>(`/admin/users/${id}`), enabled: !!id, retry: detailRetry });
 }
 
 export function useAdminUserAccessLogs(userId: string, enabled: boolean) {
@@ -249,10 +252,12 @@ export interface AdminAgency {
   staffCount: number;
 }
 
-export function useAdminAgencies() {
+/** 전체 권한(OWNER) 전용 API — 고객 응대(SUPPORT) 운영자 화면에선 enabled=false로(2026-10-29, 예전엔 홈을 열 때마다 403 + 재시도 3번) */
+export function useAdminAgencies(enabled = true) {
   return useQuery({
     queryKey: ['admin', 'agencies'],
     queryFn: () => apiClient.get<AdminAgency[]>('/admin/agencies'),
+    enabled,
   });
 }
 
@@ -378,6 +383,7 @@ export function useAdminActor(id: string) {
   return useQuery({
     queryKey: ['admin', 'actors', id],
     queryFn: () => apiClient.get<AdminActor>(`/admin/actors/${id}`),
+    retry: detailRetry,
   });
 }
 
@@ -734,7 +740,7 @@ export function useAdminBundles() {
 }
 
 export function useAdminBundle(id: string) {
-  return useQuery({ queryKey: ['admin', 'bundles', id], queryFn: () => apiClient.get<AdminBundle>(`/admin/bundles/${id}`), enabled: !!id });
+  return useQuery({ queryKey: ['admin', 'bundles', id], queryFn: () => apiClient.get<AdminBundle>(`/admin/bundles/${id}`), enabled: !!id, retry: detailRetry });
 }
 
 function useBundleMutation<TInput>(request: (input: TInput) => Promise<AdminBundle>) {
@@ -916,8 +922,9 @@ export interface AppleStoreTodo {
   bundles: { id: string; name: string; storeProductId: string }[];
 }
 
-export function useAppleStoreTodo() {
-  return useQuery({ queryKey: ['admin', 'store', 'apple-todo'], queryFn: () => apiClient.get<AppleStoreTodo>('/admin/store/apple-todo') });
+/** 전체 권한(OWNER) 전용 — SUPPORT 운영자면 enabled=false(2026-10-29) */
+export function useAppleStoreTodo(enabled = true) {
+  return useQuery({ queryKey: ['admin', 'store', 'apple-todo'], queryFn: () => apiClient.get<AppleStoreTodo>('/admin/store/apple-todo'), enabled });
 }
 
 export function useMarkSaleStopped() {
@@ -1021,7 +1028,8 @@ export interface AdminAppSettings {
 }
 
 export function useAdminAppSettings() {
-  return useQuery({ queryKey: ['admin', 'app-settings'], queryFn: () => apiClient.get<AdminAppSettings | null>('/admin/app-settings') });
+  // 처음엔 저장된 줄이 없어 빈 응답 — undefined면 react-query가 오류로 처리해서 null로(2026-10-29)
+  return useQuery({ queryKey: ['admin', 'app-settings'], queryFn: async () => (await apiClient.get<AdminAppSettings | null>('/admin/app-settings')) ?? null });
 }
 
 export function useUpdateAppSettings() {
@@ -1067,7 +1075,7 @@ export function useAdminInquiries(status?: AdminInquiryStatus, category?: Inquir
 }
 
 export function useAdminInquiry(id: string) {
-  return useQuery({ queryKey: ['admin', 'inquiries', 'one', id], queryFn: () => apiClient.get<AdminInquiryDetail>(`/admin/inquiries/${id}`), enabled: !!id });
+  return useQuery({ queryKey: ['admin', 'inquiries', 'one', id], queryFn: () => apiClient.get<AdminInquiryDetail>(`/admin/inquiries/${id}`), enabled: !!id, retry: detailRetry });
 }
 
 export function useReplyInquiry(id: string) {

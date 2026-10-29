@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter, type Href } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -8,6 +9,7 @@ import { PersonFigure } from '@/components/ui/person-figure';
 import { useTheme } from '@/hooks/use-theme';
 import { useWideLayout } from '@/components/wide-shell';
 import { Spacing } from '@/constants/theme';
+import { ApiError } from '@/lib/api-client';
 
 // 운영자 화면 공용 조각 — 운영자 화면은 한국어 전용(다국어 대상 아님)
 
@@ -116,6 +118,22 @@ export function AdminMessage({ text, error }: { text: string | null; error?: boo
   );
 }
 
+/**
+ * 상세 화면을 못 불러왔을 때(2026-10-29) — 403(예: ADMIN_OWNER_ONLY, 전체 권한 아닌 운영자가 운영자 계정을 열 때)·404면 스피너만 계속 돌았음.
+ * 서버 문구를 보여 주고 뒤로 가기(이전 화면이 없으면 fallback 목록으로)
+ */
+export function AdminLoadError({ error, fallback }: { error: unknown; fallback: Href }) {
+  const router = useRouter();
+  return (
+    <View style={styles.loadError}>
+      <AdminMessage error text={error instanceof ApiError ? error.message : '불러오지 못했어요. 잠시 뒤 다시 열어 주세요.'} />
+      <AdminButtonRow>
+        <AdminButton secondary label="뒤로" onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))} />
+      </AdminButtonRow>
+    </View>
+  );
+}
+
 /** 아티스트 성별 선택지(2026-10-02, 둘러보기 여성·남성 줄) — null은 지정 안 함(그룹·혼성 등, 두 줄엔 안 나옴) */
 export const GENDER_OPTIONS: { value: 'FEMALE' | 'MALE' | null; label: string }[] = [
   { value: 'FEMALE', label: '여성' },
@@ -174,4 +192,5 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   disabled: { opacity: 0.5 },
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+  loadError: { padding: Spacing.four, gap: Spacing.three },
 });

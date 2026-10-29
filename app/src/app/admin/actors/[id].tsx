@@ -11,6 +11,7 @@ import {
   AdminButtonRow,
   AdminChip,
   AdminField,
+  AdminLoadError,
   AdminMessage,
   AdminSection,
   formatBaht,
@@ -261,7 +262,13 @@ function LinkInvite({ actor }: { actor: AdminActor }) {
             label="링크 취소"
             danger
             disabled={revoke.isPending}
-            onPress={() => revoke.mutate(undefined, { onSuccess: () => (setUrl(null), setMessage({ text: '링크를 취소했어요.' })) })}
+            // 실패도 보여 줌(2026-10-29 — 예전엔 실패해도 아무 표시 없었음)
+            onPress={() =>
+              revoke.mutate(undefined, {
+                onSuccess: () => (setUrl(null), setMessage({ text: '링크를 취소했어요.' })),
+                onError: (e) => setMessage({ text: errorText(e, '취소하지 못했어요.'), error: true }),
+              })
+            }
           />
         ) : null}
       </ThemedView>
@@ -491,14 +498,17 @@ function ActorRelease({ actor }: { actor: AdminActor }) {
 export default function AdminActorDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: actor, isLoading } = useAdminActor(id);
+  const { data: actor, isLoading, error } = useAdminActor(id);
   const { data: bundles } = useAdminBundles();
   const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen options={{ title: actor?.legalName ?? '아티스트' }} />
-      {isLoading || !actor ? (
+      {/* 없는 아티스트·권한 없음이면 오류 문구 + 뒤로(2026-10-29 — 예전엔 스피너만 계속) */}
+      {!actor && !isLoading && error ? (
+        <AdminLoadError error={error} fallback="/admin/actors" />
+      ) : isLoading || !actor ? (
         <ActivityIndicator style={styles.loading} color={theme.tint} />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>

@@ -812,7 +812,8 @@
       "prevMonth": "Tháng trước",
       "nextMonth": "Tháng sau",
       "apply": "Áp dụng"
-    }
+    },
+    "loadFailed": "Không tải được số liệu thống kê"
   },
   "consoleNav": {
     "dashboard": "Bảng thống kê",

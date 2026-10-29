@@ -302,7 +302,7 @@ export default function AdminDemoCodesScreen() {
         hint="코드 하나로 데모의 소속사·아티스트·팬 버튼을 다 써요. 화면(소속사·아티스트·팬)마다 30분 넘게 쉬었다가 들어올 때 운영자에게 메일이 가요. 보내기 전에 직접 눌러 봤다면 [기록 초기화]. 코드를 비우면 자동으로 만들어요.">
         <AdminField label="소속사 이름" value={agencyName} onChangeText={setAgencyName} maxLength={100} />
         <AdminField
-          label="입장 코드(영문 소문자·숫자·하이픈 4~32자, 비우면 자동)"
+          label="입장 코드(영문 소문자·숫자·하이픈 8~32자, 비우면 자동)"
           value={code}
           onChangeText={setCode}
           autoCapitalize="none"

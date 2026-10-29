@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { AdminButton, AdminButtonRow, AdminSection } from '@/components/admin-ui';
+import { AdminButton, AdminButtonRow, AdminMessage, AdminSection } from '@/components/admin-ui';
 import { useAppleStoreTodo, useMarkSaleStopped } from '@/hooks/use-admin';
+import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
@@ -17,8 +19,11 @@ export default function AdminStoreTodoScreen() {
   const theme = useTheme();
   const { data, isLoading } = useAppleStoreTodo();
   const mark = useMarkSaleStopped();
+  // 실패도 보여 줌(2026-10-29 — 예전엔 실패해도 아무 표시 없이 할 일에 그대로 남았음)
+  const [error, setError] = useState<string | null>(null);
   const done = async (kind: 'actors' | 'bundles', id: string, name: string) => {
-    if (await confirm('판매 중지함', `App Store Connect에서 "${name}" 상품을 판매 중지했나요? 표시하면 할 일에서 빠져요.`, '판매 중지함', '취소', false)) mark.mutate({ kind, id });
+    if (!(await confirm('판매 중지함', `App Store Connect에서 "${name}" 상품을 판매 중지했나요? 표시하면 할 일에서 빠져요.`, '판매 중지함', '취소', false))) return;
+    mark.mutate({ kind, id }, { onSuccess: () => setError(null), onError: (e) => setError(e instanceof ApiError ? e.message : '표시하지 못했어요.') });
   };
   const empty = data && data.actors.length === 0 && data.bundles.length === 0;
   return (
@@ -29,6 +34,7 @@ export default function AdminStoreTodoScreen() {
           hint="① App Store Connect → 앱 → 구독 → 아래 상품 ID → 사용 가능 여부에서 모든 국가 빼기(판매 중지) ② 여기서 [판매 중지함]. 월 구독이라 종료일 31일 전까지 해 두면 다음 갱신이 안 생겨요. 그래도 종료 뒤 갱신된 결제는 팬이 환불을 요청할 수 있어요(애플 환불 안내). 구글 구독은 서버가 자동으로 갱신을 끊어요."
         />
         {isLoading ? <ActivityIndicator color={theme.tint} /> : null}
+        <AdminMessage text={error} error />
         {empty ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
             판매 중지할 애플 상품이 없어요.

@@ -812,7 +812,8 @@
       "prevMonth": "เดือนก่อน",
       "nextMonth": "เดือนถัดไป",
       "apply": "ใช้"
-    }
+    },
+    "loadFailed": "โหลดสถิติไม่สำเร็จ"
   },
   "consoleNav": {
     "dashboard": "แดชบอร์ด",
