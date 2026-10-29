@@ -297,4 +297,11 @@ describe('소속사별 데모 입장 코드', () => {
     expect(prisma.demoAccessEvent.create.mock.calls[0][0].data).toMatchObject({ newVisit: true });
     expect(prisma.demoAccessEvent.update).toHaveBeenCalledWith({ where: { id: 'e-now' }, data: { automated: '짧은 시간에 여러 IP' } });
   });
+
+  it('소유자를 모르는 대역에서 한 번 들어온 사람은 사람(2026-10-29 FAYMAY — 152.233 대역, LINE 답장까지 옴)', async () => {
+    const { service, email } = make();
+    await service.record('c1', 'c1:artist', 'artist', 'LOGIN', { ...CLIENT, ip: '152.233.68.105', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) Safari/604.1' }, new Date());
+    expect(email.send).toHaveBeenCalledOnce();
+  });
 });
+

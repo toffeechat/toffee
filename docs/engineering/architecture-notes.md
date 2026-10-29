@@ -2103,7 +2103,7 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - 테스트: `demo-access.service.spec`(봇 5종 — Meta IP·Google IPv4-mapped·봇 UA·webdriver·UTC는 메일·요약 없음, 인스타 인앱+태국 시간대는 사람, 예전 Meta 줄만 있던 코드의
   첫 사람 접속은 "첫 접속", 목록·기록 표시). 로컬 서버에서 봇 UA+UTC / webdriver 로그인 → 메일 없음·자동 2, 사람 로그인 → "첫 접속" 로그 확인.
 - **보강(같은 날)**: `patternReason(row, neighbors)` — 다른 `codeId`에 `SHARED_IP_WINDOW_MS`(2h) 안 같은 IP → "여러 소속사 코드에 같은 IP", 같은 코드에
-  60초 안 서로 다른 IP 2개·3분 안 3개(그 줄이 들어가는 아무 창) → "짧은 시간에 여러 IP". IP 표에 `152.233.0.0/16`(소유자 미확인 검사 서버) 추가.
+  60초 안 서로 다른 IP 2개·3분 안 3개(그 줄이 들어가는 아무 창) → "짧은 시간에 여러 IP". IP 표에 `152.233.0.0/16`(소유자 미확인 검사 서버)을 넣었다가 같은 날 뺌 — FAYMAY 실제 접속이 같은 대역이었음(소유자 모르는 대역은 넣지 않고 패턴으로만).
   `record`: IP·UA 판단 다음 직전 `PATTERN_WINDOW_MS` 기록과 패턴 판단 → 자동이면 기록만. 사람이면 알림을 `DEMO_ALERT_DELAY_SECONDS`(기본 120) 뒤로
   미뤄 앞뒤 기록으로 다시 판단 → 자동이면 그 이벤트에 `automated` 저장하고 메일 안 보냄(`setTimeout(...).unref()` — 재시작 땐 메일 빠짐).
   `withAutomated(rows)`: 저장된 이유 → IP·UA → 패턴(앞뒤 창의 모든 코드 기록) 순으로 `list`·`events`·`humanSeen`이 같이 씀.
