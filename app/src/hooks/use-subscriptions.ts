@@ -7,6 +7,12 @@ export interface Subscription {
   id: string;
   actorId: string;
   startedAt: string;
+  /** 끊기지 않고 이어서 구독한 기간의 시작(2026-10-29 장기 구독 혜택) — 만료 후 24시간 안 재구독이면 이어짐. 옛 서버면 없음(startedAt) */
+  streakStartedAt?: string;
+  /** 1년 이상 이어서 구독 — "1년+" 배지 */
+  yearBadge?: boolean;
+  /** 지금 답장 1개당 최대 글자 수(100~500) */
+  replyMaxLength?: number;
   lastArtistMessageAt: string | null;
   lastFanReplyAt: string | null;
   cancelledAt: string | null;

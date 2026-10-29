@@ -123,6 +123,8 @@ try {
   await step('답장 보내기', async () => {
     const reply = `e2e 답장 ${stamp}`;
     await page.getByPlaceholder('메시지 보내기').fill(reply);
+    // 답장 글자 수(2026-10-29 장기 구독 혜택) — 새 팬은 100자, 입력창 위에 "글자 수/100"
+    await page.getByText(`${reply.length}/100`, { exact: true }).waitFor({ timeout: 10_000 });
     // 첫 답장 전 메시지 이용 규칙 동의(웹은 브라우저 확인창, 2026-10-12) — 뜨지 않으면 실패
     let askedRules = false;
     page.once('dialog', (dialog) => {

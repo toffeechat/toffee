@@ -271,25 +271,25 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
 
   // 구매(결제 단위)와 방 이용권(Subscription)을 같이 — fan1은 캐러멜 + CP방 묶음으로 두 방, fan2는 CP 전체 묶음으로 세 방 + 누가 개인
   await prisma.purchase.create({ data: { userId: fan1.id, bundleId: caramelCpBundle.id, priceCents: caramelCpBundle.priceCents, startedAt: daysAgo(5) } });
-  await prisma.subscription.create({ data: { userId: fan1.id, actorId: DEMO_IDS.couple, startedAt: daysAgo(5) } });
+  await prisma.subscription.create({ data: { userId: fan1.id, actorId: DEMO_IDS.couple, startedAt: daysAgo(5), streakStartedAt: daysAgo(5) } });
   await prisma.purchase.create({ data: { userId: fan2.id, bundleId: cpAllBundle.id, priceCents: cpAllBundle.priceCents, startedAt: daysAgo(20) } });
   await prisma.purchase.create({ data: { userId: fan2.id, actorId: nougat.id, priceCents: nougat.monthlyPriceCents, startedAt: daysAgo(20) } });
   for (const actorId of [DEMO_IDS.macaron, DEMO_IDS.couple]) {
-    await prisma.subscription.create({ data: { userId: fan2.id, actorId, startedAt: daysAgo(20) } });
+    await prisma.subscription.create({ data: { userId: fan2.id, actorId, startedAt: daysAgo(20), streakStartedAt: daysAgo(20) } });
   }
   const fan1Sub = await prisma.subscription.create({
-    data: { userId: fan1.id, actorId: caramel.id, startedAt: daysAgo(5) },
+    data: { userId: fan1.id, actorId: caramel.id, startedAt: daysAgo(5), streakStartedAt: daysAgo(5) },
   });
   await prisma.subscription.create({
-    data: { userId: fan2.id, actorId: caramel.id, startedAt: daysAgo(20) },
+    data: { userId: fan2.id, actorId: caramel.id, startedAt: daysAgo(20), streakStartedAt: daysAgo(20) },
   });
   await prisma.subscription.create({
-    data: { userId: fan2.id, actorId: nougat.id, startedAt: daysAgo(20) },
+    data: { userId: fan2.id, actorId: nougat.id, startedAt: daysAgo(20), streakStartedAt: daysAgo(20) },
   });
   // 해지된 구독도 하나 넣어서 "방송 대상에서 제외되는지" 확인용
   await prisma.purchase.create({ data: { userId: fan1.id, actorId: nougat.id, priceCents: nougat.monthlyPriceCents, startedAt: daysAgo(30), cancelledAt: daysAgo(2) } });
   const fan1NougatSub = await prisma.subscription.create({
-    data: { userId: fan1.id, actorId: nougat.id, startedAt: daysAgo(30) },
+    data: { userId: fan1.id, actorId: nougat.id, startedAt: daysAgo(30), streakStartedAt: daysAgo(30) },
   });
   await prisma.subscription.update({
     where: { id: fan1NougatSub.id },
@@ -397,7 +397,9 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
       data: { ...AGREED, ...ADULT, id: fan.id, role: Role.USER, displayName: fan.nickname, nickname: fan.nickname, email: `fan${i + 3}@toffee.demo`, countryCode: fan.countryCode, locale: fan.locale },
     });
     await prisma.purchase.create({ data: { userId: fan.id, actorId: caramel.id, priceCents: caramel.monthlyPriceCents, startedAt: daysAgo(8 + i) } });
-    await prisma.subscription.create({ data: { userId: fan.id, actorId: caramel.id, startedAt: daysAgo(8 + i) } });
+    // 장기 구독 혜택(2026-10-29) — 두 명은 1년 넘게 이어서 구독한 팬으로(답장 화면 "1년+" 배지). 대화는 구독 시작(startedAt)부터
+    const streakDays = [420, 0, 380, 0][i] || 8 + i;
+    await prisma.subscription.create({ data: { userId: fan.id, actorId: caramel.id, startedAt: daysAgo(8 + i), streakStartedAt: daysAgo(streakDays) } });
     await prisma.message.create({
       data: {
         actorId: caramel.id,
@@ -508,7 +510,7 @@ async function seedStatsCrowd(prisma: Prisma.TransactionClient, ids: { staffId: 
       const startedDays = 1 + Math.floor(random() * 80);
       const cancelledDays = random() < 0.18 ? Math.max(0, startedDays - 1 - Math.floor(random() * startedDays)) : null;
       await prisma.subscription.create({
-        data: { userId: id, actorId, startedAt: daysAgo(startedDays), cancelledAt: cancelledDays === null ? null : daysAgo(cancelledDays) },
+        data: { userId: id, actorId, startedAt: daysAgo(startedDays), streakStartedAt: daysAgo(startedDays), cancelledAt: cancelledDays === null ? null : daysAgo(cancelledDays) },
       });
       events.push({ userId: id, actorId, type: 'STARTED', priceCents: actorId === DEMO_IDS.couple ? 19900 : 14900, createdAt: daysAgo(startedDays) });
       if (cancelledDays !== null) events.push({ userId: id, actorId, type: 'CANCELLED', createdAt: daysAgo(cancelledDays) });

@@ -87,7 +87,10 @@
     "copyFailed": "複製失敗",
     "more": "更多",
     "welcomeLabel": "歡迎訊息",
-    "birthdayLabel": "🎂 生日祝福"
+    "birthdayLabel": "🎂 生日祝福",
+    "replyLength": "{{count}}/{{max}} 字",
+    "replyTooLong": "回覆最多可寫 {{max}} 個字。",
+    "replyTooLongNext": "回覆最多可寫 {{max}} 個字。繼續訂閱，從 {{date}} 起可增加到 {{next}} 個字。"
   },
   "chatProfile": {
     "open": "查看個人資料",
@@ -487,7 +490,10 @@
     "billingIssueBody": "因信用卡過期等原因，商店扣款失敗。在商店的寬限期內可以照常使用，更換付款方式後商店會重新扣款。若寬限期結束時仍未付款成功，訂閱將會結束。",
     "nextBillingDate": "{{date}}（僅供參考）",
     "guideTitle": "訂閱說明",
-    "guideBody": "• 此頁面顯示你目前正在使用的訂閱。\n• 下次付款日期僅供參考，實際日期與金額由商店決定，可能相差約一天。詳細付款紀錄與退款請至付款的商店（App Store 或 Google Play）查看。\n• 「付款需確認」：因信用卡過期等原因自動付款失敗，請至商店更換付款方式。若商店寬限期結束時仍未付款成功，訂閱將會結束。\n• 恢復購買：讀取手機上登入的商店帳號的購買紀錄。以其他商店帳號購買的項目不會顯示，請先以付款時的帳號登入後再點選。"
+    "guideBody": "• 此頁面顯示你目前正在使用的訂閱。\n• 下次付款日期僅供參考，實際日期與金額由商店決定，可能相差約一天。詳細付款紀錄與退款請至付款的商店（App Store 或 Google Play）查看。\n• 「付款需確認」：因信用卡過期等原因自動付款失敗，請至商店更換付款方式。若商店寬限期結束時仍未付款成功，訂閱將會結束。\n• 恢復購買：讀取手機上登入的商店帳號的購買紀錄。以其他商店帳號購買的項目不會顯示，請先以付款時的帳號登入後再點選。",
+    "replyLength": "回覆字數",
+    "replyLengthValue": "每則回覆 {{max}} 字",
+    "badge": "徽章"
   },
   "welcome": {
     "headline": "Closer to\nwhat matters",
@@ -1001,5 +1007,9 @@
     "failed": "連線中斷，無法確認是否已傳送。",
     "action": "重新傳送",
     "dismiss": "關閉"
+  },
+  "streak": {
+    "yearBadge": "1年+",
+    "yearBadgeLabel": "訂閱超過 1 年的粉絲"
   }
 }

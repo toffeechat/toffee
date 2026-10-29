@@ -1,12 +1,13 @@
 import { TranslatableText } from '@/components/translatable-text';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CornerUpLeft } from 'lucide-react-native';
 
 import { Avatar } from '@/components/ui/avatar';
+import { YearBadge } from '@/components/year-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FanReplyActions } from '@/components/fan-reply-actions';
@@ -190,9 +191,13 @@ function ReplyBubble({
       {/* 팬 프로필 사진·상태메시지(2026-10-12) — 아티스트·소속사에게만 보임 */}
       <Avatar uri={item.fanUser?.profileImageUrl} size={36} />
       <ThemedView style={styles.row}>
-        <ThemedText type="smallBold" themeColor="textSecondary">
-          {item.fanUser ? `${item.fanUser.nickname ?? t('console.noNickname')} ${item.fanUser.tag}` : t('console.deletedFan')}
-        </ThemedText>
+        <View style={styles.nameLine}>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.nameText} numberOfLines={1}>
+            {item.fanUser ? `${item.fanUser.nickname ?? t('console.noNickname')} ${item.fanUser.tag}` : t('console.deletedFan')}
+          </ThemedText>
+          {/* 1년 이상 이어서 구독한 팬(2026-10-29) */}
+          {item.fanUser?.yearBadge ? <YearBadge /> : null}
+        </View>
         {item.fanUser?.statusMessage ? (
           <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
             {item.fanUser.statusMessage}
@@ -241,6 +246,8 @@ function ReplyBubble({
 }
 
 const styles = StyleSheet.create({
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nameText: { flexShrink: 1 },
   // PC 웹에서 토피룸 화면처럼 가운데 폭으로(2026-10-20 — 이 화면만 화면 전체 폭이었음)
   container: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   original: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, gap: Spacing.one, borderBottomWidth: StyleSheet.hairlineWidth },

@@ -89,7 +89,10 @@
     "copyFailed": "Couldn't copy",
     "more": "More",
     "welcomeLabel": "Welcome message",
-    "birthdayLabel": "🎂 Birthday message"
+    "birthdayLabel": "🎂 Birthday message",
+    "replyLength": "{{count}} of {{max}} characters",
+    "replyTooLong": "Replies can be up to {{max}} characters.",
+    "replyTooLongNext": "Replies can be up to {{max}} characters. Stay subscribed and it goes up to {{next}} on {{date}}."
   },
   "chatProfile": {
     "open": "View profile",
@@ -494,7 +497,10 @@
     "billingIssueBody": "The store couldn’t charge you (for example, an expired card). You can keep using it during the store’s grace period, and the store will charge again once you update your payment method. If payment still fails when the grace period ends, your subscription will end.",
     "nextBillingDate": "{{date}} (for reference)",
     "guideTitle": "About your subscriptions",
-    "guideBody": "• This screen shows the subscriptions you’re using now.\n• The next payment date is for reference only. The store sets the actual date and amount, which may differ by about a day. For full payment history and refunds, check the store you paid with (App Store or Google Play).\n• \"Payment issue\": automatic payment is failing (for example, an expired card). Update your payment method in the store. If payment still fails when the store’s grace period ends, your subscription will end.\n• Restore purchases: loads purchases from the store account signed in on your phone. Purchases made with another store account won’t appear, so sign in with the account you paid with first."
+    "guideBody": "• This screen shows the subscriptions you’re using now.\n• The next payment date is for reference only. The store sets the actual date and amount, which may differ by about a day. For full payment history and refunds, check the store you paid with (App Store or Google Play).\n• \"Payment issue\": automatic payment is failing (for example, an expired card). Update your payment method in the store. If payment still fails when the store’s grace period ends, your subscription will end.\n• Restore purchases: loads purchases from the store account signed in on your phone. Purchases made with another store account won’t appear, so sign in with the account you paid with first.",
+    "replyLength": "Reply length",
+    "replyLengthValue": "{{max}} characters per reply",
+    "badge": "Badge"
   },
   "welcome": {
     "headline": "Closer to\nwhat matters",
@@ -1014,5 +1020,9 @@
     "failed": "Connection lost — couldn't confirm it was sent.",
     "action": "Resend",
     "dismiss": "Dismiss"
+  },
+  "streak": {
+    "yearBadge": "1yr+",
+    "yearBadgeLabel": "Subscribed for over a year"
   }
 }

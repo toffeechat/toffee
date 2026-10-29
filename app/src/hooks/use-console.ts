@@ -107,6 +107,8 @@ export interface FanReply extends ChatMessage {
     /** 팬 프로필 사진·상태메시지(2026-10-12) */
     profileImageUrl?: string | null;
     statusMessage?: string | null;
+    /** 1년 이상 이어서 구독(2026-10-29) — 이름 옆 "1년+" */
+    yearBadge?: boolean;
   } | null;
 }
 

@@ -153,7 +153,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '구독한 지 며칠 됐는지 볼 수 있나요?',
-          a: '프로필 > 구독 관리에서 아티스트를 누르면 구독 시작일과 "N일째"가 보여요. 해지했다가 다시 구독하면 처음부터 다시 세요.',
+          a: '프로필 > 구독 관리에서 아티스트를 누르면 구독 시작일과 "N일째"가 보여요. 만료·해지 후 24시간 안에 다시 구독하면 이어서 세고, 그 뒤에 다시 구독하면 처음부터 세요. 1년 이상 이어서 구독하면 "1년+" 배지가 붙고, 아티스트도 내 답장을 볼 때 이 배지를 볼 수 있어요.',
         },
       ],
     },
@@ -191,7 +191,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: '답장은 몇 개까지 보낼 수 있나요?',
-          a: '아티스트 메시지 하나에 3개까지 글과 이모지로 답장할 수 있어요. 입력창 위에 남은 개수가 보여요. 아티스트가 내 답장을 인용해서 답하면 다른 구독자에게도 내 답장 내용이 보여요(닉네임은 안 보여요).',
+          a: '아티스트 메시지 하나에 3개까지 글과 이모지로 답장할 수 있어요. 입력창 위에 남은 개수가 보여요. 답장 1개는 처음엔 100자까지 쓸 수 있고, 이어서 오래 구독할수록 길어져요(3개월 150자 · 6개월 200자 · 1년 300자 · 2년 500자). 아티스트가 내 답장을 인용해서 답하면 다른 구독자에게도 내 답장 내용이 보여요(닉네임은 안 보여요).',
         },
         {
           q: '보낸 답장을 지울 수 있나요?',
@@ -372,7 +372,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Can I see how long I’ve been subscribed?',
-          a: 'In Profile > Manage subscriptions, tap an artist to see your start date and "day N". If you cancel and subscribe again, the count starts over.',
+          a: 'In Profile > Manage subscriptions, tap an artist to see your start date and "day N". If you subscribe again within 24 hours after it ends, the count continues; after that it starts over. After a full year without a break you get a "1yr+" badge, which the artist also sees on your replies.',
         },
       ],
     },
@@ -410,7 +410,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: 'How many replies can I send?',
-          a: 'Up to 3 text or emoji replies per artist message. The remaining count is shown above the input box. If the artist quotes your reply, other subscribers can see what you wrote (but not your nickname).',
+          a: 'Up to 3 text or emoji replies per artist message. The remaining count is shown above the input box. Each reply can be up to 100 characters at first, and gets longer the longer you stay subscribed without a break (3 months 150 · 6 months 200 · 1 year 300 · 2 years 500). If the artist quotes your reply, other subscribers can see what you wrote (but not your nickname).',
         },
         {
           q: 'Can I delete a reply I sent?',
@@ -591,7 +591,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'ดูได้ไหมว่าสมัครมากี่วันแล้ว',
-          a: 'ไปที่ โปรไฟล์ > จัดการการสมัครสมาชิก แล้วแตะศิลปิน จะเห็นวันเริ่มสมัครและ "วันที่ N" หากยกเลิกแล้วสมัครใหม่ จะเริ่มนับใหม่ตั้งแต่ต้น',
+          a: 'ไปที่ โปรไฟล์ > จัดการการสมัครสมาชิก แล้วแตะศิลปิน จะเห็นวันเริ่มสมัครและ "วันที่ N" หากสมัครใหม่ภายใน 24 ชั่วโมงหลังหมดอายุหรือยกเลิก จะนับต่อ แต่ถ้าเกินนั้นจะเริ่มนับใหม่ตั้งแต่ต้น เมื่อสมัครต่อเนื่องครบ 1 ปี จะได้ป้าย "1 ปี+" ซึ่งศิลปินก็เห็นได้ตอนอ่านข้อความตอบกลับของคุณ',
         },
       ],
     },
@@ -629,7 +629,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: 'ตอบกลับได้กี่ข้อความ',
-          a: 'ตอบกลับเป็นข้อความหรืออีโมจิได้สูงสุด 3 ข้อความต่อข้อความของศิลปิน จำนวนที่เหลือแสดงอยู่เหนือช่องพิมพ์ หากศิลปินอ้างอิงข้อความของคุณ สมาชิกคนอื่นจะเห็นข้อความนั้น (แต่ไม่เห็นชื่อเล่นของคุณ)',
+          a: 'ตอบกลับเป็นข้อความหรืออีโมจิได้สูงสุด 3 ข้อความต่อข้อความของศิลปิน จำนวนที่เหลือแสดงอยู่เหนือช่องพิมพ์ แต่ละข้อความตอบกลับเขียนได้ 100 ตัวอักษรในช่วงแรก และยาวขึ้นเมื่อสมัครต่อเนื่องนานขึ้น (3 เดือน 150 · 6 เดือน 200 · 1 ปี 300 · 2 ปี 500) หากศิลปินอ้างอิงข้อความของคุณ สมาชิกคนอื่นจะเห็นข้อความนั้น (แต่ไม่เห็นชื่อเล่นของคุณ)',
         },
         {
           q: 'ลบข้อความตอบกลับที่ส่งไปแล้วได้ไหม',
@@ -810,7 +810,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '購読して何日目か確認できますか？',
-          a: 'プロフィール > 購読の管理でアーティストをタップすると、購読開始日と「N日目」が表示されます。解約してから再購読すると、最初から数え直します。',
+          a: 'プロフィール > 購読の管理でアーティストをタップすると、購読開始日と「N日目」が表示されます。終了・解約から24時間以内に再購読すると続けて数え、それ以降は最初から数え直します。1年以上続けて購読すると「1年+」バッジが付き、アーティストも返信を見るときにこのバッジを確認できます。',
         },
       ],
     },
@@ -848,7 +848,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: '返信はいくつまで送れますか？',
-          a: 'アーティストのメッセージ1件につき、文字と絵文字で3件まで返信できます。残りの件数は入力欄の上に表示されます。アーティストがあなたの返信を引用すると、他の購読者にも返信の内容が表示されます（ニックネームは表示されません）。',
+          a: 'アーティストのメッセージ1件につき、文字と絵文字で3件まで返信できます。残りの件数は入力欄の上に表示されます。返信1件は最初は100文字まで書け、続けて長く購読するほど長くなります（3か月150文字・6か月200文字・1年300文字・2年500文字）。アーティストがあなたの返信を引用すると、他の購読者にも返信の内容が表示されます（ニックネームは表示されません）。',
         },
         {
           q: '送った返信を消せますか？',
@@ -1029,7 +1029,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '可以查看订阅了多少天吗？',
-          a: '在 我的 > 管理订阅 中点击艺人，即可看到订阅开始日期和“第 N 天”。取消后重新订阅会从头开始计算。',
+          a: '在 我的 > 管理订阅 中点击艺人，即可看到订阅开始日期和“第 N 天”。到期或取消后 24 小时内重新订阅会继续计算，超过则从头开始。连续订阅满 1 年会获得“1年+”徽章，艺人查看你的回复时也能看到。',
         },
       ],
     },
@@ -1067,7 +1067,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: '可以回复几条？',
-          a: '每条艺人消息最多可用文字或表情回复3条，剩余条数显示在输入框上方。如果艺人引用了你的回复，其他订阅者也能看到回复内容（看不到你的昵称）。',
+          a: '每条艺人消息最多可用文字或表情回复3条，剩余条数显示在输入框上方。每条回复一开始最多 100 字，连续订阅越久越长（3个月150字 · 6个月200字 · 1年300字 · 2年500字）。如果艺人引用了你的回复，其他订阅者也能看到回复内容（看不到你的昵称）。',
         },
         {
           q: '可以删除已发送的回复吗？',
@@ -1248,7 +1248,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '可以查看訂閱了幾天嗎？',
-          a: '在 我的 > 管理訂閱 中點選藝人，即可看到訂閱開始日期和「第 N 天」。取消後重新訂閱會從頭開始計算。',
+          a: '在 我的 > 管理訂閱 中點選藝人，即可看到訂閱開始日期和「第 N 天」。到期或取消後 24 小時內重新訂閱會繼續計算，超過則從頭開始。連續訂閱滿 1 年會獲得「1年+」徽章，藝人查看你的回覆時也看得到。',
         },
       ],
     },
@@ -1286,7 +1286,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: '可以回覆幾則？',
-          a: '每則藝人訊息最多可用文字或表情回覆3則，剩餘則數顯示在輸入框上方。若藝人引用了你的回覆，其他訂閱者也看得到回覆內容（看不到你的暱稱）。',
+          a: '每則藝人訊息最多可用文字或表情回覆3則，剩餘則數顯示在輸入框上方。每則回覆一開始最多 100 字，連續訂閱越久越長（3個月150字 · 6個月200字 · 1年300字 · 2年500字）。若藝人引用了你的回覆，其他訂閱者也看得到回覆內容（看不到你的暱稱）。',
         },
         {
           q: '可以刪除已傳送的回覆嗎？',
@@ -1467,7 +1467,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Tôi có xem được mình đã đăng ký bao nhiêu ngày không?',
-          a: 'Vào Hồ sơ > Quản lý gói đăng ký rồi chạm vào nghệ sĩ, bạn sẽ thấy ngày bắt đầu đăng ký và "ngày thứ N". Nếu hủy rồi đăng ký lại, số ngày sẽ được tính lại từ đầu.',
+          a: 'Vào Hồ sơ > Quản lý gói đăng ký rồi chạm vào nghệ sĩ, bạn sẽ thấy ngày bắt đầu đăng ký và "ngày thứ N". Nếu đăng ký lại trong vòng 24 giờ sau khi hết hạn hoặc hủy, số ngày được tính tiếp; quá thời gian đó sẽ tính lại từ đầu. Khi đăng ký liên tục đủ 1 năm, bạn nhận huy hiệu "1 năm+" và nghệ sĩ cũng thấy huy hiệu này khi xem tin trả lời của bạn.',
         },
       ],
     },
@@ -1505,7 +1505,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: 'Tôi trả lời được bao nhiêu tin?',
-          a: 'Tối đa 3 tin trả lời bằng chữ hoặc biểu tượng cảm xúc cho mỗi tin nhắn của nghệ sĩ. Số còn lại hiển thị phía trên ô nhập. Nếu nghệ sĩ trích dẫn tin trả lời của bạn, người đăng ký khác cũng thấy nội dung tin đó (nhưng không thấy biệt danh của bạn).',
+          a: 'Tối đa 3 tin trả lời bằng chữ hoặc biểu tượng cảm xúc cho mỗi tin nhắn của nghệ sĩ. Số còn lại hiển thị phía trên ô nhập. Mỗi tin trả lời lúc đầu tối đa 100 ký tự và dài hơn khi bạn đăng ký liên tục lâu hơn (3 tháng 150 · 6 tháng 200 · 1 năm 300 · 2 năm 500). Nếu nghệ sĩ trích dẫn tin trả lời của bạn, người đăng ký khác cũng thấy nội dung tin đó (nhưng không thấy biệt danh của bạn).',
         },
         {
           q: 'Tôi có xóa được câu trả lời đã gửi không?',
@@ -1686,7 +1686,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: '¿Puedo ver cuánto tiempo llevo suscrito?',
-          a: 'En Perfil > Gestionar suscripciones, toca un artista para ver la fecha de inicio y "día N". Si cancelas y te vuelves a suscribir, la cuenta empieza de nuevo.',
+          a: 'En Perfil > Gestionar suscripciones, toca un artista para ver la fecha de inicio y "día N". Si te vuelves a suscribir dentro de las 24 horas siguientes a que termine, la cuenta continúa; después, empieza de nuevo. Con un año seguido obtienes la insignia "1 año+", que el artista también ve en tus respuestas.',
         },
       ],
     },
@@ -1724,7 +1724,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: '¿Cuántas respuestas puedo enviar?',
-          a: 'Hasta 3 respuestas de texto o emoji por cada mensaje del artista. Las que te quedan se muestran encima del cuadro de texto. Si el artista cita tu respuesta, otros suscriptores podrán ver lo que escribiste (pero no tu apodo).',
+          a: 'Hasta 3 respuestas de texto o emoji por cada mensaje del artista. Las que te quedan se muestran encima del cuadro de texto. Cada respuesta puede tener hasta 100 caracteres al principio y se alarga cuanto más tiempo sigas suscrito sin interrupción (3 meses 150 · 6 meses 200 · 1 año 300 · 2 años 500). Si el artista cita tu respuesta, otros suscriptores podrán ver lo que escribiste (pero no tu apodo).',
         },
         {
           q: '¿Puedo borrar una respuesta que envié?',
@@ -1905,7 +1905,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
         },
         {
           q: 'Posso ver há quanto tempo sou assinante?',
-          a: 'Em Perfil > Gerenciar assinaturas, toque em um artista para ver a data de início e "dia N". Se você cancelar e assinar de novo, a contagem recomeça.',
+          a: 'Em Perfil > Gerenciar assinaturas, toque em um artista para ver a data de início e "dia N". Se você assinar de novo em até 24 horas depois que terminar, a contagem continua; depois disso, recomeça. Com um ano seguido você ganha o selo "1 ano+", que o artista também vê nas suas respostas.',
         },
       ],
     },
@@ -1943,7 +1943,7 @@ export const FAQ: Record<SupportedLocale, FaqSection[]> = {
       items: [
         {
           q: 'Quantas respostas posso enviar?',
-          a: 'Até 3 respostas em texto ou emoji para cada mensagem do artista. O número restante aparece acima da caixa de texto. Se o artista citar sua resposta, outros assinantes poderão ver o que você escreveu (mas não o seu apelido).',
+          a: 'Até 3 respostas em texto ou emoji para cada mensagem do artista. O número restante aparece acima da caixa de texto. Cada resposta pode ter até 100 caracteres no início e fica mais longa quanto mais tempo você assinar sem interrupção (3 meses 150 · 6 meses 200 · 1 ano 300 · 2 anos 500). Se o artista citar sua resposta, outros assinantes poderão ver o que você escreveu (mas não o seu apelido).',
         },
         {
           q: 'Posso apagar uma resposta que enviei?',

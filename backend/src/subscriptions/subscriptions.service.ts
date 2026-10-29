@@ -17,6 +17,7 @@ import type { StoreTransaction } from './iap-verification.service.js';
 import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { ConfigService } from '@nestjs/config';
 import { storeGroupOf, switchTiming, type GroupActor } from '../bundles/switch-group.js';
+import { DEFAULT_STREAK_GRACE_HOURS, hasYearBadge, replyMaxLength } from './streak.js';
 
 const LAST_MESSAGE_PREVIEW = 80;
 
@@ -153,6 +154,9 @@ export class SubscriptionsService {
           actor: { ...subscription.actor, chatProfileImageUrl },
           unreadCount,
           unreadQuotedReply: !!unreadQuote,
+          // 1년 이상 이어서 구독(2026-10-29) — 구독 관리에 "1년+"
+          yearBadge: hasYearBadge(subscription.streakStartedAt),
+          replyMaxLength: replyMaxLength(subscription.streakStartedAt),
           endsAt: endsAtOf(covering),
           renewsAt: renewsAtOf(covering),
           // 자동 결제 실패로 유예 중인 구매가 있음(2026-10-28) — 앱이 결제 수단 확인 안내
@@ -801,6 +805,8 @@ export class SubscriptionsService {
    * resumeSince(2026-10-27): 결제 실패로 닫혔던 같은 스토어 구독의 회복 — 그 구매가 닫힌 시각(resumeSince) 이후에 닫힌 방은 재구독이 아니라서
    * 대화 시작 시점(startedAt)·무사용 판정 기록을 그대로 두고 다시 엶(짧은 결제 실패로 대화가 사라지지 않게).
    * 열기·닫기는 상태가 바뀔 때만(조건부 갱신) — 동시에 두 번 돌아도 이력이 한 번만 남음.
+   * 장기 구독 기간(streakStartedAt, 2026-10-29): 닫힌 지 SUBSCRIPTION_STREAK_GRACE_HOURS(기본 24시간) 안에 다시 열리면 이어서 셈 —
+   * 대화는 재구독처럼 지금부터 보이지만 답장 글자 수·"1년+" 배지는 끊기지 않음.
    */
   private async syncAccess(tx: Db, userId: string, actorIds: string[], prices: Map<string, number>, resumeSince?: Date) {
     if (actorIds.length === 0) return;
@@ -811,11 +817,19 @@ export class SubscriptionsService {
     const existing = await tx.subscription.findMany({ where: { userId, actorId: { in: actorIds } } });
     const byActor = new Map(existing.map((sub) => [sub.actorId, sub]));
     const now = new Date();
+    const graceMs = this.streakGraceHours * 60 * 60 * 1000;
     for (const actorId of new Set(actorIds)) {
       const sub = byActor.get(actorId);
       const open = !!sub && !sub.cancelledAt;
       if (covered.has(actorId) && !open) {
-        const fresh = { startedAt: now, cancelledAt: null, lastArtistMessageAt: null, lastFanReplyAt: null };
+        const keepStreak = !!sub?.cancelledAt && now.getTime() - sub.cancelledAt.getTime() <= graceMs;
+        const fresh = {
+          startedAt: now,
+          streakStartedAt: keepStreak ? sub.streakStartedAt : now,
+          cancelledAt: null,
+          lastArtistMessageAt: null,
+          lastFanReplyAt: null,
+        };
         if (sub) {
           const resume = !!resumeSince && !!sub.cancelledAt && sub.cancelledAt >= resumeSince;
           const { count } = await tx.subscription.updateMany({ where: { id: sub.id, cancelledAt: { not: null } }, data: resume ? { cancelledAt: null } : fresh });
@@ -828,6 +842,11 @@ export class SubscriptionsService {
         await tx.subscriptionEvent.create({ data: { userId, actorId, type: SubscriptionEventType.CANCELLED } });
       }
     }
+  }
+
+  private get streakGraceHours(): number {
+    const hours = Number(this.config.get<string>('SUBSCRIPTION_STREAK_GRACE_HOURS'));
+    return Number.isFinite(hours) && hours >= 0 ? hours : DEFAULT_STREAK_GRACE_HOURS;
   }
 
   // 이 사람의 구독이 바뀜 — 열려 있는 실시간 연결이 볼 수 있는 방 목록을 바로 다시 읽게(앱은 인박스를 새로고침)

@@ -2067,3 +2067,25 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   앞 토큰으로 되돌림, `logoutAll()` 끝에 `signedOutReason` 비움. 화면 캡처 경고 표시 여부는 모듈 변수 하나. `restorePurchases()`는 `handling`·`waiters`에 있는
   거래를 빼고 보내는 동안 `handling`에 넣음.
 
+## 장기 구독 혜택 — 답장 글자 수·"1년+" 배지 (2026-10-29)
+
+- 스키마(`20261029120000_subscription_streak`): `Subscription.streakStartedAt DateTime @default(now())` — 끊기지 않고 이어서 구독한 기간의 시작.
+  기존 행은 `startedAt`으로 채움. `startedAt`(팬에게 대화를 보여 주는 시작점·재구독 시 이전 대화 비공개)과 따로 둔 이유: 24시간 유예로 이어서 세도
+  대화 범위는 바꾸지 않으려고.
+- `SubscriptionsService.syncAccess`: 닫힌 방을 다시 열 때 `cancelledAt`이 `SUBSCRIPTION_STREAK_GRACE_HOURS`(기본 24) 안이면 `streakStartedAt` 유지,
+  아니면 now. `resumeSince`(결제 실패 회복) 경로는 원래대로 아무것도 안 바꿈. 개인 → 묶음 전환은 방이 안 닫혀서 그대로.
+  IAP는 만료 후 `sweepExpired`가 `IAP_EXPIRY_GRACE_HOURS`(24) 뒤에 닫으므로, 스토어 만료 기준으로는 최대 약 48시간까지 이어짐(넉넉한 쪽).
+- 규칙은 `backend/src/subscriptions/streak.ts` 한 곳: `REPLY_LENGTH_TIERS`(지난 날수 0/90/180/365/730 → 100/150/200/300/500), `YEAR_BADGE_DAYS = 365`,
+  `countReplyChars`(코드 포인트 중 `\p{M}`·U+200B~200D·2060·FE00~FE0F·1F3FB~1F3FF·E0020~E007F 제외). 앱 `app/src/utils/reply-length.ts`가 같은 규칙
+  (Hermes가 `\p{M}`을 모르면 코드 포인트로 — 앱이 더 많이 세서 서버 거절은 없음).
+- `sendReply`: 차단 확인 뒤 `countReplyChars(body) > replyMaxLength` → 400 `REPLY_TOO_LONG {limit}`(9개 언어). DTO `@MaxLength`는 1000 → 2000(결합 기호·
+  이모지까지 센 상한, 실제 한도는 서비스).
+- `GET /actors/:id/messages/reply-quota`에 `maxLength`·`streakStartedAt`·`nextMaxLength`·`nextMaxLengthAt` 추가(옛 앱은 무시). `GET /subscriptions/me`
+  행에 `streakStartedAt`(스프레드)·`yearBadge`·`replyMaxLength`. `listReplies`의 `fanUser.yearBadge` — 팬의 그 방 활성 구독(`subscriptions where actorId,
+  cancelledAt null take 1`)으로 계산.
+- 앱: 채팅 입력창 위 `글자 수/한도`(넘으면 빨강 + 보내기 막음 + 다음 단계 날짜), 구독 관리 상세 "구독 시작 · N일째"를 `streakStartedAt ?? startedAt`로,
+  답장 글자 수·배지 줄, 목록 카드 이름 옆 `YearBadge`(`components/year-badge.tsx` — tintSoft 바탕 + chart1 글자). 스튜디오 답장 화면·소속사 콘솔 답장 탭 이름 옆.
+- 데모 시드: 모든 구독에 `streakStartedAt = startedAt`(안 넣으면 기본값 now라 전부 1일째가 됨), minnie(420일)·sora(380일)는 `1년+`.
+- 테스트: `streak.spec.ts`(단계·배지·다음 단계·글자 세기), `messages.service.spec`(100자/300자 한도·태국어), `subscriptions.service.spec`(23시간 이어짐·25시간 처음부터),
+  앱 `reply-length.test.ts`, e2e 답장 단계에 `N/100` 확인.
+

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
 import { Avatar } from '@/components/ui/avatar';
+import { YearBadge } from '@/components/year-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ChatPhotoEditor } from '@/components/chat-photo-editor';
 import { showNameToken } from '@/utils/name-token';
@@ -299,9 +300,13 @@ function ReplyBubble({ reply, actorId, menuOpen, onMenuChange }: { reply: FanRep
     <View style={styles.bubbleRow}>
       <Avatar uri={fan?.profileImageUrl} size={36} />
       <View style={styles.bubbleColumn}>
-        <ThemedText type="captionBold" themeColor="textSecondary" numberOfLines={1}>
-          {fan ? `${fan.nickname ?? t('console.noNickname')} ${fan.tag}` : t('console.deletedFan')}
-        </ThemedText>
+        <View style={styles.nameLine}>
+          <ThemedText type="captionBold" themeColor="textSecondary" numberOfLines={1} style={styles.nameText}>
+            {fan ? `${fan.nickname ?? t('console.noNickname')} ${fan.tag}` : t('console.deletedFan')}
+          </ThemedText>
+          {/* 1년 이상 이어서 구독한 팬(2026-10-29) */}
+          {fan?.yearBadge ? <YearBadge /> : null}
+        </View>
         {fan?.statusMessage ? (
           <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
             {fan.statusMessage}
@@ -539,6 +544,8 @@ export default function ConsoleActorScreen() {
 }
 
 const styles = StyleSheet.create({
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nameText: { flexShrink: 1 },
   actorPreviewBody: { flex: 1, gap: 4, backgroundColor: 'transparent' },
   chatList: { paddingHorizontal: Spacing.four, paddingVertical: Spacing.three },
   flip: { transform: [{ scaleY: -1 }] },

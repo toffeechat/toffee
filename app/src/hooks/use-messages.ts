@@ -127,6 +127,12 @@ export interface ReplyQuota {
   remaining: number;
   /** 아티스트·소속사가 이 팬을 차단함(2026-10-20) — 입력칸을 막고 안내 */
   blocked?: boolean;
+  /** 답장 1개당 최대 글자 수(2026-10-29 장기 구독 혜택 — 이어서 구독한 기간에 따라 100~500자). 옛 서버면 없음 */
+  maxLength?: number;
+  streakStartedAt?: string;
+  /** 다음 단계 글자 수와 그날(마지막 단계면 null) */
+  nextMaxLength?: number | null;
+  nextMaxLengthAt?: string | null;
 }
 
 export function useReplyQuota(actorId: string, enabled: boolean) {

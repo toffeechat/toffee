@@ -543,6 +543,9 @@ model Subscription {
   userId              String
   actorId             String
   startedAt           DateTime  @default(now())
+  // 끊기지 않고 이어서 구독한 기간의 시작(2026-10-29, 장기 구독 혜택 — 답장 글자 수·"1년+" 배지·"N일째"). startedAt(대화를 보여 주는
+  // 시작점)과 따로 둠 — 만료 후 24시간 안에 다시 구독하면 대화는 지금부터지만 이 날짜는 이어짐
+  streakStartedAt     DateTime  @default(now())
   lastArtistMessageAt DateTime?
   lastFanReplyAt      DateTime?
   cancelledAt         DateTime?
