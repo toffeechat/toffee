@@ -5,6 +5,7 @@ import { googleStoreEvent } from './store-events.js';
 import { googleTransaction, type IapVerificationService, type StoreTransaction } from './iap-verification.service.js';
 import { ChargeLedgerService } from '../settlements/charge-ledger.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import type { ShutdownService } from '../common/lifecycle/shutdown.service.js';
 import type { MediaService } from '../storage/media.service.js';
 import type { RealtimeService } from '../realtime/realtime.service.js';
 import type { ConfigService } from '@nestjs/config';
@@ -95,6 +96,7 @@ function setup() {
     subscriptionEvent: { create: async () => ({}) },
     purchaseCharge: { findFirst: async () => (latestCharge.at ? { chargedAt: latestCharge.at } : null), findUnique: async () => null },
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
+    $executeRaw: async () => 0,
   };
   let nextTransaction: StoreTransaction | null = null;
   const iap = { verifyApple: async () => nextTransaction!, verifyGoogle: async () => nextTransaction! };
@@ -255,7 +257,7 @@ describe('정산 — 기간 중간에 바꾸면 안 쓴 기간 몫을 예전 묶
         create,
       },
     };
-    const ledger = new ChargeLedgerService({} as PrismaService);
+    const ledger = new ChargeLedgerService({} as PrismaService, { track: <T>(work: Promise<T>) => work } as unknown as ShutdownService);
     const credit = await ledger.creditUnused(db as never, 'p1', at);
     expect(credit).toEqual({ totalCents: 20000, fromChargeId: 'c1', periodEnd });
     const data = create.mock.calls[0][0].data;

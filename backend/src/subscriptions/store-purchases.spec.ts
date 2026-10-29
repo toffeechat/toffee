@@ -111,6 +111,7 @@ function setup() {
         charges.filter((c) => c.purchaseId === where.purchaseId).sort((a, b) => +b.chargedAt - +a.chargedAt)[0] ?? null,
     },
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
+    $executeRaw: async () => 0,
   };
   let nextTransaction: StoreTransaction | null = null;
   const iap = {
@@ -271,6 +272,17 @@ describe('스토어 알림 반영', () => {
     await expect(t.service.verifyPurchase('u', 'a1', t.iosDto)).rejects.toThrow();
     const { results } = await t.service.restorePurchases('u', [t.iosDto]);
     expect(results).toEqual([{ productId: 'toffee.a1', restored: true }]);
+  });
+
+  it('만료로 닫힌 뒤 늦게 온 "결제됨" 알림(기간도 끝난 결제)은 결제만 기록하고 방을 다시 열지 않음(2026-10-28)', async () => {
+    const t = setup();
+    t.receipt();
+    await t.service.verifyPurchase('u', 'a1', t.iosDto);
+    await t.service.applyStoreEvent({ kind: 'EXPIRED', originalTransactionId: 'orig-1' });
+    const late = t.receipt({ storeTransactionId: 'tx-late', purchasedAt: new Date(Date.now() - 31 * DAY), expiresAt: new Date(Date.now() - DAY) });
+    expect(await t.service.applyStoreEvent({ kind: 'PAID', transaction: late })).toEqual({ applied: true });
+    expect(t.open('a1')).toBeUndefined();
+    expect(t.charges.map((c) => c.storeTransactionId)).toContain('tx-late');
   });
 
   it('만료되면 방이 닫히고, 환불되면 결제 기록이 환불로 바뀌고 방도 닫힘', async () => {
@@ -527,5 +539,22 @@ describe('스토어 알림 해석', () => {
     // 며칠 늦게 처음 기록된 갱신 — 만료일 한 달 전으로 추정(지금 시각이면 정산 달이 바뀜)
     const late = googleTransaction('pt', 'p', { orderId: 'GPA.1..1', expiryTimeMillis: String(Date.parse('2026-10-25T00:00:00Z')) }, now);
     expect(late.purchasedAt.toISOString()).toBe('2026-09-25T00:00:00.000Z');
+  });
+
+  it('구글 첫 달 할인(도입 가격)은 할인 기간 결제만 할인 금액, 무료 체험은 0(2026-10-28)', () => {
+    const now = new Date('2026-10-01T00:00:00Z');
+    const base = {
+      expiryTimeMillis: '1792000000000',
+      priceAmountMicros: '149000000',
+      priceCurrencyCode: 'THB',
+      introductoryPriceInfo: { introductoryPriceAmountMicros: '99000000', introductoryPriceCurrencyCode: 'THB', introductoryPriceCycles: 1 },
+    };
+    expect(googleTransaction('pt', 'p', { ...base, orderId: 'GPA.1' }, now)).toMatchObject({ storeAmountMilli: 99000, storeCurrency: 'THB' });
+    expect(googleTransaction('pt', 'p', { ...base, orderId: 'GPA.1..0' }, now).storeAmountMilli).toBe(149000);
+    // 할인 2회면 두 번째 결제(..0)까지 할인
+    const twoCycles = { ...base, introductoryPriceInfo: { ...base.introductoryPriceInfo, introductoryPriceCycles: 2 } };
+    expect(googleTransaction('pt', 'p', { ...twoCycles, orderId: 'GPA.1..0' }, now).storeAmountMilli).toBe(99000);
+    expect(googleTransaction('pt', 'p', { ...twoCycles, orderId: 'GPA.1..1' }, now).storeAmountMilli).toBe(149000);
+    expect(googleTransaction('pt', 'p', { ...base, orderId: 'GPA.1', paymentState: 2, introductoryPriceInfo: undefined }, now).storeAmountMilli).toBe(0);
   });
 });

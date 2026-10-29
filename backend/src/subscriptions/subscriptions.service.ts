@@ -580,6 +580,21 @@ export class SubscriptionsService {
         if (event.transaction.expiresAt.getTime() <= Date.now()) return { applied: true };
       }
       if (await this.reopensRefunded(existing, event.transaction)) return { applied: false };
+      // 기간이 이미 끝난 결제의 늦게 온·다시 온 알림(2026-10-28 점검) — 결제 기록만 남기고 방은 다시 열지 않음. 예전엔 만료로 닫힌 구매가
+      // 새 결제 없이 다시 열려(대화 기록 처음부터) 만료 정리 때까지 이용됐음
+      if (event.transaction.expiresAt.getTime() <= Date.now()) {
+        if (existing && event.transaction.storeTransactionId) {
+          await this.ledger.record(this.prisma, existing.id, {
+            chargedAt: event.transaction.purchasedAt,
+            periodEnd: event.transaction.expiresAt,
+            source: event.transaction.sandbox ? ChargeSource.SANDBOX : sourceOf(event.transaction.platform),
+            storeTransactionId: event.transaction.storeTransactionId,
+            storeAmountMilli: event.transaction.storeAmountMilli,
+            storeCurrency: event.transaction.storeCurrency,
+          });
+        }
+        return { applied: true };
+      }
       // 앱 확인 없이 알림으로 처음 만드는 구매도 미성년자 확인(2026-10-28 점검 — 부모 동의 대기·성년 미만이 이 경로로 방을 열 수 있었음).
       // 이미 결제된 건이라 방은 열지 않고 운영자에게 환불 처리를 알림(잠정 정책, STATUS "출시 전 확정할 정책")
       if (!existing) {
@@ -789,6 +804,9 @@ export class SubscriptionsService {
    */
   private async syncAccess(tx: Db, userId: string, actorIds: string[], prices: Map<string, number>, resumeSince?: Date) {
     if (actorIds.length === 0) return;
+    // 한 사람의 방 열고 닫기는 한 번에 하나씩(2026-10-28 점검) — 만료로 닫는 처리와 같은 방을 덮는 새 구매가 동시에 오면 서로의 아직 안 끝난
+    // 변경을 못 봐서, 결제된 구매가 있는데도 방이 닫힌 채 남을 수 있었음. 트랜잭션이 끝나면 풀림
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`subscription-access:${userId}`}))`;
     const covered = new Set((await this.activePurchases(tx, userId)).flatMap(actorIdsOf));
     const existing = await tx.subscription.findMany({ where: { userId, actorId: { in: actorIds } } });
     const byActor = new Map(existing.map((sub) => [sub.actorId, sub]));

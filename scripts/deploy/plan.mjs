@@ -108,7 +108,9 @@ const DESTRUCTIVE = [
   [/\bRENAME\s+(COLUMN|TO)\b/i, '이름 변경(옛 서버·앱이 옛 이름을 씀)'],
   [/\bALTER\s+COLUMN\b[^;]*\bTYPE\b/i, '컬럼 타입 변경'],
   [/\bALTER\s+COLUMN\b[^;]*\bSET\s+NOT\s+NULL\b/i, '빈 값 금지로 변경'],
-  [/\bADD\s+COLUMN\b[^;]*\bNOT\s+NULL\b(?![^;]*\bDEFAULT\b)/i, '기본값 없는 필수 컬럼 추가(옛 서버의 저장이 실패)'],
+  // 기본값은 같은 컬럼 안에서만 찾음(쉼표까지) — Prisma는 여러 컬럼을 한 ALTER TABLE에 쉼표로 이어 써서, 뒤 컬럼의 DEFAULT 때문에
+  // 앞 컬럼의 "기본값 없는 NOT NULL"을 놓쳤음(2026-10-28)
+  [/\bADD\s+COLUMN\b[^;]*\bNOT\s+NULL\b(?![^;,]*\bDEFAULT\b)/i, '기본값 없는 필수 컬럼 추가(옛 서버의 저장이 실패)'],
   [/\bDROP\s+TYPE\b|\bALTER\s+TYPE\b[^;]*\bRENAME\b/i, '종류(enum) 삭제·이름 변경'],
   [/\bTRUNCATE\b|\bDELETE\s+FROM\b/i, '데이터 삭제'],
   [/\bUPDATE\s+"/i, '데이터 일괄 수정'],

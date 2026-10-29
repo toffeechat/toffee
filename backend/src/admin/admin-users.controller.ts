@@ -20,20 +20,24 @@ export class AdminUsersController {
     return this.adminUsersService.findAll(query.q, query.role, query.sort, query.page, query.dateField ? { field: query.dateField, ...rangeBounds(resolveRange(query)) } : undefined);
   }
 
+  // 상세·결제·활동도 접속 기록처럼 운영자 계정이 대상이면 OWNER만(본인은 됨, 2026-10-28 — 예전엔 상담 등급이 OWNER 상세를 볼 수 있었음)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    await this.adminUsersService.assertCanView(admin, id);
     return this.adminUsersService.findOne(id);
   }
 
   // 구독·결제·환불 내역(2026-10-20)
   @Get(':id/billing')
-  billing(@Param('id') id: string) {
+  async billing(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    await this.adminUsersService.assertCanView(admin, id);
     return this.adminUsersService.billing(id);
   }
 
   // 팬 한 명 기준 보기 — 답장·신고·차단·제재(2026-10-22)
   @Get(':id/activity')
-  activity(@Param('id') id: string) {
+  async activity(@CurrentUser() admin: AuthenticatedUser, @Param('id') id: string) {
+    await this.adminUsersService.assertCanView(admin, id);
     return this.adminUsersService.activity(id);
   }
 

@@ -756,7 +756,7 @@ export class MessagesService {
    */
   async deleteBroadcast(requesterId: string, actorId: string, messageId: string) {
     // 팬은 자기 답장만 회수(2026-10-14) — 같은 주소(DELETE …/messages/:id)를 씀
-    const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true } });
+    const requester = await this.prisma.user.findUniqueOrThrow({ where: { id: requesterId }, select: { role: true, agencyId: true } });
     if (requester.role === Role.USER) return this.retractReply(requesterId, actorId, messageId);
     // 다른 방을 팬으로 구독한 아티스트·소속사·운영자 계정이 자기 답장을 회수하는 것도 같은 길로(2026-10-28 — 예전엔 USER만이라 ACTOR_SELF_ONLY로 막혔음)
     const ownReply = await this.prisma.message.findFirst({
@@ -779,6 +779,15 @@ export class MessagesService {
     if (!byAdmin && !byStaff) {
       const own = message.senderActorId ? message.senderActorId === selfActorId : selfActorId === actorId;
       if (!own) throw new ForbiddenException(appError('ACTOR_SELF_ONLY'));
+    }
+    // 소속사 직원은 자기 소속 아티스트가 보낸 것만(2026-10-28) — 서로 다른 소속사 멤버의 CP방은 양쪽 직원 모두 볼 수 있어서, 예전엔
+    // 상대 소속사 아티스트 메시지·파일까지 지울 수 있었음. 보낸 배우가 없는 메시지(1인 방의 예전 메시지)는 그 방 소속사 기준, CP방 운영자 발송은 못 지움
+    if (byStaff) {
+      const senderId = message.senderActorId ?? actorId;
+      const sender = await this.prisma.actor.findUnique({ where: { id: senderId }, select: { kind: true, agencyId: true } });
+      if (!sender || sender.kind === ActorKind.COUPLE || !requester.agencyId || sender.agencyId !== requester.agencyId) {
+        throw new ForbiddenException(appError('ACTOR_STAFF_OR_SELF_ONLY'));
+      }
     }
     if (message.deletedAt) return;
     const keepFile = message._count.reports > 0;

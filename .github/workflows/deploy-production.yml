@@ -110,7 +110,12 @@ jobs:
 
       - name: 배포 계획 — 무엇이 올라가는지
         id: plan
-        run: node scripts/deploy/plan.mjs --env production --target ${{ steps.target.outputs.sha }} --ota-base "${{ inputs.ota_base || steps.last_ota.outputs.commit }}" --json plan.json
+        env:
+          # 직접 입력한 커밋은 환경 변수로 받아 커밋 모양인지 확인(스크립트에 바로 넣으면 명령이 끼어들 수 있음, 2026-10-28)
+          OTA_BASE: ${{ inputs.ota_base || steps.last_ota.outputs.commit }}
+        run: |
+          [[ -z "$OTA_BASE" || "$OTA_BASE" =~ ^[0-9a-f]{7,40}$ ]] || { echo "⛔ ota_base는 커밋 해시(7~40자리 16진수)만"; exit 1; }
+          node scripts/deploy/plan.mjs --env production --target ${{ steps.target.outputs.sha }} --ota-base "$OTA_BASE" --json plan.json
 
       - name: 위험한 마이그레이션 막기(규칙 5)
         if: steps.plan.outputs.destructive == 'true' && !inputs.allow_destructive_migration

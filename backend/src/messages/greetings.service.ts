@@ -7,6 +7,7 @@ import { pushStrings } from '../notifications/push-messages.js';
 import { ensureIsActorSelf } from '../common/authorization/actor-access.js';
 import { ensureActiveSubscription } from '../common/authorization/ensure-active-subscription.js';
 import { ActorKind, UserStatus } from '../generated/prisma/enums.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { birthdayToday } from './birthday.js';
 import type { UpdateGreetingsDto } from './dto/update-greetings.dto.js';
@@ -115,8 +116,12 @@ export class GreetingsService {
         await this.prisma.birthdayGreeting.create({
           data: { userId: user.id, actorId, year: today.year, body: personalize(actor.birthdayMessage ?? '', user.nickname ?? user.displayName) },
         });
-      } catch {
-        continue; // 이미 보냄(같은 해) — 다른 서버가 먼저 만들었거나 다시 돌린 경우
+      } catch (error) {
+        // 이미 보냄(같은 해) — 다른 서버가 먼저 만들었거나 다시 돌린 경우. 그 밖의 실패(DB 끊김 등)는 기록을 남기고 다음 팬으로(2026-10-28 — 예전엔 조용히 넘겨서 몰랐음)
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) {
+          this.logger.error(`생일 축하 메시지 저장 실패(user ${user.id}, actor ${actorId}): ${String(error)}`);
+        }
+        continue;
       }
       created += 1;
       // 이 방 알림을 끈 팬은 축하 메시지만 대화방에 남기고 푸시는 안 보냄(2026-10-28)

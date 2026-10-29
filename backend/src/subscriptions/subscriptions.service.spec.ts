@@ -97,6 +97,7 @@ function fakeDb(user: Record<string, unknown> = DONE_USER) {
       create: async ({ data }: { data: { actorId: string; type: string; priceCents?: number } }) => events.push(data),
     },
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
+    $executeRaw: async () => 0,
   };
   // 정산용 결제 기록 — 무엇이 기록됐는지만 모아 둠(배분 계산은 settlements/allocate-charge.spec)
   const charges: { purchaseId: string; source: string }[] = [];

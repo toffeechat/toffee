@@ -23,7 +23,7 @@ export function scrubText(text: string): string {
   return text.replace(JWT_PATTERN, '[redacted-jwt]').replace(EMAIL_PATTERN, '[redacted-email]');
 }
 
-export const SENSITIVE_HEADERS = new Set(['authorization', 'cookie', 'x-api-key']);
+export const SENSITIVE_HEADERS = new Set(['authorization', 'cookie', 'x-api-key', 'x-smoke-secret']);
 
 function redactBody(data: unknown): unknown {
   if (Array.isArray(data)) return data.map(redactBody);

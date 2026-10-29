@@ -251,8 +251,13 @@ export class AdminUsersService {
   }
 
   /** 회원 한 명의 접속 기록(최근 3개월, 최신순 최대 200줄) — 로그인·접속 시각, 기기, 앱 버전, IP */
+  /** 계정 상세 보기 권한 — 운영자 계정이 대상이면 OWNER만, 본인 것은 누구나 */
+  async assertCanView(caller: AuthenticatedUser, userId: string) {
+    if (caller.id !== userId) await assertCanManageUser(this.prisma, caller, userId);
+  }
+
   async accessLogs(caller: AuthenticatedUser, userId: string) {
-    await assertCanManageUser(this.prisma, caller, userId);
+    await this.assertCanView(caller, userId);
     return this.prisma.accessLog.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },

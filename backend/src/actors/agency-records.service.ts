@@ -21,7 +21,7 @@ export class AgencyRecordsService {
   ) {}
 
   async records(userId: string, actorId?: string) {
-    const actors = await this.actors.findMine(userId);
+    const actors = await this.actors.findMine(userId, { preview: false });
     let ids = actors.map((actor) => actor.id);
     if (actorId) {
       if (!ids.includes(actorId)) throw new ForbiddenException(appError('ACTOR_STAFF_OR_SELF_ONLY'));
