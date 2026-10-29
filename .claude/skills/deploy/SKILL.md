@@ -99,6 +99,8 @@ mcp__github__actions_run_trigger  method=run_workflow  owner=toffeechat repo=tof
 
 1. 그 커밋이 프리뷰를 통과했는지(커밋 상태 `deploy/preview` = success, `mcp__github__get_commit` 또는 워크플로가 검사). 안 거쳤으면
    **먼저 프리뷰**(규칙 3). 급한 수정도 프리뷰를 거치되 확인을 짧게 — 사용자 화면 확인을 기다리지 않고 자동 점검 통과만으로 넘어감.
+   워크플로는 그 커밋의 CI(backend·migrations·app)도 통과해야 진행(2026-10-29) — main에 합친 직후면 CI가 1~2분 도니 끝난 뒤 실행.
+   `deploy/preview` 표시는 main에 들어간 커밋에만 붙음(작업 브랜치로 프리뷰를 돌려도 운영엔 못 올림).
 2. `node scripts/deploy/plan.mjs --env production --target <sha>`로 **"무엇이 올라가는지" 요약을 먼저 보여 줌**(서버·마이그레이션·웹·OTA·스토어 빌드,
    위험한 마이그레이션, 피할 시간). 스토어 빌드가 필요하면 심사 안내.
 3. `actions_run_trigger` `deploy-production.yml` `inputs={"sha":"<sha>", "ota_message":"…", "build":"none"}` → 사용자에게
