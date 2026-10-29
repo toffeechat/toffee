@@ -812,7 +812,8 @@
       "prevMonth": "이전 달",
       "nextMonth": "다음 달",
       "apply": "적용"
-    }
+    },
+    "loadFailed": "통계를 불러오지 못했어요"
   },
   "consoleNav": {
     "dashboard": "대시보드",

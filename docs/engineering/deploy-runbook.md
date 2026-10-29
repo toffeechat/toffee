@@ -12,10 +12,10 @@
         ▼
 deploy-preview.yml (수동 실행: Claude가 MCP로 / 폰 GitHub 앱)
   배포 피할 시간? → plan(바뀐 부분) → 서버·웹이 그 커밋인지 기다림 → (버전업 전 OTA) → OTA preview → (요청 시 내부 빌드)
-  → 자동 점검 → Sentry → 커밋에 deploy/preview 상태 + deployed/preview 태그
+  → 자동 점검 → Sentry → 커밋에 deploy/preview 상태 + deployed/preview 태그(main에 들어간 커밋일 때만, 2026-10-29)
         ▼
 deploy-production.yml (수동 실행, sha = 프리뷰 통과 커밋)
-  plan 작업(승인 전): 프리뷰 통과 확인 → 피할 시간 → 바뀐 부분 요약 → 위험한 마이그레이션이면 멈춤
+  plan 작업(승인 전): 프리뷰 통과 확인 → 그 커밋의 CI(backend·migrations·app) 통과 확인(문서만 바뀐 커밋은 통과, 되돌리기는 건너뜀, 2026-10-29) → 피할 시간 → 바뀐 부분 요약 → 위험한 마이그레이션이면 멈춤
   deploy 작업(환경 production 승인 = 사용자): 백업(마이그레이션 있을 때) → Railway 이 커밋 배포 → 웹 빌드·Pages 업로드
   → 버전업 전 OTA → OTA production → (요청 시 스토어 빌드·제출) → 자동 점검 → Sentry → deploy/production 상태 + deployed/production 태그
 ```

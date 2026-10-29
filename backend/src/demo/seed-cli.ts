@@ -29,7 +29,9 @@ async function run() {
       process.exitCode = 1;
       return;
     }
-    await seedDemo(prisma);
+    // 한 트랜잭션으로(2026-10-29) — 운영자 화면·매일 초기화와 같게. 예전엔 컨테이너 시작 때만 문장마다 따로 돌아서 중간에 실패하면(옛 컨테이너가
+    // 아직 쓰는 중이라 외래 키 충돌 등) 반쯤 지워진 데모가 남았음
+    await prisma.$transaction((tx) => seedDemo(tx), { timeout: 60_000, maxWait: 10_000 });
     console.log(`[demo-seed] 완료(${decision === 'reset' ? '초기화 후 다시 넣음' : '빈 DB에 넣음'})`);
   } finally {
     await prisma.$disconnect();

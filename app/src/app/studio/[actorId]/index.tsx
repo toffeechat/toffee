@@ -61,6 +61,16 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
 // 여러 장 보내기(2026-10-13) — 앨범에서 최대 10개까지 고른 순서대로, 한 장씩 메시지로 보냄(팬 화면은 연달아 온 사진을 격자로 묶음)
 const MAX_BATCH = 10;
 type StudioRow = StudioMessage & { album?: StudioMessage[]; retracted?: boolean };
+// 보내다 멈춘 여러 장 묶음(2026-10-29) — 다시 보낼 때 장마다 처음과 같은 설정(인용 위치·글이 뒤따르는지·묶음 개수)으로 보내야 중복 방지 키가
+// 같아서 이미 저장된 장이 두 번 가지 않음. 예전엔 남은 것만 새 묶음(한 장이면 한 장 보내기)으로 보내서 키가 달라져 중복됐음
+interface AlbumSend {
+  items: Attachment[];
+  /** 앞에서부터 보낸 장 수 */
+  sent: number;
+  textFollows: boolean;
+  quoteId?: string;
+}
+const sameQueue = (a: Attachment[], b: Attachment[]) => a.length === b.length && a.every((item, i) => item.uri === b[i].uri);
 const sameMinute = (a: string, b: string) => Math.floor(new Date(a).getTime() / 60_000) === Math.floor(new Date(b).getTime() / 60_000);
 
 function toAttachments(result: ImagePicker.ImagePickerResult): Attachment[] {
@@ -250,13 +260,14 @@ export default function StudioChannelScreen() {
   const clearQuote = () => router.setParams({ quoteId: undefined, quoteNickname: undefined, quoteBody: undefined });
   const { data: actor } = useActor(actorId);
   const { data: greetings } = useGreetings(actorId);
-  const { data: messages, isLoading } = useStudioMessages(actorId);
+  const { data: messages, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useStudioMessages(actorId);
   const send = useStudioSend(actorId);
   const deleteBroadcast = useDeleteBroadcast(actorId);
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
   const recorderState = useAudioRecorderState(recorder, 100);
   const levels = useRef<number[]>([]);
   const uploadAbort = useRef<AbortController | null>(null);
+  const albumSend = useRef<AlbumSend | null>(null);
   const [draft, setDraft] = useState('');
   // 보낼 첨부물 — 음성·카메라는 1개, 앨범은 여러 개(MAX_BATCH)
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -388,33 +399,34 @@ export default function StudioChannelScreen() {
 
   // 여러 개: 사진·영상을 고른 순서대로 하나씩 보내고(앞쪽은 푸시 없음, 마지막 사진·영상이 "N개를 보냈어요" 알림 한 건), 글이 있으면 맨 뒤에
   // 글 메시지로 따로(그 글이 알림). 중간에 실패하면 거기서 멈추고 못 보낸 것만 남겨 둠
-  const sendBatch = async (body: string) => {
-    const queue = [...attachments];
-    const total = queue.length;
+  const sendBatch = async (body: string, album: AlbumSend) => {
+    const total = album.items.length;
     const controller = new AbortController();
     uploadAbort.current = controller;
     try {
-      for (let index = 0; index < total; index += 1) {
+      for (let index = album.sent; index < total; index += 1) {
         setBatchStep({ index: index + 1, total });
         setProgress(0);
         const last = index === total - 1;
         await send.mutateAsync({
           body: '',
-          attachment: queue[index],
+          attachment: album.items[index],
           // 인용 답장은 글이 있으면 글에, 없으면 첫 사진에
-          replyToMessageId: !body && index === 0 ? quoteId : undefined,
-          silent: !last || !!body,
-          batchCount: last && !body ? total : undefined,
+          replyToMessageId: !album.textFollows && index === 0 ? album.quoteId : undefined,
+          silent: !last || album.textFollows,
+          batchCount: last && !album.textFollows ? total : undefined,
           onProgress: setProgress,
           signal: controller.signal,
         });
-        setAttachments(queue.slice(index + 1));
+        album.sent = index + 1;
+        setAttachments(album.items.slice(index + 1));
       }
-      if (body) await send.mutateAsync({ body, attachment: null, replyToMessageId: quoteId });
+      if (body) await send.mutateAsync({ body, attachment: null, replyToMessageId: album.textFollows ? album.quoteId : undefined });
+      albumSend.current = null;
       setDraft('');
       if (quoteId) clearQuote();
     } catch (error) {
-      // 못 보낸 것부터 남아 있음 — 다시 보내기는 남은 것만, 장마다 같은 중복 방지 키(이미 저장된 장은 두 번 안 감)
+      // 못 보낸 것부터 남아 있음 — 다시 보내기는 albumSend로 이어서, 장마다 같은 중복 방지 키(이미 저장된 장은 두 번 안 감)
       showSendError(error);
     } finally {
       setProgress(null);
@@ -427,9 +439,15 @@ export default function StudioChannelScreen() {
     const body = draft.trim();
     if (!body && !attachment) return;
     setSendFailed(false);
-    if (attachments.length > 1) {
+    // 멈춘 묶음의 남은 것 그대로면 이어 보내기(한 장만 남아도 묶음 설정으로), 첨부를 바꿨으면 묶음은 버림(2026-10-29)
+    const album = albumSend.current;
+    const resuming = !!album && sameQueue(attachments, album.items.slice(album.sent));
+    if (!resuming) albumSend.current = null;
+    if (resuming || attachments.length > 1) {
       setNotice(null);
-      void sendBatch(body);
+      const next = resuming && album ? album : { items: [...attachments], sent: 0, textFollows: !!body, quoteId };
+      albumSend.current = next;
+      void sendBatch(body, next);
       return;
     }
     setNotice(null);
@@ -454,7 +472,9 @@ export default function StudioChannelScreen() {
     );
   };
 
-  const canSend = !send.isPending && !batchStep && !recorderState.isRecording && (!!draft.trim() || !!attachment);
+  // 보내는 동안엔 입력창·첨부 버튼을 막음(2026-10-29) — 보내기가 끝나면 입력창·첨부를 비우므로 그 사이 쓰거나 고른 게 지워졌음
+  const sending = send.isPending || !!batchStep;
+  const canSend = !sending && !recorderState.isRecording && (!!draft.trim() || !!attachment);
   // 회수한 메시지도 자리는 남김(2026-10-14) — 팬 화면처럼 "회수한 메시지예요", 운영자가 가렸거나 소속사가 회수한 건 이유와 함께
   // 연달아 보낸 글 없는 사진·영상은 팬 화면처럼 격자 한 칸으로(2026-10-15 — 예전엔 한 장씩 따로 보여서 장마다 "답장 없음"이 붙었음)
   const visible = useMemo(() => messages ?? [], [messages]);
@@ -506,6 +526,12 @@ export default function StudioChannelScreen() {
               keyExtractor={(item) => (item.album ? `album-${item.album[0].id}` : item.id)}
               contentContainerStyle={styles.list}
               keyboardShouldPersistTaps="handled"
+              // 위로 올리면 이전 메시지(2026-10-29 — 서버가 한 번에 최근 것만 줌)
+              onEndReached={() => {
+                if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+              }}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : null}
               ListEmptyComponent={
                 <View style={styles.flip}>
                   <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />
@@ -653,7 +679,7 @@ export default function StudioChannelScreen() {
                     </ThemedText>
                   ) : null}
                 </View>
-                {send.isPending || batchStep ? (
+                {sending ? (
                   <IconButton icon={X} size={18} label={t('studio.cancelUpload')} onPress={() => uploadAbort.current?.abort()} />
                 ) : (
                   <IconButton icon={X} size={18} label={t('studio.removeAttachment')} onPress={() => setAttachments([])} />
@@ -664,14 +690,27 @@ export default function StudioChannelScreen() {
         )}
 
         <View style={styles.tools}>
-          <IconButton icon={ImagePlus} label={t('studio.attachLibrary')} onPress={pickFromLibrary} color={recorderState.isRecording ? theme.textTertiary : theme.text} />
+          <IconButton
+            icon={ImagePlus}
+            label={t('studio.attachLibrary')}
+            onPress={pickFromLibrary}
+            disabled={sending}
+            color={recorderState.isRecording ? theme.textTertiary : theme.text}
+          />
           {Platform.OS !== 'web' && (
-            <IconButton icon={Camera} label={t('studio.camera')} onPress={takeWithCamera} color={recorderState.isRecording ? theme.textTertiary : theme.text} />
+            <IconButton
+              icon={Camera}
+              label={t('studio.camera')}
+              onPress={takeWithCamera}
+              disabled={sending}
+              color={recorderState.isRecording ? theme.textTertiary : theme.text}
+            />
           )}
           {/* 마이크: 바로 녹음하지 않고 녹음 패널을 엶(패널의 "녹음 시작"으로 시작) */}
           <IconButton
             icon={Mic}
             label={t('studio.record')}
+            disabled={sending}
             onPress={() => {
               if (recorderState.isRecording) return;
               if (attachment && attachment.mediaType !== 'AUDIO') setAttachment(null);
@@ -682,9 +721,11 @@ export default function StudioChannelScreen() {
           {/* 받는 팬마다 그 팬의 닉네임으로 바뀌는 자리 — 버블처럼 "OO야" 하고 부를 때 */}
           <Pressable
             onPress={() => setDraft((current) => `${current}${NAME_TOKEN}`)}
+            disabled={sending}
             accessibilityRole="button"
+            accessibilityState={sending ? { disabled: true } : undefined}
             accessibilityHint={t('studio.insertNameHint')}
-            style={[styles.nameChip, { backgroundColor: theme.backgroundElement }]}>
+            style={[styles.nameChip, { backgroundColor: theme.backgroundElement, opacity: sending ? 0.3 : 1 }]}>
             <Icon as={AtSign} size={15} color={theme.tint} />
             <ThemedText type="smallMedium">{t('studio.insertName')}</ThemedText>
           </Pressable>
@@ -699,6 +740,7 @@ export default function StudioChannelScreen() {
           <TextInput
             value={draft}
             onChangeText={setDraft}
+            editable={!sending}
             placeholder={t('studio.inputPlaceholder')}
             placeholderTextColor={theme.textTertiary}
             style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }, fontFor(400, i18n.language)]}

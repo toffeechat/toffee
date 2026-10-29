@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
-import { AdminButton, AdminButtonRow, AdminChip, AdminSection } from '@/components/admin-ui';
+import { AdminButton, AdminButtonRow, AdminChip, AdminMessage, AdminSection } from '@/components/admin-ui';
 import { AdminDateField } from '@/components/admin-date-field';
 import {
   useAdminAgencies,
@@ -15,6 +15,8 @@ import {
   type AdminReportFilter,
   type ReportStatus,
 } from '@/hooks/use-admin';
+import { useMe } from '@/hooks/use-onboarding';
+import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
@@ -46,7 +48,9 @@ export default function AdminReportsScreen() {
   const theme = useTheme();
   const [filter, setFilter] = useState<AdminReportFilter>({ status: 'PENDING' });
   const { data, isLoading, isFetching } = useAdminReports(filter);
-  const { data: agencies } = useAdminAgencies();
+  // 소속사 목록은 전체 권한 전용 API(2026-10-29 — SUPPORT 운영자는 부르지 않음, 소속사 거르기 칩도 안 보임)
+  const { data: me } = useMe();
+  const { data: agencies } = useAdminAgencies(!!me && me.adminLevel !== 'SUPPORT');
   const set = (patch: Partial<AdminReportFilter>) => setFilter((current) => ({ ...current, ...patch }));
   const selectedActor = data?.byActor.find((row) => row.actorId === filter.actorId);
 
@@ -151,15 +155,18 @@ function ReportRow({ report }: { report: AdminReport }) {
   const resolve = useResolveReport();
   const dismiss = useDismissReport();
   const isPending = resolve.isPending || dismiss.isPending;
+  // 승인·기각 실패도 보여 줌(2026-10-29 — 예전엔 실패해도 아무 표시 없었음)
+  const [error, setError] = useState<string | null>(null);
+  const onError = (e: unknown) => setError(e instanceof ApiError ? e.message : '처리하지 못했어요.');
   const fromFan = report.message.senderType === 'FAN';
   const actor = report.message.actor;
 
   const onResolve = async () => {
     const what = fromFan ? '이 팬 답장을 아티스트·소속사 화면에서 가려요.' : '이 아티스트 메시지를 팬 화면에서 가려요.';
-    if (await confirm('신고 승인', `${what} 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리돼요.`, '승인', '취소')) resolve.mutate(report.id);
+    if (await confirm('신고 승인', `${what} 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리돼요.`, '승인', '취소')) resolve.mutate(report.id, { onSuccess: () => setError(null), onError });
   };
   const onDismiss = async () => {
-    if (await confirm('신고 기각', `문제 없음으로 처리해요(메시지는 그대로). 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리돼요.`, '기각', '취소')) dismiss.mutate(report.id);
+    if (await confirm('신고 기각', `문제 없음으로 처리해요(메시지는 그대로). 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리돼요.`, '기각', '취소')) dismiss.mutate(report.id, { onSuccess: () => setError(null), onError });
   };
 
   return (
@@ -190,6 +197,7 @@ function ReportRow({ report }: { report: AdminReport }) {
         {report.reason ? ` — ${report.reason}` : ''} · {new Date(report.createdAt).toLocaleString('ko-KR')}
         {report.resolvedAt ? ` · 처리 ${new Date(report.resolvedAt).toLocaleString('ko-KR')}` : ''}
       </ThemedText>
+      <AdminMessage text={error} error />
       <AdminButtonRow>
         {report.status === 'PENDING' ? (
           <>

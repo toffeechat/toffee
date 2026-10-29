@@ -41,24 +41,39 @@ export function SettlementReportView({ agencyFilter, canClose }: { agencyFilter?
   const [agencyId, setAgencyId] = useState<string | undefined>(undefined);
   const [includeSandbox, setIncludeSandbox] = useState<boolean | undefined>(undefined);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const { data: report, isLoading, isFetching, error } = useSettlement(month, { agencyId, includeSandbox });
-  const { close, reopen } = useSettlementClose(month);
+  const { data: report, isLoading, isFetching, error, isPlaceholderData } = useSettlement(month, { agencyId, includeSandbox });
+  // 마감·지급은 지금 보이는 표의 달로(2026-10-29) — 달을 넘기면 새 달을 불러오는 동안 앞 달 표가 보이므로(keepPreviousData) 고른 달이 아니라
+  // report.month, 그 사이엔 버튼을 막음. 예전엔 앞 달 표에서 채운 금액이 새 달 지급으로 기록될 수 있었음
+  const reportMonth = report?.month ?? month;
+  const { close, reopen } = useSettlementClose(reportMonth);
+  const changeMonth = (next: string) => {
+    // 앞 달의 마감 실패 안내가 새 달에 남지 않게
+    close.reset();
+    reopen.reset();
+    setMonth(next);
+  };
 
   if (Platform.OS !== 'web') {
     return <EmptyState icon={Monitor} title={t('settlement.webOnly')} body={t('settlement.webOnlyBody')} />;
   }
 
-  const [year, mon] = month.split('-').map(Number);
-  const monthLabel = new Date(Date.UTC(year, mon - 1, 15)).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', timeZone: 'UTC' });
+  const labelOf = (value: string) => {
+    const [year, mon] = value.split('-').map(Number);
+    return new Date(Date.UTC(year, mon - 1, 15)).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', timeZone: 'UTC' });
+  };
+  const monthLabel = labelOf(month);
   const isCurrent = month === currentMonth();
+  // 마감 확인 문구·마감 가능 여부는 표의 달 기준
+  const reportMonthLabel = labelOf(reportMonth);
+  const reportIsCurrent = reportMonth === currentMonth();
   const closeError = close.error ?? reopen.error;
   const startClose = async () => {
-    if (await confirm(t('settlement.closeTitle'), t('settlement.closeConfirm', { month: monthLabel }), t('settlement.close'), t('common.cancel'))) {
+    if (await confirm(t('settlement.closeTitle'), t('settlement.closeConfirm', { month: reportMonthLabel }), t('settlement.close'), t('common.cancel'))) {
       close.mutate(includeSandbox);
     }
   };
   const startReopen = async () => {
-    if (await confirm(t('settlement.reopenTitle'), t('settlement.reopenConfirm', { month: monthLabel }), t('settlement.reopen'), t('common.cancel'))) {
+    if (await confirm(t('settlement.reopenTitle'), t('settlement.reopenConfirm', { month: reportMonthLabel }), t('settlement.reopen'), t('common.cancel'))) {
       reopen.mutate();
     }
   };
@@ -74,11 +89,11 @@ export function SettlementReportView({ agencyFilter, canClose }: { agencyFilter?
       {/* 달 고르기 · 테스트 결제 · 내려받기 */}
       <View style={styles.toolbar}>
         <View style={styles.monthNav}>
-          <IconButton icon={ChevronLeft} label={t('settlement.prevMonth')} onPress={() => setMonth(shiftMonth(month, -1))} />
+          <IconButton icon={ChevronLeft} label={t('settlement.prevMonth')} onPress={() => changeMonth(shiftMonth(month, -1))} />
           <ThemedText type="title" style={styles.monthLabel}>
             {monthLabel}
           </ThemedText>
-          <IconButton icon={ChevronRight} label={t('settlement.nextMonth')} onPress={() => setMonth(shiftMonth(month, 1))} disabled={isCurrent} />
+          <IconButton icon={ChevronRight} label={t('settlement.nextMonth')} onPress={() => changeMonth(shiftMonth(month, 1))} disabled={isCurrent} />
           {isFetching ? <ActivityIndicator color={theme.textTertiary} /> : null}
         </View>
         <View style={styles.actions}>
@@ -138,14 +153,14 @@ export function SettlementReportView({ agencyFilter, canClose }: { agencyFilter?
                     date: new Date(report.closed.at).toLocaleString(i18n.language),
                     name: report.closed.byName ?? '-',
                   })
-                : isCurrent
+                : reportIsCurrent
                   ? t('settlement.openCurrent')
                   : t('settlement.openPast')}
             </ThemedText>
             {canClose && report.closed ? (
-              <ToolbarButton label={t('settlement.reopen')} onPress={() => void startReopen()} busy={reopen.isPending} icon={LockOpen} />
-            ) : canClose && !isCurrent ? (
-              <ToolbarButton label={t('settlement.close')} onPress={() => void startClose()} busy={close.isPending} icon={Lock} />
+              <ToolbarButton label={t('settlement.reopen')} onPress={() => void startReopen()} busy={reopen.isPending} disabled={isPlaceholderData} icon={LockOpen} />
+            ) : canClose && !reportIsCurrent ? (
+              <ToolbarButton label={t('settlement.close')} onPress={() => void startClose()} busy={close.isPending} disabled={isPlaceholderData} icon={Lock} />
             ) : null}
           </View>
           {closeError ? (
@@ -166,11 +181,13 @@ export function SettlementReportView({ agencyFilter, canClose }: { agencyFilter?
           ) : (
             report.agencies.map((agency) => (
               <AgencyTable
-                key={agency.agencyId ?? 'none'}
+                // 달마다 새로(2026-10-29) — 소속사만으로 키를 잡으면 달을 넘겨도 지급 입력란·채운 금액이 남았음
+                key={`${report.month}-${agency.agencyId ?? 'none'}`}
                 agency={agency}
                 columns={report.totals.platformCents === undefined ? COLUMNS.filter((column) => column.key !== 'platformCents') : COLUMNS}
                 // 지급 기록은 마감한 달에만(마감한 표 기준으로 보냄)
-                payouts={report.closed ? { month, list: report.payouts ?? [], canRecord: !!canClose } : undefined}
+                // 표의 달(report.month)로, 새 달을 불러오는 중엔 기록 버튼을 숨김
+                payouts={report.closed ? { month: report.month, list: report.payouts ?? [], canRecord: !!canClose && !isPlaceholderData } : undefined}
               />
             ))
           )}
@@ -183,14 +200,27 @@ export function SettlementReportView({ agencyFilter, canClose }: { agencyFilter?
   );
 }
 
-function ToolbarButton({ label, onPress, busy, icon = Download }: { label: string; onPress: () => void; busy?: boolean; icon?: typeof Download }) {
+function ToolbarButton({
+  label,
+  onPress,
+  busy,
+  disabled,
+  icon = Download,
+}: {
+  label: string;
+  onPress: () => void;
+  busy?: boolean;
+  disabled?: boolean;
+  icon?: typeof Download;
+}) {
   const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
-      disabled={busy}
+      disabled={busy || disabled}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.toolbarButton, { backgroundColor: theme.backgroundElement, opacity: pressed || busy ? 0.7 : 1 }]}>
+      accessibilityState={disabled ? { disabled: true } : undefined}
+      style={({ pressed }) => [styles.toolbarButton, { backgroundColor: theme.backgroundElement, opacity: disabled ? 0.4 : pressed || busy ? 0.7 : 1 }]}>
       {busy ? <ActivityIndicator size="small" color={theme.text} /> : <Icon as={icon} size={16} color={theme.text} />}
       <ThemedText type="smallMedium">{label}</ThemedText>
     </Pressable>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Copy, Images, MessageCircle, MoreHorizontal, Undo2 } from 'lucide-react-native';
+import { CloudOff, Copy, Images, MessageCircle, MoreHorizontal, Undo2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +30,8 @@ import { VoiceMessage } from '@/components/voice-message';
 import { TranslatableText } from '@/components/translatable-text';
 import { MessageText } from '@/components/message-text';
 import { IconButton } from '@/components/ui/icon-button';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { useTheme } from '@/hooks/use-theme';
@@ -83,7 +85,7 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { data: actor } = useActor(actorId);
-  const { data: broadcasts, isLoading: loadingBroadcasts } = useStudioMessages(actorId);
+  const { data: broadcasts, isLoading: loadingBroadcasts, fetchNextPage, hasNextPage, isFetchingNextPage } = useStudioMessages(actorId);
   const { data: stories, isLoading: loadingStories } = useActorStories(actorId);
   const remove = useDeleteBroadcast(actorId);
   const [failed, setFailed] = useState<string | null>(null);
@@ -131,6 +133,12 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
         data={items}
         keyExtractor={(item) => `${item.kind}-${item.kind === 'message' ? item.message.id : item.story.id}`}
         contentContainerStyle={styles.chatList}
+        // 위로 올리면 이전 메시지(2026-10-29 — 서버가 한 번에 최근 것만 줌)
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+        }}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : null}
         ListEmptyComponent={
           <ThemedText type="small" themeColor="textSecondary" style={[styles.emptyMessage, styles.flip]}>
             {t('console.monitorEmpty')}
@@ -390,7 +398,7 @@ function StatsSection({ actorId, onOpenReplies }: { actorId: string; onOpenRepli
   const { t, i18n } = useTranslation();
   const [selection, setSelection] = useState<StatsSelection>({ days: 30 });
   const [width, setWidth] = useState(0);
-  const { data: stats, isLoading } = useActorStats(actorId, selection);
+  const { data: stats, isLoading, isError, refetch } = useActorStats(actorId, selection);
   const half = cellStyle(width, width >= 900 ? 2 : 1);
 
   return (
@@ -399,7 +407,10 @@ function StatsSection({ actorId, onOpenReplies }: { actorId: string; onOpenRepli
         <View style={statsStyles.filters}>
           <StatsRangeControl value={selection} onChange={setSelection} />
         </View>
-        {isLoading || !stats ? (
+        {/* 불러오기 실패면 계속 도는 대신 안내 + 다시 시도(2026-10-29) */}
+        {isError && !stats ? (
+          <EmptyState icon={CloudOff} title={t('dashboard.loadFailed')} action={<Button title={t('discover.retry')} variant="secondary" onPress={() => void refetch()} />} />
+        ) : isLoading || !stats ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
         ) : (
           <>

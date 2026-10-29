@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import { ThemedText } from '@/components/themed-text';
 import { AdminButton, AdminButtonRow, AdminField, AdminMessage, AdminSection } from '@/components/admin-ui';
 import { AdminDateField } from '@/components/admin-date-field';
-import { useAdminAppSettings, useUpdateAppSettings } from '@/hooks/use-admin';
+import { useAdminAppSettings, useUpdateAppSettings, type AdminAppSettings } from '@/hooks/use-admin';
 import { ApiError } from '@/lib/api-client';
 import { confirm } from '@/lib/confirm';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,16 +23,21 @@ const VERSION = /^\d+(\.\d+){0,2}$/;
 export default function AdminAppSettingsScreen() {
   const theme = useTheme();
   const { data, isLoading } = useAdminAppSettings();
-  if (isLoading || !data) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
-  return <AppSettingsForm data={data} />;
+  // 처음 DB엔 설정 줄이 없어 서버가 null을 줌(처음 저장할 때 생김) — 그땐 기본값으로 폼을 보여 줌(2026-10-29, 예전엔 스피너만 계속)
+  if (isLoading) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
+  return <AppSettingsForm data={data ?? DEFAULT_SETTINGS} />;
 }
 
+const DEFAULT_SETTINGS: AppSettingsValues = { maintenanceOn: false, maintenanceMessage: null, maintenanceUntil: null, minVersionIos: null, minVersionAndroid: null };
+type AppSettingsValues = Omit<AdminAppSettings, 'updatedAt'>;
+
 // 입력칸은 처음 받은 값으로 시작(저장하면 서버 값이 바뀌어도 입력 중인 글자는 그대로)
-function AppSettingsForm({ data }: { data: NonNullable<ReturnType<typeof useAdminAppSettings>['data']> }) {
+function AppSettingsForm({ data }: { data: AppSettingsValues }) {
   const theme = useTheme();
   const update = useUpdateAppSettings();
   const [message, setMessage] = useState(data.maintenanceMessage ?? '');
-  const [until, setUntil] = useState(data.maintenanceUntil ? formatBangkokDateTime(data.maintenanceUntil) : '');
+  // 이미 지난 끝 시각은 비운 채로 시작(2026-10-29 — 그대로 다시 켜면 서버가 바로 끝난 것으로 봐서 점검이 안 걸렸음)
+  const [until, setUntil] = useState(data.maintenanceUntil && new Date(data.maintenanceUntil) > new Date() ? formatBangkokDateTime(data.maintenanceUntil) : '');
   const [ios, setIos] = useState(data.minVersionIos ?? '');
   const [android, setAndroid] = useState(data.minVersionAndroid ?? '');
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
@@ -40,9 +45,18 @@ function AppSettingsForm({ data }: { data: NonNullable<ReturnType<typeof useAdmi
   const on = !!data?.maintenanceOn && (!data.maintenanceUntil || new Date(data.maintenanceUntil) > new Date());
   const onError = (e: unknown) => setNotice({ text: e instanceof ApiError ? e.message : '저장하지 못했어요.', error: true });
   const untilIso = until ? parseBangkokDateTime(until) : null;
+  // 끝 시각이 지금이거나 이미 지났으면 막음(2026-10-29 — 저장돼도 점검이 바로 풀린 상태라 운영자가 켠 줄 착각)
+  const untilPast = () => {
+    if (untilIso && new Date(untilIso) <= new Date()) {
+      setNotice({ text: '끝나는 시각이 이미 지났어요. 지금보다 뒤로 고르거나 비워 주세요.', error: true });
+      return true;
+    }
+    return false;
+  };
 
   const toggle = async () => {
     const turningOn = !on;
+    if (turningOn && untilPast()) return;
     const ok = await confirm(
       turningOn ? '점검 모드 켜기' : '점검 모드 끄기',
       turningOn
@@ -80,7 +94,7 @@ function AppSettingsForm({ data }: { data: NonNullable<ReturnType<typeof useAdmi
                 secondary
                 label="안내·끝 시각만 바꾸기"
                 disabled={update.isPending}
-                onPress={() => update.mutate({ maintenanceMessage: message || null, maintenanceUntil: untilIso }, { onSuccess: () => setNotice({ text: '저장했어요.' }), onError })}
+                onPress={() => !untilPast() && update.mutate({ maintenanceMessage: message || null, maintenanceUntil: untilIso }, { onSuccess: () => setNotice({ text: '저장했어요.' }), onError })}
               />
             </AdminButtonRow>
           ) : null}

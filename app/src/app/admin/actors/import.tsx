@@ -25,7 +25,7 @@ import { uploadProfileImage } from '@/lib/upload-media';
 import { canUseWebFiles, downloadText, pickWebFiles, shrinkPhoto } from '@/lib/web-files';
 import { Spacing } from '@/constants/theme';
 import { parseBangkokDateTime } from '@/utils/release';
-import { parseCsv, photoNameKey, rowsFromTable, TEMPLATE_CSV, type ImportGender, type SheetRow } from '@/utils/sheet-import';
+import { decodeCsv, parseCsv, photoNameKey, rowsFromTable, TEMPLATE_CSV, type ImportGender, type SheetRow } from '@/utils/sheet-import';
 import { readXlsx } from '@/utils/xlsx';
 import { AdminDateField } from '@/components/admin-date-field';
 import { thaiToday } from '@/utils/stat-range';
@@ -192,7 +192,13 @@ export default function AdminImportActorsScreen() {
     if (!file) return;
     touch();
     try {
-      const table = file.name.toLowerCase().endsWith('.csv') ? parseCsv(await file.text()) : await readXlsx(await file.arrayBuffer());
+      // CSV는 인코딩을 알아봄(2026-10-29 — 한국어·태국어 윈도우 엑셀 CSV가 UTF-8이 아니라 이름이 깨졌음)
+      const isCsv = file.name.toLowerCase().endsWith('.csv');
+      const csvText = isCsv ? decodeCsv(await file.arrayBuffer()) : null;
+      if (isCsv && csvText === null) {
+        return setMessage({ text: 'CSV 글자를 읽지 못했어요. 엑셀에서 [다른 이름으로 저장] → "CSV UTF-8(쉼표로 분리)"로 저장하거나 .xlsx로 올려 주세요.', error: true });
+      }
+      const table = csvText !== null ? parseCsv(csvText) : await readXlsx(await file.arrayBuffer());
       const parsed = rowsFromTable(table);
       if (!parsed) return setMessage({ text: '"영문 이름"(English name) 칸을 찾지 못했어요. 양식의 첫 줄 칸 이름을 확인해 주세요.', error: true });
       if (parsed.rows.length === 0) return setMessage({ text: '등록할 줄이 없어요.', error: true });

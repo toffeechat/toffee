@@ -17,26 +17,33 @@ export const TEMPLATE_CSV = '﻿English name,Nickname,Gender (F/M),CP partner (E
 
 const normalizeHeader = (text: string) => text.toLowerCase().replace(/[\s_\-()（）.:/]/g, '');
 
+// 앞에 있을수록 우선(2026-10-29) — "이름"·"Name"·"ชื่อ"와 "영문 이름"이 같이 있으면 영문 이름 칸을 씀(예전엔 왼쪽 칸이 이겨서 한국어·태국어 이름이 들어갔음)
 const HEADER_ALIASES: Record<'legalName' | 'chatDisplayName' | 'gender' | 'partners', string[]> = {
-  legalName: ['englishname', 'nameen', 'nameenglish', 'name', 'officialname', 'stagename', '영문이름', '영문명', '이름', '공식이름', '활동명', 'ชื่อภาษาอังกฤษ', 'ชื่ออังกฤษ', 'ชื่อ'],
+  legalName: ['englishname', 'nameen', 'nameenglish', '영문이름', '영문명', 'ชื่อภาษาอังกฤษ', 'ชื่ออังกฤษ', 'officialname', 'stagename', '공식이름', '활동명', 'name', '이름', 'ชื่อ'],
   chatDisplayName: ['nickname', 'nick', '닉네임', '별명', 'ชื่อเล่น'],
   gender: ['gender', 'genderfm', 'sex', '성별', 'เพศ'],
   partners: ['cp', 'cppartner', 'cppartnerenglishnameseparatewith;', 'partner', 'couple', 'cp짝', '짝', 'cp파트너', 'คู่จิ้น', 'คู่'],
 };
 
-function headerField(header: string): keyof typeof HEADER_ALIASES | null {
+type HeaderField = keyof typeof HEADER_ALIASES;
+
+/** 칸 이름 → 어느 칸인지 + 우선순위(작을수록 우선) */
+function headerMatch(header: string): { field: HeaderField; rank: number } | null {
   const key = normalizeHeader(header);
   if (!key) return null;
-  for (const [field, aliases] of Object.entries(HEADER_ALIASES) as [keyof typeof HEADER_ALIASES, string[]][]) {
-    if (aliases.includes(key)) return field;
+  for (const [field, aliases] of Object.entries(HEADER_ALIASES) as [HeaderField, string[]][]) {
+    const rank = aliases.indexOf(key);
+    if (rank >= 0) return { field, rank };
   }
-  // "CP partner (English name; …)"처럼 설명이 붙은 칸 — 앞부분으로
-  if (key.startsWith('cp') || key.startsWith('partner')) return 'partners';
-  if (key.startsWith('englishname') || key.startsWith('영문')) return 'legalName';
-  if (key.startsWith('gender') || key.startsWith('성별')) return 'gender';
-  if (key.startsWith('nickname') || key.startsWith('닉네임')) return 'chatDisplayName';
+  // "CP partner (English name; …)"처럼 설명이 붙은 칸 — 앞부분으로. 영문 이름 설명 칸은 영문 이름급 우선순위(일반 "이름"보다 앞)
+  if (key.startsWith('cp') || key.startsWith('partner')) return { field: 'partners', rank: 100 };
+  if (key.startsWith('englishname') || key.startsWith('영문')) return { field: 'legalName', rank: 0.5 };
+  if (key.startsWith('gender') || key.startsWith('성별')) return { field: 'gender', rank: 100 };
+  if (key.startsWith('nickname') || key.startsWith('닉네임')) return { field: 'chatDisplayName', rank: 100 };
   return null;
 }
+
+const headerField = (header: string) => headerMatch(header)?.field ?? null;
 
 const FEMALE = ['f', 'female', 'woman', 'w', '여', '여자', '여성', 'หญิง', 'ญ', 'ผู้หญิง'];
 const MALE = ['m', 'male', 'man', '남', '남자', '남성', 'ชาย', 'ช', 'ผู้ชาย'];
@@ -47,6 +54,35 @@ export function parseGender(value: string): { gender: ImportGender; unknown: boo
   if (FEMALE.includes(key)) return { gender: 'FEMALE', unknown: false };
   if (MALE.includes(key)) return { gender: 'MALE', unknown: false };
   return { gender: null, unknown: true };
+}
+
+/**
+ * CSV 파일 글자 읽기(2026-10-29) — 엑셀 "CSV로 저장"은 한국어 윈도우면 CP949(euc-kr), 태국어 윈도우면 Windows-874로 저장돼 UTF-8로 읽으면 이름이 조용히 깨졌음.
+ * UTF-8로 먼저 읽고, 안 되면 euc-kr → windows-874 순서(한국어 바이트는 874로도 "읽혀서" 순서가 중요). 영어 아닌 글자 대부분이 그 언어 글자이고
+ * 머리글을 알아볼 때만 씀. 아니면 null(→ "CSV UTF-8"로 저장해 달라고 안내)
+ */
+export function decodeCsv(bytes: ArrayBuffer | Uint8Array): string | null {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    // 아래 다른 인코딩으로
+  }
+  const candidates: [string, RegExp][] = [
+    ['euc-kr', /[\uAC00-\uD7A3\u3131-\u318E]/],
+    ['windows-874', /[\u0E00-\u0E7F]/],
+  ];
+  for (const [label, script] of candidates) {
+    let text: string;
+    try {
+      text = new TextDecoder(label, { fatal: true }).decode(bytes);
+    } catch {
+      continue;
+    }
+    const nonAscii = [...text].filter((char) => char.charCodeAt(0) > 0x7f && char !== '\uFEFF');
+    const inScript = nonAscii.filter((char) => script.test(char)).length;
+    if (nonAscii.length > 0 && inScript / nonAscii.length >= 0.9 && rowsFromTable(parseCsv(text))) return text;
+  }
+  return null;
 }
 
 /** CSV(엑셀에서 "CSV로 저장") — 따옴표·칸 안 줄바꿈·BOM 처리, 구분자는 첫 줄을 보고 , ; 탭 중 하나 */
@@ -93,20 +129,21 @@ export function rowsFromTable(table: string[][]): { rows: SheetRow[]; ignoredCol
   const headerIndex = table.slice(0, 10).findIndex((cells) => cells.some((cell) => headerField(cell) === 'legalName'));
   if (headerIndex < 0) return null;
   const header = table[headerIndex];
-  const fields = header.map(headerField);
-  // 같은 칸이 두 번이면(예: "이름"과 "영문 이름") 앞쪽만
-  const seen = new Set<string>();
-  const columns = fields.map((field) => {
-    if (!field || seen.has(field)) return null;
-    seen.add(field);
-    return field;
+  const matches = header.map(headerMatch);
+  // 같은 칸이 여러 번이면(예: "이름"과 "영문 이름") 우선순위가 높은 칸 하나만, 같으면 왼쪽(2026-10-29)
+  const best = new Map<HeaderField, number>();
+  matches.forEach((match, index) => {
+    if (!match) return;
+    const current = best.get(match.field);
+    if (current === undefined || match.rank < matches[current]!.rank) best.set(match.field, index);
   });
+  const columns = matches.map((match, index) => (match && best.get(match.field) === index ? match.field : null));
   const ignoredColumns = header.filter((cell, index) => cell.trim() && !columns[index]).map((cell) => cell.trim());
   const rows: SheetRow[] = [];
   for (const cells of table.slice(headerIndex + 1)) {
     if (cells.every((cell) => !cell?.trim())) continue;
     const value = (field: string) => {
-      const index = columns.indexOf(field as keyof typeof HEADER_ALIASES);
+      const index = columns.indexOf(field as HeaderField);
       return index >= 0 ? (cells[index] ?? '').trim() : '';
     };
     const warnings: string[] = [];

@@ -41,6 +41,7 @@ on:
 permissions:
   contents: write # deployed/production 태그
   statuses: write
+  checks: read # 그 커밋의 CI 결과(2026-10-29)
 
 concurrency:
   group: deploy-production
@@ -94,6 +95,41 @@ jobs:
           else
             [ "$(state deploy/preview)" = "success" ] || { echo "⛔ 프리뷰 배포·자동 점검을 통과한 커밋이 아님 — 먼저 Deploy preview(급하면 확인을 짧게)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
             echo "- ✅ 프리뷰에서 확인한 커밋" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # CI(단위 테스트·마이그레이션 드리프트·앱 검사)도 통과한 커밋만(2026-10-29) — 예전엔 프리뷰 자동 점검만 보아서 CI가 실패·취소된 커밋도
+      # 데모에서 기본 동작만 되면 운영에 올라갈 수 있었음. 문서만 바뀐 커밋은 CI가 원래 안 돌아서 통과로 봄. 되돌리기는 예전에 올렸던 커밋이라 건너뜀
+      - name: CI를 통과한 커밋인지
+        if: ${{ !inputs.rollback }}
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          RUNS=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs?per_page=100")
+          conclusion() { echo "$RUNS" | jq -r --arg n "$1" '[.check_runs[] | select(.name == $n)] | sort_by(.started_at) | last | if . == null then "missing" elif .status != "completed" then "running" else .conclusion end'; }
+          missing=0; bad=""
+          for job in backend migrations app; do
+            c=$(conclusion "$job")
+            case "$c" in
+              success) ;;
+              missing) missing=$((missing + 1)) ;;
+              *) bad="$bad $job=$c" ;;
+            esac
+          done
+          if [ -n "$bad" ]; then
+            if echo "$bad" | grep -q running; then
+              echo "⛔ CI가 아직 도는 중(${bad# }) — 끝난 뒤 다시 실행" | tee -a "$GITHUB_STEP_SUMMARY"
+            else
+              echo "⛔ CI를 통과하지 않은 커밋(${bad# }) — 고친 커밋을 프리뷰부터 다시" | tee -a "$GITHUB_STEP_SUMMARY"
+            fi
+            exit 1
+          fi
+          if [ "$missing" -gt 0 ]; then
+            # CI 기록이 없음 — 문서만 바뀐 커밋(ci.yml paths-ignore)일 때만 통과
+            CODE=$(git diff --name-only "$SHA^1" "$SHA" | grep -vE '^docs/|\.md$' || true)
+            [ -z "$CODE" ] || { echo "⛔ 이 커밋의 CI 기록이 없음(main에 합친 커밋이 아니거나 CI가 안 돌았음)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+            echo "- ✅ 문서만 바뀐 커밋(CI 대상 아님)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ✅ CI 통과(서버·마이그레이션·앱)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: 배포를 피할 시간인지

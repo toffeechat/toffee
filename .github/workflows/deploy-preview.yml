@@ -131,6 +131,12 @@ jobs:
       - name: 프리뷰 확인 표시(프로덕션은 이 커밋만 받음)
         run: |
           SHA=${{ steps.target.outputs.sha }}
+          # main에 들어간 커밋만 표시(2026-10-29) — 작업 브랜치를 프리뷰로 돌려도 표시가 붙어서, 합치지도 않은 커밋이 운영에 갈 수 있었음
+          git fetch -q origin main
+          if ! git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "- ℹ️ main에 아직 없는 커밋이라 \`deploy/preview\` 표시를 남기지 않음(운영엔 못 올림 — main에 합친 뒤 다시)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=success -f context=deploy/preview \
             -f description="프리뷰 배포·자동 점검 통과" -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > /dev/null
           git tag -f deployed/preview "$SHA"

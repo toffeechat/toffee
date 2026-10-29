@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
-import { AdminButton, AdminButtonRow, AdminMessage, AdminSection } from '@/components/admin-ui';
+import { AdminButton, AdminButtonRow, AdminLoadError, AdminMessage, AdminSection } from '@/components/admin-ui';
 import { ROLE_LABELS } from '@/components/admin-user-panels';
 import { InquiryPhotoPicker, InquiryPhotoStrip } from '@/components/inquiry-photos';
 import { useAdminInquiry, useCloseInquiry, useDeleteAdminInquiry, useReplyInquiry } from '@/hooks/use-admin';
@@ -23,12 +23,14 @@ export default function AdminInquiryScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading } = useAdminInquiry(id);
+  const { data, isLoading, error } = useAdminInquiry(id);
   const reply = useReplyInquiry(id);
   const close = useCloseInquiry(id);
   const remove = useDeleteAdminInquiry(id);
   const [body, setBody] = useState('');
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  // 지워진 문의·권한 없음이면 오류 문구 + 뒤로(2026-10-29 — 예전엔 스피너만 계속)
+  if (!data && !isLoading && error) return <AdminLoadError error={error} fallback="/admin/inquiries" />;
   if (isLoading || !data) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
   const onClose = async () => {
     if (await confirm('문의 종료', '이 문의를 끝낼까요? 문의한 사람은 더 쓸 수 없고 새로 문의해야 해요.', '종료', '취소')) close.mutate();

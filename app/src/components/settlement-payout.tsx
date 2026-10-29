@@ -109,7 +109,7 @@ export function PayoutBar({
           {payout.memo}
         </ThemedText>
       ) : null}
-      {open ? (
+      {open && canRecord ? (
         <View style={styles.form}>
           <View style={styles.fields}>
             <TextField

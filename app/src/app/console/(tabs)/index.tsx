@@ -3,12 +3,15 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { CloudOff } from 'lucide-react-native';
 
 import { RankCard, SegmentedPills } from '@/components/console-charts';
 import { RANK_ICONS, rankItems } from '@/components/console-rank';
 import { AudiencePanels, KpiGrid, RangeCaption, ScreenIntro, TrendPanels, cellStyle, statsStyles } from '@/components/console-stats';
 import { StatsRangeControl, formatStatDay } from '@/components/stats-range-picker';
 import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { selectionParams, useAgencyDashboard, type RoomKindFilter, type StatsSelection } from '@/hooks/use-console';
 import { useMe } from '@/hooks/use-onboarding';
 import { useTheme } from '@/hooks/use-theme';
@@ -33,7 +36,7 @@ export default function AgencyDashboardScreen() {
   const [selection, setSelection] = useState<StatsSelection>({ days: 30 });
   const [kind, setKind] = useState<RoomKindFilter>('ALL');
   const [width, setWidth] = useState(0);
-  const { data, isLoading, isFetching, refetch } = useAgencyDashboard(selection, kind);
+  const { data, isLoading, isError, isFetching, refetch } = useAgencyDashboard(selection, kind);
   const { refreshing, onRefresh } = useManualRefresh(refetch);
   const rankCell = cellStyle(width, width >= 1100 ? 3 : width >= 640 ? 2 : 1);
   // 오래 안 보낸 순은 기간과 상관없이 오늘 기준, 구독자 순은 지난 날짜면 그날 기준
@@ -64,7 +67,10 @@ export default function AgencyDashboardScreen() {
         </View>
         <RangeCaption range={data} />
 
-        {isLoading || !data ? (
+        {/* 불러오기 실패면 계속 도는 대신 안내 + 다시 시도(2026-10-29) */}
+        {isError && !data ? (
+          <EmptyState icon={CloudOff} title={t('dashboard.loadFailed')} action={<Button title={t('discover.retry')} variant="secondary" onPress={() => void refetch()} />} />
+        ) : isLoading || !data ? (
           <ActivityIndicator style={styles.loading} color={theme.tint} />
         ) : (
           <>

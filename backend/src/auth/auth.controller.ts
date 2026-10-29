@@ -132,6 +132,8 @@ export class AuthController {
 
   @Public()
   @UseGuards(DevOnlyGuard)
+  // 입장 코드 맞혀 보기를 막으려고 다른 로그인과 같은 횟수 제한(2026-10-29 — 예전엔 전체 기본값만)
+  @Throttle(LOGIN_THROTTLE)
   @Post('dev-login')
   async devLogin(@Body() dto: DevLoginDto, @Client() client: ClientInfo) {
     // 소속사별로 등록한 입장 코드인지 먼저(만료·중지면 여기서 거절), 아니면 공용·운영자 코드 확인은 devLogin이

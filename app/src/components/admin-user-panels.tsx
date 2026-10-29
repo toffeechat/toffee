@@ -294,9 +294,13 @@ export function SignOutSection({ user }: { user: AdminUser }) {
 /** 팬 프로필(2026-10-12) — 부적절하면 지움 */
 export function ProfileSection({ user }: { user: AdminUser }) {
   const clear = useClearUserProfile();
+  // 실패도 보여 줌(2026-10-29 — 예전엔 실패해도 아무 표시 없었음)
+  const [error, setError] = useState<string | null>(null);
   if (!user.statusMessage && !user.profileImageUrl) return null;
   const run = async () => {
-    if (await confirm('프로필 지우기', '이 팬의 프로필 사진과 상태메시지를 지울까요? 되돌릴 수 없어요.', '지우기', '취소')) clear.mutate(user.id);
+    if (await confirm('프로필 지우기', '이 팬의 프로필 사진과 상태메시지를 지울까요? 되돌릴 수 없어요.', '지우기', '취소')) {
+      clear.mutate(user.id, { onSuccess: () => setError(null), onError: (e) => setError(errorText(e, '지우지 못했어요.')) });
+    }
   };
   return (
     <AdminSection title="팬 프로필" hint="아티스트·소속사 답장 화면에만 보여요.">
@@ -307,6 +311,7 @@ export function ProfileSection({ user }: { user: AdminUser }) {
       <AdminButtonRow>
         <AdminButton secondary label={clear.isPending ? '지우는 중…' : '사진·상태메시지 지우기'} disabled={clear.isPending} onPress={() => void run()} />
       </AdminButtonRow>
+      <AdminMessage text={error} error />
     </AdminSection>
   );
 }

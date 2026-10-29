@@ -35,7 +35,8 @@ export function demoRoleOf(role: Role): DemoRoleKey {
 
 // 헷갈리는 글자(0·o·1·l·i)를 뺀 자동 생성용 글자
 const CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
-const CODE_FORMAT = /^[a-z0-9-]{4,32}$/;
+// 직접 정하는 코드도 8자 이상(2026-10-29 — 4자 코드는 여러 IP에서 맞혀 볼 수 있었음, 자동 생성과 같은 길이)
+const CODE_FORMAT = /^[a-z0-9-]{8,32}$/;
 
 export function normalizeDemoCode(code: string | null | undefined): string {
   return (code ?? '').trim().toLowerCase();

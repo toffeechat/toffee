@@ -812,7 +812,8 @@
       "prevMonth": "上個月",
       "nextMonth": "下個月",
       "apply": "套用"
-    }
+    },
+    "loadFailed": "無法載入統計資料"
   },
   "consoleNav": {
     "dashboard": "數據看板",
