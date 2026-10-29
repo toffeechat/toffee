@@ -80,7 +80,8 @@ export function useBundleSwitchInfo(bundleId: string) {
   const { token } = useAuth();
   return useQuery({
     queryKey: ['bundle-switch', bundleId],
-    queryFn: () => apiClient.get<BundleSwitchInfo | null>(`/bundles/${bundleId}/switch-from`),
+    // 바꿀 묶음이 없으면 서버가 null(빈 본문) — undefined면 react-query가 오류로 처리해서 null로 맞춤
+    queryFn: async () => (await apiClient.get<BundleSwitchInfo | null>(`/bundles/${bundleId}/switch-from`)) ?? null,
     enabled: !!token && !!bundleId,
   });
 }
