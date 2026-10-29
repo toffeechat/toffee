@@ -16,6 +16,7 @@ import { appError } from '../common/i18n/app-error.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { escapeLike } from '../common/utils/escape-like.js';
+import { countReplyChars, hasYearBadge, nextReplyTier, replyMaxLength } from '../subscriptions/streak.js';
 
 const NAME_PLACEHOLDER = '{{name}}';
 // 인용 칸에 보이는 글 길이 — 번역도 인용으로만 보이는 메시지는 이만큼만(2026-10-27)
@@ -207,7 +208,7 @@ export class MessagesService {
     return { target, used };
   }
 
-  /** 팬 화면 입력창 위 "남은 답장 N개" */
+  /** 팬 화면 입력창 위 "남은 답장 N개" + 답장 1개당 글자 수(장기 구독 혜택, 2026-10-29 — 이어서 구독한 기간에 따라) */
   async replyQuota(userId: string, actorId: string) {
     const subscription = await ensureActiveSubscription(this.prisma, userId, actorId);
     const [{ target, used }, block] = await Promise.all([
@@ -217,7 +218,18 @@ export class MessagesService {
     const limit = this.repliesPerMessage;
     // 차단된 팬은 입력칸을 미리 막음(2026-10-20 — 예전엔 보내 봐야 REPLY_BLOCKED가 뜨고 그 아래 "남은 답장 3개"가 같이 보였음)
     const blocked = !!block;
-    return { messageId: target?.id ?? null, limit, used, remaining: target && !blocked ? Math.max(limit - used, 0) : 0, blocked };
+    const next = nextReplyTier(subscription.streakStartedAt);
+    return {
+      messageId: target?.id ?? null,
+      limit,
+      used,
+      remaining: target && !blocked ? Math.max(limit - used, 0) : 0,
+      blocked,
+      maxLength: replyMaxLength(subscription.streakStartedAt),
+      streakStartedAt: subscription.streakStartedAt,
+      nextMaxLength: next?.max ?? null,
+      nextMaxLengthAt: next?.at ?? null,
+    };
   }
 
   /**
@@ -420,6 +432,9 @@ export class MessagesService {
       select: { id: true },
     });
     if (blocked) throw new ForbiddenException(appError('REPLY_BLOCKED'));
+    // 답장 1개당 글자 수 — 이어서 구독한 기간에 따라 100~500자(2026-10-29), 보이는 글자 기준
+    const maxLength = replyMaxLength(subscription.streakStartedAt);
+    if (countReplyChars(dto.body) > maxLength) throw new BadRequestException(appError('REPLY_TOO_LONG', { limit: maxLength }));
     await this.moderationService.assertNoBannedWords(dto.body);
     let saved: { message: Prisma.MessageGetPayload<object>; isNew: boolean };
     try {
@@ -645,7 +660,19 @@ export class MessagesService {
         ...(messageId ? { replyToMessageId: messageId } : {}),
         AND: [await this.olderThan(page.before)],
       },
-      include: { fanUser: { select: { id: true, nickname: true, deletedAt: true, profileImageUrl: true, statusMessage: true } } },
+      include: {
+        fanUser: {
+          select: {
+            id: true,
+            nickname: true,
+            deletedAt: true,
+            profileImageUrl: true,
+            statusMessage: true,
+            // "1년+" 배지(2026-10-29) — 지금 이 방을 이어서 구독한 기간
+            subscriptions: { where: { actorId, cancelledAt: null }, select: { streakStartedAt: true }, take: 1 },
+          },
+        },
+      },
       // 최신 → 오래된 순. 같은 시각이면 id로 순서를 고정해야 나눠 받을 때 빠지거나 겹치지 않음
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       // limit 없이 부르는 콘솔 "답장 모아보기"도 최근 STAFF_LIST_DEFAULT_LIMIT개까지만(2026-10-28)
@@ -667,6 +694,7 @@ export class MessagesService {
               tag: fanTag(fanUser.id),
               profileImageUrl: fanUser.profileImageUrl ? (photos.get(fanUser.profileImageUrl) ?? null) : null,
               statusMessage: fanUser.statusMessage,
+              yearBadge: !!fanUser.subscriptions[0] && hasYearBadge(fanUser.subscriptions[0].streakStartedAt),
             }
           : null,
     }));

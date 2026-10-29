@@ -10,6 +10,7 @@ import { ExpandableItem } from '@/components/expandable-item';
 import { RefundSection } from '@/components/refund-section';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/avatar';
+import { YearBadge } from '@/components/year-badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
@@ -205,16 +206,19 @@ function SubscriptionCard({ sub, onPress }: { sub: Subscription; onPress: () => 
       style={({ pressed }) => [styles.card, { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.85 : 1 }]}>
       <Avatar uri={sub.actor.chatProfileImageUrl} size={56} />
       <View style={styles.body}>
-        <ThemedText type="headline" numberOfLines={1}>
-          {sub.actor.chatDisplayName}
-        </ThemedText>
+        <View style={styles.nameLine}>
+          <ThemedText type="headline" numberOfLines={1} style={styles.nameText}>
+            {sub.actor.chatDisplayName}
+          </ThemedText>
+          {sub.yearBadge ? <YearBadge /> : null}
+        </View>
         <ThemedText type="smallMedium">
           {viaBundle
             ? t('bundle.viaShort')
             : `${formatPrice(sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`}
         </ThemedText>
         <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
-          {t('manage.since', { date: new Date(sub.startedAt).toLocaleDateString(i18n.language) })}
+          {t('manage.since', { date: new Date(sub.streakStartedAt ?? sub.startedAt).toLocaleDateString(i18n.language) })}
         </ThemedText>
       </View>
       <View style={[styles.status, { backgroundColor: sub.billingIssue ? `${theme.danger}1A` : theme.tintSoft }]}>
@@ -228,6 +232,8 @@ function SubscriptionCard({ sub, onPress }: { sub: Subscription; onPress: () => 
 }
 
 const styles = StyleSheet.create({
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nameText: { flexShrink: 1 },
   list: { padding: Spacing.four, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   card: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.lg },
   body: { flex: 1, gap: 2 },

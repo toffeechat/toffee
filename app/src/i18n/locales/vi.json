@@ -87,7 +87,10 @@
     "copyFailed": "Không sao chép được",
     "more": "Thêm",
     "welcomeLabel": "Tin nhắn chào mừng",
-    "birthdayLabel": "🎂 Lời chúc sinh nhật"
+    "birthdayLabel": "🎂 Lời chúc sinh nhật",
+    "replyLength": "{{count}}/{{max}} ký tự",
+    "replyTooLong": "Câu trả lời tối đa {{max}} ký tự.",
+    "replyTooLongNext": "Câu trả lời tối đa {{max}} ký tự. Tiếp tục đăng ký, từ {{date}} sẽ tăng lên {{next}} ký tự."
   },
   "chatProfile": {
     "open": "Xem hồ sơ",
@@ -487,7 +490,10 @@
     "billingIssueBody": "Cửa hàng không thể thu tiền (ví dụ thẻ đã hết hạn). Bạn vẫn dùng bình thường trong thời gian gia hạn của cửa hàng, và cửa hàng sẽ thu lại khi bạn đổi phương thức thanh toán. Nếu đến hết thời gian gia hạn vẫn chưa thanh toán được, gói đăng ký sẽ kết thúc.",
     "nextBillingDate": "{{date}} (tham khảo)",
     "guideTitle": "Thông tin gói đăng ký",
-    "guideBody": "• Màn hình này hiển thị các gói đăng ký bạn đang dùng.\n• Ngày thanh toán tiếp theo chỉ để tham khảo. Ngày và số tiền thực tế do cửa hàng quyết định và có thể lệch khoảng một ngày. Lịch sử thanh toán chi tiết và hoàn tiền xem tại cửa hàng bạn đã thanh toán (App Store hoặc Google Play).\n• \"Thanh toán có vấn đề\": thanh toán tự động đang thất bại (ví dụ thẻ hết hạn). Hãy đổi phương thức thanh toán trong cửa hàng. Nếu đến hết thời gian gia hạn của cửa hàng vẫn chưa thanh toán được, gói đăng ký sẽ kết thúc.\n• Khôi phục giao dịch: tải lịch sử mua của tài khoản cửa hàng đang đăng nhập trên điện thoại. Giao dịch bằng tài khoản cửa hàng khác sẽ không hiện, vì vậy hãy đăng nhập tài khoản đã thanh toán trước."
+    "guideBody": "• Màn hình này hiển thị các gói đăng ký bạn đang dùng.\n• Ngày thanh toán tiếp theo chỉ để tham khảo. Ngày và số tiền thực tế do cửa hàng quyết định và có thể lệch khoảng một ngày. Lịch sử thanh toán chi tiết và hoàn tiền xem tại cửa hàng bạn đã thanh toán (App Store hoặc Google Play).\n• \"Thanh toán có vấn đề\": thanh toán tự động đang thất bại (ví dụ thẻ hết hạn). Hãy đổi phương thức thanh toán trong cửa hàng. Nếu đến hết thời gian gia hạn của cửa hàng vẫn chưa thanh toán được, gói đăng ký sẽ kết thúc.\n• Khôi phục giao dịch: tải lịch sử mua của tài khoản cửa hàng đang đăng nhập trên điện thoại. Giao dịch bằng tài khoản cửa hàng khác sẽ không hiện, vì vậy hãy đăng nhập tài khoản đã thanh toán trước.",
+    "replyLength": "Độ dài câu trả lời",
+    "replyLengthValue": "{{max}} ký tự mỗi câu trả lời",
+    "badge": "Huy hiệu"
   },
   "welcome": {
     "headline": "Closer to\nwhat matters",
@@ -1001,5 +1007,9 @@
     "failed": "Mất kết nối, chưa xác nhận được đã gửi hay chưa.",
     "action": "Gửi lại",
     "dismiss": "Đóng"
+  },
+  "streak": {
+    "yearBadge": "1 năm+",
+    "yearBadgeLabel": "Fan đã đăng ký hơn 1 năm"
   }
 }

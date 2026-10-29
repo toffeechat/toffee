@@ -215,3 +215,31 @@ describe('정산용 결제 기록', () => {
     expect(charges).toEqual(purchases.map((purchase) => ({ purchaseId: purchase.id, source: 'SANDBOX' })));
   });
 });
+
+describe('장기 구독 기간 — 만료 후 24시간 유예(2026-10-29)', () => {
+  const HOUR = 60 * 60 * 1000;
+  async function resubscribeAfter(hoursClosed: number) {
+    const db = fakeDb();
+    await db.service.subscribe('u', 'a1');
+    const first = db.open('a1')!;
+    const streakStartedAt = new Date(Date.now() - 400 * 24 * HOUR);
+    Object.assign(first, { streakStartedAt });
+    await db.service.cancelPurchase('u', db.purchases.find((p) => p.actorId === 'a1')!.id);
+    // 닫힌 시각을 과거로
+    first.cancelledAt = new Date(Date.now() - hoursClosed * HOUR);
+    await db.service.subscribe('u', 'a1');
+    return { sub: db.open('a1') as unknown as { startedAt: Date; streakStartedAt: Date }, streakStartedAt };
+  }
+
+  it('닫힌 지 24시간 안에 다시 구독하면 이어서 셈(대화는 지금부터)', async () => {
+    const { sub, streakStartedAt } = await resubscribeAfter(23);
+    expect(sub.streakStartedAt).toEqual(streakStartedAt);
+    expect(sub.startedAt.getTime()).toBeGreaterThan(Date.now() - HOUR);
+  });
+
+  it('24시간이 지나면 처음부터', async () => {
+    const { sub, streakStartedAt } = await resubscribeAfter(25);
+    expect(sub.streakStartedAt).not.toEqual(streakStartedAt);
+    expect(sub.streakStartedAt.getTime()).toBeGreaterThan(Date.now() - HOUR);
+  });
+});

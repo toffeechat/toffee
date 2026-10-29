@@ -90,7 +90,10 @@
     "copyFailed": "No se pudo copiar",
     "more": "Más",
     "welcomeLabel": "Mensaje de bienvenida",
-    "birthdayLabel": "🎂 Mensaje de cumpleaños"
+    "birthdayLabel": "🎂 Mensaje de cumpleaños",
+    "replyLength": "{{count}} de {{max}} caracteres",
+    "replyTooLong": "Las respuestas pueden tener hasta {{max}} caracteres.",
+    "replyTooLongNext": "Las respuestas pueden tener hasta {{max}} caracteres. Si sigues suscrito, a partir del {{date}} podrás escribir hasta {{next}}."
   },
   "chatProfile": {
     "open": "Ver perfil",
@@ -495,7 +498,10 @@
     "billingIssueBody": "La tienda no pudo cobrarte (por ejemplo, por una tarjeta vencida). Puedes seguir usándolo durante el período de gracia de la tienda, y la tienda volverá a cobrar cuando actualices tu método de pago. Si el pago sigue fallando al terminar el período de gracia, tu suscripción terminará.",
     "nextBillingDate": "{{date}} (referencia)",
     "guideTitle": "Sobre tus suscripciones",
-    "guideBody": "• En esta pantalla ves las suscripciones que usas ahora.\n• La próxima fecha de pago es solo de referencia. La tienda fija la fecha y el importe reales, que pueden variar alrededor de un día. Consulta el historial de pagos y los reembolsos en la tienda donde pagaste (App Store o Google Play).\n• \"Problema con el pago\": el pago automático está fallando (por ejemplo, por una tarjeta vencida). Actualiza tu método de pago en la tienda. Si el pago sigue fallando al terminar el período de gracia de la tienda, tu suscripción terminará.\n• Restaurar compras: carga las compras de la cuenta de la tienda con la que iniciaste sesión en tu teléfono. Las compras hechas con otra cuenta no aparecerán, así que inicia sesión primero con la cuenta con la que pagaste."
+    "guideBody": "• En esta pantalla ves las suscripciones que usas ahora.\n• La próxima fecha de pago es solo de referencia. La tienda fija la fecha y el importe reales, que pueden variar alrededor de un día. Consulta el historial de pagos y los reembolsos en la tienda donde pagaste (App Store o Google Play).\n• \"Problema con el pago\": el pago automático está fallando (por ejemplo, por una tarjeta vencida). Actualiza tu método de pago en la tienda. Si el pago sigue fallando al terminar el período de gracia de la tienda, tu suscripción terminará.\n• Restaurar compras: carga las compras de la cuenta de la tienda con la que iniciaste sesión en tu teléfono. Las compras hechas con otra cuenta no aparecerán, así que inicia sesión primero con la cuenta con la que pagaste.",
+    "replyLength": "Longitud de respuesta",
+    "replyLengthValue": "{{max}} caracteres por respuesta",
+    "badge": "Insignia"
   },
   "welcome": {
     "headline": "Más cerca de\nlo que importa",
@@ -1015,5 +1021,9 @@
     "failed": "Se perdió la conexión y no pudimos confirmar el envío.",
     "action": "Reenviar",
     "dismiss": "Cerrar"
+  },
+  "streak": {
+    "yearBadge": "1 año+",
+    "yearBadgeLabel": "Suscrito desde hace más de un año"
   }
 }

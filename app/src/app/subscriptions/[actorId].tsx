@@ -83,14 +83,18 @@ export default function SubscriptionDetailScreen() {
 
   // 스토어에서 자동 갱신을 끈 방(2026-10-02) — "해지 예정" + 이용 종료일
   const endsOn = sub.endsAt ? new Date(sub.endsAt).toLocaleDateString(i18n.language) : null;
+  const streakStart = sub.streakStartedAt ?? sub.startedAt;
   const rows: [string, string][] = [
     [t('manage.status'), endsOn ? t('manage.ending') : t('manage.active')],
     bundleCover?.bundle
       ? [t('manage.price'), t('bundle.via', { name: bundleCover.bundle.name })]
       : [t('manage.price'), `${formatPrice(sub.actor.monthlyPriceCents)} ${t('actorProfile.perMonth')}`],
     // 끊기지 않고 이어진 이번 구독의 시작일 + 며칠째(시작한 날이 1일째) — 장기 구독 혜택의 기준(2026-10-15 사용자 결정: 여러 번 나눠 구독한 걸
-    // 합치지 않고 한 번 이어서 구독한 기간만). startedAt은 해지·만료 후 다시 구독하면 새로 시작되고 개인 → 묶음 전환처럼 안 끊기면 그대로
-    [t('manage.started'), t('manage.startedDays', { date: new Date(sub.startedAt).toLocaleDateString(i18n.language), days: daysSince(sub.startedAt) })],
+    // 합치지 않고 한 번 이어서 구독한 기간만). 2026-10-29부터 streakStartedAt — 만료 후 24시간 안에 다시 구독하면 이어짐, 개인 → 묶음 전환도 그대로
+    [t('manage.started'), t('manage.startedDays', { date: new Date(streakStart).toLocaleDateString(i18n.language), days: daysSince(streakStart) })],
+    // 장기 구독 혜택(2026-10-29) — 지금 답장 글자 수, 1년 이상이면 "1년+"
+    ...(sub.replyMaxLength ? [[t('manage.replyLength'), t('manage.replyLengthValue', { max: sub.replyMaxLength })] as [string, string]] : []),
+    ...(sub.yearBadge ? [[t('manage.badge'), t('streak.yearBadgeLabel')] as [string, string]] : []),
     endsOn
       ? [t('manage.endsOn'), endsOn]
       : [t('manage.nextBilling'), sub.renewsAt ? t('manage.nextBillingDate', { date: new Date(sub.renewsAt).toLocaleDateString(i18n.language) }) : t('manage.nextBillingStore')],

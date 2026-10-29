@@ -9,6 +9,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import type { ClientInfo } from '../access-log/client-info.js';
 import { ACCESS_LOG_RETENTION_DAYS } from '../access-log/access-log.service.js';
+import { automatedReason } from './automated-client.js';
 
 /** 토큰의 `dac`가 이 값이면 공용 코드(DEV_LOGIN_CODE, 내부 테스트용) — 기록은 남기고 메일은 안 보냄 */
 export const COMMON_DEMO_CODE = 'common';
@@ -46,6 +47,15 @@ export function generateDemoCode(): string {
   const part = () => Array.from({ length: 4 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join('');
   return `${part()}-${part()}`;
 }
+
+// 기록 한 줄이 자동 검사였는지 — 기록할 때 정한 이유가 없으면(2026-10-29 전 기록) IP·브라우저로 다시 판단
+type EventSignals = { automated: string | null; ip: string | null; userAgent: string | null; timeZone: string | null };
+function eventAutomated(event: EventSignals): string | null {
+  return event.automated ?? automatedReason(event);
+}
+const EVENT_SIGNALS = { automated: true, ip: true, userAgent: true, timeZone: true } as const;
+// 알림·횟수에 세는 줄 = 로그인 + 30분 넘게 쉬었다 들어온 줄
+const VISIT_ROWS: Prisma.DemoAccessEventWhereInput = { OR: [{ kind: 'LOGIN' }, { newVisit: true }] };
 
 function isActive(row: { expiresAt: Date; revokedAt: Date | null }, now: Date): boolean {
   return !row.revokedAt && row.expiresAt > now;
@@ -138,18 +148,51 @@ export class DemoAccessService {
 
   /** 테스트에서 기다릴 수 있게 분리 */
   async record(dac: string, key: string, role: DemoRoleKey, kind: 'LOGIN' | 'VISIT', client: ClientInfo, now: Date): Promise<void> {
+    const { automationHint: _hint, ...eventClient } = client;
+    const codeId = dac === COMMON_DEMO_CODE ? null : dac;
+    // 링크 자동 검사(2026-10-29) — 첫 접속·마지막 접속·횟수는 건드리지 않고(사람이 나중에 열면 그때가 첫 접속) 기록 줄만, 알림 없음
+    const automated = automatedReason(client);
+    if (automated) {
+      const last = this.lastEvent.get(key);
+      if (kind === 'LOGIN' || !last || now.getTime() - last >= VISIT_EVENT_INTERVAL_MS) {
+        this.lastEvent.set(key, now.getTime());
+        await this.prisma.demoAccessEvent.create({ data: { codeId, role, kind, newVisit: false, ...eventClient, automated, createdAt: now } });
+      }
+      return;
+    }
     const code = await this.markSeen(dac, now);
     // 공용 코드는 화면별 요약 없이 코드 전체 기준
     const seen = dac === COMMON_DEMO_CODE ? { newVisit: code.newVisit, first: false, count: 0 } : await this.markRoleSeen(dac, role, now);
     const newVisit = seen.newVisit;
     const lastEvent = this.lastEvent.get(key);
+    let eventId: string | null = null;
     if (kind === 'LOGIN' || newVisit || !lastEvent || now.getTime() - lastEvent >= VISIT_EVENT_INTERVAL_MS) {
       this.lastEvent.set(key, now.getTime());
-      await this.prisma.demoAccessEvent.create({
-        data: { codeId: dac === COMMON_DEMO_CODE ? null : dac, role, kind, newVisit, ...client, createdAt: now },
-      });
+      eventId = (await this.prisma.demoAccessEvent.create({ data: { codeId, role, kind, newVisit, ...eventClient, createdAt: now } })).id;
     }
-    if (newVisit && dac !== COMMON_DEMO_CODE) await this.notify(dac, role, { codeFirst: code.first, roleFirst: seen.first, roleCount: seen.count }, client, now);
+    if (newVisit && dac !== COMMON_DEMO_CODE) await this.notify(dac, role, await this.humanSeen(dac, role, eventId, code.first, seen), client, now);
+  }
+
+  /**
+   * "첫 접속"·"N번째"를 사람 접속만으로 다시 셈(2026-10-29) — 거르기 전에 자동 검사가 먼저 열어 버린 코드(Becky·North Star)도 소속사가 처음
+   * 열면 "첫 접속" 메일이 가게. 지난 기록을 IP·브라우저로 다시 판단
+   */
+  private async humanSeen(
+    dac: string,
+    role: DemoRoleKey,
+    currentEventId: string | null,
+    codeFirst: boolean,
+    seen: { first: boolean; count: number },
+  ): Promise<{ codeFirst: boolean; roleFirst: boolean; roleCount: number }> {
+    const rows = await this.prisma.demoAccessEvent.findMany({
+      where: { codeId: dac, ...VISIT_ROWS, ...(currentEventId ? { id: { not: currentEventId } } : {}) },
+      select: { role: true, ...EVENT_SIGNALS },
+    });
+    const humans = rows.filter((row) => !eventAutomated(row));
+    // 자동 검사 줄이 없으면 접속 요약 그대로(요약은 사람 접속만 셈 — 거르기 전 기록이 섞였을 때만 다시 셈)
+    if (humans.length === rows.length) return { codeFirst, roleFirst: seen.first, roleCount: seen.count };
+    const sameRole = humans.filter((row) => row.role === role).length;
+    return { codeFirst: codeFirst || humans.length === 0, roleFirst: seen.first || sameRole === 0, roleCount: sameRole + 1 };
   }
 
   // 화면별 30분 규칙 — 이 화면으로 30분 넘게 안 들어왔으면 새 접속(횟수 +1). 조건부 updateMany라 요청이 겹쳐도 한 번만
@@ -252,21 +295,25 @@ export class DemoAccessService {
 
   async list() {
     const now = new Date();
-    const [codes, roleCounts, common, commonVisits] = await Promise.all([
+    const [codes, visitRows, common, commonVisits] = await Promise.all([
       this.prisma.demoAccessCode.findMany({ orderBy: [{ lastSeenAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }] }),
-      // 역할별 횟수 = 로그인 + 새 접속(로그인 유지 중 한 시간마다 남는 줄은 빼고)
-      this.prisma.demoAccessEvent.groupBy({
-        by: ['codeId', 'role'],
-        where: { OR: [{ kind: 'LOGIN' }, { newVisit: true }] },
-        _count: { _all: true },
-      }),
+      // 역할별 횟수 = 로그인 + 새 접속(로그인 유지 중 한 시간마다 남는 줄은 빼고). 자동 검사 줄은 따로 셈(2026-10-29) — 3개월치라 많지 않음
+      this.prisma.demoAccessEvent.findMany({ where: VISIT_ROWS, select: { codeId: true, role: true, createdAt: true, ...EVENT_SIGNALS } }),
       this.prisma.demoAccessEvent.aggregate({ where: { codeId: null }, _min: { createdAt: true }, _max: { createdAt: true } }),
       this.prisma.demoAccessEvent.count({ where: { codeId: null, newVisit: true } }),
     ]);
-    const rolesOf = (codeId: string | null) =>
-      Object.fromEntries(roleCounts.filter((row) => row.codeId === codeId).map((row) => [row.role, row._count._all])) as Partial<
-        Record<DemoRoleKey, number>
-      >;
+    const visits = visitRows.map((row) => ({ ...row, automated: eventAutomated(row) }));
+    const rolesOf = (codeId: string | null) => {
+      const counts: Partial<Record<DemoRoleKey, number>> = {};
+      for (const row of visits) if (row.codeId === codeId && !row.automated) counts[row.role as DemoRoleKey] = (counts[row.role as DemoRoleKey] ?? 0) + 1;
+      return counts;
+    };
+    // 자동 검사 횟수, 사람이 처음 들어온 때(자동 검사만 있었으면 null)
+    const botsOf = (codeId: string) => {
+      const rows = visits.filter((row) => row.codeId === codeId);
+      const humans = rows.filter((row) => !row.automated).map((row) => row.createdAt.getTime());
+      return { automatedCount: rows.length - humans.length, firstHumanSeenAt: humans.length ? new Date(Math.min(...humans)) : null };
+    };
     return {
       codes: codes.map((row) => ({
         id: row.id,
@@ -280,6 +327,7 @@ export class DemoAccessService {
         lastSeenAt: row.lastSeenAt,
         visitCount: row.visitCount,
         roleCounts: rolesOf(row.id),
+        ...botsOf(row.id),
         createdAt: row.createdAt,
       })),
       // 공용 코드(내부) — 기록이 있을 때만
@@ -334,7 +382,7 @@ export class DemoAccessService {
 
   /** 접속 기록 — 코드 id 또는 'common'(공용 코드), 최근 것부터 */
   async events(id: string, limit = 200) {
-    return this.prisma.demoAccessEvent.findMany({
+    const rows = await this.prisma.demoAccessEvent.findMany({
       where: { codeId: id === COMMON_DEMO_CODE ? null : id },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -347,10 +395,12 @@ export class DemoAccessService {
         deviceModel: true,
         osVersion: true,
         appVersion: true,
-        ip: true,
         createdAt: true,
+        ...EVENT_SIGNALS,
       },
     });
+    // 자동 검사 표시(2026-10-29) — 그 전 기록도 IP·브라우저로 판단해서
+    return rows.map(({ userAgent: _agent, ...row }) => ({ ...row, automated: eventAutomated({ ...row, userAgent: _agent }) }));
   }
 
   private async freshCode(): Promise<string> {

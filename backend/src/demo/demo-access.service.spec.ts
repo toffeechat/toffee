@@ -10,7 +10,9 @@ import { Role } from '../generated/prisma/enums.js';
 const CLIENT: ClientInfo = { platform: 'web', deviceModel: 'Chrome · macOS', osVersion: null, appVersion: null, userAgent: null, ip: '1.2.3.4' };
 const DAY = 24 * 60 * 60 * 1000;
 
-function make(options: { env?: Record<string, string>; code?: Record<string, unknown> | null; roleSeen?: Record<string, unknown> | null } = {}) {
+function make(
+  options: { env?: Record<string, string>; code?: Record<string, unknown> | null; roleSeen?: Record<string, unknown> | null; pastVisits?: Record<string, unknown>[] } = {},
+) {
   const env = { DEMO_ALERT_EMAIL: 'ops@example.com', ...options.env };
   const code = options.code === undefined ? { id: 'c1', code: 'gmm-7k3p', agencyName: 'GMM', expiresAt: new Date(Date.now() + DAY), revokedAt: null, visitCount: 1 } : options.code;
   const prisma = {
@@ -21,7 +23,12 @@ function make(options: { env?: Record<string, string>; code?: Record<string, unk
       count: vi.fn().mockResolvedValue(0),
       update: vi.fn().mockResolvedValue({}),
     },
-    demoAccessEvent: { create: vi.fn().mockResolvedValue({}), deleteMany: vi.fn().mockReturnValue('events') },
+    demoAccessEvent: {
+      create: vi.fn().mockResolvedValue({ id: 'e-now' }),
+      deleteMany: vi.fn().mockReturnValue('events'),
+      // 지난 접속 줄(첫 접속을 사람 접속만으로 다시 셀 때) — 기본은 없음
+      findMany: vi.fn().mockResolvedValue(options.pastVisits ?? []),
+    },
     // 화면별 요약 — 기본은 이 화면으로 처음 들어옴(줄 없음)
     demoAccessRoleSeen: {
       findUnique: vi.fn().mockResolvedValue(options.roleSeen ?? null),
@@ -174,5 +181,58 @@ describe('소속사별 데모 입장 코드', () => {
     expect(demoRoleOf(Role.ACTOR)).toBe('artist');
     expect(demoRoleOf(Role.USER)).toBe('fan');
     expect(generateDemoCode()).not.toMatch(/[01ilo]/);
+  });
+
+  it('링크 자동 검사(Meta 서버·검사 봇·자동 조종·세계 표준시)는 기록만 남기고 첫 접속·횟수·메일은 그대로(2026-10-29)', async () => {
+    const bots: ClientInfo[] = [
+      { ...CLIENT, ip: '69.171.249.1' },
+      { ...CLIENT, ip: '::ffff:66.249.66.1' },
+      { ...CLIENT, userAgent: 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' },
+      { ...CLIENT, automationHint: true },
+      { ...CLIENT, timeZone: 'UTC' },
+    ];
+    for (const [i, bot] of bots.entries()) {
+      const { service, prisma, email } = make();
+      await service.record('c1', `c1:agency:${i}`, 'agency', 'LOGIN', bot, new Date());
+      expect(prisma.demoAccessEvent.create.mock.calls[0][0].data).toMatchObject({ codeId: 'c1', newVisit: false, automated: expect.any(String) });
+      expect(prisma.demoAccessEvent.create.mock.calls[0][0].data).not.toHaveProperty('automationHint');
+      expect(prisma.demoAccessCode.updateMany).not.toHaveBeenCalled();
+      expect(prisma.demoAccessRoleSeen.findUnique).not.toHaveBeenCalled();
+      expect(email.send).not.toHaveBeenCalled();
+    }
+    // 태국 시간대·일반 브라우저·일반 IP는 사람
+    const { service, email } = make();
+    await service.record('c1', 'c1:agency', 'agency', 'LOGIN', { ...CLIENT, timeZone: 'Asia/Bangkok', userAgent: 'Mozilla/5.0 (iPhone) Instagram 300.0' }, new Date());
+    expect(email.send).toHaveBeenCalledOnce();
+  });
+
+  it('거르기 전에 자동 검사가 먼저 연 코드도 소속사가 처음 열면 "첫 접속" 메일', async () => {
+    const { service, prisma, email } = make({
+      code: { id: 'c1', code: 'gmm-7k3p', agencyName: 'GMM', visitCount: 2 },
+      roleSeen: { lastSeenAt: new Date(Date.now() - 2 * NEW_VISIT_GAP_MS), visitCount: 1 },
+      // 예전 기록: 인스타 DM 미리보기(Meta IP) — 그때는 자동 검사 표시가 없었음
+      pastVisits: [{ role: 'agency', automated: null, ip: '31.13.115.2', userAgent: null, timeZone: null }],
+    });
+    prisma.demoAccessCode.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    await service.record('c1', 'c1:agency', 'agency', 'LOGIN', CLIENT, new Date());
+    expect(email.send.mock.calls[0][1]).toBe('[토피 데모] GMM 첫 접속 (소속사 화면)');
+  });
+
+  it('접속 기록·목록: 예전 기록도 IP로 "자동 검사" 표시, 화면별 횟수에서 빼고 따로 셈', async () => {
+    const { service, prisma } = make();
+    const at = new Date('2026-10-28T10:00:00Z');
+    const rows = [
+      { id: 'e1', codeId: 'c1', role: 'agency', kind: 'LOGIN', newVisit: true, automated: null, ip: '157.240.1.1', userAgent: null, timeZone: null, createdAt: at },
+      { id: 'e2', codeId: 'c1', role: 'fan', kind: 'LOGIN', newVisit: true, automated: null, ip: '1.2.3.4', userAgent: null, timeZone: 'Asia/Bangkok', createdAt: new Date(at.getTime() + DAY) },
+    ];
+    prisma.demoAccessEvent.findMany.mockResolvedValue(rows);
+    const events = await service.events('c1');
+    expect(events.map((event) => event.automated)).toEqual(['Meta 서버', null]);
+    expect(events[0]).not.toHaveProperty('userAgent');
+
+    Object.assign(prisma.demoAccessCode, { findMany: vi.fn().mockResolvedValue([{ id: 'c1', agencyName: 'GMM', code: 'gmm-7k3p', expiresAt: new Date(Date.now() + DAY), revokedAt: null, visitCount: 2 }]) });
+    Object.assign(prisma.demoAccessEvent, { aggregate: vi.fn().mockResolvedValue({ _min: {}, _max: {} }), count: vi.fn().mockResolvedValue(0) });
+    const { codes } = await service.list();
+    expect(codes[0]).toMatchObject({ roleCounts: { fan: 1 }, automatedCount: 1, firstHumanSeenAt: rows[1].createdAt });
   });
 });

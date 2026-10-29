@@ -359,6 +359,10 @@ model DemoAccessEvent {
   appVersion  String?
   userAgent   String?
   ip          String?
+  // 링크 자동 검사(메신저 미리보기·검색 회사 서버 등)로 본 접속(2026-10-29) — 알림 메일 없이 기록만, 이유는 "Meta 서버" 등
+  automated   String?
+  // 브라우저 시간대(데모 웹이 보냄) — 자동 검사 판단 근거를 운영자 화면에서 보려고
+  timeZone    String?
   createdAt   DateTime @default(now())
 
   code DemoAccessCode? @relation(fields: [codeId], references: [id], onDelete: Cascade)
@@ -543,6 +547,9 @@ model Subscription {
   userId              String
   actorId             String
   startedAt           DateTime  @default(now())
+  // 끊기지 않고 이어서 구독한 기간의 시작(2026-10-29, 장기 구독 혜택 — 답장 글자 수·"1년+" 배지·"N일째"). startedAt(대화를 보여 주는
+  // 시작점)과 따로 둠 — 만료 후 24시간 안에 다시 구독하면 대화는 지금부터지만 이 날짜는 이어짐
+  streakStartedAt     DateTime  @default(now())
   lastArtistMessageAt DateTime?
   lastFanReplyAt      DateTime?
   cancelledAt         DateTime?

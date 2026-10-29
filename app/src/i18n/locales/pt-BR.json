@@ -93,7 +93,10 @@
     "copyFailed": "Não foi possível copiar",
     "more": "Mais",
     "welcomeLabel": "Mensagem de boas-vindas",
-    "birthdayLabel": "🎂 Mensagem de aniversário"
+    "birthdayLabel": "🎂 Mensagem de aniversário",
+    "replyLength": "{{count}} de {{max}} caracteres",
+    "replyTooLong": "As respostas podem ter até {{max}} caracteres.",
+    "replyTooLongNext": "As respostas podem ter até {{max}} caracteres. Continuando a assinatura, a partir de {{date}} você poderá escrever até {{next}}."
   },
   "chatProfile": {
     "open": "Ver perfil",
@@ -506,7 +509,10 @@
     "billingIssueBody": "A loja não conseguiu fazer a cobrança (por exemplo, cartão vencido). Você pode continuar usando durante o período de carência da loja, e a loja cobra de novo quando você atualizar a forma de pagamento. Se o pagamento ainda falhar quando o período de carência acabar, sua assinatura será encerrada.",
     "nextBillingDate": "{{date}} (referência)",
     "guideTitle": "Sobre suas assinaturas",
-    "guideBody": "• Esta tela mostra as assinaturas que você usa agora.\n• A próxima data de pagamento é só uma referência. A loja define a data e o valor reais, que podem variar cerca de um dia. Veja o histórico de pagamentos e reembolsos na loja em que você pagou (App Store ou Google Play).\n• \"Problema no pagamento\": o pagamento automático está falhando (por exemplo, cartão vencido). Atualize a forma de pagamento na loja. Se o pagamento ainda falhar quando o período de carência da loja acabar, sua assinatura será encerrada.\n• Restaurar compras: carrega as compras da conta da loja conectada no seu celular. Compras feitas com outra conta da loja não aparecem, então entre primeiro com a conta usada no pagamento."
+    "guideBody": "• Esta tela mostra as assinaturas que você usa agora.\n• A próxima data de pagamento é só uma referência. A loja define a data e o valor reais, que podem variar cerca de um dia. Veja o histórico de pagamentos e reembolsos na loja em que você pagou (App Store ou Google Play).\n• \"Problema no pagamento\": o pagamento automático está falhando (por exemplo, cartão vencido). Atualize a forma de pagamento na loja. Se o pagamento ainda falhar quando o período de carência da loja acabar, sua assinatura será encerrada.\n• Restaurar compras: carrega as compras da conta da loja conectada no seu celular. Compras feitas com outra conta da loja não aparecem, então entre primeiro com a conta usada no pagamento.",
+    "replyLength": "Tamanho da resposta",
+    "replyLengthValue": "{{max}} caracteres por resposta",
+    "badge": "Selo"
   },
   "welcome": {
     "headline": "Mais perto do\nque importa",
@@ -1032,5 +1038,9 @@
     "failed": "A conexão caiu e não deu para confirmar o envio.",
     "action": "Reenviar",
     "dismiss": "Fechar"
+  },
+  "streak": {
+    "yearBadge": "1 ano+",
+    "yearBadgeLabel": "Assinante há mais de um ano"
   }
 }

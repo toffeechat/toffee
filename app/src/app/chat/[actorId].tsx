@@ -36,6 +36,7 @@ import { MessageText } from '@/components/message-text';
 import { VoiceMessage } from '@/components/voice-message';
 import { SendRetryBar } from '@/components/send-retry-bar';
 import { isRetryableSendError } from '@/utils/send-retry';
+import { countReplyChars } from '@/utils/reply-length';
 import { ApiError } from '@/lib/api-client';
 import { saveMedia } from '@/lib/save-media';
 import { useActor } from '@/hooks/use-actors';
@@ -299,7 +300,7 @@ export default function ChatRoomScreen() {
   // 첫 답장 전엔 메시지 이용 규칙 동의를 한 번 받음(버블 방식, 2026-10-12) — 취소하면 쓴 글은 그대로 둠
   const handleSend = async () => {
     const body = draft.trim();
-    if (!body) return;
+    if (!body || tooLong) return;
     if (onboarding?.needsReplyRules) {
       const agreed = await confirm(t('replyRules.title'), t('replyRules.body'), t('replyRules.agree'), t('common.cancel'), false);
       if (!agreed) return;
@@ -358,6 +359,9 @@ export default function ChatRoomScreen() {
   const { data: quota } = useReplyQuota(actorId, canReply);
   const replyBlocked = !!quota?.blocked;
   const outOfReplies = !!quota && quota.remaining === 0;
+  // 답장 1개당 글자 수(2026-10-29 장기 구독 혜택 — 이어서 구독한 기간에 따라 100~500자, 서버가 알려 줌). 넘으면 보내기만 막음
+  const replyLength = countReplyChars(draft.trim());
+  const tooLong = !!quota?.maxLength && replyLength > quota.maxLength;
 
   // isPending: 구독 목록을 기다리느라 아직 안 불러온 동안도 로딩으로
   const body = isPending && !isError ? (
@@ -560,8 +564,26 @@ export default function ChatRoomScreen() {
                 {!canReply ? t('chat.replyAfterFirst') : replyBlocked ? t('chat.replyBlocked') : t('chat.noRepliesLeft', { limit: quota?.limit })}
               </ThemedText>
             ) : quota ? (
-              <ThemedText type="caption" themeColor="textTertiary" style={styles.quota}>
-                {t('chat.repliesLeft', { count: quota.remaining })}
+              <View style={styles.quotaRow}>
+                <ThemedText type="caption" themeColor="textTertiary" style={styles.quota}>
+                  {t('chat.repliesLeft', { count: quota.remaining })}
+                </ThemedText>
+                {quota.maxLength ? (
+                  <ThemedText
+                    type="caption"
+                    themeColor={tooLong ? undefined : 'textTertiary'}
+                    style={[styles.quota, tooLong ? { color: theme.danger } : null]}
+                    accessibilityLabel={t('chat.replyLength', { count: replyLength, max: quota.maxLength })}>
+                    {replyLength}/{quota.maxLength}
+                  </ThemedText>
+                ) : null}
+              </View>
+            ) : null}
+            {tooLong && quota?.maxLength ? (
+              <ThemedText type="caption" style={[styles.quota, { color: theme.danger }]}>
+                {quota.nextMaxLength && quota.nextMaxLengthAt
+                  ? t('chat.replyTooLongNext', { max: quota.maxLength, date: new Date(quota.nextMaxLengthAt).toLocaleDateString(i18n.language), next: quota.nextMaxLength })
+                  : t('chat.replyTooLong', { max: quota.maxLength })}
               </ThemedText>
             ) : null}
             <View style={styles.inputRow}>
@@ -575,18 +597,18 @@ export default function ChatRoomScreen() {
                 multiline
                 // 웹 textarea가 기본 두 줄 높이로 커지지 않게
                 numberOfLines={1}
-                maxLength={1000}
+                maxLength={2000}
               />
               <Pressable
                 onPress={() => void handleSend()}
-                disabled={sendReply.isPending || !draft.trim() || !canReply || outOfReplies}
+                disabled={sendReply.isPending || !draft.trim() || !canReply || outOfReplies || tooLong}
                 accessibilityRole="button"
                 accessibilityLabel={t('chat.send')}
-                style={[styles.sendButton, { backgroundColor: draft.trim() && canReply && !outOfReplies ? theme.tint : theme.backgroundElement }]}>
+                style={[styles.sendButton, { backgroundColor: draft.trim() && canReply && !outOfReplies && !tooLong ? theme.tint : theme.backgroundElement }]}>
                 {sendReply.isPending ? (
                   <ActivityIndicator color="#ffffff" size="small" />
                 ) : (
-                  <Icon as={ArrowUp} size={20} strokeWidth={2.25} color={draft.trim() && canReply && !outOfReplies ? '#ffffff' : theme.textTertiary} />
+                  <Icon as={ArrowUp} size={20} strokeWidth={2.25} color={draft.trim() && canReply && !outOfReplies && !tooLong ? '#ffffff' : theme.textTertiary} />
                 )}
               </Pressable>
             </View>
@@ -882,6 +904,7 @@ const styles = StyleSheet.create({
   inputDisabled: { opacity: 0.5 },
   composer: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: Spacing.two, gap: 4 },
   quota: { paddingHorizontal: Spacing.two },
+  quotaRow: { flexDirection: 'row', justifyContent: 'space-between' },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two },
   input: {
     flex: 1,

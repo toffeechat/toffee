@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { ClientInfo } from './client-info.js';
+import { withoutAutomationSignals, type ClientInfo } from './client-info.js';
 
 export const ACCESS_LOG_RETENTION_DAYS = 90;
 // 로그인이 유지된 채 쓰는 동안엔 한 시간에 한 번만 기록(User.lastActiveAt도 같은 주기)
@@ -21,7 +21,7 @@ export class AccessLogService {
     try {
       const now = new Date();
       await this.prisma.$transaction([
-        this.prisma.accessLog.create({ data: { userId, kind: 'LOGIN', method, ...client, createdAt: now } }),
+        this.prisma.accessLog.create({ data: { userId, kind: 'LOGIN', method, ...withoutAutomationSignals(client), createdAt: now } }),
         // 로그인 직후 첫 요청이 VISIT를 또 남기지 않게 마지막 접속도 같이 갱신
         this.prisma.user.update({ where: { id: userId }, data: { lastActiveAt: now } }),
       ]);
@@ -44,7 +44,7 @@ export class AccessLogService {
         data: { lastActiveAt: now },
       })
       .then(({ count }) =>
-        count ? this.prisma.accessLog.create({ data: { userId, kind: 'VISIT', ...client, createdAt: now } }) : undefined,
+        count ? this.prisma.accessLog.create({ data: { userId, kind: 'VISIT', ...withoutAutomationSignals(client), createdAt: now } }) : undefined,
       )
       .catch(() => {});
   }

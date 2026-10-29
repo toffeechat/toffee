@@ -249,11 +249,11 @@ describe('인용 답장 요약(toQuote)', () => {
 });
 
 // 팬 답장 횟수 제한 — 스타 메시지 하나당 N개(기본 3, FAN_REPLIES_PER_MESSAGE)
-function replySetup(alreadySent: number, settings: Record<string, string> = {}) {
+function replySetup(alreadySent: number, settings: Record<string, string> = {}, streakStartedAt = new Date()) {
   const created = vi.fn().mockResolvedValue({ id: 'r1' });
   const prisma = {
     subscription: {
-      findUnique: vi.fn().mockResolvedValue({ startedAt: new Date(0), cancelledAt: null }),
+      findUnique: vi.fn().mockResolvedValue({ startedAt: new Date(0), streakStartedAt, cancelledAt: null }),
       update: vi.fn().mockResolvedValue({}),
     },
     actorFanBlock: { findUnique: vi.fn().mockResolvedValue(null) },
@@ -274,6 +274,31 @@ function replySetup(alreadySent: number, settings: Record<string, string> = {}) 
   return { service, created, prisma };
 }
 
+describe('답장 글자 수 — 이어서 구독한 기간에 따라(2026-10-29)', () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000 - 60_000);
+
+  it('처음엔 100자까지, 넘으면 거절', async () => {
+    const { service, created } = replySetup(0);
+    await service.sendReply('fan', 'actor', { body: 'a'.repeat(100) });
+    await expect(service.sendReply('fan', 'actor', { body: 'a'.repeat(101) })).rejects.toThrow('100자까지');
+    expect(created).toHaveBeenCalledTimes(1);
+  });
+
+  it('1년 이어서 구독했으면 300자, 남은 개수와 함께 다음 단계(2년 500자)를 알려줌', async () => {
+    const { service } = replySetup(0, {}, daysAgo(365));
+    await service.sendReply('fan', 'actor', { body: 'a'.repeat(300) });
+    await expect(service.sendReply('fan', 'actor', { body: 'a'.repeat(301) })).rejects.toThrow('300자까지');
+    await expect(service.replyQuota('fan', 'actor')).resolves.toMatchObject({ maxLength: 300, nextMaxLength: 500 });
+  });
+
+  it('태국어 모음·성조 기호는 따로 세지 않음(보이는 글자 기준)', async () => {
+    const { service, created } = replySetup(0);
+    // "ที่" = ท + ี + ่ → 1자. 100번 = 코드 포인트 300개지만 100자
+    await service.sendReply('fan', 'actor', { body: 'ที่'.repeat(100) });
+    expect(created).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('MessagesService 답장 횟수 제한', () => {
   it('3개 미만이면 보내지고, 3개째까지 허용', async () => {
     const { service, created } = replySetup(2);
@@ -289,13 +314,13 @@ describe('MessagesService 답장 횟수 제한', () => {
 
   it('설정값으로 바꿀 수 있고, 남은 개수를 알려줌', async () => {
     const { service } = replySetup(4, { FAN_REPLIES_PER_MESSAGE: '5' });
-    await expect(service.replyQuota('fan', 'actor')).resolves.toEqual({ messageId: 'star-1', limit: 5, used: 4, remaining: 1, blocked: false });
+    await expect(service.replyQuota('fan', 'actor')).resolves.toMatchObject({ messageId: 'star-1', limit: 5, used: 4, remaining: 1, blocked: false });
   });
 
   it('차단된 팬은 남은 답장 0개 + blocked(입력칸을 미리 막음)', async () => {
     const { service, prisma } = replySetup(0);
     vi.mocked(prisma.actorFanBlock.findUnique).mockResolvedValue({ id: 'block-1' } as never);
-    await expect(service.replyQuota('fan', 'actor')).resolves.toEqual({ messageId: 'star-1', limit: 3, used: 0, remaining: 0, blocked: true });
+    await expect(service.replyQuota('fan', 'actor')).resolves.toMatchObject({ messageId: 'star-1', limit: 3, used: 0, remaining: 0, blocked: true });
   });
 
   it('지워진 아티스트 메시지는 답장 대상에서 빠짐', async () => {
