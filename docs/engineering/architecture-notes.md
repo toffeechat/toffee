@@ -2108,3 +2108,11 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   미뤄 앞뒤 기록으로 다시 판단 → 자동이면 그 이벤트에 `automated` 저장하고 메일 안 보냄(`setTimeout(...).unref()` — 재시작 땐 메일 빠짐).
   `withAutomated(rows)`: 저장된 이유 → IP·UA → 패턴(앞뒤 창의 모든 코드 기록) 순으로 `list`·`events`·`humanSeen`이 같이 씀.
 
+## 웹 링크 미리보기 태그 (2026-11-16)
+
+- 웹은 SPA(`web.output: 'single'`)라 `dist/index.html`이 거의 비어 있음 — 미리보기 봇(LINE·Facebook·Slack 등)은 JS를 실행하지 않아
+  `<title>`(=`app.config.ts` `name`, 개발 빌드는 `Toffee Dev`)과 `<noscript>` 문구로 카드를 만들었음.
+- `app/scripts/web-meta.mjs`(`npm run build:web`에서 `expo export` 뒤 실행)가 `<title>`, `description`, `og:*`, `twitter:*`를 넣고 `<noscript>`를 설명 문구로 바꿈.
+  다시 실행해도 같은 태그가 겹치지 않음. 대표 이미지 `app/public/og-image.png`(public → dist 복사), 절대 주소는 `EXPO_PUBLIC_WEB_URL` 또는 `https://demo.toffeechat.app`.
+- 화면별 다른 카드(예: 아티스트 페이지마다 다른 이미지)가 필요해지면 정적 태그로는 안 됨 — Cloudflare Pages Functions로 봇 요청에만 HTML을 바꾸는 방식을 검토.
+
