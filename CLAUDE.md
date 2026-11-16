@@ -37,6 +37,7 @@
   `POST /auth/dev-login`(`admin@toffee.demo`, role ADMIN, 운영자 입장 코드)으로 로그인 → `POST /admin/demo-codes`(`agencyName`, `code`, `expiresAt`=한국 날짜 23:59:59)로 등록,
   만료일 변경은 `PATCH /admin/demo-codes/:id`, 확인은 `GET /admin/demo-codes`. 운영자 입장 코드는 실기기 테스트 아티팩트 `data/users/me` 컬렉션 `admin-code` 문서에
   사용자 본인만 보이게 저장돼 있음 — `ArtifactData`로 읽어서 쓰고, **값을 저장소·다른 아티팩트·외부에 적지 않는다**. 만든 뒤 "토피 소속사" 페이지의 코드 표·카드도 맞춘다.
+- **아티팩트·문서엔 소속사 공식 이름을 쓴다**(2026-11-16 사용자 요청) — 대화에서 쓰는 별명("채삼"=Channel 3, "찌엠"=GMMTV 등)을 그대로 옮기지 말 것.
 - [`docs/product/`](./docs/product/) — 기획/디자인 문서. **개발자가 아니어도 읽을 수
   있게** 쓴다(사업 파트너, 디자이너, 나중에 합류할 비개발자 팀원 기준).
 - [`docs/engineering/`](./docs/engineering/) — 기술 문서. 개발자가 이해할 정도면
