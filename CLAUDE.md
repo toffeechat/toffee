@@ -33,6 +33,10 @@
 - **테스트·작업 중 발견한 오류는 바로 고친다**(2026-10-20 사용자 방침) — "개선 후보"로만 적고 넘어가지 말 것. 고칠지 판단이 필요한
   기획 결정(기능 동작을 바꾸는 것)이면 먼저 작업 로그·`feature-decisions.md`·STATUS에서 이미 정한 게 있는지 확인하고(체크리스트·옛 문구만 보고 판단하지
   않기 — 10-20 사진 묶음 회수를 잘못 고친 일), 정한 게 없으면 위 "정책 결정" 방침대로 추천안으로 고친다.
+- **소속사 데모 입장 코드는 Claude가 직접 만든다**(2026-11-16 사용자 요청 — 사용자에게 운영자 화면에서 등록하라고 넘기지 말 것). 데모 서버 `api-demo.toffeechat.app`에
+  `POST /auth/dev-login`(`admin@toffee.demo`, role ADMIN, 운영자 입장 코드)으로 로그인 → `POST /admin/demo-codes`(`agencyName`, `code`, `expiresAt`=한국 날짜 23:59:59)로 등록,
+  만료일 변경은 `PATCH /admin/demo-codes/:id`, 확인은 `GET /admin/demo-codes`. 운영자 입장 코드는 실기기 테스트 아티팩트 `data/users/me` 컬렉션 `admin-code` 문서에
+  사용자 본인만 보이게 저장돼 있음 — `ArtifactData`로 읽어서 쓰고, **값을 저장소·다른 아티팩트·외부에 적지 않는다**. 만든 뒤 "토피 소속사" 페이지의 코드 표·카드도 맞춘다.
 - [`docs/product/`](./docs/product/) — 기획/디자인 문서. **개발자가 아니어도 읽을 수
   있게** 쓴다(사업 파트너, 디자이너, 나중에 합류할 비개발자 팀원 기준).
 - [`docs/engineering/`](./docs/engineering/) — 기술 문서. 개발자가 이해할 정도면
