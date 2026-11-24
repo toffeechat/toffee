@@ -166,6 +166,13 @@ footer { color: var(--muted); font-size: 13px; }
   const stageName = (n) => { const s = stages().find((x) => x.n === n); return s ? n + "단계 · " + s.name : "단계 미정"; };
   const fmtUSD = (v) => "$" + (Math.round(v * 100) / 100).toFixed(2);
   const fmtKRW = (v) => Math.round(v).toLocaleString("ko-KR") + "원";
+  // 원화로 본 금액(2026-11-24): 카드 청구 원화(krw)가 있으면 그 값, 없으면 결제일 무렵 대략 환율(fxRate, 원/달러)로 환산. 둘 다 없으면 null
+  function krwOf(d) {
+    if (typeof d.krw === "number") return d.krw;
+    if (typeof d.amount !== "number") return null;
+    if (d.currency === "KRW") return d.amount;
+    return typeof d.fxRate === "number" ? d.amount * d.fxRate : null;
+  }
   function money(d) {
     if (typeof d.amount !== "number") return d.estimate || "";
     return d.currency === "KRW" ? fmtKRW(d.amount) : fmtUSD(d.amount);
@@ -233,6 +240,7 @@ footer { color: var(--muted); font-size: 13px; }
     addMeta(dl, "주기", d.cycle);
     if (paid) addMeta(dl, "결제일", d.date, true);
     if (typeof d.krw === "number") addMeta(dl, "카드 청구액", fmtKRW(d.krw));
+    else if (paid && d.currency !== "KRW" && typeof d.amount === "number" && d.amount > 0 && typeof d.fxRate === "number") addMeta(dl, "원화(추정)", "약 " + fmtKRW(d.amount * d.fxRate) + " · 1달러 " + d.fxRate.toLocaleString("ko-KR") + "원 기준");
     addMeta(dl, "다음 결제", d.renews ? d.renews + (d.renewAmount ? " · " + d.renewAmount : "") : "", false);
     addMeta(dl, "결제 수단", d.payer);
     if (paid) addMeta(dl, "영수증", d.receipt || "보관 확인 필요");
@@ -245,7 +253,8 @@ footer { color: var(--muted); font-size: 13px; }
     if (!p.length) return "";
     const usd = p.filter((d) => d.currency !== "KRW").reduce((s, d) => s + d.amount, 0);
     const krw = p.filter((d) => d.currency === "KRW").reduce((s, d) => s + d.amount, 0);
-    return "쓴 돈 " + [usd ? fmtUSD(usd) : "", krw ? fmtKRW(krw) : ""].filter(Boolean).join(" + ");
+    const total = p.reduce((s, d) => s + (krwOf(d) ?? 0), 0);
+    return "쓴 돈 약 " + fmtKRW(total) + " (" + [usd ? fmtUSD(usd) : "", krw ? fmtKRW(krw) : ""].filter(Boolean).join(" + ") + ")";
   }
 
   // 만료일 — 비용의 다음 결제일(YYYY-MM-DD로 시작하는 것) + expiries 컬렉션(토큰·카드처럼 돈이 안 드는 만료)
@@ -318,14 +327,18 @@ footer { color: var(--muted); font-size: 13px; }
     const paid = state.costs.filter((d) => d.status === "paid" && typeof d.amount === "number");
     const usd = paid.filter((d) => d.currency !== "KRW").reduce((s, d) => s + d.amount, 0);
     const krwOnly = paid.filter((d) => d.currency === "KRW").reduce((s, d) => s + d.amount, 0);
-    const charged = paid.filter((d) => typeof d.krw === "number").reduce((s, d) => s + d.krw, 0) + krwOnly;
-    const spentV = [usd ? fmtUSD(usd) : "", krwOnly ? fmtKRW(krwOnly) : ""].filter(Boolean).join(" + ") || "0원";
+    const parts = [usd ? fmtUSD(usd) : "", krwOnly ? fmtKRW(krwOnly) : ""].filter(Boolean).join(" + ") || "0원";
+    // 원화 합계 — 카드 청구액이 있으면 그 값, 없으면 결제일 무렵 대략 환율로(카드 해외 결제 수수료는 빠짐)
+    const missingFx = paid.filter((d) => d.amount > 0 && krwOf(d) === null).length;
+    const totalKrw = paid.reduce((s, d) => s + (krwOf(d) ?? 0), 0);
+    const spentV = paid.length ? "약 " + fmtKRW(totalKrw) : "0원";
+    const spentSub = parts + (missingFx ? " · 환율 없는 " + missingFx + "건 빠짐" : " · 결제일 무렵 환율로 환산");
     const next = state.costs.filter((d) => d.renews).sort((a, b) => (a.renews < b.renews ? -1 : 1))[0];
     const doneAcc = state.accounts.filter((d) => d.status === "done");
     const warn = doneAcc.filter((d) => d.twofa !== "on").length;
     const tile = (k, v, s) => { const t = el("div", "stat"); t.append(el("div", "k", k), el("div", "v", v)); if (s) t.append(el("div", "s", s)); return t; };
     $("stats").replaceChildren(
-      tile("지금까지 쓴 돈", spentV, paid.length + "건" + (charged ? " · 카드 청구 " + fmtKRW(charged) : "")),
+      tile("지금까지 쓴 돈", spentV, paid.length + "건 · " + spentSub),
       tile("다음 정기 결제", next ? next.renews : "없음", next ? (next.item + (next.renewAmount ? " · " + next.renewAmount : "")) : ""),
       tile("만든 계정", doneAcc.length + "개", warn ? "2단계 인증 확인 " + warn + "개" : "모두 2단계 인증 켬")
     );
