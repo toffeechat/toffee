@@ -90,6 +90,15 @@ h2 .tot { letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nu
 .line2 { grid-column: 1 / -1; color: var(--muted); font-size: 14px; }
 .empty { padding: 20px 16px; color: var(--muted); font-size: 14px; }
 .b-late { background: var(--warn); color: var(--surface); }
+/* 메모 — 길어서 기본 접힘(2026-11-24 사용자 요청) */
+.memo { grid-column: 1 / -1; font-size: 14px; }
+.memo summary { cursor: pointer; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.memo summary::-webkit-details-marker { display: none; }
+.memo summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s; }
+.memo[open] summary::before { transform: rotate(45deg); }
+.memo summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.memo p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .memo summary::before { transition: none; } }
 .when { font-family: var(--font-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .setdate { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 14px; }
 .setdate input { font: inherit; font-size: 14px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
@@ -189,6 +198,16 @@ footer { color: var(--muted); font-size: 13px; }
     if (!value) return;
     dl.append(el("dt", null, label), el("dd", mono ? "mono" : null, value));
   }
+  // 메모는 접어 둔 아코디언으로(펼친 상태는 화면을 다시 그려도 기억)
+  const openMemos = new Set();
+  function memo(key, text) {
+    if (!text) return null;
+    const det = el("details", "memo");
+    det.open = openMemos.has(key);
+    det.addEventListener("toggle", () => { if (det.open) openMemos.add(key); else openMemos.delete(key); });
+    det.append(el("summary", null, "메모"), el("p", null, text));
+    return det;
+  }
   function group(items, rowFn, emptyText, totalFn) {
     const box = document.createDocumentFragment();
     const byStage = new Map();
@@ -221,10 +240,11 @@ footer { color: var(--muted); font-size: 13px; }
       addMeta(dl, "용도", d.purpose);
       addMeta(dl, "복구 수단", d.recovery);
       addMeta(dl, "만든 날", d.created, true);
-      addMeta(dl, "메모", d.note);
       r.append(dl);
+      const m = memo("a:" + (d.service || ""), d.note); if (m) r.append(m);
     } else {
       r.append(el("div", "line2", [d.purpose, d.login ? "가입 계정: " + d.login : ""].filter(Boolean).join(" · ")));
+      const m = memo("a:" + (d.service || ""), d.note); if (m) r.append(m);
     }
     return r;
   }
@@ -244,8 +264,8 @@ footer { color: var(--muted); font-size: 13px; }
     addMeta(dl, "다음 결제", d.renews ? d.renews + (d.renewAmount ? " · " + d.renewAmount : "") : "", false);
     addMeta(dl, "결제 수단", d.payer);
     if (paid) addMeta(dl, "영수증", d.receipt || "보관 확인 필요");
-    addMeta(dl, "메모", d.note);
     r.append(dl);
+    const m = memo("c:" + (d.item || ""), d.note); if (m) r.append(m);
     return r;
   }
   function paidTotal(rows) {
@@ -288,8 +308,8 @@ footer { color: var(--muted); font-size: 13px; }
     if (d.when && d.when.length > 10) addMeta(dl, "참고", d.when.slice(10).replace(/^[\s(·-]+|\)$/g, ""));
     addMeta(dl, "만료되면", d.impact);
     addMeta(dl, "확인·갱신", d.how);
-    addMeta(dl, "메모", d.note);
     r.append(dl);
+    const m = memo("e:" + (d.item || ""), d.note); if (m) r.append(m);
     if (d.id && dbRef) {
       const f = el("div", "setdate");
       const label = el("label", null, at === null ? "날짜 넣기" : "날짜 바꾸기");
