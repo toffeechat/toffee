@@ -112,7 +112,8 @@ function activeAdminItem(items: { href: string }[], pathname: string) {
 
 // 소속사: 아티스트 화면(/console/<id>)은 "소속 아티스트", 전체 순위는 "대시보드", 설정 아래 화면(/settings/*)은 "설정"
 export function activeConsoleItem(pathname: string): string {
-  if (pathname === '/console' || pathname.startsWith('/console/ranking')) return '/console';
+  if (pathname === '/console' || pathname.startsWith('/console/ranking') || pathname.startsWith('/console/dashboard')) return '/console';
+  if (pathname.startsWith('/console/earnings')) return '/console/settlements';
   for (const href of ['/console/records', '/console/settlements', '/console/settings']) {
     if (pathname === href || pathname.startsWith(`${href}/`)) return href;
   }

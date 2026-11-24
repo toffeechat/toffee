@@ -1,11 +1,13 @@
-import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { LifeBuoy, Bell, Globe, KeyRound, LogOut, Moon, Wallet } from 'lucide-react-native';
+import { LifeBuoy, Bell, Globe, KeyRound, LogOut, Mic2, Monitor, Moon, UserRound } from 'lucide-react-native';
 
 import { AppVersion } from '@/components/app-version';
 import { ListRow } from '@/components/ui/list-row';
 import { LogoutAllRow } from '@/components/logout-all-row';
+import { PcContinueSheet } from '@/components/pc-continue-sheet';
 import { useWideLayout } from '@/components/wide-shell';
 import { PROVIDER_NAMES } from '@/components/social-button-style';
 import { useMe } from '@/hooks/use-onboarding';
@@ -13,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { LANGUAGE_NATIVE_NAMES } from '@/i18n/languages';
 import { useLocalePreference } from '@/i18n/locale-preference-context';
 import { useAuth } from '@/lib/auth-context';
+import { useDemoSwitch, useIsDemoAccount } from '@/lib/demo-switch';
 import { useThemePreference } from '@/lib/theme-preference';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -25,18 +28,25 @@ export default function StaffSettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { logout, role } = useAuth();
-  // 정산은 PC 웹 전용 — 넓은 화면은 왼쪽 메뉴에 있으니 좁은 웹 창일 때만 여기에(앱엔 없음, 2026-10-13 하단 탭 개편)
+  // 정산은 폰 하단 탭 "정산"(요약, 2026-11-24)·PC 왼쪽 메뉴에 있어서 여기엔 없음. 소속사는 폰에서 "PC로 이어 보기", 데모면 팬·아티스트 화면 보기
   const wide = useWideLayout();
-  const showSettlement = role === 'AGENCY_STAFF' && Platform.OS === 'web' && !wide;
+  const isAgency = role === 'AGENCY_STAFF';
+  const isDemo = useIsDemoAccount();
+  const { switchTo, busy } = useDemoSwitch();
+  const [pcOpen, setPcOpen] = useState(false);
   const { data: me } = useMe();
   const { override } = useLocalePreference();
   const themePreference = useThemePreference();
   const providers = (me?.loginProviders ?? []).map((provider) => PROVIDER_NAMES[provider]).join(' · ');
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.scroll}>
-      {showSettlement ? (
-        <ListRow icon={Wallet} title={t('settlement.title')} subtitle={t('settlement.menuHint')} onPress={() => router.push('/console/settlements')} />
+      {isAgency && isDemo ? (
+        <>
+          <ListRow icon={UserRound} title={t('demoView.asFan')} subtitle={t('demoView.hint')} onPress={busy ? undefined : () => void switchTo('fan')} />
+          <ListRow icon={Mic2} title={t('demoView.asArtist')} onPress={busy ? undefined : () => void switchTo('artist')} />
+        </>
       ) : null}
+      {isAgency && !wide ? <ListRow icon={Monitor} title={t('pcContinue.open')} subtitle={t('pcContinue.menuHint')} onPress={() => setPcOpen(true)} /> : null}
       <ListRow icon={Bell} title={t('profile.notifications')} onPress={() => router.push('/settings/notifications')} />
       <ListRow icon={Moon} title={t('themeMode.title')} value={t(`themeMode.${themePreference}`)} onPress={() => router.push('/settings/theme')} />
       <ListRow
@@ -51,6 +61,7 @@ export default function StaffSettingsScreen() {
       <ListRow icon={LogOut} title={t('profile.logout')} onPress={() => void logout()} showChevron={false} />
       <LogoutAllRow />
       <AppVersion />
+      <PcContinueSheet visible={pcOpen} onClose={() => setPcOpen(false)} />
     </ScrollView>
   );
 }

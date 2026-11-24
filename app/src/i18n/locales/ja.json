@@ -823,7 +823,8 @@
   },
   "consoleNav": {
     "dashboard": "ダッシュボード",
-    "artists": "所属アーティスト"
+    "artists": "所属アーティスト",
+    "overview": "概要"
   },
   "consoleAlerts": {
     "anArtist": "所属アーティスト",
@@ -1011,5 +1012,68 @@
   "streak": {
     "yearBadge": "1年+",
     "yearBadgeLabel": "1年以上購読しているファン"
+  },
+  "overview": {
+    "title": "概要",
+    "heroLabel": "今月の事務所精算見込み",
+    "heroSub": "ファン決済 {{gross}} のうち事務所分 {{percent}}%",
+    "heroEmpty": "今月はまだ決済がありません",
+    "toSettlement": "精算を見る",
+    "subscribers": "購読中のファン",
+    "subscribersSub": "直近{{days}}日の推移",
+    "replies": "ファンの返信",
+    "repliesSub": "メッセージ1件あたり返信{{value}}件",
+    "repliesNoMessages": "この期間に送ったメッセージはありません",
+    "countries": "ファンの国",
+    "byArtist": "アーティスト別購読者",
+    "more": "ダッシュボード"
+  },
+  "settlementSummary": {
+    "payoutLabel": "事務所への支払見込み額",
+    "share": "配分 {{percent}}%",
+    "nextShare": "{{month}}から {{percent}}%",
+    "closed": "締め済みの月",
+    "openCurrent": "進行中の月 · 数字は変わり続けます",
+    "openPast": "未締め · 返金があると変わることがあります",
+    "sandbox": "テスト決済を含む",
+    "flowTitle": "ファン決済から事務所分まで",
+    "agencyShort": "事務所分",
+    "agencyShare": "事務所分 {{percent}}%",
+    "byArtist": "アーティスト別支払見込み",
+    "pcNote": "ルーム別の詳細表とCSVはPCで見られます"
+  },
+  "compactDashboard": {
+    "trend": "推移",
+    "trendSubs": "購読",
+    "trendActivity": "メッセージ",
+    "rank": {
+      "subscribers": "購読者",
+      "idle": "長く未送信",
+      "newSubs": "新規購読",
+      "replies": "返信",
+      "cancellations": "解約",
+      "engagement": "反応"
+    }
+  },
+  "demoView": {
+    "hint": "デモのみ — 同じ入場コードですぐ切り替えられます",
+    "asFan": "ファン画面で見る",
+    "asArtist": "アーティスト画面で見る",
+    "bannerFan": "ファン画面で表示中",
+    "bannerArtist": "アーティスト画面で表示中",
+    "back": "事務所に戻る",
+    "failed": "切り替えられませんでした。少し後でもう一度押してください"
+  },
+  "pcContinue": {
+    "open": "PCで続きを見る",
+    "menuHint": "大きな画面で開けるリンクをコピー・送信",
+    "title": "PCなら1画面ですべて見られます",
+    "body": "PCのブラウザでこのアドレスを開き、同じアカウントでログインしてください。",
+    "bodyDemo": "同じ入場コードですぐ開けます · 社内の方にだけ送ってください",
+    "copy": "リンクをコピー",
+    "copied": "コピーしました",
+    "share": "送る",
+    "shareMessage": "Toffee 事務所画面 — PCで開いてください",
+    "close": "閉じる"
   }
 }

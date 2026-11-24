@@ -17,6 +17,7 @@ import type { SocialCredential } from '@/lib/social-types';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { saveLastLoginProvider } from '@/lib/last-login';
+import { clearDemoViewAs } from '@/lib/demo-switch';
 import { DEMO_ROLE_EMAILS, DEMO_ROLES, loadDemoPrefs, peekDemoLink, saveDemoPrefs, SHOW_DEV_LOGIN, takeDemoLink, type DemoRole } from '@/lib/demo-entry';
 import { Radius, Spacing } from '@/constants/theme';
 
@@ -49,6 +50,8 @@ export default function LoginScreen() {
       apiClient.post<{ accessToken: string }>('/auth/dev-login', { email: input.email, ...(input.code.trim() ? { code: input.code.trim() } : {}) }),
     onSuccess: async (data, input) => {
       await saveDemoPrefs(input.role, input.code.trim());
+      // 로그인 화면에서 직접 고른 역할 — 소속사에서 "바꿔 보는 중" 띠는 끔(2026-11-24)
+      await clearDemoViewAs();
       return login(data.accessToken);
     },
   });

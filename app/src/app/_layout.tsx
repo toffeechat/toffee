@@ -27,6 +27,7 @@ import { useOtaUpdate } from '@/hooks/use-ota-update';
 import { useStorePurchaseSync } from '@/hooks/use-store-purchase';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { peekDemoLink } from '@/lib/demo-entry';
+import { DemoViewFrame } from '@/components/demo-view-frame';
 import { getPendingActorLink, loadPendingActorLink } from '@/lib/actor-link';
 import { useOnboardingStatus } from '@/hooks/use-onboarding';
 import { useRealtimeSync } from '@/lib/realtime';
@@ -203,6 +204,7 @@ function RootLayout() {
           <AdminMfaGate>
           <AuthGate>
             <WideShell>
+            <DemoViewFrame>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -295,6 +297,7 @@ function RootLayout() {
               <Stack.Screen name="faq" options={{ headerShown: true, title: t('faq.title') }} />
               <Stack.Screen name="notices" options={{ headerShown: true, title: t('notices.title') }} />
             </Stack>
+            </DemoViewFrame>
             </WideShell>
             <InAppBanner />
             <ToastHost />

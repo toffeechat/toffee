@@ -379,3 +379,22 @@ describe('배분율 이력(2026-10-27)', () => {
     expect(march.agencies[0]).toMatchObject({ sharePercent: 60, sharePercentsUsed: [70, 60], carriedCents: -9000, payoutCents: -5440 });
   });
 });
+
+describe('다음 배분율 안내(2026-11-24)', () => {
+  const founding = [
+    { agencyId: 'ag', fromMonth: '2027-02', percent: 70 },
+    { agencyId: 'ag', fromMonth: '2028-02', percent: null },
+  ];
+  const charge = (iso: string): Charge => ({ id: 'c1', chargedAt: at(iso), createdAt: at(iso), refundedAt: null, amountCents: 10000 });
+
+  it('70% 달이면 "2028-02부터 60%(기본값)"을 같이 줌', async () => {
+    const t = setup([charge('2027-05-10T00:00:00Z')], founding);
+    const report = await t.service.report('2027-05');
+    expect(report.agencies[0]).toMatchObject({ sharePercent: 70, nextShare: { fromMonth: '2028-02', percent: 60 } });
+  });
+
+  it('바뀐 뒤 달이나 이력이 없으면 nextShare 없음', async () => {
+    expect((await setup([charge('2028-03-10T00:00:00Z')], founding).service.report('2028-03')).agencies[0]).not.toHaveProperty('nextShare');
+    expect((await setup([charge('2028-03-10T00:00:00Z')], []).service.report('2028-03')).agencies[0]).not.toHaveProperty('nextShare');
+  });
+});

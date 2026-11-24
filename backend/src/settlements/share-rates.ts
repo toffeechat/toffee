@@ -32,3 +32,17 @@ export function shareRateAt(book: ShareRateBook, agencyId: string | null, month:
   const row = list.find((candidate) => candidate.fromMonth <= month);
   return row?.percent ?? defaultPercent;
 }
+
+/**
+ * 이 달 다음에 배분율이 바뀌는 첫 달과 그 비율(2026-11-24, 소속사 폰 정산 요약의 "2027-08부터 60%" 안내) — 이후 이력 중 이 달 비율과 다른
+ * 첫 줄. 없으면 null(무소속·이력 없음·안 바뀜).
+ */
+export function nextShareChange(book: ShareRateBook, agencyId: string | null, month: string, currentPercent: number, defaultPercent: number): { fromMonth: string; percent: number } | null {
+  if (!agencyId) return null;
+  const later = (book.get(agencyId) ?? []).filter((row) => row.fromMonth > month).sort((a, b) => a.fromMonth.localeCompare(b.fromMonth));
+  for (const row of later) {
+    const percent = row.percent ?? defaultPercent;
+    if (percent !== currentPercent) return { fromMonth: row.fromMonth, percent };
+  }
+  return null;
+}

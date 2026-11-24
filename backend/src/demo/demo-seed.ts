@@ -7,6 +7,7 @@ import { CURRENT_TERMS_VERSION } from '../common/legal/terms.js';
 import { computeAudienceSnapshot } from '../actors/daily-stats.service.js';
 import { DAY_MS, startOfTodayInZone, zoneDays } from '../common/utils/stats-time.js';
 import { DEFAULT_BANNED_WORDS } from '../moderation/default-banned-words.js';
+import { monthOf } from '../settlements/settlements.service.js';
 
 // 데모 계정은 약관 동의를 마친 상태로(새로 가입하는 계정은 앱 온보딩에서 동의)
 const AGREED = { termsVersion: CURRENT_TERMS_VERSION, termsAcceptedAt: new Date() };
@@ -59,6 +60,12 @@ const DEMO_GREETINGS = {
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 // 오늘 보낸 메시지(토피룸 목록에 "어제"·날짜 말고 시각이 보이는지 확인용, 2026-10-16) — 자정 직후에 초기화하면 어제가 될 수 있음
+/** YYYY-MM에서 n달 앞뒤 */
+function shiftMonthBy(month: string, n: number): string {
+  const [year, mon] = month.split('-').map(Number);
+  const date = new Date(Date.UTC(year, mon - 1 + n, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 const minutesAgo = (n: number) => new Date(Date.now() - n * 60 * 1000);
 
 // PrismaClient나 트랜잭션(tx) 둘 다 받음 — 운영자 화면 초기화는 트랜잭션으로 한 번에(중간에 실패하면 원래대로)
@@ -108,6 +115,15 @@ export async function seedDemo(prisma: Prisma.TransactionClient): Promise<void> 
   // 가상의 소속사 2곳 — 현 소속사 + 이적 이력 데모용 이전 소속사
   const demoAgency = await prisma.agency.create({
     data: { id: DEMO_IDS.demoAgency, name: 'Demo Entertainment (sample)', logoUrl: demoImage('agency-demo') },
+  });
+  // 데모 소속사 = 창립 파트너 조건(2026-11-24 사용자 결정 — 제안서에 공개한 "첫 12개월 70% → 그 뒤 60%"와 맞춤). 새벽마다 다시 만드니
+  // 기준 달은 오늘에서 3달 전(데모 결제가 있는 달은 모두 70%), 12개월 뒤부터 60% — 정산 화면에 "언제부터 60%"가 같이 보임
+  const founderFrom = shiftMonthBy(monthOf(new Date()), -3);
+  await prisma.agencyShareRate.createMany({
+    data: [
+      { agencyId: demoAgency.id, fromMonth: founderFrom, percent: 70 },
+      { agencyId: demoAgency.id, fromMonth: shiftMonthBy(founderFrom, 12), percent: 60 },
+    ],
   });
   const formerAgency = await prisma.agency.create({
     data: { id: DEMO_IDS.formerAgency, name: 'Former Agency (sample)', logoUrl: demoImage('agency-former') },

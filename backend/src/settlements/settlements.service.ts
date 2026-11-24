@@ -6,7 +6,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { appError } from '../common/i18n/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { SettlementPayoutDto } from './dto.js';
-import { shareRateAt, shareRateBook } from './share-rates.js';
+import { nextShareChange, shareRateAt, shareRateBook } from './share-rates.js';
 
 // 정산의 "한 달"은 태국 시간 기준(통계와 같음, 서머타임 없는 UTC+7)
 const ZONE_OFFSET_MS = 7 * 60 * 60 * 1000;
@@ -297,7 +297,17 @@ export class SettlementsService {
           .sort((a, b) => b.grossCents - a.grossCents || b.adjustmentCents - a.adjustmentCents);
         // 이 달 비율 말고 다른 비율이 섞였을 때만(옛 표·앱 호환)
         const sharePercentsUsed = [...used].some((percent) => percent !== sharePercent) ? [...used].sort((a, b) => b - a) : undefined;
-        return { agencyId: group.agencyId, name: group.name, sharePercent, ...(sharePercentsUsed ? { sharePercentsUsed } : {}), ...sum(actors), actors };
+        // 앞으로 바뀔 배분율(창립 파트너 70% → 60% 같은 것) — 있을 때만
+        const nextShare = nextShareChange(book, group.agencyId, month, sharePercent, defaultSharePercent);
+        return {
+          agencyId: group.agencyId,
+          name: group.name,
+          sharePercent,
+          ...(sharePercentsUsed ? { sharePercentsUsed } : {}),
+          ...(nextShare ? { nextShare } : {}),
+          ...sum(actors),
+          actors,
+        };
       })
       // 소속사 이름순, 무소속은 맨 뒤
       .sort((a, b) => (a.name === null ? 1 : b.name === null ? -1 : a.name.localeCompare(b.name)));

@@ -852,7 +852,8 @@
   },
   "consoleNav": {
     "dashboard": "Painel",
-    "artists": "Artistas"
+    "artists": "Artistas",
+    "overview": "Resumo"
   },
   "consoleAlerts": {
     "anArtist": "Um artista",
@@ -1042,5 +1043,68 @@
   "streak": {
     "yearBadge": "1 ano+",
     "yearBadgeLabel": "Assinante há mais de um ano"
+  },
+  "overview": {
+    "title": "Resumo",
+    "heroLabel": "Acerto estimado da agência neste mês",
+    "heroSub": "{{percent}}% para a agência de {{gross}} em pagamentos de fãs",
+    "heroEmpty": "Ainda não há pagamentos neste mês",
+    "toSettlement": "Ver acerto",
+    "subscribers": "Assinantes ativos",
+    "subscribersSub": "Últimos {{days}} dias",
+    "replies": "Respostas de fãs",
+    "repliesSub": "{{value}} respostas por mensagem",
+    "repliesNoMessages": "Nenhuma mensagem enviada neste período",
+    "countries": "Países dos fãs",
+    "byArtist": "Assinantes por artista",
+    "more": "Painel"
+  },
+  "settlementSummary": {
+    "payoutLabel": "Pagamento estimado à agência",
+    "share": "Repasse {{percent}}%",
+    "nextShare": "{{percent}}% a partir de {{month}}",
+    "closed": "Mês fechado",
+    "openCurrent": "Mês em andamento · os números ainda mudam",
+    "openPast": "Ainda não fechado · pode mudar com reembolsos",
+    "sandbox": "Inclui pagamentos de teste",
+    "flowTitle": "Dos pagamentos dos fãs à sua parte",
+    "agencyShort": "Parte da agência",
+    "agencyShare": "Parte da agência {{percent}}%",
+    "byArtist": "Pagamento por artista",
+    "pcNote": "Tabelas por sala e download CSV estão no computador"
+  },
+  "compactDashboard": {
+    "trend": "Tendência",
+    "trendSubs": "Assinaturas",
+    "trendActivity": "Mensagens",
+    "rank": {
+      "subscribers": "Assinantes",
+      "idle": "Sem enviar",
+      "newSubs": "Novas",
+      "replies": "Respostas",
+      "cancellations": "Cancelamentos",
+      "engagement": "Engajamento"
+    }
+  },
+  "demoView": {
+    "hint": "Só na demo: troque na hora com o mesmo código",
+    "asFan": "Ver como fã",
+    "asArtist": "Ver como artista",
+    "bannerFan": "Vendo como fã",
+    "bannerArtist": "Vendo como artista",
+    "back": "Voltar à agência",
+    "failed": "Não foi possível trocar. Tente de novo em instantes"
+  },
+  "pcContinue": {
+    "open": "Continuar no computador",
+    "menuHint": "Copie ou envie um link para abrir em tela grande",
+    "title": "No computador, tudo cabe em uma tela",
+    "body": "Abra este endereço no navegador do computador e entre com a mesma conta.",
+    "bodyDemo": "Abre na hora com o seu código · compartilhe só com sua equipe",
+    "copy": "Copiar link",
+    "copied": "Copiado",
+    "share": "Compartilhar",
+    "shareMessage": "Painel da agência Toffee — abra no computador",
+    "close": "Fechar"
   }
 }

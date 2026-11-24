@@ -133,6 +133,7 @@ export function KpiCard({
   footer,
   delta,
   spark,
+  large,
   style,
 }: {
   icon: LucideIcon;
@@ -141,6 +142,8 @@ export function KpiCard({
   footer?: string;
   delta?: ReactNode;
   spark?: number[];
+  /** 폰 대시보드 핵심 숫자 4개(2026-11-24) — 숫자를 더 크게 */
+  large?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const theme = useTheme();
@@ -155,7 +158,7 @@ export function KpiCard({
         </ThemedText>
       </View>
       <View style={styles.kpiValueRow}>
-        <ThemedText type="display" style={styles.kpiValue} numberOfLines={1}>
+        <ThemedText type="display" style={large ? styles.kpiValueLarge : styles.kpiValue} numberOfLines={1}>
           {value}
         </ThemedText>
         {delta}
@@ -286,7 +289,8 @@ export function TrendChart({
             <View style={[styles.axis, { marginLeft: AXIS_WIDTH }]}>
               {days.map((day, i) =>
                 // 마지막 날짜는 늘 보이게 — 바로 앞의 규칙 눈금과 겹치면 그 눈금을 뺌
-                i === days.length - 1 || (i % labelEvery === 0 && xOf(days.length - 1) - xOf(i) >= 44) ? (
+                // 마지막 날 글자는 오른쪽 끝에 맞춰 왼쪽으로 밀리므로 그 앞 글자와 64px 넘게 떨어진 것만(2026-11-24 폰에서 "11. 1911. 24." 겹침)
+                i === days.length - 1 || (i % labelEvery === 0 && xOf(days.length - 1) - xOf(i) >= 64) ? (
                   <ThemedText
                     key={day}
                     type="caption"
@@ -513,6 +517,7 @@ const styles = StyleSheet.create({
   kpiIcon: { width: 28, height: 28, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   kpiValueRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap', marginTop: Spacing.one },
   kpiValue: { fontSize: 30, lineHeight: 38 },
+  kpiValueLarge: { fontSize: 38, lineHeight: 46 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three, marginBottom: Spacing.two },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendSwatch: { width: 10, height: 10, borderRadius: 3 },
