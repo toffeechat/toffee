@@ -139,7 +139,7 @@ function MonitorSection({ actorId, onOpenReplies }: { actorId: string; onOpenRep
           if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
         }}
         onEndReachedThreshold={0.3}
-        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : null}
+        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : undefined}
         ListEmptyComponent={
           <ThemedText type="small" themeColor="textSecondary" style={[styles.emptyMessage, styles.flip]}>
             {t('console.monitorEmpty')}

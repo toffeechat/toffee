@@ -1,4 +1,7 @@
-import { Platform, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
+import { Platform, type NativeSyntheticEvent, type TextInputKeyPressEvent } from 'react-native';
+
+// RN 0.88(SDK 58)에서 TextInputKeyPressEventData가 밖으로 안 나와서 이벤트 타입에서 꺼냄
+type TextInputKeyPressEventData = TextInputKeyPressEvent['nativeEvent'];
 
 type WebKeyEvent = TextInputKeyPressEventData & {
   shiftKey?: boolean;

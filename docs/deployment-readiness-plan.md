@@ -26,6 +26,23 @@
 
 ---
 
+## 2026-11-24 (이어서 3) — Expo SDK 58 업그레이드 + preview 새 빌드
+
+- **계기**: 앱 취약점 남은 6개가 SDK 58이어야 고쳐짐 → 처음엔 "12월 새 빌드 때"로 추천했는데, 사용자 지적: 12월로 미룬 건 GitHub Actions 할당량 때문이었는데
+  토피는 `toffeechat` 조직 저장소라 젤리 개인 계정(ddururiiiiiii) 할당량과 별개이고, 프리뷰 빌드는 내부 배포라 스토어 심사도 없음 → 지금 올리고 새 빌드.
+  (Claude가 "스토어 심사 필요"라고 잘못 말함 — 심사는 운영 스토어 빌드만.)
+- **업그레이드**: expo 58.0.26(RN 0.88.1, React 19.3) — `npx expo install`로 SDK 맞춤 버전, `eslint-config-expo` 58·`@types/react` 19.3, 빠져 있던 `expo-asset`(expo-audio peer —
+  없으면 실기기에서 꺼질 수 있음, expo-doctor가 잡음). 잠금 파일은 npm 10의 `edgesOut` 버그(peer 계산) 때문에 npm 11.6.2로 만든 뒤 npm 10으로 다시 맞춤 —
+  `npm ci`(CI·EAS) 통과 확인. 앱 취약점 high·critical 0, moderate 6(빌드 도구).
+- **코드**: RN 0.88 타입 변경 24곳 — 목록 `ListEmpty/Header/FooterComponent`에 null 대신 undefined, `ViewToken`→`ListViewToken`, `TextInput` ref → `TextInputInstance`,
+  색 모드 `'unspecified'` 대신 null, `TextInputKeyPressEventData` 직접 정의, View ref `ComponentRef<typeof View>`, `AndroidImportance` 이름 가져오기.
+- **iOS 소셜 로그인 콜백**: SDK 58은 iOS 27 요구로 SceneDelegate 구조 — AppDelegate에 `application(_:open:options:)`가 없어 LINE 플러그인(6.0.1)은 prebuild 실패,
+  Kakao·Naver 플러그인은 import만 넣고 처리 코드를 조용히 빼먹음(로그인 뒤 앱으로 못 돌아오는 상태). preview 빌드 값(eas.json env)으로 복사본 prebuild를 돌려
+  발견. `plugins/with-social-login-urls.js`(+ `open-url-handlers.js`)가 그 함수를 만들고 LINE·Kakao·Naver 처리를 직접 넣음(Expo SceneEventForwarder가 씬의
+  링크를 이 함수로 넘김). 다시 prebuild — 세 줄 모두 들어감. 라이브러리들이 SDK 58을 지원하면 되돌릴 것.
+- **확인**: tsc·eslint·단위 56개, `expo export` 웹·안드로이드·아이폰 번들, expo-doctor(네트워크 필요한 2개 빼고 통과), prebuild(preview 값), 화면 e2e 9단계, 화면 76개 순회.
+- **남은 일**: 👤 새 preview 빌드 설치 후 실기기에서 로그인 5종(특히 LINE·카카오·네이버 — 앱에서 돌아오기)·푸시·사진 확인(실기기 테스트 페이지).
+
 ## 2026-11-24 (이어서 2) — 점검 5차에서 대기로 남긴 것까지 고침 + 만료일 달력
 
 - **계기**: 사용자 "코드로 수정해야 할 거 다 고쳐" — 5차에서 "서버 여러 대·부하 테스트 때"로 미룬 것도 지금 고침. "만료일 달력도 Claude가 만들면 되지 않나".

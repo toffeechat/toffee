@@ -42,7 +42,7 @@ export default function MediaGalleryScreen() {
           <ThemedText type="small" themeColor="textSecondary" style={styles.count}>
             {t('gallery.count', { count: total })}
           </ThemedText>
-        ) : null
+        ) : undefined
       }
       renderItem={({ item }) => (
         <View style={{ width: tile, height: tile }}>
@@ -62,7 +62,7 @@ export default function MediaGalleryScreen() {
         if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
       }}
       onEndReachedThreshold={0.5}
-      ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} style={styles.more} /> : null}
+      ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} style={styles.more} /> : undefined}
       ListEmptyComponent={<EmptyState icon={Images} title={t('gallery.empty')} />}
     />
   );

@@ -234,7 +234,7 @@ export default function DiscoverScreen() {
           <ActorPhotoCard actor={item} width={cardWidth} subscribed={subscribed.has(item.id)} onPress={() => open(item)} />
         )}
         ListEmptyComponent={
-          home && !homeEmpty ? null : current.isLoading ? (
+          home && !homeEmpty ? undefined : current.isLoading ? (
             <ActivityIndicator style={styles.loading} color={theme.tint} />
           ) : current.isError ? (
             <EmptyState

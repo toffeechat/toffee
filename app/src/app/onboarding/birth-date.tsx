@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, View, type TextInput } from 'react-native';
+import { StyleSheet, View, type TextInputInstance } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { OnboardingLayout } from '@/components/onboarding-layout';
@@ -19,8 +19,8 @@ export default function BirthDateOnboardingScreen() {
   const [invalid, setInvalid] = useState(false);
   const setBirthDate = useSetBirthDate();
   const { data: status } = useOnboardingStatus();
-  const monthRef = useRef<TextInput>(null);
-  const dayRef = useRef<TextInput>(null);
+  const monthRef = useRef<TextInputInstance>(null);
+  const dayRef = useRef<TextInputInstance>(null);
   const isValid = year.length === 4 && month.length >= 1 && day.length >= 1;
 
   // 달력에 없는 날짜·미래 날짜는 보내기 전에 걸러서 바로 알려줌(서버도 한 번 더 검사)

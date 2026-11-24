@@ -66,7 +66,7 @@ export default function ConsoleRankingScreen() {
         </View>
       }
       ListEmptyComponent={
-        isLoading ? null : (
+        isLoading ? undefined : (
           <ThemedText type="small" themeColor="textTertiary" style={styles.empty}>
             {t(noRecord ? 'dashboard.noRecord' : metric === 'cancellations' ? 'dashboard.noCancellations' : 'dashboard.noData')}
           </ThemedText>

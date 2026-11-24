@@ -531,7 +531,7 @@ export default function StudioChannelScreen() {
                 if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
               }}
               onEndReachedThreshold={0.3}
-              ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : null}
+              ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : undefined}
               ListEmptyComponent={
                 <View style={styles.flip}>
                   <EmptyState icon={Send} title={t('studio.emptyTitle')} body={t('studio.empty')} />

@@ -132,7 +132,7 @@ export default function MessageRepliesScreen() {
               if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
             }}
             onEndReachedThreshold={0.3}
-            ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : null}
+            ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} /> : undefined}
             ListEmptyComponent={
               <ThemedText type="small" themeColor="textSecondary" style={[styles.empty, styles.flip]}>
                 {t('studio.repliesEmpty')}

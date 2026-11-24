@@ -80,7 +80,7 @@ export default function AdminBannedWordsScreen() {
           </View>
         }
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? undefined : (
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
               {tab ? `${labelOf(tab)} 금칙어가 없습니다. 위에서 기본 목록을 넣을 수 있습니다.` : '등록된 금칙어가 없어요.'}
             </ThemedText>

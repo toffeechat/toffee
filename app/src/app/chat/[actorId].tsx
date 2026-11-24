@@ -400,7 +400,7 @@ export default function ChatRoomScreen() {
           listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: false });
           setTimeout(() => listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: false }), 100);
         }}
-        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} style={styles.pageLoading} /> : null}
+        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={theme.tint} style={styles.pageLoading} /> : undefined}
         ListEmptyComponent={
           <View style={styles.flip}>
             <EmptyState icon={MessageCircleHeart} title={t('chat.waitingTitle')} body={t('chat.waitingFirst', { name: actor?.chatDisplayName ?? '' })} />
