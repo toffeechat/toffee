@@ -835,7 +835,8 @@
   },
   "consoleNav": {
     "dashboard": "Dashboard",
-    "artists": "Artists"
+    "artists": "Artists",
+    "overview": "Overview"
   },
   "consoleAlerts": {
     "anArtist": "An artist",
@@ -1024,5 +1025,68 @@
   "streak": {
     "yearBadge": "1yr+",
     "yearBadgeLabel": "Subscribed for over a year"
+  },
+  "overview": {
+    "title": "Overview",
+    "heroLabel": "Agency payout this month (est.)",
+    "heroSub": "Agency share {{percent}}% of {{gross}} in fan payments",
+    "heroEmpty": "No payments yet this month",
+    "toSettlement": "View settlement",
+    "subscribers": "Active subscribers",
+    "subscribersSub": "Last {{days}} days",
+    "replies": "Fan replies",
+    "repliesSub": "{{value}} replies per message",
+    "repliesNoMessages": "No messages sent in this period",
+    "countries": "Fan countries",
+    "byArtist": "Subscribers by artist",
+    "more": "Dashboard"
+  },
+  "settlementSummary": {
+    "payoutLabel": "Expected agency payout",
+    "share": "Share {{percent}}%",
+    "nextShare": "{{percent}}% from {{month}}",
+    "closed": "Closed month",
+    "openCurrent": "Current month · figures keep changing",
+    "openPast": "Not closed yet · may change with refunds",
+    "sandbox": "Includes test payments",
+    "flowTitle": "From fan payments to your share",
+    "agencyShort": "Agency share",
+    "agencyShare": "Agency share {{percent}}%",
+    "byArtist": "Payout by artist",
+    "pcNote": "Room-level tables and CSV downloads are on PC"
+  },
+  "compactDashboard": {
+    "trend": "Trend",
+    "trendSubs": "Subscriptions",
+    "trendActivity": "Messages",
+    "rank": {
+      "subscribers": "Subscribers",
+      "idle": "Idle",
+      "newSubs": "New",
+      "replies": "Replies",
+      "cancellations": "Cancelled",
+      "engagement": "Engagement"
+    }
+  },
+  "demoView": {
+    "hint": "Demo only — switch instantly with the same code",
+    "asFan": "See the fan view",
+    "asArtist": "See the artist view",
+    "bannerFan": "Viewing as a fan",
+    "bannerArtist": "Viewing as an artist",
+    "back": "Back to agency",
+    "failed": "Couldn't switch. Tap again in a moment"
+  },
+  "pcContinue": {
+    "open": "Continue on PC",
+    "menuHint": "Copy or send a link to open it on a big screen",
+    "title": "On a PC, everything fits on one screen",
+    "body": "Open this address in a PC browser and sign in with the same account.",
+    "bodyDemo": "Opens right away with your code · please share only with your team",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "share": "Share",
+    "shareMessage": "Toffee agency console — open it on a PC",
+    "close": "Close"
   }
 }
