@@ -102,6 +102,11 @@
   gitignore된 `app/expo-env.d.ts`가 없는 것 — `/// <reference types="expo/types" />`
   한 줄로 만들어 주거나 `npx expo start`를 한 번 띄우면 자동 생성됨.
 
+- **GitHub Actions 절약(2026-11-24 사용자 요청 — 월 2,000분 중 1,802분 사용, 12-01 초기화)**: 12월 1일까지 Actions 분을 최소로.
+  로컬 검사(tsc·lint·test·e2e)를 다 한 뒤에만 PR을 열고, **열린 PR엔 추가 커밋을 push하지 않는다**(push마다 CI 3개가 다시 돎 — 고칠 게 생기면
+  모아서 다음 PR로). 작은 변경은 여러 개를 한 PR로 묶는다. `deploy-preview.yml`은 서버·웹이 새 커밋인 걸(`wait-deployed.mjs`) 확인한 뒤 한 번만,
+  다시 돌리기 금지. EAS 새 빌드는 꼭 필요할 때만 사용자에게 묻고. 12월부터는 평소대로.
+
 ## 배포 규칙 (2026-10-25 — 2027년 2월부터 1인 운영, 폰에서 말로 배포)
 
 절차는 `.claude/skills/deploy/SKILL.md`(deploy 스킬), 사람용 런북 `docs/engineering/deploy-runbook.md`, 비개발자 요약 `docs/product/deploy-guide.md`.
