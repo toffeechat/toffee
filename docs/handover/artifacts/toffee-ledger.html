@@ -50,7 +50,9 @@ h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; text
 .stage-now b { color: var(--ink); }
 
 /* stat tiles */
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.acc-sum { margin: 0; color: var(--muted); font-size: 14px; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
 .stat .k { font-size: 12px; color: var(--muted); }
 .stat .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -122,8 +124,9 @@ footer { color: var(--muted); font-size: 13px; }
 
   <div class="stats" id="stats">
     <div class="stat"><div class="k">지금까지 쓴 돈</div><div class="v">불러오는 중</div></div>
-    <div class="stat"><div class="k">다음 정기 결제</div><div class="v">불러오는 중</div></div>
-    <div class="stat"><div class="k">만든 계정</div><div class="v">불러오는 중</div></div>
+    <div class="stat"><div class="k">매달 고정비</div><div class="v">불러오는 중</div></div>
+    <div class="stat"><div class="k">이번 달</div><div class="v">불러오는 중</div></div>
+    <div class="stat"><div class="k">다음 결제</div><div class="v">불러오는 중</div></div>
   </div>
 
   <div class="tabs" role="tablist" aria-label="보기 선택">
@@ -134,6 +137,7 @@ footer { color: var(--muted); font-size: 13px; }
 
   <div class="panel" id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts">
     <div class="notice"><b>비밀번호·인증 코드·API 키는 여기 적지 않습니다.</b> 비밀번호 관리 앱에 따로 보관하세요. 이 페이지는 어디에 무슨 계정이 있는지만 기록합니다.</div>
+    <p class="acc-sum" id="accSum"></p>
     <div id="accountsBody"><div class="list"><div class="empty">계정 목록을 불러오는 중입니다. 계정을 만들었다고 Claude에게 말하면 여기에 추가됩니다.</div></div></div>
   </div>
 
@@ -159,7 +163,7 @@ footer { color: var(--muted); font-size: 13px; }
     { n: 1, name: "계정·기반" }, { n: 2, name: "데모·제안" }, { n: 3, name: "소속사 의견" }, { n: 4, name: "지원사업" },
     { n: 5, name: "법인 설립" }, { n: 6, name: "출시 준비" }, { n: 7, name: "출시·파일럿" }, { n: 8, name: "확장" }
   ];
-  const state = { accounts: [], costs: [], roadmap: null, expiries: [] };
+  const state = { accounts: [], costs: [], roadmap: null, expiries: [], fx: null };
   let dbRef = null;
 
   // tabs
@@ -353,14 +357,31 @@ footer { color: var(--muted); font-size: 13px; }
     const totalKrw = paid.reduce((s, d) => s + (krwOf(d) ?? 0), 0);
     const spentV = paid.length ? "약 " + fmtKRW(totalKrw) : "0원";
     const spentSub = parts + (missingFx ? " · 환율 없는 " + missingFx + "건 빠짐" : " · 결제일 무렵 환율로 환산");
-    const next = state.costs.filter((d) => d.renews).sort((a, b) => (a.renews < b.renews ? -1 : 1))[0];
+    // 정기 결제(recur: {amount, currency, every: month|year, active}) — 매달 고정비·이번 달 예상·다음 결제(2026-11-24 사용자 요청, 젤리 장부처럼)
+    const latestFx = paid.filter((d) => typeof d.fxRate === "number").sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    const usdKrw = (state.fx && typeof state.fx.usdKrw === "number" ? state.fx.usdKrw : null) ?? (latestFx ? latestFx.fxRate : 1335);
+    const recurKrw = (r) => (r.currency === "KRW" ? r.amount : r.amount * usdKrw);
+    const recurring = state.costs.filter((d) => d.recur && typeof d.recur.amount === "number" && d.recur.active !== false);
+    const monthlyOf = (d) => recurKrw(d.recur) / (d.recur.every === "year" ? 12 : 1);
+    const monthly = recurring.reduce((sum, d) => sum + monthlyOf(d), 0);
+    const biggest = [...recurring].sort((a, b) => monthlyOf(b) - monthlyOf(a))[0];
+    const nowD = new Date();
+    const ym = nowD.getFullYear() + "-" + String(nowD.getMonth() + 1).padStart(2, "0");
+    const todayStr = ym + "-" + String(nowD.getDate()).padStart(2, "0");
+    const paidThisMonth = paid.filter((d) => (d.date || "").startsWith(ym)).reduce((sum, d) => sum + (krwOf(d) ?? 0), 0);
+    const upcoming = recurring.filter((d) => dateOf(d.renews) !== null && d.renews.slice(0, 10) >= todayStr).sort((a, b) => (a.renews < b.renews ? -1 : 1));
+    const expectedThisMonth = upcoming.filter((d) => d.renews.startsWith(ym)).reduce((sum, d) => sum + recurKrw(d.recur), 0);
+    const next = upcoming[0];
+    const recurLabel = (d) => (d.recur.currency === "KRW" ? fmtKRW(d.recur.amount) : fmtUSD(d.recur.amount) + " (약 " + fmtKRW(recurKrw(d.recur)) + ")");
     const doneAcc = state.accounts.filter((d) => d.status === "done");
     const warn = doneAcc.filter((d) => d.twofa !== "on").length;
+    $("accSum").textContent = "만든 계정 " + doneAcc.length + "개 · " + (warn ? "2단계 인증 확인 필요 " + warn + "개" : "모두 2단계 인증 켬");
     const tile = (k, v, s) => { const t = el("div", "stat"); t.append(el("div", "k", k), el("div", "v", v)); if (s) t.append(el("div", "s", s)); return t; };
     $("stats").replaceChildren(
       tile("지금까지 쓴 돈", spentV, paid.length + "건 · " + spentSub),
-      tile("다음 정기 결제", next ? next.renews : "없음", next ? (next.item + (next.renewAmount ? " · " + next.renewAmount : "")) : ""),
-      tile("만든 계정", doneAcc.length + "개", warn ? "2단계 인증 확인 " + warn + "개" : "모두 2단계 인증 켬")
+      tile("매달 고정비", recurring.length ? "약 " + fmtKRW(monthly) : "없음", recurring.length ? recurring.length + "개 · 연간 결제는 12로 나눠 포함" + (biggest ? " · 가장 큰 것 " + biggest.item.split("(")[0].trim() : "") : ""),
+      tile("이번 달", "약 " + fmtKRW(paidThisMonth + expectedThisMonth), "실제 " + fmtKRW(paidThisMonth) + " + 예상 " + fmtKRW(expectedThisMonth)),
+      tile("다음 결제", next ? next.renews.slice(5, 10).replace("-", "/") : "없음", next ? next.item.split("(")[0].trim() + " · " + recurLabel(next) : "")
     );
 
     // panels
@@ -390,6 +411,7 @@ footer { color: var(--muted); font-size: 13px; }
     db.collection("accounts").onSnapshot((s) => { state.accounts = data(s); render(); }, unavailable);
     db.collection("expenses").onSnapshot((s) => { state.costs = data(s); render(); }, unavailable);
     db.collection("expiries").onSnapshot((s) => { state.expiries = s.docs.map((x) => ({ id: x.id, ...x.data() })).filter((x) => x.item); render(); }, () => {});
+    db.doc("meta/fx").onSnapshot((s) => { state.fx = s.exists ? s.data() : null; render(); }, () => {});
     db.doc("meta/roadmap").onSnapshot((s) => { state.roadmap = s.exists ? s.data() : null; render(); }, () => {});
   })();
 })();
