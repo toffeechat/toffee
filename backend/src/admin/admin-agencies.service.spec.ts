@@ -21,11 +21,14 @@ describe('소속·소속사 등록 작업 기록(2026-10-27)', () => {
         findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'a1' }),
       },
       actorAgencyHistory: { updateMany: vi.fn(), create: vi.fn() },
+      $queryRaw: vi.fn().mockResolvedValue([]),
     };
     const prisma = { agency: { findUnique: vi.fn().mockResolvedValue({ id: 'new' }) }, $transaction: (fn: (t: typeof tx) => unknown) => fn(tx) };
     const { service, record } = setup(prisma);
     await service.assignActor('admin', 'a1', 'new');
     expect(record).toHaveBeenCalledWith('admin', 'ACTOR_AGENCY', 'ACTOR', 'a1', { from: 'old', to: 'new' });
+    // 동시에 바꿀 때 "현재 소속"이 두 줄 생기지 않게 배우 줄을 먼저 잠금(점검 5차)
+    expect(tx.$queryRaw).toHaveBeenCalled();
     record.mockClear();
     await service.assignActor('admin', 'a1', 'old');
     expect(record).not.toHaveBeenCalled();

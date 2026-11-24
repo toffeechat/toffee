@@ -48,6 +48,21 @@ jobs:
           if grep -Eiq '\b(BEGIN|COMMIT|ROLLBACK|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE)\b' "$SQL_FILE"; then
             echo "⛔ 트랜잭션 제어·구조 변경 문장은 넣지 않음(구조는 마이그레이션으로)"; exit 1
           fi
+          # 2026-11-24 점검 5차: COMMIT과 같은 뜻인 END·ABORT, SAVEPOINT·PREPARE TRANSACTION 등도 문장 첫머리면 막음(CASE … END는 문장 중간이라 통과).
+          # psql 메타 명령(\! \i \c …)도 막음 — 미리보기(BEGIN…ROLLBACK) 안에서 이미 커밋되거나 다른 일을 할 수 있었음
+          python3 - "$SQL_FILE" <<'PY' || exit 1
+          import re, sys
+          text = open(sys.argv[1], encoding='utf-8').read()
+          if re.search(r'^\s*\\', text, re.M):
+              sys.exit('⛔ psql 메타 명령(역슬래시로 시작하는 줄)은 넣지 않음')
+          body = re.sub(r'--[^\n]*|/\*.*?\*/', ' ', text, flags=re.S)
+          body = re.sub(r"'(?:[^']|'')*'", "''", body)
+          banned = {'END', 'ABORT', 'START', 'SAVEPOINT', 'RELEASE', 'PREPARE', 'SET', 'RESET', 'COPY', 'DO', 'CALL', 'VACUUM', 'LOCK', 'LISTEN', 'NOTIFY'}
+          for stmt in body.split(';'):
+              word = (stmt.strip().split(None, 1) or [''])[0].upper()
+              if word in banned:
+                  sys.exit(f'⛔ {word} 문장은 넣지 않음(UPDATE·DELETE·INSERT·SELECT만)')
+          PY
           { echo "### 운영 데이터 수정 — \`$SQL_FILE\`"; echo "- 이유: $REASON"; echo '```sql'; cat "$SQL_FILE"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: 백업
         uses: ./.github/actions/db-backup
@@ -86,7 +101,8 @@ jobs:
           sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17 > /dev/null
-      # 줄 수가 미리보기와 다르면(그사이 데이터가 바뀜) 트랜잭션 안에서 오류를 내 되돌림
+      # 실행 직전에 한 번 더 미리보기(ROLLBACK)로 줄 수를 확인하고, 같을 때만 별도 트랜잭션으로 COMMIT. 두 실행 사이(몇 초)에 데이터가 바뀌면
+      # 커밋된 줄 수가 다를 수 있어서, 커밋 뒤에도 줄 수를 다시 세어 다르면 경고를 남김(되돌리기는 백업으로 — 2026-11-24 점검 5차에서 주석을 실제 동작에 맞춤)
       - name: 실행(줄 수가 같을 때만 COMMIT)
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
@@ -98,4 +114,9 @@ jobs:
           [ "$ROWS" = "$EXPECTED" ] || { echo "⛔ 승인 사이에 데이터가 바뀜($ROWS ≠ $EXPECTED) — 다시 미리보기부터" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
           { echo 'BEGIN;'; cat "$SQL_FILE"; echo; echo 'COMMIT;'; } \
             | /usr/lib/postgresql/17/bin/psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X -P pager=off 2>&1 | tee apply.txt
-          echo "- ✅ 실행 완료: $ROWS줄" >> "$GITHUB_STEP_SUMMARY"
+          APPLIED=$(grep -Eo '^(UPDATE|DELETE|INSERT 0) [0-9]+' apply.txt | awk '{s+=$NF} END {print s+0}')
+          if [ "$APPLIED" != "$EXPECTED" ]; then
+            echo "⚠️ 커밋된 줄 수가 $APPLIED개로 예상($EXPECTED)과 다름 — 결과를 확인하고 필요하면 방금 만든 백업으로 되돌릴 것" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "- ✅ 실행 완료: $APPLIED줄" >> "$GITHUB_STEP_SUMMARY"

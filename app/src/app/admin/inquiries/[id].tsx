@@ -33,10 +33,10 @@ export default function AdminInquiryScreen() {
   if (!data && !isLoading && error) return <AdminLoadError error={error} fallback="/admin/inquiries" />;
   if (isLoading || !data) return <ActivityIndicator style={styles.loading} color={theme.tint} />;
   const onClose = async () => {
-    if (await confirm('문의 종료', '이 문의를 끝낼까요? 문의한 사람은 더 쓸 수 없고 새로 문의해야 해요.', '종료', '취소')) close.mutate();
+    if (await confirm('문의 종료', '이 문의를 끝낼까요? 문의한 사람은 더 쓸 수 없고 새로 문의해야 합니다.', '종료', '취소')) close.mutate();
   };
   const onDelete = async () => {
-    if (!(await confirm('문의 지우기', '이 문의의 글과 사진(회원·운영팀 모두)을 지워요. 되돌릴 수 없고, 작업 기록엔 제목만 남아요.', '지우기', '취소'))) return;
+    if (!(await confirm('문의 지우기', '이 문의의 글과 사진(회원·운영팀 모두)을 지웁니다. 되돌릴 수 없고, 작업 기록엔 제목만 남습니다.', '지우기', '취소'))) return;
     remove.mutate(undefined, { onSuccess: () => (router.canGoBack() ? router.back() : router.replace('/admin/inquiries')) });
   };
   const send = () =>
@@ -62,7 +62,7 @@ export default function AdminInquiryScreen() {
             {data.status !== 'CLOSED' ? <AdminButton secondary label="문의 종료" disabled={close.isPending} onPress={() => void onClose()} /> : null}
             <AdminButton secondary label="문의 지우기" disabled={remove.isPending} onPress={() => void onDelete()} />
           </AdminButtonRow>
-          <AdminMessage text={remove.isError ? (remove.error instanceof ApiError ? remove.error.message : '지우지 못했어요.') : null} error />
+          <AdminMessage text={remove.isError ? (remove.error instanceof ApiError ? remove.error.message : '지우지 못했습니다.') : null} error />
         </AdminSection>
         {data.messages.map((message) => (
           <View
@@ -80,7 +80,7 @@ export default function AdminInquiryScreen() {
           </View>
         ))}
         {data.status !== 'CLOSED' ? (
-          <AdminSection title="답변" hint="보내면 문의한 사람에게 푸시가 가요(이름은 '토피 운영팀'). 그 사람 언어로 써 주세요(태국 팬이면 태국어나 영어). 설명용 사진(설정 화면 캡처 등)을 3장까지 붙일 수 있어요.">
+          <AdminSection title="답변" hint="보내면 문의한 사람에게 푸시가 갑니다(이름은 '토피 운영팀'). 그 사람 언어로 써 주세요(태국 팬이면 태국어나 영어). 설명용 사진(설정 화면 캡처 등)을 3장까지 붙일 수 있습니다.">
             <TextInput
               value={body}
               onChangeText={setBody}
@@ -94,7 +94,7 @@ export default function AdminInquiryScreen() {
             <AdminButtonRow>
               <AdminButton label={reply.isPending ? '보내는 중…' : '답변 보내기'} disabled={(!body.trim() && photos.length === 0) || reply.isPending} onPress={send} />
             </AdminButtonRow>
-            <AdminMessage text={reply.isError ? (reply.error instanceof ApiError ? reply.error.message : '보내지 못했어요.') : null} error />
+            <AdminMessage text={reply.isError ? (reply.error instanceof ApiError ? reply.error.message : '보내지 못했습니다.') : null} error />
           </AdminSection>
         ) : null}
       </ScrollView>

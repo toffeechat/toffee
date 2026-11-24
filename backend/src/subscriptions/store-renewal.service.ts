@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { captureException } from '@sentry/nestjs';
 import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { IapPlatform } from '../generated/prisma/enums.js';
@@ -37,6 +38,8 @@ export class StoreRenewalService {
       if (stopped > 0) this.logger.log(`활동 종료 방 구글 구독 갱신 해지 ${stopped}건`);
     } catch (error) {
       this.logger.error('구글 구독 갱신 해지 실패', error as Error);
+      // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
+      captureException(error, { tags: { job: 'google-renewal-stop' } });
     }
   }
 

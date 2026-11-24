@@ -95,8 +95,8 @@ export default function AdminCpBundleSetScreen() {
       router.replace('/admin/bundles');
     } catch (e) {
       const done = plans.length - todo.length + made;
-      const reason = e instanceof ApiError ? e.message : '만들지 못했어요.';
-      setMessage({ text: done > 0 ? `${reason} (3개 중 ${done}개는 이미 있어요 — 다시 누르면 나머지만 만들어요.)` : reason, error: true });
+      const reason = e instanceof ApiError ? e.message : '만들지 못했습니다.';
+      setMessage({ text: done > 0 ? `${reason} (3개 중 ${done}개는 이미 있습니다 — 다시 누르면 나머지만 만듭니다.)` : reason, error: true });
     } finally {
       setSaving(false);
     }
@@ -105,7 +105,7 @@ export default function AdminCpBundleSetScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <AdminSection title="CP 고르기" hint="고른 CP로 'A + CP방', 'B + CP방', '전체(A + B + CP방)' 묶음 3개를 한 번에 만들어요.">
+        <AdminSection title="CP 고르기" hint="고른 CP로 'A + CP방', 'B + CP방', '전체(A + B + CP방)' 묶음 3개를 한 번에 만듭니다.">
           {(rooms ?? []).map((item) => (
             <AdminChip key={item.id} label={item.legalName} selected={room?.id === item.id} onPress={() => pick(item)} />
           ))}
@@ -113,7 +113,7 @@ export default function AdminCpBundleSetScreen() {
         </AdminSection>
 
         {room && a && b ? (
-          <AdminSection title="가격" hint="추천 가격(2개 묶음 약 17%, 전체 약 29% 할인)이 미리 들어가 있어요. 소속사와 정한 값으로 바꿔도 돼요.">
+          <AdminSection title="가격" hint="추천 가격(2개 묶음 약 17%, 전체 약 29% 할인)이 미리 들어가 있습니다. 소속사와 정한 값으로 바꿔도 됩니다.">
             <AdminField label={`2개 묶음 월 가격(바트) — ${a.legalName} + CP, ${b.legalName} + CP`} value={pairValue} onChangeText={setPairPrice} keyboardType="decimal-pad" />
             <ThemedText type="small" themeColor="textSecondary">
               따로 구독하면 {formatBaht(pairRegularA)}

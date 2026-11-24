@@ -26,7 +26,7 @@ function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () =>
 
   const handleSave = async () => {
     if (!ready) return;
-    if (push && !(await confirm('공지 푸시', '모든 계정(팬·아티스트·소속사)에게 알림을 보내요. 한 공지에 한 번만 보낼 수 있어요.', '올리고 보내기', '취소', false))) return;
+    if (push && !(await confirm('공지 푸시', '모든 계정(팬·아티스트·소속사)에게 알림을 보냅니다. 한 공지에 한 번만 보낼 수 있습니다.', '올리고 보내기', '취소', false))) return;
     save.mutate(
       { id: editing?.id, title: title.trim(), body: body.trim(), pinned, push: push && !alreadyPushed },
       {
@@ -51,7 +51,7 @@ function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () =>
         onChangeText={setBody}
         maxLength={10000}
         multiline
-        placeholder="본문(한국어로 쓰면 돼요 — 다른 언어 팬은 [번역 보기]로 자기 언어로 봐요)"
+        placeholder="본문(한국어로 쓰면 됩니다 — 다른 언어 팬은 [번역 보기]로 자기 언어로 봅니다)"
         placeholderTextColor={theme.textSecondary}
         style={[inputStyle, styles.body]}
       />
@@ -60,7 +60,7 @@ function NoticeForm({ editing, onDone }: { editing: Notice | null; onDone: () =>
         <Switch value={pinned} onValueChange={setPinned} trackColor={{ true: theme.tint, false: theme.border }} thumbColor="#ffffff" />
       </ThemedView>
       <ThemedView style={styles.pinRow}>
-        <ThemedText type="small">{alreadyPushed ? '푸시 보냄(다시 못 보내요)' : '모두에게 푸시 보내기(점검·약관 변경 등)'}</ThemedText>
+        <ThemedText type="small">{alreadyPushed ? '푸시 보냄(다시 못 보냅니다)' : '모두에게 푸시 보내기(점검·약관 변경 등)'}</ThemedText>
         <Switch value={push} onValueChange={setPush} disabled={alreadyPushed} trackColor={{ true: theme.tint, false: theme.border }} thumbColor="#ffffff" />
       </ThemedView>
       <ThemedView style={styles.actions}>

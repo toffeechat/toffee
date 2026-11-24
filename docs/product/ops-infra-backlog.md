@@ -133,7 +133,7 @@ GitHub 값 넣는 곳: 저장소 `toffeechat/toffee` → Settings → Secrets an
 
 | # | 할 일 | 넣을 곳(Environment `production`) |
 |---|---|---|
-| 1 | Railway 운영 프로젝트·서버 서비스 — GitHub 저장소 연결하되 **자동 배포 끄기**(Settings → Source 브랜치 트리거 해제), Root `/backend`, Config `/backend/railway.json` | — |
+| 1 | Railway 운영 프로젝트·서버 서비스 — GitHub 저장소 연결하되 **자동 배포 끄기**(Settings → Source 브랜치 트리거 해제), Root `/backend`, Config `/backend/railway.json`. Settings → Deploy → **Teardown 켜기·Draining 30초·Overlap 0초**(데모와 같게 — 짧으면 배포 때 보내던 메시지·푸시가 끊김, 2026-11-24 점검 5차 추가) | — |
 | 2 | Railway 운영 프로젝트 → Settings → Tokens → **Project token**(production 환경) | Secret `RAILWAY_TOKEN` |
 | 3 | 서비스 ID·환경 ID 복사(서비스 화면에서 Ctrl/Cmd+K → "Copy Service ID" / "Copy Environment ID") | Variables `RAILWAY_SERVICE_ID`, `RAILWAY_ENVIRONMENT_ID` |
 | 4 | 운영 점검 비밀값(데모와 **다른** 40자) → Railway 운영 서버 변수 `SMOKE_TEST_SECRET` | Secret `PROD_SMOKE_TEST_SECRET` |

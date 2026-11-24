@@ -82,7 +82,7 @@ export default function AdminBannedWordsScreen() {
         ListEmptyComponent={
           isLoading ? null : (
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
-              {tab ? `${labelOf(tab)} 금칙어가 없어요. 위에서 기본 목록을 넣을 수 있어요.` : '등록된 금칙어가 없어요.'}
+              {tab ? `${labelOf(tab)} 금칙어가 없습니다. 위에서 기본 목록을 넣을 수 있습니다.` : '등록된 금칙어가 없어요.'}
             </ThemedText>
           )
         }
@@ -98,7 +98,7 @@ function TestBox() {
   const test = useTestBannedWords();
   const hits = test.data?.hits;
   return (
-    <AdminSection title="테스트해 보기" hint="팬이 이렇게 쓰면 막히는지 확인해요(저장하지 않아요).">
+    <AdminSection title="테스트해 보기" hint="팬이 이렇게 쓰면 막히는지 확인합니다(저장하지 않습니다).">
       <TextInput
         value={text}
         onChangeText={(value) => {
@@ -115,10 +115,10 @@ function TestBox() {
       </AdminButtonRow>
       {hits ? (
         <ThemedText type="smallBold" themeColor={hits.length ? 'danger' : 'text'}>
-          {hits.length ? `막혀요 — ${hits.map((hit) => `"${hit.term}"(${labelOf(hit.language)})`).join(', ')}` : '막히지 않아요.'}
+          {hits.length ? `막힙니다 — ${hits.map((hit) => `"${hit.term}"(${labelOf(hit.language)})`).join(', ')}` : '막히지 않습니다.'}
         </ThemedText>
       ) : null}
-      <AdminMessage text={test.isError ? errorText(test.error, '확인하지 못했어요.') : null} error />
+      <AdminMessage text={test.isError ? errorText(test.error, '확인하지 못했습니다.') : null} error />
     </AdminSection>
   );
 }
@@ -137,8 +137,8 @@ function AddForm({ language: initial }: { language: BannedWordLanguage }) {
       title="금칙어 추가"
       hint={
         WORD_BOUNDARY.has(language)
-          ? `${labelOf(language)}는 단어 단위로 비교해요 — "ass"를 넣어도 "class"는 안 막혀요.`
-          : `${labelOf(language)}는 포함되면 막아요 — 다른 낱말 안에 들어가는 짧은 말은 넣지 마세요(예: "보지"는 "보지 마"도 막음).`
+          ? `${labelOf(language)}는 단어 단위로 비교합니다 — "ass"를 넣어도 "class"는 안 막힙니다.`
+          : `${labelOf(language)}는 포함되면 막습니다 — 다른 낱말 안에 들어가는 짧은 말은 넣지 마세요(예: "보지"는 "보지 마"도 막음).`
       }>
       <View style={styles.chips}>
         {LANGUAGES.map((lang) => (
@@ -156,7 +156,7 @@ function AddForm({ language: initial }: { language: BannedWordLanguage }) {
       <AdminButtonRow>
         <AdminButton label={create.isPending ? '추가하는 중…' : `${labelOf(language)}로 추가`} disabled={!term.trim() || create.isPending} onPress={handleAdd} />
       </AdminButtonRow>
-      <AdminMessage text={create.isError ? errorText(create.error, '추가하지 못했어요.') : null} error />
+      <AdminMessage text={create.isError ? errorText(create.error, '추가하지 못했습니다.') : null} error />
     </AdminSection>
   );
 }
@@ -167,18 +167,18 @@ function DefaultsBox({ language }: { language: BannedWordLanguage | null }) {
   const run = async () => {
     const ok = await confirm(
       '기본 목록 넣기',
-      `${target}의 기본 금칙어(욕설·성적·혐오 표현, 외부 연락처 유도·광고 문구)를 넣어요. 이미 있는 단어는 건너뛰고, 예전에 지운 기본 단어는 다시 들어가요.`,
+      `${target}의 기본 금칙어(욕설·성적·혐오 표현, 외부 연락처 유도·광고 문구)를 넣습니다. 이미 있는 단어는 건너뛰고, 예전에 지운 기본 단어는 다시 들어갑니다.`,
       '넣기',
       '취소',
     );
     if (ok) add.mutate(language ?? undefined);
   };
   return (
-    <AdminSection title="기본 목록" hint="토피가 미리 정리한 나라별 금칙어예요(원어민 검토 전 초안). 넣은 뒤 목록에서 하나씩 지울 수 있어요.">
+    <AdminSection title="기본 목록" hint="토피가 미리 정리한 나라별 금칙어입니다(원어민 검토 전 초안). 넣은 뒤 목록에서 하나씩 지울 수 있습니다.">
       <AdminButtonRow>
         <AdminButton secondary label={add.isPending ? '넣는 중…' : `${target} 기본 목록 넣기`} disabled={add.isPending} onPress={() => void run()} />
       </AdminButtonRow>
-      <AdminMessage text={add.data ? `${add.data.added}개를 넣었어요.` : add.isError ? errorText(add.error, '넣지 못했어요.') : null} error={add.isError} />
+      <AdminMessage text={add.data ? `${add.data.added}개를 넣었어요.` : add.isError ? errorText(add.error, '넣지 못했습니다.') : null} error={add.isError} />
     </AdminSection>
   );
 }
@@ -187,7 +187,7 @@ function BannedWordRow({ word }: { word: BannedWord }) {
   const theme = useTheme();
   const remove = useDeleteBannedWord();
   const onDelete = async () => {
-    if (await confirm('금칙어 삭제', `"${word.term}"(${labelOf(word.language)})을 지울까요? 지우면 바로 이 말을 쓸 수 있게 돼요.`, '삭제', '취소')) remove.mutate(word.id);
+    if (await confirm('금칙어 삭제', `"${word.term}"(${labelOf(word.language)})을 지울까요? 지우면 바로 이 말을 쓸 수 있게 됩니다.`, '삭제', '취소')) remove.mutate(word.id);
   };
   return (
     <View style={[styles.row, { backgroundColor: theme.backgroundElement }]}>

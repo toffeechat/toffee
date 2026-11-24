@@ -73,7 +73,7 @@ const WEB = Platform.OS === 'web';
 
 const styles = StyleSheet.create({
   wrap: { alignSelf: WEB ? 'center' : 'stretch', maxWidth: '100%' },
-  badge: { position: 'absolute', top: -9, right: 14, backgroundColor: '#5566E8', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  badge: { position: 'absolute', top: -9, right: 14, backgroundColor: '#5F6FEA', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { color: '#FFFFFF', fontSize: 11, lineHeight: 14 },
   // 웹: 구글 공식 버튼과 같은 크기(320×40), 가운데. 앱: 폭 가득, 손가락으로 누르기 좋게 48
   button: {

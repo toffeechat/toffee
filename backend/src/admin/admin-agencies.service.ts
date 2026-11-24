@@ -198,6 +198,9 @@ export class AdminAgenciesService {
 
     let from: string | null | undefined;
     const result = await this.prisma.$transaction(async (tx) => {
+      // 배우 줄을 잠그고 읽음(2026-11-24 점검 5차) — 잠그지 않으면 운영자 두 명이 동시에 바꿀 때 서로가 새로 만든 이력을 못 봐서
+      // "현재 소속"(endedAt 없음) 이력이 두 줄 생기고, 정산이 그 기간 매출을 어느 소속사로 보낼지 정해지지 않음
+      await tx.$queryRaw`SELECT id FROM "Actor" WHERE id = ${actorId} FOR UPDATE`;
       const actor = await tx.actor.findUnique({ where: { id: actorId }, select: { agencyId: true, kind: true } });
       if (!actor) throw new NotFoundException(appError('ACTOR_NOT_FOUND'));
       // 커플방은 소속사가 없음 — 멤버 배우의 소속사가 각자 모니터링

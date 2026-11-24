@@ -126,7 +126,7 @@ function EventList({ id }: { id: string }) {
   if (isError) {
     return (
       <ThemedText type="small" themeColor="danger">
-        기록을 불러오지 못했어요.
+        기록을 불러오지 못했습니다.
       </ThemedText>
     );
   }
@@ -163,7 +163,7 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
     if (!expiresAt) return setMessage('만료일을 골라 주세요.');
     updateCode.mutate(
       { id: item.id, expiresAt },
-      { onSuccess: () => (setEditingExpiry(false), setMessage(null)), onError: (e) => setMessage(errorText(e, '저장하지 못했어요.')) },
+      { onSuccess: () => (setEditingExpiry(false), setMessage(null)), onError: (e) => setMessage(errorText(e, '저장하지 못했습니다.')) },
     );
   };
 
@@ -171,11 +171,11 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
     const revoking = item.status !== 'REVOKED';
     if (
       revoking &&
-      !(await confirm('사용 중지', `${item.agencyName} 입장 코드를 중지할까요? 지금 들어와 있는 사람도 1분 안에 로그아웃돼요.`, '중지', '취소'))
+      !(await confirm('사용 중지', `${item.agencyName} 입장 코드를 중지할까요? 지금 들어와 있는 사람도 1분 안에 로그아웃됩니다.`, '중지', '취소'))
     ) {
       return;
     }
-    updateCode.mutate({ id: item.id, revoked: revoking }, { onError: (e) => setMessage(errorText(e, '저장하지 못했어요.')) });
+    updateCode.mutate({ id: item.id, revoked: revoking }, { onError: (e) => setMessage(errorText(e, '저장하지 못했습니다.')) });
   };
 
   // 보내기 전에 직접 눌러 본 기록 지우기(2026-10-25) — 코드·만료일은 그대로
@@ -183,7 +183,7 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
     if (
       !(await confirm(
         '기록 초기화',
-        `${item.agencyName}의 접속 기록·첫 접속·방문 횟수를 지울까요? 입장 코드와 만료일은 그대로이고, 다음 접속이 다시 "첫 접속" 알림 메일로 가요.`,
+        `${item.agencyName}의 접속 기록·첫 접속·방문 횟수를 지울까요? 입장 코드와 만료일은 그대로이고, 다음 접속이 다시 "첫 접속" 알림 메일로 갑니다.`,
         '지우기',
         '취소',
       ))
@@ -192,7 +192,7 @@ function CodeRow({ item, linkRole, linkLang }: { item: DemoCode; linkRole: DemoR
     }
     resetStats.mutate(item.id, {
       onSuccess: () => (setShowEvents(false), setMessage(null)),
-      onError: (e) => setMessage(errorText(e, '지우지 못했어요.')),
+      onError: (e) => setMessage(errorText(e, '지우지 못했습니다.')),
     });
   };
 
@@ -297,7 +297,7 @@ export default function AdminDemoCodesScreen() {
           setMessage(null);
           setCreated(`${row.agencyName} 코드: ${row.code}`);
         },
-        onError: (e) => setMessage(errorText(e, '등록하지 못했어요.')),
+        onError: (e) => setMessage(errorText(e, '등록하지 못했습니다.')),
       },
     );
   };
@@ -306,7 +306,7 @@ export default function AdminDemoCodesScreen() {
     <ThemedView style={styles.header}>
       <AdminSection
         title="입장 코드 등록"
-        hint="코드 하나로 데모의 소속사·아티스트·팬 버튼을 다 써요. 화면(소속사·아티스트·팬)마다 30분 넘게 쉬었다가 들어올 때 운영자에게 메일이 가요. 보내기 전에 직접 눌러 봤다면 [기록 초기화]. 코드를 비우면 자동으로 만들어요.">
+        hint="코드 하나로 데모의 소속사·아티스트·팬 버튼을 다 씁니다. 화면(소속사·아티스트·팬)마다 30분 넘게 쉬었다가 들어올 때 운영자에게 메일이 갑니다. 보내기 전에 직접 눌러 봤다면 [기록 초기화]. 코드를 비우면 자동으로 만들어요.">
         <AdminField label="소속사 이름" value={agencyName} onChangeText={setAgencyName} maxLength={100} />
         <AdminField
           label="입장 코드(영문 소문자·숫자·하이픈 8~32자, 비우면 자동)"
@@ -327,7 +327,7 @@ export default function AdminDemoCodesScreen() {
         <AdminMessage text={created} />
         <AdminButton label={createCode.isPending ? '등록하는 중…' : '등록'} disabled={createCode.isPending || !agencyName.trim()} onPress={create} />
       </AdminSection>
-      <AdminSection title="링크 설정" hint="[링크 복사]로 만드는 주소 — 누르면 입력 없이 그 화면·언어로 바로 들어가요.">
+      <AdminSection title="링크 설정" hint="[링크 복사]로 만드는 주소 — 누르면 입력 없이 그 화면·언어로 바로 들어갑니다.">
         <ThemedView style={styles.chips}>
           {LINK_ROLES.map((role) => (
             <AdminChip key={role} label={`${ROLE_LABELS[role]} 화면`} selected={linkRole === role} onPress={() => setLinkRole(role)} />
@@ -357,7 +357,7 @@ export default function AdminDemoCodesScreen() {
           ListHeaderComponent={header}
           ListEmptyComponent={
             <ThemedText type="small" themeColor={isError ? 'danger' : 'textSecondary'} style={styles.empty}>
-              {isError ? '목록을 불러오지 못했어요.' : '등록된 입장 코드가 없어요.'}
+              {isError ? '목록을 불러오지 못했습니다.' : '등록된 입장 코드가 없어요.'}
             </ThemedText>
           }
           ListFooterComponent={data?.common ? <CommonRow summary={data.common} /> : null}

@@ -72,7 +72,7 @@ function MfaSection() {
     void queryClient.invalidateQueries({ queryKey: ['admin', 'mfa'] });
     void queryClient.invalidateQueries({ queryKey: ['me'] });
   };
-  const onError = (e: unknown) => setNotice({ text: errorText(e, '코드가 맞지 않아요.'), error: true });
+  const onError = (e: unknown) => setNotice({ text: errorText(e, '코드가 맞지 않습니다.'), error: true });
 
   const codeField = (
     <AdminField
@@ -89,12 +89,12 @@ function MfaSection() {
   if (status.enabled) {
     const turnOff = async () => {
       if (code.length !== 6) return setNotice({ text: '끄려면 지금 코드를 넣어 주세요.', error: true });
-      if (await confirm('2단계 인증 끄기', '끄면 비밀번호(로그인)만으로 운영자 화면에 들어올 수 있어요. 끌까요?', '끄기', '취소')) {
+      if (await confirm('2단계 인증 끄기', '끄면 비밀번호(로그인)만으로 운영자 화면에 들어올 수 있습니다. 끌까요?', '끄기', '취소')) {
         disable.mutate(code, { onSuccess: ({ accessToken }) => void afterToken(accessToken, '2단계 인증을 껐어요.'), onError });
       }
     };
     return (
-      <AdminSection title="2단계 인증" hint="켜져 있어요. 로그인한 뒤와 12시간마다 인증 앱 코드를 물어요.">
+      <AdminSection title="2단계 인증" hint="켜져 있습니다. 로그인한 뒤와 12시간마다 인증 앱 코드를 묻습니다.">
         <ThemedText type="smallBold">켜짐{status.enabledAt ? ` · ${new Date(status.enabledAt).toLocaleDateString('ko-KR')}부터` : ''}</ThemedText>
         {codeField}
         <AdminButtonRow>
@@ -108,7 +108,7 @@ function MfaSection() {
   return (
     <AdminSection
       title="2단계 인증"
-      hint="운영자 계정은 회원 제재·환불·정산을 할 수 있어서 켜 두길 권해요. 휴대폰 인증 앱(Google Authenticator, 1Password 등)이 필요해요.">
+      hint="운영자 계정은 회원 제재·환불·정산을 할 수 있어서 켜 두길 권합니다. 휴대폰 인증 앱(Google Authenticator, 1Password 등)이 필요합니다.">
       <ThemedText type="smallBold" themeColor="danger">
         꺼짐
       </ThemedText>
@@ -150,7 +150,7 @@ function AdminsSection({ myId }: { myId?: string }) {
   const theme = useTheme();
   const { data: admins, isLoading } = useAdminAccounts(true);
   return (
-    <AdminSection title="운영자" hint="권한 단계를 바꾸거나, 휴대폰을 잃어버린 운영자의 2단계 인증을 초기화해요. 전체 권한 운영자는 최소 1명 남아야 해요.">
+    <AdminSection title="운영자" hint="권한 단계를 바꾸거나, 휴대폰을 잃어버린 운영자의 2단계 인증을 초기화합니다. 전체 권한 운영자는 최소 1명 남아야 합니다.">
       {isLoading ? <ActivityIndicator color={theme.tint} /> : null}
       {(admins ?? []).map((admin) => (
         <AdminRow key={admin.id} admin={admin} isMe={admin.id === myId} />
@@ -172,7 +172,7 @@ function AdminRow({ admin, isMe }: { admin: AdminAccount; isMe: boolean }) {
     if (ok) setLevel.mutate({ id: admin.id, level });
   };
   const resetMfa = async () => {
-    if (await confirm('2단계 인증 초기화', `${name}의 2단계 인증을 꺼요. 본인 확인을 한 뒤에만 하세요. 다음 로그인 때 다시 설정해야 해요.`, '초기화', '취소')) reset.mutate(admin.id);
+    if (await confirm('2단계 인증 초기화', `${name}의 2단계 인증을 끕니다. 본인 확인을 한 뒤에만 하세요. 다음 로그인 때 다시 설정해야 합니다.`, '초기화', '취소')) reset.mutate(admin.id);
   };
 
   return (
@@ -191,7 +191,7 @@ function AdminRow({ admin, isMe }: { admin: AdminAccount; isMe: boolean }) {
         ))}
         {admin.mfaEnabled && !isMe ? <AdminChip label="2단계 인증 초기화" danger disabled={reset.isPending} onPress={() => void resetMfa()} /> : null}
       </View>
-      <AdminMessage text={error ? errorText(error, '바꾸지 못했어요.') : null} error />
+      <AdminMessage text={error ? errorText(error, '바꾸지 못했습니다.') : null} error />
     </View>
   );
 }

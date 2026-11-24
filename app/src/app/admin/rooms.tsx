@@ -29,7 +29,7 @@ export default function AdminRoomsScreen() {
       messagePeriod={period}
       header={
         <View style={styles.header}>
-          <ScreenIntro text="모든 토피룸 목록이에요. 누르면 아티스트가 보낸 메시지·스토리, 팬 답장, 통계를 소속사와 같은 화면으로 봐요. 회색 줄은 팬에겐 안 보이는 운영 정보예요." />
+          <ScreenIntro text="모든 토피룸 목록입니다. 누르면 아티스트가 보낸 메시지·스토리, 팬 답장, 통계를 소속사와 같은 화면으로 봅니다. 회색 줄은 팬에겐 안 보이는 운영 정보예요." />
           <View style={styles.chips}>
             <AdminChip label="모든 방" selected={!period} onPress={() => setPeriod(null)} />
             <AdminChip label="오늘 메시지" selected={isToday} onPress={() => setPeriod({ from: today, to: today })} />

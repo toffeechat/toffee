@@ -82,7 +82,12 @@ jobs:
 
       - name: 배포 계획(바뀐 부분)
         id: plan
-        run: node scripts/deploy/plan.mjs --env preview --target ${{ steps.target.outputs.sha }} --ota-base "${{ steps.last_ota.outputs.commit }}" --json plan.json
+        env:
+          # EAS 출력은 환경 변수로 받아 커밋 모양인지 확인(운영 워크플로와 같게, 2026-11-24 점검 5차)
+          OTA_BASE: ${{ steps.last_ota.outputs.commit }}
+        run: |
+          [[ -z "$OTA_BASE" || "$OTA_BASE" =~ ^[0-9a-f]{7,40}$ ]] || { echo "⛔ 마지막 OTA 커밋 모양이 이상함: $OTA_BASE"; exit 1; }
+          node scripts/deploy/plan.mjs --env preview --target ${{ steps.target.outputs.sha }} --ota-base "$OTA_BASE" --json plan.json
 
       - name: 서버 배포 확인(Railway 자동 배포)
         if: steps.plan.outputs.server == 'true'

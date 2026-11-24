@@ -26,7 +26,7 @@ export default function AdminBundleScreen() {
 
   // 판매 중지: 새로 살 수 없게만(이미 산 팬은 유지) — 스토어 결제가 붙으면 스토어 상품 판매도 같이 멈춰야 갱신이 안 됨
   const toggleActive = async () => {
-    if (bundle.active && !(await confirm('판매 중지', '새로 살 수 없게 돼요. 이미 구독 중인 팬은 그대로 이용해요.', '판매 중지', '취소'))) return;
+    if (bundle.active && !(await confirm('판매 중지', '새로 살 수 없게 됩니다. 이미 구독 중인 팬은 그대로 이용합니다.', '판매 중지', '취소'))) return;
     update.mutate({ active: !bundle.active });
   };
 
@@ -42,7 +42,7 @@ export default function AdminBundleScreen() {
         {/* 같은 CP 묶음 갈아타기(2026-10-22) — 스토어에 상품을 만들 때 이 그룹·단계 그대로(docs/product/store-submission.md) */}
         <AdminSection
           title="스토어 구독 그룹"
-          hint="같은 CP의 묶음 3개는 애플·구글에 한 구독 그룹으로 등록해야 팬이 묶음을 바꿀 때 두 번 결제되지 않아요. 애플 단계: 전체(A+B+CP) 1단계, A+CP·B+CP 2단계(같은 높이)."
+          hint="같은 CP의 묶음 3개는 애플·구글에 한 구독 그룹으로 등록해야 팬이 묶음을 바꿀 때 두 번 결제되지 않습니다. 애플 단계: 전체(A+B+CP) 1단계, A+CP·B+CP 2단계(같은 높이)."
         >
           <ThemedText type="small">{storeGroupText(bundle.storeGroup)}</ThemedText>
         </AdminSection>
@@ -55,8 +55,8 @@ export default function AdminBundleScreen() {
           onSave={(releaseAt) => update.mutateAsync({ releaseAt })}
           note={
             isUpcoming(bundle.opensAt) && bundle.opensAt !== bundle.releaseAt
-              ? `든 아티스트 중 더 늦게 열리는 방이 있어 실제로는 ${formatBangkokDateTime(bundle.opensAt!)}(태국)에 열려요.`
-              : '든 아티스트 중 더 늦게 열리는 방이 있으면 그때 열려요.'
+              ? `든 아티스트 중 더 늦게 열리는 방이 있어 실제로는 ${formatBangkokDateTime(bundle.opensAt!)}(태국)에 열립니다.`
+              : '든 아티스트 중 더 늦게 열리는 방이 있으면 그때 열립니다.'
           }
         />
         <AdminBundleForm
@@ -67,7 +67,7 @@ export default function AdminBundleScreen() {
           onSubmit={(input, done) =>
             update.mutate(input, {
               onSuccess: () => done(),
-              onError: (e) => done(e instanceof ApiError ? e.message : '저장하지 못했어요.'),
+              onError: (e) => done(e instanceof ApiError ? e.message : '저장하지 못했습니다.'),
             })
           }
         />

@@ -126,7 +126,7 @@ export function AdminLoadError({ error, fallback }: { error: unknown; fallback: 
   const router = useRouter();
   return (
     <View style={styles.loadError}>
-      <AdminMessage error text={error instanceof ApiError ? error.message : '불러오지 못했어요. 잠시 뒤 다시 열어 주세요.'} />
+      <AdminMessage error text={error instanceof ApiError ? error.message : '불러오지 못했습니다. 잠시 뒤 다시 열어 주세요.'} />
       <AdminButtonRow>
         <AdminButton secondary label="뒤로" onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))} />
       </AdminButtonRow>

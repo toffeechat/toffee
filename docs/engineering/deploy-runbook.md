@@ -176,6 +176,8 @@ SQL을 `ops/data-fixes/YYYYMMDD-설명.sql`로 main에 커밋 → **Production d
 1. [ ] Railway 운영 프로젝트·서비스: GitHub 저장소 연결하되 **자동 배포 끄기**(Settings → Source에서 브랜치 트리거 해제 — 워크플로가 커밋을 지정),
        Root Directory `/backend`, Config `/backend/railway.json`, `SMOKE_TEST_SECRET`(32자+), `SENTRY_ENVIRONMENT=production`. Postgres 백업 켜기.
        워크스페이스 Usage Limits는 **하드 리밋 없이(또는 넉넉하게) 알림만**(데모의 $15 하드 리밋을 그대로 쓰면 운영 서버가 꺼짐).
+       Settings → Deploy → **Teardown 켜기, Draining 30초, Overlap 0초**(데모와 같게 — 서버는 SIGTERM 뒤 최대 25초+5초 마무리하므로 Draining이
+       짧으면 배포 때 처리 중이던 보내기·푸시가 끊김, 2026-11-24 점검 5차에서 체크리스트에 추가).
 2. [ ] Cloudflare Pages `toffee-app`을 **Direct Upload**로 생성(Git 연결 X — 워크플로가 올림), 커스텀 도메인 `app.toffeechat.app`.
 3. [ ] R2 백업 버킷 + 토큰, gpg 키 쌍 만들기(`gpg --quick-gen-key "Toffee Backup" rsa4096 encr never` → `gpg --armor --export` 공개키만 GitHub에).
 4. [ ] GitHub Environments `production`·`production-data` 만들고 승인자 = 본인, 11번 표의 값 넣기. 폰 GitHub 앱 알림 켜기(Settings → Notifications → Actions).

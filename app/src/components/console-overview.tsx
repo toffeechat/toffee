@@ -54,6 +54,7 @@ export function ConsoleOverview() {
   };
 
   const agency = settlement.data?.month === month ? settlement.data.agencies[0] : undefined;
+  const settlementFailed = settlement.isError && !agency;
   const data = dashboard.data;
 
   return (
@@ -91,13 +92,16 @@ export function ConsoleOverview() {
             <ActivityIndicator color="#FFFFFF" style={styles.heroLoading} />
           ) : (
             <ThemedText type="display" style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit>
-              {money(agency?.payoutCents ?? 0)}
+              {/* 불러오기 실패면 ฿0 대신 "–"(2026-11-24 점검 5차 — 예전엔 "฿0 · 이번 달엔 아직 결제가 없어요"로 보였음) */}
+              {settlementFailed ? '–' : money(agency?.payoutCents ?? 0)}
             </ThemedText>
           )}
           <ThemedText type="small" style={styles.onHeroSoft}>
-            {agency
-              ? t('overview.heroSub', { gross: money(agency.grossCents + (agency.adjustmentCents ?? 0)), percent: agency.sharePercent })
-              : t('overview.heroEmpty')}
+            {settlementFailed
+              ? t('settlement.loadFailed')
+              : agency
+                ? t('overview.heroSub', { gross: money(agency.grossCents + (agency.adjustmentCents ?? 0)), percent: agency.sharePercent })
+                : t('overview.heroEmpty')}
           </ThemedText>
           {agency && agency.grossCents > 0 ? (
             <View style={styles.heroBar}>
@@ -140,6 +144,14 @@ export function ConsoleOverview() {
               </ScrollView>
               <PageDots count={3} index={Math.min(2, page)} />
             </>
+          ) : dashboard.isError && !data ? (
+            // 불러오기 실패면 계속 도는 대신 안내 + 다시 시도(2026-11-24 점검 5차, 통계 화면과 같은 방식)
+            <View style={styles.cardsFailed}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('dashboard.loadFailed')}
+              </ThemedText>
+              <Button title={t('discover.retry')} variant="secondary" onPress={() => void dashboard.refetch()} />
+            </View>
           ) : (
             <ActivityIndicator style={styles.cardsLoading} color={theme.tint} />
           )}
@@ -325,6 +337,7 @@ const styles = StyleSheet.create({
   heroMore: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   cards: { gap: CARD_GAP, paddingBottom: Spacing.two },
   cardsLoading: { height: 180 },
+  cardsFailed: { height: 180, alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.one, minHeight: 188 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   cardIcon: { width: 28, height: 28, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },

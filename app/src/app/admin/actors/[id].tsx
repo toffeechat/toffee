@@ -75,15 +75,15 @@ function PhotoSlot({ actor, field, label }: { actor: AdminActor; field: ImageFie
       const key = await uploadProfileImage('ACTOR', actor.id, picked.uri, picked.contentType);
       await updateImages.mutateAsync({ [field]: key });
     } catch (e) {
-      setMessage(errorText(e, '사진을 올리지 못했어요.'));
+      setMessage(errorText(e, '사진을 올리지 못했습니다.'));
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async () => {
-    if (!(await confirm(`${label} 삭제`, '사진을 지우면 사람 모양 기본 이미지로 표시돼요.', '삭제', '취소'))) return;
-    updateImages.mutate({ [field]: null }, { onError: (e) => setMessage(errorText(e, '삭제하지 못했어요.')) });
+    if (!(await confirm(`${label} 삭제`, '사진을 지우면 사람 모양 기본 이미지로 표시됩니다.', '삭제', '취소'))) return;
+    updateImages.mutate({ [field]: null }, { onError: (e) => setMessage(errorText(e, '삭제하지 못했습니다.')) });
   };
 
   return (
@@ -115,13 +115,13 @@ function BasicInfo({ actor }: { actor: AdminActor }) {
     if (!legalName.trim() || !chatDisplayName.trim()) return setMessage({ text: '이름을 비울 수 없어요.', error: true });
     if (monthlyPriceCents === null) return setMessage({ text: '월 구독료를 숫자로 입력해 주세요.', error: true });
     if (storeProductId && !STORE_PRODUCT_ID_PATTERN.test(storeProductId)) {
-      return setMessage({ text: '스토어 상품 ID는 소문자·숫자·_·. 만 쓸 수 있어요(예: toffee.actor.nawin).', error: true });
+      return setMessage({ text: '스토어 상품 ID는 소문자·숫자·_·. 만 쓸 수 있습니다(예: toffee.actor.nawin).', error: true });
     }
     updateActor.mutate(
       { legalName: legalName.trim(), chatDisplayName: chatDisplayName.trim(), monthlyPriceCents, storeProductId },
       {
         onSuccess: () => setMessage({ text: '저장했어요.' }),
-        onError: (e) => setMessage({ text: errorText(e, '저장하지 못했어요.'), error: true }),
+        onError: (e) => setMessage({ text: errorText(e, '저장하지 못했습니다.'), error: true }),
       },
     );
   };
@@ -129,7 +129,7 @@ function BasicInfo({ actor }: { actor: AdminActor }) {
   return (
     <AdminSection
       title="기본 정보"
-      hint="구독료는 앱에 보이는 금액이에요 — 실제 결제 금액은 스토어에 등록한 상품 가격이 기준이라 같이 바꿔야 해요.">
+      hint="구독료는 앱에 보이는 금액입니다 — 실제 결제 금액은 스토어에 등록한 상품 가격이 기준이라 같이 바꿔야 합니다.">
       <AdminField label="공식 이름(실명·활동명)" value={legalName} onChangeText={setLegalName} maxLength={100} />
       <AdminField label="닉네임(아티스트가 직접 바꿀 수 있음)" value={chatDisplayName} onChangeText={setChatDisplayName} maxLength={20} />
       <AdminField label="월 구독료(바트)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
@@ -185,15 +185,15 @@ function AgencySection({ actor }: { actor: AdminActor }) {
     if (agencyId === currentId) return;
     const ok = await confirm(
       '소속사 변경',
-      `${actor.legalName} 아티스트를 "${name}"(으)로 옮길까요?\n이전 소속사는 이 아티스트의 메시지를 더 이상 볼 수 없고, 이적 기록이 남아요.`,
+      `${actor.legalName} 아티스트를 "${name}"(으)로 옮길까요?\n이전 소속사는 이 아티스트의 메시지를 더 이상 볼 수 없고, 이적 기록이 남습니다.`,
       '변경',
       '취소',
     );
-    if (ok) assign.mutate(agencyId, { onError: (e) => setMessage(errorText(e, '변경하지 못했어요.')) });
+    if (ok) assign.mutate(agencyId, { onError: (e) => setMessage(errorText(e, '변경하지 못했습니다.')) });
   };
 
   return (
-    <AdminSection title="소속사" hint="이적 기록은 정산·계약 확인용으로 남아요.">
+    <AdminSection title="소속사" hint="이적 기록은 정산·계약 확인용으로 남습니다.">
       <ThemedView style={styles.chips}>
         <AdminChip label="무소속" selected={currentId === null} disabled={assign.isPending} onPress={() => move(null, '무소속')} />
         {agencies?.map((agency) => (
@@ -229,22 +229,22 @@ function LinkInvite({ actor }: { actor: AdminActor }) {
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   const make = async () => {
-    if (actor.linkPendingUntil && !(await confirm('연결 링크 새로 만들기', '아직 안 쓴 링크가 있어요. 새로 만들면 예전 링크는 바로 쓸 수 없게 돼요.', '새로 만들기', '취소'))) return;
+    if (actor.linkPendingUntil && !(await confirm('연결 링크 새로 만들기', '아직 안 쓴 링크가 있습니다. 새로 만들면 예전 링크는 바로 쓸 수 없게 됩니다.', '새로 만들기', '취소'))) return;
     issue.mutate([actor.id], {
       onSuccess: (result) => {
         const link = result.links[0];
-        if (!link) return setMessage({ text: '이미 본인 계정이 연결된 아티스트예요.', error: true });
+        if (!link) return setMessage({ text: '이미 본인 계정이 연결된 아티스트입니다.', error: true });
         setUrl(actorLinkUrl(link.token));
-        setMessage({ text: `${formatDate(link.expiresAt)}까지 쓸 수 있어요. 소속사 담당자를 통해 아티스트에게 보내 주세요.` });
+        setMessage({ text: `${formatDate(link.expiresAt)}까지 쓸 수 있습니다. 소속사 담당자를 통해 아티스트에게 보내 주세요.` });
       },
-      onError: (e) => setMessage({ text: errorText(e, '만들지 못했어요.'), error: true }),
+      onError: (e) => setMessage({ text: errorText(e, '만들지 못했습니다.'), error: true }),
     });
   };
 
   return (
     <ThemedView style={styles.linkBox}>
       <ThemedText type="small" themeColor="textSecondary">
-        {actor.linkPendingUntil ? `보낸 링크가 아직 안 쓰였어요(${formatDate(actor.linkPendingUntil)}까지).` : '아티스트에게 1회용 연결 링크를 보내면 본인이 직접 계정을 붙여요.'}
+        {actor.linkPendingUntil ? `보낸 링크가 아직 안 쓰였어요(${formatDate(actor.linkPendingUntil)}까지).` : '아티스트에게 1회용 연결 링크를 보내면 본인이 직접 계정을 붙입니다.'}
       </ThemedText>
       {url ? (
         <ThemedView style={styles.linkedRow}>
@@ -266,7 +266,7 @@ function LinkInvite({ actor }: { actor: AdminActor }) {
             onPress={() =>
               revoke.mutate(undefined, {
                 onSuccess: () => (setUrl(null), setMessage({ text: '링크를 취소했어요.' })),
-                onError: (e) => setMessage({ text: errorText(e, '취소하지 못했어요.'), error: true }),
+                onError: (e) => setMessage({ text: errorText(e, '취소하지 못했습니다.'), error: true }),
               })
             }
           />
@@ -283,7 +283,7 @@ function SelfAccountSection({ actor }: { actor: AdminActor }) {
   const candidates = candidatePage?.items;
   const link = useLinkActorUser(actor.id);
   const [message, setMessage] = useState<string | null>(null);
-  const onError = (e: unknown) => setMessage(errorText(e, '연결하지 못했어요.'));
+  const onError = (e: unknown) => setMessage(errorText(e, '연결하지 못했습니다.'));
 
   const unlink = async () => {
     if (await confirm('본인 계정 연결 해제', '해제하면 그 계정으로 메시지를 보낼 수 없어요.', '해제', '취소')) {
@@ -294,7 +294,7 @@ function SelfAccountSection({ actor }: { actor: AdminActor }) {
   return (
     <AdminSection
       title="본인 계정"
-      hint="연결된 계정으로 로그인하면 스튜디오에서 이 아티스트로 메시지를 보내요. 보통은 연결 링크를 보내고, 아래 검색은 회원 관리에서 역할을 '아티스트'로 바꾼 계정을 직접 붙일 때만.">
+      hint="연결된 계정으로 로그인하면 스튜디오에서 이 아티스트로 메시지를 보냅니다. 보통은 연결 링크를 보내고, 아래 검색은 회원 관리에서 역할을 '아티스트'로 바꾼 계정을 직접 붙일 때만.">
       {actor.selfUser ? (
         <ThemedView style={styles.linkedRow}>
           <ThemedText type="small" style={styles.flex}>
@@ -345,8 +345,8 @@ function RetireSection({ actor }: { actor: AdminActor }) {
   const [when, setWhen] = useState(actor.retireAt ? formatBangkokDateTime(actor.retireAt) : '');
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const busy = setRetired.isPending || setRetireAt.isPending;
-  const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했어요.'), error: true });
-  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 가요. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있어요(종료 예정 알림 뒤에 된 결제는 제외 — 14일 넘게 앞서 예정을 잡으면 이 환불은 거의 없어요). 구글 구독은 서버가 갱신을 자동으로 끊고, 애플 구독은 운영자 홈 "애플 판매 중지 할 일"에서 상품 판매 중지가 필요해요(종료 31일 전까지 권장).`;
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했습니다.'), error: true });
+  const effects = `지금 구독 중인 팬(${actor.activeSubscriberCount}명)은 지난 대화를 계속 볼 수 있고, 구독 팬에게 활동 종료 알림이 갑니다. 결제한 지 14일 안인 팬은 그 달 환불을 요청할 수 있습니다(종료 예정 알림 뒤에 된 결제는 제외 — 14일 넘게 앞서 예정을 잡으면 이 환불은 거의 없어요). 구글 구독은 서버가 갱신을 자동으로 끊고, 애플 구독은 운영자 홈 "애플 판매 중지 할 일"에서 상품 판매 중지가 필요합니다(종료 31일 전까지 권장).`;
 
   const retireNow = async () => {
     const ok = await confirm('지금 바로 활동 종료', `${actor.legalName} 아티스트를 지금 둘러보기·검색에서 숨기고 새 구독을 막을까요?\n\n${effects}`, '활동 종료', '취소');
@@ -362,20 +362,20 @@ function RetireSection({ actor }: { actor: AdminActor }) {
     if (!iso) return setMessage({ text: '종료 예정 날짜와 시각을 골라 주세요(태국 시간).', error: true });
     const ok = await confirm(
       '활동 종료 예정',
-      `${actor.legalName} 아티스트를 ${when}(태국)에 활동 종료할까요?\n\n지금부터 새 구독·묶음 판매가 막히고, 팬 화면에 종료 예정일이 보이고, 구독 팬에게 미리 알림이 가요. 그 시각이 되면 자동으로 종료돼요.\n\n${effects}`,
+      `${actor.legalName} 아티스트를 ${when}(태국)에 활동 종료할까요?\n\n지금부터 새 구독·묶음 판매가 막히고, 팬 화면에 종료 예정일이 보이고, 구독 팬에게 미리 알림이 갑니다. 그 시각이 되면 자동으로 종료됩니다.\n\n${effects}`,
       '예정 저장',
       '취소',
     );
-    if (ok) setRetireAt.mutate(iso, { onSuccess: () => setMessage({ text: `${when}(태국)에 종료돼요. 지금부터 새 구독은 막혀 있어요.` }), onError });
+    if (ok) setRetireAt.mutate(iso, { onSuccess: () => setMessage({ text: `${when}(태국)에 종료됩니다. 지금부터 새 구독은 막혀 있습니다.` }), onError });
   };
   const cancelSchedule = async () => {
     if (await confirm('종료 예정 취소', '종료 예정을 지우고 다시 새 구독을 받을까요?', '예정 취소', '취소')) {
-      setRetireAt.mutate(null, { onSuccess: () => { setWhen(''); setMessage({ text: '종료 예정을 취소했어요. 다시 구독을 받아요.' }); }, onError });
+      setRetireAt.mutate(null, { onSuccess: () => { setWhen(''); setMessage({ text: '종료 예정을 취소했습니다. 다시 구독을 받습니다.' }); }, onError });
     }
   };
 
   return (
-    <AdminSection title="활동 상태" hint="계약이 끝나거나 활동을 멈출 때(입대도 종료 → 전역하면 재개). 미리 날짜를 정해 두면 그날 자동으로 종료돼요.">
+    <AdminSection title="활동 상태" hint="계약이 끝나거나 활동을 멈출 때(입대도 종료 → 전역하면 재개). 미리 날짜를 정해 두면 그날 자동으로 종료됩니다.">
       <ThemedText type="smallBold" themeColor={actor.retiredAt || actor.retireAt ? 'danger' : 'textSecondary'}>
         {actor.retiredAt
           ? `활동 종료됨 (${formatDate(actor.retiredAt)})`
@@ -414,7 +414,7 @@ function ContractSection({ actor }: { actor: AdminActor }) {
   const [day, setDay] = useState(actor.contractEndAt ? bangkokDay(actor.contractEndAt) : '');
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const busy = setContract.isPending || setRetireAt.isPending;
-  const onError = (e: unknown) => setMessage({ text: errorText(e, '저장하지 못했어요.'), error: true });
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '저장하지 못했습니다.'), error: true });
   const saved = actor.contractEndAt ? bangkokDay(actor.contractEndAt) : '';
   // 화면을 연 시각 기준(렌더마다 시계를 읽지 않게)
   const [openedAt] = useState(() => Date.now());
@@ -430,7 +430,7 @@ function ContractSection({ actor }: { actor: AdminActor }) {
   const scheduleRetire = async () => {
     const ok = await confirm(
       '계약 끝나는 날로 종료 예정',
-      `${actor.legalName} 아티스트를 ${saved} 23:59(태국)에 활동 종료할까요? 지금부터 새 구독·묶음 판매가 막히고 구독 팬에게 미리 알림이 가요.`,
+      `${actor.legalName} 아티스트를 ${saved} 23:59(태국)에 활동 종료할까요? 지금부터 새 구독·묶음 판매가 막히고 구독 팬에게 미리 알림이 갑니다.`,
       '예정 저장',
       '취소',
     );
@@ -438,10 +438,10 @@ function ContractSection({ actor }: { actor: AdminActor }) {
   };
 
   return (
-    <AdminSection title="계약" hint="계약 끝나는 날을 적어 두면 31일 전부터 운영자 홈 할 일과 알림으로 알려 줘요. 날짜가 지나도 자동으로 종료하지는 않아요.">
+    <AdminSection title="계약" hint="계약 끝나는 날을 적어 두면 31일 전부터 운영자 홈 할 일과 알림으로 알려 줍니다. 날짜가 지나도 자동으로 종료하지는 않습니다.">
       {daysLeft !== null && !actor.retiredAt ? (
         <ThemedText type="smallBold" themeColor={daysLeft <= 31 ? 'danger' : 'textSecondary'}>
-          {daysLeft < 0 ? `계약이 ${-daysLeft}일 전에 끝났어요` : daysLeft === 0 ? '오늘 계약이 끝나요' : `계약 종료까지 ${daysLeft}일`}
+          {daysLeft < 0 ? `계약이 ${-daysLeft}일 전에 끝났어요` : daysLeft === 0 ? '오늘 계약이 끝납니다' : `계약 종료까지 ${daysLeft}일`}
         </ThemedText>
       ) : null}
       <AdminDateField label="계약 끝나는 날(태국)" value={day} onChange={save} clearable />
@@ -460,16 +460,16 @@ function StatusMessageSection({ actor }: { actor: AdminActor }) {
   const clear = useClearActorStatusMessage(actor.id);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const onClear = async () => {
-    if (!(await confirm('상태메시지 지우기', `"${actor.statusMessage}"\n\n이 상태메시지를 지울까요? 아티스트는 다시 쓸 수 있어요(쓸 때 금칙어 검사).`, '지우기', '취소'))) return;
+    if (!(await confirm('상태메시지 지우기', `"${actor.statusMessage}"\n\n이 상태메시지를 지울까요? 아티스트는 다시 쓸 수 있습니다(쓸 때 금칙어 검사).`, '지우기', '취소'))) return;
     clear.mutate(undefined, {
       onSuccess: () => setMessage({ text: '상태메시지를 지웠어요. 작업 기록에 남았어요.' }),
-      onError: (e) => setMessage({ text: errorText(e, '지우지 못했어요.'), error: true }),
+      onError: (e) => setMessage({ text: errorText(e, '지우지 못했습니다.'), error: true }),
     });
   };
   return (
-    <AdminSection title="상태메시지" hint="팬이 보는 토피룸 프로필 카드의 한 줄이에요. 아티스트가 직접 쓰고, 운영자는 지우기만 할 수 있어요(CP방 카드에도 같은 값이 보여요).">
+    <AdminSection title="상태메시지" hint="팬이 보는 토피룸 프로필 카드의 한 줄입니다. 아티스트가 직접 쓰고, 운영자는 지우기만 할 수 있습니다(CP방 카드에도 같은 값이 보여요).">
       <ThemedText type="small" themeColor={actor.statusMessage ? 'text' : 'textTertiary'}>
-        {actor.statusMessage ?? '비어 있음 — 카드에 줄이 안 보여요'}
+        {actor.statusMessage ?? '비어 있음 — 카드에 줄이 안 보입니다'}
       </ThemedText>
       {actor.statusMessage ? (
         <AdminButtonRow>
@@ -490,7 +490,7 @@ function ActorRelease({ actor }: { actor: AdminActor }) {
       watchCount={actor.releaseWatchCount}
       saving={update.isPending}
       onSave={(releaseAt) => update.mutateAsync({ releaseAt })}
-      note={actor.kind === 'SOLO' ? '이 아티스트가 든 CP방·묶음은 각자 공개 시각을 따로 정해요(묶음은 든 방 중 가장 늦게 열리는 방에 맞춰 열려요).' : undefined}
+      note={actor.kind === 'SOLO' ? '이 아티스트가 든 CP방·묶음은 각자 공개 시각을 따로 정합니다(묶음은 든 방 중 가장 늦게 열리는 방에 맞춰 열립니다).' : undefined}
     />
   );
 }
@@ -523,7 +523,7 @@ export default function AdminActorDetailScreen() {
               <AdminButton secondary label="이 CP로 패키지(묶음 3개) 만들기" onPress={() => router.push({ pathname: '/admin/bundles/cp-set', params: { roomId: actor.id } })} />
             ) : null}
           </AdminButtonRow>
-          <AdminSection title="프로필 사진" hint="공식 사진은 아티스트 찾기·아티스트 소개에, 대화방 사진은 채팅방에서 보여요. 공식 사진을 처음 올리면 비어 있는 대화방 사진에도 같이 들어가요(아티스트가 나중에 바꾸거나 기본 이미지로 돌릴 수 있음). 정사각으로 잘라서 올려요.">
+          <AdminSection title="프로필 사진" hint="공식 사진은 아티스트 찾기·아티스트 소개에, 대화방 사진은 채팅방에서 보입니다. 공식 사진을 처음 올리면 비어 있는 대화방 사진에도 같이 들어갑니다(아티스트가 나중에 바꾸거나 기본 이미지로 돌릴 수 있음). 정사각으로 잘라서 올려요.">
             <ThemedView style={styles.photos}>
               <PhotoSlot actor={actor} field="officialProfileImageKey" label="공식 사진" />
               <PhotoSlot actor={actor} field="chatProfileImageKey" label="대화방 사진" />
@@ -532,7 +532,7 @@ export default function AdminActorDetailScreen() {
           <BasicInfo key={`${actor.id}-info`} actor={actor} />
           {actor.kind === 'COUPLE' ? (
             // 커플방: 소속사·본인 계정은 멤버 배우 쪽에서 정해짐(각 소속사가 자기 배우가 든 커플방을 모니터링, 두 배우 본인 계정이 보냄)
-            <AdminSection title="멤버 아티스트" hint="방 이름과 대화방 사진은 두 아티스트가 각자 스튜디오에서 바꿀 수 있어요. 멤버 중 한 명이라도 활동을 종료하면 새 구독이 멈춰요.">
+            <AdminSection title="멤버 아티스트" hint="방 이름과 대화방 사진은 두 아티스트가 각자 스튜디오에서 바꿀 수 있습니다. 멤버 중 한 명이라도 활동을 종료하면 새 구독이 멈춥니다.">
               {actor.coupleMembers.map(({ member }) => (
                 <ThemedText key={member.id} type="small">
                   {member.legalName} ({member.chatDisplayName}){member.retiredAt ? ' — 활동 종료' : ''}

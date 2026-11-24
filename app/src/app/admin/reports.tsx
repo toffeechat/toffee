@@ -90,7 +90,7 @@ export default function AdminReportsScreen() {
               })}
             </View>
 
-            <AdminSection title="필터" hint="카드 숫자는 아래 필터를 건 결과예요.">
+            <AdminSection title="필터" hint="카드 숫자는 아래 필터를 건 결과입니다.">
               <ThemedText type="small" themeColor="textSecondary">
                 사유
               </ThemedText>
@@ -124,7 +124,7 @@ export default function AdminReportsScreen() {
             </AdminSection>
 
             {data?.byActor.length ? (
-              <AdminSection title="신고 많은 방" hint="누르면 그 방 신고만 봐요.">
+              <AdminSection title="신고 많은 방" hint="누르면 그 방 신고만 봅니다.">
                 <View style={styles.chips}>
                   {filter.actorId ? <AdminChip label="모든 방" onPress={() => set({ actorId: undefined })} /> : null}
                   {(selectedActor ? [selectedActor] : data.byActor).map((row) => (
@@ -157,16 +157,16 @@ function ReportRow({ report }: { report: AdminReport }) {
   const isPending = resolve.isPending || dismiss.isPending;
   // 승인·기각 실패도 보여 줌(2026-10-29 — 예전엔 실패해도 아무 표시 없었음)
   const [error, setError] = useState<string | null>(null);
-  const onError = (e: unknown) => setError(e instanceof ApiError ? e.message : '처리하지 못했어요.');
+  const onError = (e: unknown) => setError(e instanceof ApiError ? e.message : '처리하지 못했습니다.');
   const fromFan = report.message.senderType === 'FAN';
   const actor = report.message.actor;
 
   const onResolve = async () => {
-    const what = fromFan ? '이 팬 답장을 아티스트·소속사 화면에서 가려요.' : '이 아티스트 메시지를 팬 화면에서 가려요.';
-    if (await confirm('신고 승인', `${what} 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리돼요.`, '승인', '취소')) resolve.mutate(report.id, { onSuccess: () => setError(null), onError });
+    const what = fromFan ? '이 팬 답장을 아티스트·소속사 화면에서 가립니다.' : '이 아티스트 메시지를 팬 화면에서 가립니다.';
+    if (await confirm('신고 승인', `${what} 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리됩니다.`, '승인', '취소')) resolve.mutate(report.id, { onSuccess: () => setError(null), onError });
   };
   const onDismiss = async () => {
-    if (await confirm('신고 기각', `문제 없음으로 처리해요(메시지는 그대로). 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리돼요.`, '기각', '취소')) dismiss.mutate(report.id, { onSuccess: () => setError(null), onError });
+    if (await confirm('신고 기각', `문제 없음으로 처리합니다(메시지는 그대로). 같은 메시지의 대기 중 신고 ${report.reportCount}건이 함께 처리됩니다.`, '기각', '취소')) dismiss.mutate(report.id, { onSuccess: () => setError(null), onError });
   };
 
   return (

@@ -599,6 +599,24 @@ export class SubscriptionsService {
         }
         return { applied: true };
       }
+      // 탈퇴한 계정의 갱신 결제(2026-11-24 점검 5차) — 탈퇴는 우리 구매만 닫고 스토어 자동 갱신은 앱이 끊을 수 없어서, 다음 달 갱신 알림이
+      // 오면 예전엔 로그인도 못 하는 계정의 방을 다시 열고 활성 구독자로 셌음. 결제 기록만 남기고(정산·환불 대조용) 방은 열지 않고
+      // 운영자에게 환불 검토를 알림(잠정 정책, STATUS "출시 전 확정할 정책")
+      if ((await this.prisma.user.findUnique({ where: { id: userId }, select: { deletedAt: true } }))?.deletedAt) {
+        if (existing && event.transaction.storeTransactionId) {
+          await this.ledger.record(this.prisma, existing.id, {
+            chargedAt: event.transaction.purchasedAt,
+            periodEnd: event.transaction.expiresAt,
+            source: event.transaction.sandbox ? ChargeSource.SANDBOX : sourceOf(event.transaction.platform),
+            storeTransactionId: event.transaction.storeTransactionId,
+            storeAmountMilli: event.transaction.storeAmountMilli,
+            storeCurrency: event.transaction.storeCurrency,
+          });
+        }
+        await this.alerts?.notify('REFUND', '탈퇴한 계정의 갱신 결제', `탈퇴한 계정(${userId})의 스토어 갱신 결제가 들어왔어요(상품 ${event.transaction.productId}). 방은 다시 열지 않았습니다 — 스토어에서 환불·구독 해지를 확인해 주세요.`, { userId });
+        // 구글 첫 결제 확인(acknowledge)은 하지 않음 — 확인하지 않은 구글 결제는 3일 뒤 스토어가 자동 환불함
+        return { applied: true };
+      }
       // 앱 확인 없이 알림으로 처음 만드는 구매도 미성년자 확인(2026-10-28 점검 — 부모 동의 대기·성년 미만이 이 경로로 방을 열 수 있었음).
       // 이미 결제된 건이라 방은 열지 않고 운영자에게 환불 처리를 알림(잠정 정책, STATUS "출시 전 확정할 정책")
       if (!existing) {

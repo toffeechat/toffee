@@ -25,7 +25,7 @@ export default function AdminBundlesScreen() {
         </AdminButtonRow>
         {isLoading ? <ActivityIndicator color={theme.tint} /> : null}
         {bundles?.length === 0 ? (
-          <AdminSection title="아직 묶음이 없어요" hint="보통은 CP마다 '아티스트 + CP방' 2개와 '전체' 1개를 만들어요(위 첫 번째 버튼). 개인방·CP방 어느 조합이든 직접 고를 수도 있어요." />
+          <AdminSection title="아직 묶음이 없어요" hint="보통은 CP마다 '아티스트 + CP방' 2개와 '전체' 1개를 만듭니다(위 첫 번째 버튼). 개인방·CP방 어느 조합이든 직접 고를 수도 있습니다." />
         ) : null}
         {bundles?.map((bundle) => (
           <Pressable

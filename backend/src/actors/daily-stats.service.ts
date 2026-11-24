@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { captureException } from '@sentry/nestjs';
 import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -71,6 +72,8 @@ export class DailyStatsService {
       await writeDailyStats(this.prisma, zoneDayOf(now));
     } catch (error) {
       this.logger.error(`하루 통계 기록 실패: ${error instanceof Error ? error.message : String(error)}`);
+      // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
+      captureException(error, { tags: { job: 'daily-stats' } });
     }
   }
 }

@@ -13,9 +13,14 @@ on:
     paths-ignore: ['docs/**', '**/*.md']
   workflow_dispatch: {}
 
+# PR에서만 앞 실행을 취소(2026-11-24 점검 5차) — main push까지 취소하면 연달아 합친 앞 커밋의 CI가 "cancelled"로 남아
+# 운영 배포 워크플로의 CI 확인에 걸렸음
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 jobs:
   backend:

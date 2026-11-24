@@ -73,7 +73,7 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
       />
       {verify.isError ? (
         <ThemedText type="small" themeColor="danger" style={styles.center}>
-          {verify.error instanceof ApiError ? verify.error.message : '확인하지 못했어요.'}
+          {verify.error instanceof ApiError ? verify.error.message : '확인하지 못했습니다.'}
         </ThemedText>
       ) : null}
       <Button title="확인" loading={verify.isPending} disabled={code.length !== 6} onPress={submit} />

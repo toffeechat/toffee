@@ -23,7 +23,7 @@ export default function AdminStoreTodoScreen() {
   const [error, setError] = useState<string | null>(null);
   const done = async (kind: 'actors' | 'bundles', id: string, name: string) => {
     if (!(await confirm('판매 중지함', `App Store Connect에서 "${name}" 상품을 판매 중지했나요? 표시하면 할 일에서 빠져요.`, '판매 중지함', '취소', false))) return;
-    mark.mutate({ kind, id }, { onSuccess: () => setError(null), onError: (e) => setError(e instanceof ApiError ? e.message : '표시하지 못했어요.') });
+    mark.mutate({ kind, id }, { onSuccess: () => setError(null), onError: (e) => setError(e instanceof ApiError ? e.message : '표시하지 못했습니다.') });
   };
   const empty = data && data.actors.length === 0 && data.bundles.length === 0;
   return (
@@ -31,7 +31,7 @@ export default function AdminStoreTodoScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <AdminSection
           title="이렇게 하면 돼요"
-          hint="① App Store Connect → 앱 → 구독 → 아래 상품 ID → 사용 가능 여부에서 모든 국가 빼기(판매 중지) ② 여기서 [판매 중지함]. 월 구독이라 종료일 31일 전까지 해 두면 다음 갱신이 안 생겨요. 그래도 종료 뒤 갱신된 결제는 팬이 환불을 요청할 수 있어요(애플 환불 안내). 구글 구독은 서버가 자동으로 갱신을 끊어요."
+          hint="① App Store Connect → 앱 → 구독 → 아래 상품 ID → 사용 가능 여부에서 모든 국가 빼기(판매 중지) ② 여기서 [판매 중지함]. 월 구독이라 종료일 31일 전까지 해 두면 다음 갱신이 안 생겨요. 그래도 종료 뒤 갱신된 결제는 팬이 환불을 요청할 수 있습니다(애플 환불 안내). 구글 구독은 서버가 자동으로 갱신을 끊어요."
         />
         {isLoading ? <ActivityIndicator color={theme.tint} /> : null}
         <AdminMessage text={error} error />

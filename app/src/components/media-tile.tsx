@@ -46,7 +46,7 @@ export function MediaTile({ id, url, mediaType, durationMs, thumbnailUrl, thumbh
             <Image source={{ uri: thumbnailUrl }} placeholder={placeholder} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
           ) : null}
           <View style={[styles.playCircle, size && styles.playSmall]}>
-            <Play size={size ? 14 : 20} color="#1E1F26" fill="#1E1F26" style={styles.playIcon} />
+            <Play size={size ? 14 : 20} color="#1A1C22" fill="#1A1C22" style={styles.playIcon} />
           </View>
           {/* 웹 피커는 길이를 못 주는 경우가 있어서(0 또는 초 단위) 1초 미만이면 표시 안 함 */}
           {durationMs && durationMs >= 1000 ? (
@@ -61,7 +61,7 @@ export function MediaTile({ id, url, mediaType, durationMs, thumbnailUrl, thumbh
 const styles = StyleSheet.create({
   // 2A 시안: 사진은 크고 깔끔한 카드(모서리 16), 영상도 같은 폭. 받기 전 빈 자리는 옅은 회색
   photo: { width: 240, height: 280, borderRadius: 16, backgroundColor: '#E9ECF3' },
-  video: { width: 240, height: 180, borderRadius: 16, backgroundColor: '#1E1F26', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  video: { width: 240, height: 180, borderRadius: 16, backgroundColor: '#1A1C22', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   playCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
   playSmall: { width: 30, height: 30, borderRadius: 15 },
   playIcon: { marginLeft: 3 },

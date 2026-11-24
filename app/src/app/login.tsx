@@ -117,7 +117,7 @@ export default function LoginScreen() {
                 {points.map((point) => (
                   <View key={point.text} style={styles.point}>
                     <View style={styles.pointIcon}>
-                      <Icon as={point.icon} size={18} color="#5566E8" />
+                      <Icon as={point.icon} size={18} color="#5F6FEA" />
                     </View>
                     <ThemedText style={styles.pointText}>{point.text}</ThemedText>
                   </View>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   points: { gap: Spacing.three, marginTop: Spacing.two },
   point: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   pointIcon: { width: 36, height: 36, borderRadius: Radius.md, backgroundColor: '#DCE1FF', alignItems: 'center', justifyContent: 'center' },
-  pointText: { color: '#3A3E48', flex: 1 },
+  pointText: { color: '#0F1115', flex: 1 },
   paid: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   paidText: { color: '#6B6F7A' },
   actions: { gap: Spacing.two },
