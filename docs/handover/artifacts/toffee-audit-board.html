@@ -1,4 +1,4 @@
-<title>토피 점검 보드</title>
+<title>[토피/매월] 점검 보드</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -98,7 +98,7 @@ footer{color:var(--muted);font-size:13px}
 <div id="sections" style="display:flex;flex-direction:column;gap:36px"></div>
 
 <section>
-  <div class="sec-head"><h2>점검 기록</h2><p>예약 점검은 매달 첫째 주 화요일 오전 9시 43분(한국 시간)에 실행됩니다. 결과는 회차마다 한 줄씩 남기고, 새로 찾은 항목은 위 표에 이어 붙입니다. 첫 월간 회차는 사용자가 요청할 때 직접 돌려요.</p></div>
+  <div class="sec-head"><h2>점검 기록</h2><p>예약 점검은 매달 첫째 주 화요일 오전 9시 43분(한국 시간)에 실행됩니다. 결과는 회차마다 한 줄씩 남기고, 새로 찾은 항목은 위 표에 이어 붙입니다. 11월 말에 수동 전수조사(5차)를 한 번 하고, 예약 점검은 2026-12-01(화)부터 돌아요.</p></div>
   <div class="list" id="history"></div>
 </section>
 
@@ -138,7 +138,7 @@ const SECTIONS = [
  {key:'app', title:'코드 — 앱·웹 (OTA)', note:'JS만 바뀌어서 웹 배포 + OTA로 반영. 새 빌드 필요 없음.', items:[
  ]},
  {key:'ux', title:'UI/UX 개선', note:'화면을 PC·폰 폭으로 직접 띄워 보고 브랜드 가이드와 비교해 찾은 것. 작은 다듬기는 바로 고치고, 화면이 크게 바뀌면 "결정 필요"로 올립니다.', items:[
-  ['X1','한국어 문구 어미 섞기(전체)','앱 한국어 문구 중 "~요."로 끝나는 게 189개, "~니다."는 1개뿐이라 AI가 쓴 티가 납니다. 브랜드 가이드 "문구 톤" 기준으로 앱 화면·안내·약관·FAQ·운영자 화면·랜딩 문구를 전부 다시 봅니다. 다른 세션에서 웹 화면 작업이 끝난 뒤 첫 월간 점검 때 진행.','todo','mid','OTA','2026-11-24',''],
+  ['X1','한국어 문구 어미 섞기(전체)','앱 한국어 문구 중 "~요."로 끝나는 게 189개, "~니다."는 1개뿐이라 AI가 쓴 티가 납니다. 브랜드 가이드 "문구 톤" 기준으로 앱 화면·안내·약관·FAQ·운영자 화면·랜딩 문구를 전부 다시 봅니다. 다른 세션의 웹 화면 작업이 끝난 뒤 5차 수동 전수조사 때 진행.','todo','mid','OTA','2026-11-24',''],
  ]},
  {key:'ver', title:'새 빌드 필요 — 모아서', note:'네이티브 변경이라 OTA가 안 돼요. 다음 프리뷰·스토어 빌드 때 함께.', items:[
  ]},
@@ -154,7 +154,7 @@ const HISTORY = [
 ];
 const SL={ask:'결정 필요',you:'사용자 할 일',todo:'대기',wip:'진행 중',done:'완료',skip:'보류'};
 const PL={crit:'높음',mid:'중간',low:'낮음'};
-const UPDATED='2026-11-24 · 보드 만듦(지난 수동 점검 1~4차와 남은 일 옮김, 문구 톤 규칙 추가). 첫 월간 점검은 사용자 요청 때 진행';
+const UPDATED='2026-11-24 · 보드 만듦(지난 수동 점검 1~4차와 남은 일 옮김, 문구 톤 규칙 추가). 11월 말 수동 5차, 첫 예약 점검 2026-12-01(화)';
 
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function md(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>')}
