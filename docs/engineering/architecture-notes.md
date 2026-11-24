@@ -2116,3 +2116,21 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   다시 실행해도 같은 태그가 겹치지 않음. 대표 이미지 `app/public/og-image.png`(public → dist 복사), 절대 주소는 `EXPO_PUBLIC_WEB_URL` 또는 `https://demo.toffeechat.app`.
 - 화면별 다른 카드(예: 아티스트 페이지마다 다른 이미지)가 필요해지면 정적 태그로는 안 됨 — Cloudflare Pages Functions로 봇 요청에만 HTML을 바꾸는 방식을 검토.
 
+## 소속사 폰 화면 개선 (2026-11-24)
+
+- 라우트: `app/console/(tabs)/index.tsx`는 `useWideLayout()`이면 `AgencyDashboardScreen`(PC 첫 화면 그대로), 아니면 `ConsoleOverview`
+  (`components/console-overview.tsx`). 대시보드는 `(tabs)/dashboard.tsx`(PC에서 열면 `/console`로 Redirect), 정산 요약 탭 `(tabs)/earnings.tsx`
+  (PC면 `/console/settlements`로), 스택 `console/settlements.tsx`는 좁으면 `/console/earnings`로. 설정 탭은 `href: null` + `headerRight` 톱니
+  (`components/console-header-actions.tsx`). `wide-shell.tsx` `activeConsoleItem`에 dashboard·earnings 추가.
+- 대시보드 압축: 측정 폭 < 700이면 `components/console-compact.tsx`(`CompactKpis`·`TrendSwitcher`·`RankSwitcher`·`AudienceCompact`). `KpiCard`에 `large`.
+  `TrendChart` 날짜 눈금: 마지막 날짜가 오른쪽 끝에 맞춰 20px 밀리므로 앞 눈금과 64px 이상 떨어진 것만(예전 44 — 폰에서 겹침).
+- 작은 그래프 `components/console-mini-charts.tsx`: `Donut`, `AreaLine`(구독 중 흐름 = 오늘 구독 수에서 날마다 new − cancel을 거꾸로 뺌), `GroupedBars`, `FlowBars`, `PageDots`.
+- 정산 요약 `components/settlement-summary.tsx` — `useSettlement(month, { anyPlatform: true })`(표는 여전히 웹 전용 `enabled`). 응답 `agencies[].nextShare`
+  (`share-rates.ts` `nextShareChange`: 이 달 이후 이력 중 이 달 비율과 다른 첫 줄, `percent null` = 기본값) — 선택 필드라 옛 앱 호환.
+- 데모 역할 보기 `lib/demo-switch.ts`: 저장된 입장 코드로 `POST /auth/dev-login`(팬·아티스트 데모 이메일) → `queryClient.clear()` → `login()`.
+  "바꿔 보는 중"(`toffee_demo_view_as`)은 preference-storage + `useSyncExternalStore`, 로그인 화면에서 직접 들어오면 `clearDemoViewAs()`.
+  띠 `components/demo-view-frame.tsx`는 `_layout.tsx` Stack을 감싸고 아래 화면엔 `SafeAreaInsetsContext`로 top 0을 넘김. 데모 판단 `useIsDemoAccount()`
+  = `SHOW_DEV_LOGIN && me.email`이 `@toffee.demo`. 접속 기록의 역할 수는 서버가 로그인 사용자 역할로 세므로 따로 손대지 않음.
+- PC로 이어 보기 `components/pc-continue-sheet.tsx`: 데모면 `${웹}/?demo=코드&as=agency&lang=…`, 아니면 웹 주소만. `expo-clipboard` 복사, 공유는 앱 `Share`·웹 `navigator.share`(없으면 버튼 숨김).
+- 데모 시드: `demo-seed.ts`에서 데모 소속사 `AgencyShareRate` 70%(오늘 기준 3달 전 달부터)·60%(그 12개월 뒤). 새벽 초기화마다 다시 계산.
+

@@ -23,6 +23,8 @@ export interface SettlementActor extends SettlementAmounts {
 
 export interface SettlementAgency extends SettlementAmounts {
   agencyId: string | null;
+  // 앞으로 바뀔 배분율(창립 파트너 70% → 60% 등, 2026-11-24) — 있을 때만
+  nextShare?: { fromMonth: string; percent: number };
   name: string | null;
   // 이 달 배분율(2026-10-27부터 결제가 속한 달 기준)
   sharePercent: number;
@@ -69,6 +71,8 @@ export interface SettlementPayoutInput {
 export interface SettlementOptions {
   agencyId?: string;
   includeSandbox?: boolean;
+  // 앱에서도 부를지 — 표(SettlementReportView)는 PC 웹 전용, 폰 요약(2026-11-24)은 앱·웹 모두
+  anyPlatform?: boolean;
 }
 
 function query(month: string, options: SettlementOptions, extra: Record<string, string> = {}) {
@@ -85,8 +89,8 @@ export function useSettlement(month: string, options: SettlementOptions = {}) {
     queryFn: () => apiClient.get<SettlementReport>(`/settlements?${query(month, options)}`),
     // 달을 넘길 때 표가 깜빡이지 않게 이전 달을 잠깐 보여 줌
     placeholderData: keepPreviousData,
-    // 정산은 PC 웹에서만 보여 줌
-    enabled: Platform.OS === 'web',
+    // 표는 PC 웹에서만(앱은 안내만), 폰 정산 요약은 앱에서도
+    enabled: options.anyPlatform || Platform.OS === 'web',
   });
 }
 

@@ -823,7 +823,8 @@
   },
   "consoleNav": {
     "dashboard": "数据看板",
-    "artists": "旗下艺人"
+    "artists": "旗下艺人",
+    "overview": "概览"
   },
   "consoleAlerts": {
     "anArtist": "旗下艺人",
@@ -1011,5 +1012,68 @@
   "streak": {
     "yearBadge": "1年+",
     "yearBadgeLabel": "订阅超过 1 年的粉丝"
+  },
+  "overview": {
+    "title": "概览",
+    "heroLabel": "本月经纪公司结算预估",
+    "heroSub": "粉丝付款 {{gross}} 中经纪公司分成 {{percent}}%",
+    "heroEmpty": "本月还没有付款",
+    "toSettlement": "查看结算",
+    "subscribers": "订阅中的粉丝",
+    "subscribersSub": "最近{{days}}天走势",
+    "replies": "粉丝回复",
+    "repliesSub": "每条消息 {{value}} 条回复",
+    "repliesNoMessages": "这段时间没有发送消息",
+    "countries": "粉丝国家",
+    "byArtist": "各艺人订阅者",
+    "more": "数据看板"
+  },
+  "settlementSummary": {
+    "payoutLabel": "经纪公司预计结算金额",
+    "share": "分成 {{percent}}%",
+    "nextShare": "{{month}}起 {{percent}}%",
+    "closed": "已结账月份",
+    "openCurrent": "进行中的月份 · 数字会持续变化",
+    "openPast": "尚未结账 · 如有退款可能变化",
+    "sandbox": "含测试付款",
+    "flowTitle": "从粉丝付款到经纪公司分成",
+    "agencyShort": "经纪公司分成",
+    "agencyShare": "经纪公司分成 {{percent}}%",
+    "byArtist": "各艺人预计结算",
+    "pcNote": "按房间的明细表和CSV下载请在电脑上查看"
+  },
+  "compactDashboard": {
+    "trend": "趋势",
+    "trendSubs": "订阅",
+    "trendActivity": "消息",
+    "rank": {
+      "subscribers": "订阅者",
+      "idle": "久未发送",
+      "newSubs": "新订阅",
+      "replies": "回复",
+      "cancellations": "取消",
+      "engagement": "互动"
+    }
+  },
+  "demoView": {
+    "hint": "仅限演示 — 用同一个入场码即可切换",
+    "asFan": "以粉丝视角查看",
+    "asArtist": "以艺人视角查看",
+    "bannerFan": "正在以粉丝视角查看",
+    "bannerArtist": "正在以艺人视角查看",
+    "back": "返回经纪公司",
+    "failed": "切换失败，请稍后再试"
+  },
+  "pcContinue": {
+    "open": "在电脑上继续查看",
+    "menuHint": "复制或发送链接，在大屏幕上打开",
+    "title": "在电脑上一屏就能看全",
+    "body": "在电脑浏览器打开此地址，用同一账号登录。",
+    "bodyDemo": "用同一个入场码直接打开 · 请只发给你的团队",
+    "copy": "复制链接",
+    "copied": "已复制",
+    "share": "分享",
+    "shareMessage": "Toffee 经纪公司页面 — 请在电脑上打开",
+    "close": "关闭"
   }
 }

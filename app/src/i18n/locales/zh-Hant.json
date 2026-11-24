@@ -823,7 +823,8 @@
   },
   "consoleNav": {
     "dashboard": "數據看板",
-    "artists": "旗下藝人"
+    "artists": "旗下藝人",
+    "overview": "概覽"
   },
   "consoleAlerts": {
     "anArtist": "旗下藝人",
@@ -1011,5 +1012,68 @@
   "streak": {
     "yearBadge": "1年+",
     "yearBadgeLabel": "訂閱超過 1 年的粉絲"
+  },
+  "overview": {
+    "title": "概覽",
+    "heroLabel": "本月經紀公司結算預估",
+    "heroSub": "粉絲付款 {{gross}} 中經紀公司分成 {{percent}}%",
+    "heroEmpty": "本月還沒有付款",
+    "toSettlement": "查看結算",
+    "subscribers": "訂閱中的粉絲",
+    "subscribersSub": "最近{{days}}天走勢",
+    "replies": "粉絲回覆",
+    "repliesSub": "每則訊息 {{value}} 則回覆",
+    "repliesNoMessages": "這段時間沒有傳送訊息",
+    "countries": "粉絲國家",
+    "byArtist": "各藝人訂閱者",
+    "more": "數據看板"
+  },
+  "settlementSummary": {
+    "payoutLabel": "經紀公司預計結算金額",
+    "share": "分成 {{percent}}%",
+    "nextShare": "{{month}}起 {{percent}}%",
+    "closed": "已結帳月份",
+    "openCurrent": "進行中的月份 · 數字會持續變化",
+    "openPast": "尚未結帳 · 如有退款可能變化",
+    "sandbox": "含測試付款",
+    "flowTitle": "從粉絲付款到經紀公司分成",
+    "agencyShort": "經紀公司分成",
+    "agencyShare": "經紀公司分成 {{percent}}%",
+    "byArtist": "各藝人預計結算",
+    "pcNote": "按房間的明細表和CSV下載請在電腦上查看"
+  },
+  "compactDashboard": {
+    "trend": "趨勢",
+    "trendSubs": "訂閱",
+    "trendActivity": "訊息",
+    "rank": {
+      "subscribers": "訂閱者",
+      "idle": "久未傳送",
+      "newSubs": "新訂閱",
+      "replies": "回覆",
+      "cancellations": "取消",
+      "engagement": "互動"
+    }
+  },
+  "demoView": {
+    "hint": "僅限展示 — 用同一個入場碼即可切換",
+    "asFan": "以粉絲視角查看",
+    "asArtist": "以藝人視角查看",
+    "bannerFan": "正在以粉絲視角查看",
+    "bannerArtist": "正在以藝人視角查看",
+    "back": "返回經紀公司",
+    "failed": "切換失敗，請稍後再試"
+  },
+  "pcContinue": {
+    "open": "在電腦上繼續查看",
+    "menuHint": "複製或傳送連結，在大螢幕上開啟",
+    "title": "在電腦上一個畫面就能看完",
+    "body": "在電腦瀏覽器開啟此網址，用同一帳號登入。",
+    "bodyDemo": "用同一個入場碼直接開啟 · 請只傳給你的團隊",
+    "copy": "複製連結",
+    "copied": "已複製",
+    "share": "分享",
+    "shareMessage": "Toffee 經紀公司頁面 — 請在電腦上開啟",
+    "close": "關閉"
   }
 }

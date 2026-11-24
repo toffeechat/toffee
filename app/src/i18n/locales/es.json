@@ -836,7 +836,8 @@
   },
   "consoleNav": {
     "dashboard": "Panel",
-    "artists": "Artistas"
+    "artists": "Artistas",
+    "overview": "Resumen"
   },
   "consoleAlerts": {
     "anArtist": "Un artista",
@@ -1025,5 +1026,68 @@
   "streak": {
     "yearBadge": "1 año+",
     "yearBadgeLabel": "Suscrito desde hace más de un año"
+  },
+  "overview": {
+    "title": "Resumen",
+    "heroLabel": "Liquidación estimada de la agencia este mes",
+    "heroSub": "{{percent}} % para la agencia de {{gross}} en pagos de fans",
+    "heroEmpty": "Aún no hay pagos este mes",
+    "toSettlement": "Ver liquidación",
+    "subscribers": "Suscriptores activos",
+    "subscribersSub": "Últimos {{days}} días",
+    "replies": "Respuestas de fans",
+    "repliesSub": "{{value}} respuestas por mensaje",
+    "repliesNoMessages": "No se enviaron mensajes en este periodo",
+    "countries": "Países de los fans",
+    "byArtist": "Suscriptores por artista",
+    "more": "Panel"
+  },
+  "settlementSummary": {
+    "payoutLabel": "Pago estimado a la agencia",
+    "share": "Reparto {{percent}} %",
+    "nextShare": "{{percent}} % desde {{month}}",
+    "closed": "Mes cerrado",
+    "openCurrent": "Mes en curso · las cifras siguen cambiando",
+    "openPast": "Sin cerrar · puede cambiar con reembolsos",
+    "sandbox": "Incluye pagos de prueba",
+    "flowTitle": "De los pagos de fans a tu parte",
+    "agencyShort": "Parte de la agencia",
+    "agencyShare": "Parte de la agencia {{percent}} %",
+    "byArtist": "Pago por artista",
+    "pcNote": "Las tablas por sala y la descarga CSV están en PC"
+  },
+  "compactDashboard": {
+    "trend": "Tendencia",
+    "trendSubs": "Suscripciones",
+    "trendActivity": "Mensajes",
+    "rank": {
+      "subscribers": "Suscriptores",
+      "idle": "Inactivos",
+      "newSubs": "Nuevas",
+      "replies": "Respuestas",
+      "cancellations": "Cancelaciones",
+      "engagement": "Interacción"
+    }
+  },
+  "demoView": {
+    "hint": "Solo en la demo: cambia al instante con el mismo código",
+    "asFan": "Ver como fan",
+    "asArtist": "Ver como artista",
+    "bannerFan": "Viendo como fan",
+    "bannerArtist": "Viendo como artista",
+    "back": "Volver a la agencia",
+    "failed": "No se pudo cambiar. Inténtalo de nuevo en un momento"
+  },
+  "pcContinue": {
+    "open": "Continuar en PC",
+    "menuHint": "Copia o envía un enlace para abrirlo en pantalla grande",
+    "title": "En un PC, todo cabe en una pantalla",
+    "body": "Abre esta dirección en el navegador de un PC e inicia sesión con la misma cuenta.",
+    "bodyDemo": "Se abre al instante con tu código · compártelo solo con tu equipo",
+    "copy": "Copiar enlace",
+    "copied": "Copiado",
+    "share": "Compartir",
+    "shareMessage": "Panel de agencia de Toffee: ábrelo en un PC",
+    "close": "Cerrar"
   }
 }

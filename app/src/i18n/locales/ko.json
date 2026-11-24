@@ -823,7 +823,8 @@
   },
   "consoleNav": {
     "dashboard": "대시보드",
-    "artists": "소속 아티스트"
+    "artists": "소속 아티스트",
+    "overview": "한눈에"
   },
   "consoleAlerts": {
     "anArtist": "소속 아티스트",
@@ -1011,5 +1012,68 @@
   "streak": {
     "yearBadge": "1년+",
     "yearBadgeLabel": "1년 이상 구독한 팬"
+  },
+  "overview": {
+    "title": "한눈에",
+    "heroLabel": "이번 달 소속사 정산 예상",
+    "heroSub": "팬 결제 {{gross}} 중 소속사 몫 {{percent}}%",
+    "heroEmpty": "이번 달엔 아직 결제가 없어요",
+    "toSettlement": "정산 보기",
+    "subscribers": "구독 중인 팬",
+    "subscribersSub": "최근 {{days}}일 흐름",
+    "replies": "팬 답장",
+    "repliesSub": "메시지 1개에 답장 {{value}}개",
+    "repliesNoMessages": "이 기간에 보낸 메시지가 없어요",
+    "countries": "팬 나라",
+    "byArtist": "아티스트별 구독자",
+    "more": "대시보드"
+  },
+  "settlementSummary": {
+    "payoutLabel": "소속사 지급 예상액",
+    "share": "배분 {{percent}}%",
+    "nextShare": "{{month}}부터 {{percent}}%",
+    "closed": "마감된 달",
+    "openCurrent": "진행 중인 달 · 숫자가 계속 바뀌어요",
+    "openPast": "아직 마감 전 · 환불이 있으면 바뀔 수 있어요",
+    "sandbox": "테스트 결제 포함",
+    "flowTitle": "팬 결제에서 소속사 몫까지",
+    "agencyShort": "소속사 몫",
+    "agencyShare": "소속사 몫 {{percent}}%",
+    "byArtist": "아티스트별 지급 예상",
+    "pcNote": "방별 상세 표·CSV 내려받기는 PC에서 볼 수 있어요"
+  },
+  "compactDashboard": {
+    "trend": "추이",
+    "trendSubs": "구독",
+    "trendActivity": "메시지",
+    "rank": {
+      "subscribers": "구독자",
+      "idle": "오래 안 보냄",
+      "newSubs": "새 구독",
+      "replies": "답장",
+      "cancellations": "해지",
+      "engagement": "반응"
+    }
+  },
+  "demoView": {
+    "hint": "데모에서만 — 같은 입장 코드로 바로 바꿔 볼 수 있어요",
+    "asFan": "팬 화면으로 보기",
+    "asArtist": "아티스트 화면으로 보기",
+    "bannerFan": "팬 화면으로 보는 중",
+    "bannerArtist": "아티스트 화면으로 보는 중",
+    "back": "소속사로 돌아가기",
+    "failed": "바꾸지 못했어요. 잠시 뒤 다시 눌러 주세요"
+  },
+  "pcContinue": {
+    "open": "PC로 이어 보기",
+    "menuHint": "큰 화면으로 볼 수 있는 링크를 복사하거나 보내요",
+    "title": "PC에서 보면 한 화면에 다 보여요",
+    "body": "PC 브라우저에서 이 주소를 열고 같은 계정으로 로그인하세요.",
+    "bodyDemo": "같은 입장 코드로 바로 열려요 · 우리 팀에게만 보내 주세요",
+    "copy": "링크 복사",
+    "copied": "복사했어요",
+    "share": "보내기",
+    "shareMessage": "토피 소속사 화면 — PC에서 열어 보세요",
+    "close": "닫기"
   }
 }

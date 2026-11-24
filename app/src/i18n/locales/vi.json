@@ -823,7 +823,8 @@
   },
   "consoleNav": {
     "dashboard": "Bảng thống kê",
-    "artists": "Nghệ sĩ"
+    "artists": "Nghệ sĩ",
+    "overview": "Tổng quan"
   },
   "consoleAlerts": {
     "anArtist": "Nghệ sĩ trực thuộc",
@@ -1011,5 +1012,68 @@
   "streak": {
     "yearBadge": "1 năm+",
     "yearBadgeLabel": "Fan đã đăng ký hơn 1 năm"
+  },
+  "overview": {
+    "title": "Tổng quan",
+    "heroLabel": "Dự kiến quyết toán của công ty tháng này",
+    "heroSub": "Phần của công ty {{percent}}% trên {{gross}} fan thanh toán",
+    "heroEmpty": "Tháng này chưa có thanh toán",
+    "toSettlement": "Xem quyết toán",
+    "subscribers": "Fan đang đăng ký",
+    "subscribersSub": "{{days}} ngày gần nhất",
+    "replies": "Fan trả lời",
+    "repliesSub": "{{value}} trả lời mỗi tin nhắn",
+    "repliesNoMessages": "Không có tin nhắn đã gửi trong khoảng này",
+    "countries": "Quốc gia của fan",
+    "byArtist": "Người đăng ký theo nghệ sĩ",
+    "more": "Bảng thống kê"
+  },
+  "settlementSummary": {
+    "payoutLabel": "Số tiền dự kiến trả cho công ty",
+    "share": "Tỷ lệ chia {{percent}}%",
+    "nextShare": "{{percent}}% từ {{month}}",
+    "closed": "Tháng đã chốt",
+    "openCurrent": "Tháng hiện tại · số liệu còn thay đổi",
+    "openPast": "Chưa chốt · có thể thay đổi nếu hoàn tiền",
+    "sandbox": "Gồm thanh toán thử",
+    "flowTitle": "Từ tiền fan trả đến phần của công ty",
+    "agencyShort": "Phần công ty",
+    "agencyShare": "Phần công ty {{percent}}%",
+    "byArtist": "Dự kiến theo nghệ sĩ",
+    "pcNote": "Bảng chi tiết theo phòng và tải CSV xem trên máy tính"
+  },
+  "compactDashboard": {
+    "trend": "Xu hướng",
+    "trendSubs": "Đăng ký",
+    "trendActivity": "Tin nhắn",
+    "rank": {
+      "subscribers": "Người đăng ký",
+      "idle": "Lâu chưa gửi",
+      "newSubs": "Đăng ký mới",
+      "replies": "Trả lời",
+      "cancellations": "Hủy",
+      "engagement": "Tương tác"
+    }
+  },
+  "demoView": {
+    "hint": "Chỉ trong bản demo — chuyển ngay bằng cùng mã",
+    "asFan": "Xem giao diện fan",
+    "asArtist": "Xem giao diện nghệ sĩ",
+    "bannerFan": "Đang xem như fan",
+    "bannerArtist": "Đang xem như nghệ sĩ",
+    "back": "Về trang công ty",
+    "failed": "Không chuyển được. Hãy thử lại sau"
+  },
+  "pcContinue": {
+    "open": "Xem tiếp trên máy tính",
+    "menuHint": "Sao chép hoặc gửi liên kết để mở trên màn hình lớn",
+    "title": "Trên máy tính, mọi thứ nằm gọn một màn hình",
+    "body": "Mở địa chỉ này trên trình duyệt máy tính và đăng nhập cùng tài khoản.",
+    "bodyDemo": "Mở ngay bằng mã của bạn · chỉ gửi cho nhóm của bạn",
+    "copy": "Sao chép liên kết",
+    "copied": "Đã sao chép",
+    "share": "Chia sẻ",
+    "shareMessage": "Trang công ty Toffee — hãy mở trên máy tính",
+    "close": "Đóng"
   }
 }
