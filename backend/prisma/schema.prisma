@@ -1136,3 +1136,13 @@ model SupportAttachment {
 
   @@index([messageId, sortOrder])
 }
+
+/// 요청 횟수 제한 기록(2026-11-24) — 서버가 여러 대여도 한도가 한 곳에서 세지게. PrismaThrottlerStorage가 쓰고 매시간 지난 기록을 지움
+model RateLimitHit {
+  key          String    @id
+  hits         Int
+  expiresAt    DateTime
+  blockedUntil DateTime?
+
+  @@index([expiresAt])
+}

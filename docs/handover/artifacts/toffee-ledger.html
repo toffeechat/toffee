@@ -1,10 +1,9 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Toffee 사업화 장부</title>
+<title>[토피] 사업화 장부</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one narrow ledger column — stage track, tab switch (계정 / 비용), then grouped rows per stage. */
+/* Layout: one narrow ledger column — stage track, tab switch (계정 / 비용 / 만료일), then grouped rows per stage (만료일은 날짜순). */
 :root {
   --bg: #F4F6FB;          /* Cloud */
   --surface: #FFFFFF;
@@ -90,6 +89,13 @@ h2 .tot { letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nu
 .mono { font-family: var(--font-mono); font-size: 13.5px; }
 .line2 { grid-column: 1 / -1; color: var(--muted); font-size: 14px; }
 .empty { padding: 20px 16px; color: var(--muted); font-size: 14px; }
+.b-late { background: var(--warn); color: var(--surface); }
+.when { font-family: var(--font-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.setdate { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+.setdate input { font: inherit; font-size: 14px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.setdate button { font: inherit; font-size: 14px; padding: 4px 12px; border: 0; border-radius: 7px; background: var(--accent-soft); color: var(--accent); font-weight: 700; cursor: pointer; }
+.setdate button:focus-visible, .setdate input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.setdate .msg { color: var(--muted); }
 footer { color: var(--muted); font-size: 13px; }
 @media (max-width: 480px) { .meta { grid-template-columns: minmax(0, 1fr); } .meta dt { margin-top: 4px; } }
 </style>
@@ -114,6 +120,7 @@ footer { color: var(--muted); font-size: 13px; }
   <div class="tabs" role="tablist" aria-label="보기 선택">
     <button id="tab-accounts" role="tab" aria-selected="true" aria-controls="panel-accounts">계정</button>
     <button id="tab-costs" role="tab" aria-selected="false" aria-controls="panel-costs">비용</button>
+    <button id="tab-expiry" role="tab" aria-selected="false" aria-controls="panel-expiry">만료일</button>
   </div>
 
   <div class="panel" id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts">
@@ -124,6 +131,11 @@ footer { color: var(--muted); font-size: 13px; }
   <div class="panel" id="panel-costs" role="tabpanel" aria-labelledby="tab-costs" hidden>
     <div class="notice"><b>영수증은 따로 보관하세요.</b> 법인 설립 후 비용 정리와 지원사업 정산에 필요합니다. 원화 금액은 카드 청구액을 알려 주면 채웁니다.</div>
     <div id="costsBody"><div class="list"><div class="empty">비용 목록을 불러오는 중입니다. 결제했다고 Claude에게 말하면 여기에 추가됩니다.</div></div></div>
+  </div>
+
+  <div class="panel" id="panel-expiry" role="tabpanel" aria-labelledby="tab-expiry" hidden>
+    <div class="notice"><b>만료되면 배포·로그인·결제가 조용히 멈춥니다.</b> 정기 결제 갱신일과 토큰·카드 유효기간을 날짜순으로 모았습니다. 30일 안에 다가오는 것은 월요일 주간 브리핑에서도 알려 드립니다. 날짜를 모르는 항목은 아래에서 직접 넣을 수 있어요.</div>
+    <div id="expiryBody"><div class="list"><div class="empty">만료일을 불러오는 중입니다.</div></div></div>
   </div>
 
   <footer id="footer">Claude가 계정이나 결제 소식을 들을 때마다 이 장부를 갱신합니다.</footer>
@@ -138,16 +150,17 @@ footer { color: var(--muted); font-size: 13px; }
     { n: 1, name: "계정·기반" }, { n: 2, name: "데모·제안" }, { n: 3, name: "소속사 의견" }, { n: 4, name: "지원사업" },
     { n: 5, name: "법인 설립" }, { n: 6, name: "출시 준비" }, { n: 7, name: "출시·파일럿" }, { n: 8, name: "확장" }
   ];
-  const state = { accounts: [], costs: [], roadmap: null };
+  const state = { accounts: [], costs: [], roadmap: null, expiries: [] };
+  let dbRef = null;
 
   // tabs
-  const tabs = [["accounts", $("tab-accounts"), $("panel-accounts")], ["costs", $("tab-costs"), $("panel-costs")]];
+  const tabs = [["accounts", $("tab-accounts"), $("panel-accounts")], ["costs", $("tab-costs"), $("panel-costs")], ["expiry", $("tab-expiry"), $("panel-expiry")]];
   function showTab(key) {
     tabs.forEach(([k, b, p]) => { const on = k === key; b.setAttribute("aria-selected", String(on)); p.hidden = !on; });
     try { localStorage.setItem("ledger-tab", key); } catch (e) {}
   }
   tabs.forEach(([k, b]) => b.addEventListener("click", () => showTab(k)));
-  try { const t = localStorage.getItem("ledger-tab"); if (t === "costs") showTab("costs"); } catch (e) {}
+  try { const t = localStorage.getItem("ledger-tab"); if (t === "costs" || t === "expiry") showTab(t); } catch (e) {}
 
   const stages = () => (state.roadmap && Array.isArray(state.roadmap.stages) ? state.roadmap.stages : DEFAULT_STAGES);
   const stageName = (n) => { const s = stages().find((x) => x.n === n); return s ? n + "단계 · " + s.name : "단계 미정"; };
@@ -235,6 +248,59 @@ footer { color: var(--muted); font-size: 13px; }
     return "쓴 돈 " + [usd ? fmtUSD(usd) : "", krw ? fmtKRW(krw) : ""].filter(Boolean).join(" + ");
   }
 
+  // 만료일 — 비용의 다음 결제일(YYYY-MM-DD로 시작하는 것) + expiries 컬렉션(토큰·카드처럼 돈이 안 드는 만료)
+  const DAY = 86400000;
+  const today = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
+  const dateOf = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v || ""); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null; };
+  function expiryItems() {
+    const fromCosts = state.costs.filter((d) => dateOf(d.renews) !== null).map((d) => ({
+      item: d.item, kind: "정기 결제", when: d.renews, impact: d.renewAmount ? "결제 " + d.renewAmount : "", how: d.payer ? "결제 수단: " + d.payer : "", note: ""
+    }));
+    const own = state.expiries.map((d) => ({ id: d.id, item: d.item, kind: d.kind, when: d.expires || "", impact: d.impact, how: d.check, note: d.note }));
+    return [...fromCosts, ...own].sort((a, b) => {
+      const x = dateOf(a.when), y = dateOf(b.when);
+      if (x === null && y === null) return 0; if (x === null) return 1; if (y === null) return -1; return x - y;
+    });
+  }
+  function expiryRow(d) {
+    const r = el("div", "row");
+    const name = el("div", "svc"); name.append(document.createTextNode(d.item || "(이름 없음)")); if (d.kind) name.append(el("span", "cat", d.kind));
+    r.append(name);
+    const b = el("div", "right");
+    const at = dateOf(d.when);
+    if (at === null) b.append(el("span", "badge b-warn", "날짜 확인 필요"));
+    else {
+      const left = Math.round((at - today()) / DAY);
+      b.append(el("span", "when", d.when.slice(0, 10)));
+      b.append(el("span", "badge " + (left < 0 ? "b-late" : left <= 30 ? "b-warn" : "b-ok"), left < 0 ? "지남" : left === 0 ? "오늘" : "D-" + left));
+    }
+    r.append(b);
+    const dl = el("dl", "meta");
+    if (d.when && d.when.length > 10) addMeta(dl, "참고", d.when.slice(10).replace(/^[\s(·-]+|\)$/g, ""));
+    addMeta(dl, "만료되면", d.impact);
+    addMeta(dl, "확인·갱신", d.how);
+    addMeta(dl, "메모", d.note);
+    r.append(dl);
+    if (d.id && dbRef) {
+      const f = el("div", "setdate");
+      const label = el("label", null, at === null ? "날짜 넣기" : "날짜 바꾸기");
+      const input = el("input"); input.type = "date"; input.id = "exp-" + d.id; if (at !== null) input.value = d.when.slice(0, 10);
+      label.htmlFor = input.id;
+      const save = el("button", null, "저장"); save.type = "button";
+      const msg = el("span", "msg");
+      save.addEventListener("click", async () => {
+        if (!input.value) { msg.textContent = "날짜를 골라 주세요."; return; }
+        save.disabled = true; msg.textContent = "저장하는 중…";
+        try { await dbRef.doc("expiries/" + d.id).update({ expires: input.value, updated: new Date().toISOString().slice(0, 10) }); msg.textContent = "저장했어요."; }
+        catch (e) { msg.textContent = "저장하지 못했습니다. 편집 권한이 있는 계정으로 열어 주세요."; }
+        finally { save.disabled = false; }
+      });
+      f.append(label, input, save, msg);
+      r.append(f);
+    }
+    return r;
+  }
+
   function render() {
     // stage track
     const cur = state.roadmap && typeof state.roadmap.current === "number" ? state.roadmap.current : 1;
@@ -267,6 +333,11 @@ footer { color: var(--muted); font-size: 13px; }
     // panels
     $("accountsBody").replaceChildren(group(state.accounts, accountRow, "아직 계정이 없습니다. 계정을 만들었다고 Claude에게 말하면 여기에 추가됩니다."));
     $("costsBody").replaceChildren(group(state.costs, costRow, "아직 기록된 비용이 없습니다. 결제했다고 Claude에게 말하면 여기에 추가됩니다.", paidTotal));
+    const ex = expiryItems();
+    const exList = el("div", "list");
+    if (ex.length) ex.forEach((d) => exList.append(expiryRow(d)));
+    else exList.append(el("div", "empty", "아직 만료일이 없습니다. 정기 결제나 토큰을 만들었다고 Claude에게 말하면 여기에 추가됩니다."));
+    $("expiryBody").replaceChildren(exList);
 
     const latest = [...state.accounts, ...state.costs].map((d) => d.updated || d.created || d.date || "").sort().pop();
     if (latest) $("footer").textContent = "Claude가 계정이나 결제 소식을 들을 때마다 이 장부를 갱신합니다. 마지막 갱신 " + latest + ".";
@@ -275,17 +346,18 @@ footer { color: var(--muted); font-size: 13px; }
     $("stageNow").textContent = "이 화면에서는 장부를 읽을 수 없습니다. claude.ai에 로그인한 상태로 다시 열어 주세요.";
     $("accountsBody").replaceChildren();
     $("costsBody").replaceChildren();
+    $("expiryBody").replaceChildren();
     $("stats").replaceChildren();
   }
   const data = (snap) => snap.docs.map((s) => s.data()).filter(Boolean);
   (async () => {
     const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
     if (!db) return unavailable();
+    dbRef = db;
     db.collection("accounts").onSnapshot((s) => { state.accounts = data(s); render(); }, unavailable);
     db.collection("expenses").onSnapshot((s) => { state.costs = data(s); render(); }, unavailable);
+    db.collection("expiries").onSnapshot((s) => { state.expiries = s.docs.map((x) => ({ id: x.id, ...x.data() })).filter((x) => x.item); render(); }, () => {});
     db.doc("meta/roadmap").onSnapshot((s) => { state.roadmap = s.exists ? s.data() : null; render(); }, () => {});
   })();
 })();
 </script>
-
-</body></html>

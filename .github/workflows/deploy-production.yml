@@ -269,7 +269,7 @@ jobs:
         if: inputs.build != 'none'
         working-directory: app
         run: |
-          npx --yes eas-cli@latest build --profile production --platform ${{ inputs.build }} --auto-submit --non-interactive --no-wait
+          npx --yes eas-cli@27.11.0 build --profile production --platform ${{ inputs.build }} --auto-submit --non-interactive --no-wait
           echo "- 📦 스토어 빌드·제출 요청(${{ inputs.build }}) — 애플·구글 심사 후 출시(store-submission.md)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 자동 점검(헬스·로그인·메시지)

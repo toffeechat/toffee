@@ -2148,3 +2148,7 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   늦어 iat가 미래면 무시하고 갱신).
 - **데모 역할 바꾸기**: `login()` 성공 → `queryClient.clear()`·`resetSessionState()` → viewAs 저장 → 앞 토큰으로 `/auth/logout`(기다리지 않음).
   viewAs는 `onSessionReset`에도 등록(로그아웃 때 지움, 역할 바꾸기 중엔 건너뜀).
+- **요청 제한 저장소**(같은 날 이어서): `ThrottlerModule.forRootAsync`가 `ThrottlerStoreModule`의 `PrismaThrottlerStorage`를 씀. 키는 throttler가 만든
+  해시 그대로 `RateLimitHit.key`, 고정 창(ttl) 카운트 + `blockedUntil`. 요청마다 쿼리 1~2개가 늘어남(한도 넘을 때만 2개). `@Cron`은 `common/lifecycle/cron.js`.
+- **의존성 overrides**: backend `effect`(Prisma CLI 고정 3.20.0 취약), `rimraf`·`uuid`(firebase-admin → google-gax·gaxios). app `shell-quote`·`node-forge`·`re2js`·
+  `source-map-js`·`@grpc/grpc-js`·`decode-uri-component@0.5.0`. 상위 패키지가 고치면 지울 것(월간 점검 때 `npm ls`로 확인).
