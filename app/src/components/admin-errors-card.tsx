@@ -39,7 +39,7 @@ export function AdminErrorsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     return (
       <Panel title="최근 오류" icon={Bug} style={style}>
         <ThemedText type="small" themeColor="textSecondary">
-          Sentry 연결 전이에요. 서버에 Sentry API 토큰(SENTRY_API_TOKEN)을 넣으면 앱·서버 오류가 여기 보이고, 새 오류는 운영자 알림으로 와요.
+          Sentry 연결 전입니다. 서버에 Sentry API 토큰(SENTRY_API_TOKEN)을 넣으면 앱·서버 오류가 여기 보이고, 새 오류는 운영자 알림으로 옵니다.
         </ThemedText>
       </Panel>
     );
@@ -56,8 +56,8 @@ export function AdminErrorsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   ) : undefined;
   const caption =
     data.status === 'FAILED'
-      ? `Sentry에서 가져오지 못했어요(${data.error ?? '알 수 없는 오류'})${data.fetchedAt ? ` — ${ago(data.fetchedAt)} 목록` : ''}`
-      : `미해결 오류 · 최근 24시간 ${data.total24h.toLocaleString()}번 · 5분마다 새로 가져와요`;
+      ? `Sentry에서 가져오지 못했습니다(${data.error ?? '알 수 없는 오류'})${data.fetchedAt ? ` — ${ago(data.fetchedAt)} 목록` : ''}`
+      : `미해결 오류 · 최근 24시간 ${data.total24h.toLocaleString()}번 · 5분마다 새로 가져옵니다`;
 
   return (
     <Panel title="최근 오류" icon={Bug} right={right} caption={caption} style={style}>

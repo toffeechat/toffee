@@ -43,7 +43,7 @@ function AppSettingsForm({ data }: { data: AppSettingsValues }) {
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
 
   const on = !!data?.maintenanceOn && (!data.maintenanceUntil || new Date(data.maintenanceUntil) > new Date());
-  const onError = (e: unknown) => setNotice({ text: e instanceof ApiError ? e.message : '저장하지 못했어요.', error: true });
+  const onError = (e: unknown) => setNotice({ text: e instanceof ApiError ? e.message : '저장하지 못했습니다.', error: true });
   const untilIso = until ? parseBangkokDateTime(until) : null;
   // 끝 시각이 지금이거나 이미 지났으면 막음(2026-10-29 — 저장돼도 점검이 바로 풀린 상태라 운영자가 켠 줄 착각)
   const untilPast = () => {
@@ -60,7 +60,7 @@ function AppSettingsForm({ data }: { data: AppSettingsValues }) {
     const ok = await confirm(
       turningOn ? '점검 모드 켜기' : '점검 모드 끄기',
       turningOn
-        ? '지금부터 운영자 말고는 앱·웹에서 점검 화면만 보여요(아티스트 메시지 발송·팬 답장도 멈춤). 스토어 결제 알림은 계속 받아요.'
+        ? '지금부터 운영자 말고는 앱·웹에서 점검 화면만 보입니다(아티스트 메시지 발송·팬 답장도 멈춤). 스토어 결제 알림은 계속 받습니다.'
         : '점검을 끝내고 모두 다시 쓸 수 있게 할까요?',
       turningOn ? '켜기' : '끄기',
       '취소',
@@ -79,14 +79,14 @@ function AppSettingsForm({ data }: { data: AppSettingsValues }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <AdminSection title="점검 모드" hint="서버 작업·큰 장애 때. 켜는 동안 운영자 말고는 점검 화면만 보이고 서버도 막아요. 끝 시각을 넣으면 그때 저절로 풀려요.">
+        <AdminSection title="점검 모드" hint="서버 작업·큰 장애 때. 켜는 동안 운영자 말고는 점검 화면만 보이고 서버도 막습니다. 끝 시각을 넣으면 그때 저절로 풀립니다.">
           <View style={styles.switchRow}>
             <ThemedText type="smallBold" themeColor={on ? 'danger' : 'text'} style={styles.flex}>
               {on ? '점검 중' : '꺼짐'}
             </ThemedText>
             <Switch value={on} onValueChange={() => void toggle()} disabled={update.isPending} trackColor={{ true: theme.danger, false: theme.border }} thumbColor="#ffffff" />
           </View>
-          <AdminField label="안내 문구(선택, 한국어 — 앱은 번역된 기본 문구와 함께 보여 줘요)" value={message} onChangeText={setMessage} maxLength={500} placeholder="예: 10월 21일 새벽 2시~4시 서버 이전" />
+          <AdminField label="안내 문구(선택, 한국어 — 앱은 번역된 기본 문구와 함께 보여 줍니다)" value={message} onChangeText={setMessage} maxLength={500} placeholder="예: 10월 21일 새벽 2시~4시 서버 이전" />
           <AdminDateField label="끝나는 시각(선택, 태국 시간)" value={until} onChange={setUntil} withTime min={thaiToday()} clearable />
           {on ? (
             <AdminButtonRow>
@@ -100,7 +100,7 @@ function AppSettingsForm({ data }: { data: AppSettingsValues }) {
           ) : null}
         </AdminSection>
 
-        <AdminSection title="앱 최소 버전" hint={`이 버전보다 낮은 앱은 "업데이트해 주세요" 화면만 보여요(비우면 검사 안 함). 스토어에 새 버전이 올라간 뒤에 올려야 해요. 지금 이 기기 앱: ${Constants.expoConfig?.version ?? '-'}`}>
+        <AdminSection title="앱 최소 버전" hint={`이 버전보다 낮은 앱은 "업데이트해 주세요" 화면만 보입니다(비우면 검사 안 함). 스토어에 새 버전이 올라간 뒤에 올려야 합니다. 지금 이 기기 앱: ${Constants.expoConfig?.version ?? '-'}`}>
           <AdminField label="iOS 최소 버전" value={ios} onChangeText={setIos} placeholder="예: 1.2.0" autoCapitalize="none" />
           <AdminField label="안드로이드 최소 버전" value={android} onChangeText={setAndroid} placeholder="예: 1.2.0" autoCapitalize="none" />
           <AdminButtonRow>

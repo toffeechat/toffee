@@ -55,7 +55,7 @@ export default function AdminInquiriesScreen() {
         ListEmptyComponent={
           isLoading ? null : (
             <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-              {category ? `${INQUIRY_CATEGORY_LABEL[category]} 문의가 없어요.` : status === 'OPEN' ? '답을 기다리는 문의가 없어요.' : '문의가 없어요.'}
+              {category ? `${INQUIRY_CATEGORY_LABEL[category]} 문의가 없습니다.` : status === 'OPEN' ? '답을 기다리는 문의가 없어요.' : '문의가 없어요.'}
             </ThemedText>
           )
         }

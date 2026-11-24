@@ -21,7 +21,7 @@ export default function AdminNewBundleScreen() {
               { ...input, actorIds: input.actorIds ?? [] },
               {
                 onSuccess: (bundle) => router.replace({ pathname: '/admin/bundles/[id]', params: { id: bundle.id } }),
-                onError: (e) => done(e instanceof ApiError ? e.message : '등록하지 못했어요.'),
+                onError: (e) => done(e instanceof ApiError ? e.message : '등록하지 못했습니다.'),
               },
             )
           }

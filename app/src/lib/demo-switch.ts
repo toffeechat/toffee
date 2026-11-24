@@ -5,6 +5,8 @@ import { apiClient } from './api-client';
 import { useAuth } from './auth-context';
 import { DEMO_ROLE_EMAILS, loadDemoPrefs, saveDemoPrefs, SHOW_DEV_LOGIN } from './demo-entry';
 import { loadPreference, savePreference } from './preference-storage';
+import { onSessionReset, resetSessionState } from './session-reset';
+import { loadToken } from './token-storage';
 import { useMe } from '@/hooks/use-onboarding';
 
 /**
@@ -28,6 +30,17 @@ if (SHOW_DEV_LOGIN) {
     }
   });
 }
+
+// 로그아웃(·로그인 끊김)하면 "보는 중" 표시도 지움(2026-11-24 점검 5차) — 예전엔 로그인 화면의 데모 로그인만 지워서, 팬 화면으로 보다가
+// 로그아웃한 뒤 소셜 로그인으로 들어오면 상관없는 "소속사로 돌아가기" 띠가 다시 떴음. 역할 바꾸기도 resetSessionState를 부르므로
+// switchTo가 부를 땐 건너뛰고 바로 새 값을 저장함(저장 순서가 뒤섞이지 않게)
+let switching = false;
+onSessionReset(() => {
+  if (switching || viewAs === null) return;
+  viewAs = null;
+  emit();
+  void savePreference(VIEW_KEY, null);
+});
 
 /** 지금 소속사에서 바꿔 들어가 보는 중인 역할(아니면 null) */
 export function useDemoViewAs(): DemoViewAs | null {
@@ -73,12 +86,25 @@ export function useDemoSwitch() {
       if (!code) throw new Error('no demo code');
       const role = target === 'artist' ? 'artist' : target === 'fan' ? 'fan' : 'agency';
       const { accessToken } = await apiClient.post<{ accessToken: string }>('/auth/dev-login', { email: DEMO_ROLE_EMAILS[role], code });
-      // 앞 계정 화면 데이터가 잠깐 보이지 않게
+      const previousToken = await loadToken();
+      // 새 계정 로그인(역할 조회)이 끝난 뒤에 "보는 중" 상태를 바꿈(2026-11-24 점검 5차) — 예전엔 먼저 바꿔서, 역할 조회가 실패하면
+      // 토큰은 앞 계정으로 되돌아가는데 "소속사로 돌아가기" 띠만 사라져 돌아갈 방법이 없었음
+      await login(accessToken);
+      // 앞 계정 화면 데이터·못 보낸 메시지 같은 메모리 상태가 새 계정에 남지 않게(로그아웃과 같은 정리)
       queryClient.clear();
+      switching = true;
+      try {
+        resetSessionState();
+      } finally {
+        switching = false;
+      }
       viewAs = target === 'agency' ? null : target;
       emit();
       await Promise.all([savePreference(VIEW_KEY, viewAs), saveDemoPrefs(role, code)]);
-      await login(accessToken);
+      // 앞 계정 서버 세션은 끊음(기다리지 않음) — 안 하면 역할을 오갈 때마다 30일짜리 세션이 하나씩 남음
+      if (previousToken && previousToken !== accessToken) {
+        void apiClient.post('/auth/logout', undefined, { authToken: previousToken }).catch(() => {});
+      }
     } catch {
       setFailed(true);
     } finally {

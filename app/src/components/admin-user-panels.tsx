@@ -98,7 +98,7 @@ export function AccessHistory({ user }: { user: AdminUser }) {
       {isLoading ? (
         <ActivityIndicator style={styles.loading} />
       ) : isError ? (
-        <AdminMessage text="접속 기록을 불러오지 못했어요." error />
+        <AdminMessage text="접속 기록을 불러오지 못했습니다." error />
       ) : (
         logs?.slice(0, 30).map((log) => (
           <ThemedText key={log.id} type="small" themeColor="textSecondary">
@@ -118,15 +118,15 @@ export function RoleSection({ user }: { user: AdminUser }) {
   const { data: agencies } = useAdminAgencies();
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const busy = changeRole.isPending || assignAgency.isPending;
-  const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했어요.'), error: true });
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '바꾸지 못했습니다.'), error: true });
 
   const pickRole = async (role: AssignableRole) => {
     if (role === user.role) return;
     const detail =
       user.role === 'ACTOR' && user.actorSelf
-        ? `\n${user.actorSelf.legalName} 아티스트 본인 계정 연결이 해제돼요.`
+        ? `\n${user.actorSelf.legalName} 아티스트 본인 계정 연결이 해제됩니다.`
         : user.role === 'AGENCY_STAFF' && user.agency
-          ? `\n${user.agency.name} 소속사 배정이 해제돼요.`
+          ? `\n${user.agency.name} 소속사 배정이 해제됩니다.`
           : '';
     if (await confirm('역할 변경', `${user.displayName} 계정을 "${ROLE_LABELS[role]}"(으)로 바꿀까요?${detail}`, '변경', '취소')) {
       setMessage(null);
@@ -137,7 +137,7 @@ export function RoleSection({ user }: { user: AdminUser }) {
     if ((user.agency?.id ?? null) === agencyId) return;
     const body = agencyId
       ? `${user.displayName} 직원을 "${name}" 소속으로 바꿀까요?${user.agency ? `\n${user.agency.name}의 아티스트·정산은 더 이상 볼 수 없어요.` : ''}`
-      : `${user.displayName} 직원의 소속을 없앨까요? 어느 소속사 화면도 볼 수 없게 돼요.`;
+      : `${user.displayName} 직원의 소속을 없앨까요? 어느 소속사 화면도 볼 수 없게 됩니다.`;
     if (await confirm('소속사 변경', body, '변경', '취소')) {
       setMessage(null);
       assignAgency.mutate({ id: user.id, agencyId }, { onError, onSuccess: () => setMessage({ text: agencyId ? `${name} 소속으로 바꿨어요.` : '소속을 없앴어요.' }) });
@@ -145,7 +145,7 @@ export function RoleSection({ user }: { user: AdminUser }) {
   };
 
   return (
-    <AdminSection title="역할" hint="아티스트·소속사 직원도 일반 가입(소셜 로그인) 뒤 여기서 바꿔요. 구독 중인 팬 계정은 바꿀 수 없어요.">
+    <AdminSection title="역할" hint="아티스트·소속사 직원도 일반 가입(소셜 로그인) 뒤 여기서 바꿉니다. 구독 중인 팬 계정은 바꿀 수 없습니다.">
       <View style={styles.chips}>
         {ASSIGNABLE.map((role) => (
           <AdminChip key={role} label={ROLE_LABELS[role]} selected={user.role === role} disabled={busy} onPress={() => void pickRole(role)} />
@@ -183,7 +183,7 @@ export function SanctionSection({ user }: { user: AdminUser }) {
   const [note, setNote] = useState('');
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const busy = suspend.isPending || ban.isPending || reactivate.isPending;
-  const onError = (e: unknown) => setMessage({ text: errorText(e, '처리하지 못했어요.'), error: true });
+  const onError = (e: unknown) => setMessage({ text: errorText(e, '처리하지 못했습니다.'), error: true });
   const done = (text: string) => () => {
     setMessage({ text });
     setCategory(null);
@@ -196,7 +196,7 @@ export function SanctionSection({ user }: { user: AdminUser }) {
     const what = days === 0 ? '영구차단' : `${days}일 정지`;
     const ok = await confirm(
       what,
-      `${user.nickname ?? user.displayName} 계정을 ${what}할까요?\n당사자에게 "사유: ${SANCTION_LABELS[category]}"가 보여요. 메모는 운영자만 봐요.`,
+      `${user.nickname ?? user.displayName} 계정을 ${what}할까요?\n당사자에게 "사유: ${SANCTION_LABELS[category]}"가 보입니다. 메모는 운영자만 봅니다.`,
       what,
       '취소',
     );
@@ -206,13 +206,13 @@ export function SanctionSection({ user }: { user: AdminUser }) {
     else suspend.mutate({ id: user.id, until: new Date(Date.now() + days * 86_400_000).toISOString(), category, note }, { onError, onSuccess: done(`${days}일 정지했어요.`) });
   };
   const lift = async () => {
-    if (await confirm('제재 해제', `${user.nickname ?? user.displayName} 계정의 정지·차단을 풀까요? 바로 다시 쓸 수 있어요.`, '해제', '취소')) {
+    if (await confirm('제재 해제', `${user.nickname ?? user.displayName} 계정의 정지·차단을 풀까요? 바로 다시 쓸 수 있습니다.`, '해제', '취소')) {
       reactivate.mutate(user.id, { onError, onSuccess: done('제재를 풀었어요.') });
     }
   };
 
   return (
-    <AdminSection title="제재" hint="① 사유 → ② 기간 → ③ 메모(선택) 순서로 고른 뒤 [적용]. 사유는 당사자에게 보이고, 메모는 운영자만 봐요.">
+    <AdminSection title="제재" hint="① 사유 → ② 기간 → ③ 메모(선택) 순서로 고른 뒤 [적용]. 사유는 당사자에게 보이고, 메모는 운영자만 봅니다.">
       {user.status !== 'ACTIVE' ? (
         <View style={[styles.current, { borderColor: theme.danger }]}>
           <ThemedText type="smallBold" themeColor="danger">
@@ -274,15 +274,15 @@ export function SignOutSection({ user }: { user: AdminUser }) {
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const run = async () => {
     const name = user.nickname ?? user.displayName;
-    if (!(await confirm('모든 기기 로그아웃', `${name} 계정을 로그인된 모든 기기에서 로그아웃시킬까요? 계정은 그대로라 다시 로그인하면 쓸 수 있어요. 작업 기록에 남아요.`, '로그아웃', '취소'))) return;
+    if (!(await confirm('모든 기기 로그아웃', `${name} 계정을 로그인된 모든 기기에서 로그아웃시킬까요? 계정은 그대로라 다시 로그인하면 쓸 수 있습니다. 작업 기록에 남습니다.`, '로그아웃', '취소'))) return;
     setMessage(null);
     signOut.mutate(user.id, {
       onSuccess: () => setMessage({ text: '모든 기기에서 로그아웃시켰어요.' }),
-      onError: (e) => setMessage({ text: errorText(e, '처리하지 못했어요.'), error: true }),
+      onError: (e) => setMessage({ text: errorText(e, '처리하지 못했습니다.'), error: true }),
     });
   };
   return (
-    <AdminSection title="로그인" hint="계정 도용이 의심되거나 본인이 폰을 잃어버렸다고 알려 왔을 때. 정지·영구차단은 자동으로 로그아웃돼요.">
+    <AdminSection title="로그인" hint="계정 도용이 의심되거나 본인이 폰을 잃어버렸다고 알려 왔을 때. 정지·영구차단은 자동으로 로그아웃됩니다.">
       <AdminButtonRow>
         <AdminButton secondary label={signOut.isPending ? '처리 중…' : '모든 기기 로그아웃'} disabled={signOut.isPending} onPress={() => void run()} />
       </AdminButtonRow>
@@ -298,12 +298,12 @@ export function ProfileSection({ user }: { user: AdminUser }) {
   const [error, setError] = useState<string | null>(null);
   if (!user.statusMessage && !user.profileImageUrl) return null;
   const run = async () => {
-    if (await confirm('프로필 지우기', '이 팬의 프로필 사진과 상태메시지를 지울까요? 되돌릴 수 없어요.', '지우기', '취소')) {
-      clear.mutate(user.id, { onSuccess: () => setError(null), onError: (e) => setError(errorText(e, '지우지 못했어요.')) });
+    if (await confirm('프로필 지우기', '이 팬의 프로필 사진과 상태메시지를 지울까요? 되돌릴 수 없습니다.', '지우기', '취소')) {
+      clear.mutate(user.id, { onSuccess: () => setError(null), onError: (e) => setError(errorText(e, '지우지 못했습니다.')) });
     }
   };
   return (
-    <AdminSection title="팬 프로필" hint="아티스트·소속사 답장 화면에만 보여요.">
+    <AdminSection title="팬 프로필" hint="아티스트·소속사 답장 화면에만 보입니다.">
       <ThemedText type="small">
         {user.profileImageUrl ? '사진 있음' : '사진 없음'}
         {user.statusMessage ? ` · "${user.statusMessage}"` : ''}
@@ -370,7 +370,7 @@ export function FanSummaryCard({ user }: { user: AdminUser }) {
         ))
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
-          제재·차단이 없어요. 그래도 답장이 안 된다면 그 방에 아직 아티스트 메시지가 없거나, 최근 메시지에 보낼 수 있는 답장 개수를 다 썼거나, 금칙어에 걸린 경우예요(앱이 팬에게 바로 안내해요).
+          제재·차단이 없습니다. 그래도 답장이 안 된다면 그 방에 아직 아티스트 메시지가 없거나, 최근 메시지에 보낼 수 있는 답장 개수를 다 썼거나, 금칙어에 걸린 경우입니다(앱이 팬에게 바로 안내해요).
         </ThemedText>
       )}
     </AdminSummaryCard>
@@ -384,7 +384,7 @@ export function BillingSection({ userId }: { userId: string }) {
   const active = data.rooms.filter((room) => !room.cancelledAt);
   const livePurchases = data.purchases.filter((purchase) => !purchase.cancelledAt).length;
   return (
-    <AdminSection title="구독·결제·환불" hint="금액은 정산 기준(바트 정가)이에요. 스토어가 실제로 청구한 금액은 괄호 안.">
+    <AdminSection title="구독·결제·환불" hint="금액은 정산 기준(바트 정가)입니다. 스토어가 실제로 청구한 금액은 괄호 안.">
       <AdminTableBlock title="지금 열린 방" count={active.length} tone="ok">
         <AdminBadgeRow>
           {active.map((room) => (
@@ -527,10 +527,10 @@ function actionDetail(entry: AdminUserActivity['actions'][number]): string {
 export function ActivitySection({ user }: { user: AdminUser }) {
   const { data, isLoading, isError } = useAdminUserActivity(user.id);
   if (isLoading) return <AdminSection title="답장·신고·차단·제재"><ActivityIndicator style={styles.loading} /></AdminSection>;
-  if (isError || !data) return <AdminSection title="답장·신고·차단·제재"><AdminMessage text="불러오지 못했어요." error /></AdminSection>;
+  if (isError || !data) return <AdminSection title="답장·신고·차단·제재"><AdminMessage text="불러오지 못했습니다." error /></AdminSection>;
   const pendingReports = data.reportsReceived.filter((report) => report.status === 'PENDING').length;
   return (
-    <AdminSection title="답장·신고·차단·제재" hint="각각 최신 50개까지. 회수·가린 답장도 기록으로 보여요.">
+    <AdminSection title="답장·신고·차단·제재" hint="각각 최신 50개까지. 회수·가린 답장도 기록으로 보입니다.">
       <AdminTableBlock title="최근 답장" count={data.replies.length} tone="ok" note={data.replies.length > 30 ? '최근 30개만' : undefined}>
         <AdminTable
           columns={[

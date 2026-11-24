@@ -37,16 +37,16 @@ export function ReleaseSection({
     try {
       await onSave(iso);
       if (iso === null) setText('');
-      setMessage({ text: iso ? `${formatBangkokDateTime(iso)}(태국)에 공개돼요.` : '바로 공개했어요.' });
+      setMessage({ text: iso ? `${formatBangkokDateTime(iso)}(태국)에 공개됩니다.` : '바로 공개했어요.' });
     } catch (e) {
-      setMessage({ text: e instanceof ApiError ? e.message : '저장하지 못했어요.', error: true });
+      setMessage({ text: e instanceof ApiError ? e.message : '저장하지 못했습니다.', error: true });
     }
   };
 
   return (
     <AdminSection
       title="공개 시각(예약 오픈)"
-      hint={`태국 시간으로 넣어요. 그 전엔 팬 화면에 "곧 공개" 카드와 [알림 받기]만 보이고 구독은 안 돼요. 시각이 되면 바로 열리고, 알림 받기를 누른 팬에게 푸시가 가요.${note ? ` ${note}` : ''}`}>
+      hint={`태국 시간으로 넣습니다. 그 전엔 팬 화면에 "곧 공개" 카드와 [알림 받기]만 보이고 구독은 안 됩니다. 시각이 되면 바로 열리고, 알림 받기를 누른 팬에게 푸시가 가요.${note ? ` ${note}` : ''}`}>
       <ThemedText type="small" themeColor={upcoming ? 'text' : 'textSecondary'}>
         {upcoming ? `공개 예정: ${formatBangkokDateTime(releaseAt!)}(태국)` : releaseAt ? `공개됨(${formatBangkokDateTime(releaseAt)} 태국)` : '공개 중(예약 없음)'} · 알림 신청{' '}
         {watchCount}명

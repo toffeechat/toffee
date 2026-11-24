@@ -38,7 +38,8 @@ async function step(name, fn) {
   console.log(steps.at(-1));
 }
 
-const browser = await chromium.launch();
+// 앱이 고정한 Playwright 버전의 브라우저가 없는 환경(원격 세션 등)에선 CHROMIUM_PATH=/opt/pw-browsers/chromium 처럼 넘김(2026-11-24)
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: 'ko-KR' });
 const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));

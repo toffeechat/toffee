@@ -65,17 +65,17 @@ export default function AdminUserDetailScreen() {
 function ExportSection({ userId, name }: { userId: string; name: string }) {
   const [state, setState] = useState<{ busy?: boolean; text?: string; error?: boolean }>({});
   const run = async () => {
-    if (!(await confirm('개인정보 파일 받기', `${name} 회원의 가입 정보·구독·결제·답장·문의·접속 기록을 파일로 받아요. 작업 기록에 남아요. 본인 요청이 확인된 경우에만 받으세요.`, '받기', '취소'))) return;
+    if (!(await confirm('개인정보 파일 받기', `${name} 회원의 가입 정보·구독·결제·답장·문의·접속 기록을 파일로 받습니다. 작업 기록에 남습니다. 본인 요청이 확인된 경우에만 받으세요.`, '받기', '취소'))) return;
     setState({ busy: true });
     try {
       await exportMyData(`/admin/users/${userId}/export`, `toffee-user-${userId}-${new Date().toISOString().slice(0, 10)}.json`);
       setState({ text: '파일을 만들었어요.' });
     } catch {
-      setState({ text: '파일을 만들지 못했어요.', error: true });
+      setState({ text: '파일을 만들지 못했습니다.', error: true });
     }
   };
   return (
-    <AdminSection title="개인정보 파일(PDPA)" hint="회원이 메일·1:1 문의로 내 정보를 요청했을 때. 회원은 앱 마이페이지 [내 정보 받기]로 직접 받을 수도 있어요.">
+    <AdminSection title="개인정보 파일(PDPA)" hint="회원이 메일·1:1 문의로 내 정보를 요청했을 때. 회원은 앱 마이페이지 [내 정보 받기]로 직접 받을 수도 있습니다.">
       <AdminButtonRow>
         <AdminButton secondary label={state.busy ? '만드는 중…' : '파일 받기(JSON)'} disabled={state.busy} onPress={() => void run()} />
       </AdminButtonRow>

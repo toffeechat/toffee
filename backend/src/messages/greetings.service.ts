@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { captureException } from '@sentry/nestjs';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '../common/lifecycle/cron.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -82,6 +83,8 @@ export class GreetingsService {
     if (this.config.get<string>('BIRTHDAY_GREETINGS_ENABLED') === 'false') return;
     const sent = await this.sendBirthdayGreetings().catch((error: unknown) => {
       this.logger.error(`생일 축하 메시지 실패: ${String(error)}`);
+      // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
+      captureException(error, { tags: { job: 'birthday-greetings' } });
       return 0;
     });
     if (sent > 0) this.logger.log(`생일 축하 메시지 ${sent}건`);
@@ -120,6 +123,8 @@ export class GreetingsService {
         // 이미 보냄(같은 해) — 다른 서버가 먼저 만들었거나 다시 돌린 경우. 그 밖의 실패(DB 끊김 등)는 기록을 남기고 다음 팬으로(2026-10-28 — 예전엔 조용히 넘겨서 몰랐음)
         if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) {
           this.logger.error(`생일 축하 메시지 저장 실패(user ${user.id}, actor ${actorId}): ${String(error)}`);
+          // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
+          captureException(error, { tags: { job: 'birthday-greetings' } });
         }
         continue;
       }

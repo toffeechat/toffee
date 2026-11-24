@@ -347,6 +347,22 @@ describe('배분율 이력(2026-10-27)', () => {
     expect((await t.service.report('2028-01')).totals).toMatchObject({ grossCents: 0, refundedCents: 10000 });
   });
 
+  it('갈아타기 이월 줄도 원래 결제 달(70%) 비율 — 차감과 이월이 정확히 맞아 소속사 몫이 줄지 않음, 이월의 이월도 처음 결제까지(점검 5차)', async () => {
+    const t = setup(
+      [
+        { id: 'c1', chargedAt: at('2028-01-20T00:00:00Z'), createdAt: at('2028-01-20T00:00:00Z'), refundedAt: null, amountCents: 10000 },
+        { id: 'cr', chargedAt: at('2028-02-05T00:00:00Z'), createdAt: at('2028-02-05T00:00:00Z'), refundedAt: null, amountCents: -5000, kind: 'SWITCH_CREDIT', switchOfChargeId: 'c1' },
+        { id: 'cc', chargedAt: at('2028-02-05T00:00:00Z'), createdAt: at('2028-02-05T00:00:00Z'), refundedAt: null, amountCents: 5000, kind: 'SWITCH_CARRY', switchOfChargeId: 'c1' },
+        { id: 'cr2', chargedAt: at('2028-02-15T00:00:00Z'), createdAt: at('2028-02-15T00:00:00Z'), refundedAt: null, amountCents: -3000, kind: 'SWITCH_CREDIT', switchOfChargeId: 'cc' },
+        { id: 'cc2', chargedAt: at('2028-02-15T00:00:00Z'), createdAt: at('2028-02-15T00:00:00Z'), refundedAt: null, amountCents: 3000, kind: 'SWITCH_CARRY', switchOfChargeId: 'cc' },
+      ],
+      founding,
+    );
+    const february = await t.service.report('2028-02');
+    // 예전엔 차감 -5,000은 70%(-2,975), 이월 +5,000은 60%(+2,550)라 -425가 남았음
+    expect(february.agencies[0]).toMatchObject({ grossCents: 0, payoutCents: 0 });
+  });
+
   it('비율이 하나뿐이면 이력이 있든 없든(옛 revenueSharePercent) 결과가 같음', async () => {
     const charges = (): Charge[] => [
       { id: 'c1', chargedAt: at('2026-09-10T00:00:00Z'), createdAt: at('2026-09-10T00:00:00Z'), refundedAt: null, amountCents: 12901 },

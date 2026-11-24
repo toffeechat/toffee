@@ -87,7 +87,7 @@ export function VoiceMessage({ id, url, durationMs, waveform, tone, onSave, next
   // 2A 시안: 라벤더 재생 버튼 + 라벤더 음파(재생된 부분은 진하게)
   const strong = tone === 'light' ? '#fff' : '#7C8CFF';
   const weak = tone === 'light' ? 'rgba(255,255,255,0.45)' : 'rgba(124,140,255,0.35)';
-  const label = tone === 'light' ? '#fff' : '#3A3D4A';
+  const label = tone === 'light' ? '#fff' : '#0F1115';
   const loading = status.playing && !status.isLoaded;
 
   // 재생 영역과 저장 버튼은 형제로 둠 — 버튼 안에 버튼을 넣으면 웹에서 <button> 중첩 오류

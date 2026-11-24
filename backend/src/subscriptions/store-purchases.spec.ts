@@ -256,6 +256,20 @@ describe('스토어 알림 반영', () => {
     expect(t.alerts).toHaveLength(1);
   });
 
+  it('탈퇴한 계정의 갱신 결제는 결제만 기록하고 방을 다시 열지 않으며 운영자에게 알림(점검 5차)', async () => {
+    const t = setup();
+    t.receipt();
+    await t.service.verifyPurchase('u', 'a1', t.iosDto);
+    // 탈퇴: 우리 구매는 닫히지만 스토어 자동 갱신은 남음
+    await t.service.applyStoreEvent({ kind: 'EXPIRED', originalTransactionId: 'orig-1' });
+    t.users[0].deletedAt = new Date();
+    const renewal = t.receipt({ storeTransactionId: 'tx-renew', purchasedAt: new Date(), expiresAt: new Date(Date.now() + 30 * DAY) });
+    expect(await t.service.applyStoreEvent({ kind: 'PAID', transaction: renewal })).toEqual({ applied: true });
+    expect(t.open('a1')).toBeUndefined();
+    expect(t.charges.map((c) => c.storeTransactionId)).toContain('tx-renew');
+    expect(t.alerts).toHaveLength(1);
+  });
+
   it('기록에 없는 결제의 환불 알림은 지금 이용 중인 구매를 닫지 않고 운영자에게 알림(2026-10-28)', async () => {
     const t = setup();
     t.receipt();

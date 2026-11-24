@@ -65,7 +65,7 @@ export default function AdminSubscriptionsScreen() {
             </View>
             <ThemedText type="caption" themeColor="textSecondary">
               {`${selectionLabel(selection, i18n.language)} ${type === 'STARTED' ? '구독을 시작한' : '해지한'} 건 — 태국 시간 기준, 방 하나에 한 줄(묶음은 방마다)`}
-              {data && data.items.length < count ? ` · 최신 ${data.limit}건만 보여요` : ''}
+              {data && data.items.length < count ? ` · 최신 ${data.limit}건만 보입니다` : ''}
             </ThemedText>
           </View>
         }

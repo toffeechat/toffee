@@ -101,7 +101,7 @@ export default function AdminHomeScreen() {
   const onResetDemo = async () => {
     const ok = await confirm(
       '데모 초기화',
-      '데모 데이터(아티스트·팬·메시지·구독·신고 등)를 모두 지우고 처음 상태로 되돌려요. 직접 만든 계정은 지워지고, 데모 계정(fan1@toffee.demo 등)은 그대로 로그인돼 있어요. 소속사에 데모를 보여 주는 중에는 누르지 마세요. 입장 코드·접속 기록은 지워지지 않아요.',
+      '데모 데이터(아티스트·팬·메시지·구독·신고 등)를 모두 지우고 처음 상태로 되돌려요. 직접 만든 계정은 지워지고, 데모 계정(fan1@toffee.demo 등)은 그대로 로그인돼 있습니다. 소속사에 데모를 보여 주는 중에는 누르지 마세요. 입장 코드·접속 기록은 지워지지 않습니다.',
       '초기화',
       '취소',
     );
@@ -396,7 +396,7 @@ export default function AdminHomeScreen() {
                 {t('dashboard.rankings')}
               </ThemedText>
               <ThemedText type="caption" themeColor="textTertiary">
-                아티스트를 누르면 소속사와 같은 모니터링 화면(보낸 메시지·팬 답장·스토리·통계)으로 가요.
+                아티스트를 누르면 소속사와 같은 모니터링 화면(보낸 메시지·팬 답장·스토리·통계)으로 갑니다.
               </ThemedText>
               <View style={styles.grid}>
                 {RANK_METRICS.map((metric) => (
@@ -506,10 +506,10 @@ export default function AdminHomeScreen() {
                     {resetDemo.isError
                       ? resetDemo.error instanceof ApiError
                         ? resetDemo.error.message
-                        : '초기화하지 못했어요. 잠시 뒤 다시 시도해 주세요.'
+                        : '초기화하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
                       : resetDemo.isSuccess
                         ? '처음 상태로 되돌렸어요.'
-                        : '데모 서버에서만 보여요. 데이터를 처음 상태로 되돌려요.'}
+                        : '데모 서버에서만 보입니다. 데이터를 처음 상태로 되돌려요.'}
                   </ThemedText>
                 </View>
               </Pressable>

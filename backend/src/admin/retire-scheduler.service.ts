@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { captureException } from '@sentry/nestjs';
 import { Cron, CronExpression } from '../common/lifecycle/cron.js';
 import { AdminActorsService } from './admin-actors.service.js';
 
@@ -16,6 +17,8 @@ export class RetireScheduler {
       if (count > 0) this.logger.log(`예정된 활동 종료 ${count}건 처리`);
     } catch (error) {
       this.logger.error('활동 종료 예정 처리 실패', error as Error);
+      // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
+      captureException(error, { tags: { job: 'retire-due' } });
     }
   }
 
@@ -27,6 +30,8 @@ export class RetireScheduler {
       if (count > 0) this.logger.log(`계약 종료 임박 알림 ${count}건`);
     } catch (error) {
       this.logger.error('계약 종료 알림 실패', error as Error);
+      // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
+      captureException(error, { tags: { job: 'contract-ending' } });
     }
   }
 }

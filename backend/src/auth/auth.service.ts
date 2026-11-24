@@ -45,6 +45,9 @@ function sameCode(given: string | undefined, expected: string): boolean {
   return timingSafeEqual(digest(given?.trim() ?? ''), digest(expected));
 }
 
+// 데모 서버 입장 코드로 들어올 수 있는 이메일 — 시드 데모 계정(@toffee.demo)과 e2e 테스트 계정(@toffee.test)
+const DEMO_LOGIN_DOMAINS = ['@toffee.demo', '@toffee.test'];
+
 @Injectable()
 export class AuthService {
   private readonly googleClient: OAuth2Client;
@@ -158,6 +161,11 @@ export class AuthService {
     if (wantsAdmin) this.assertAdminLoginCode(code);
     else if (registeredCodeId) demoCode = registeredCodeId;
     else if (this.assertDevLoginCode(code)) demoCode = COMMON_DEMO_CODE;
+    // 입장 코드가 걸린 서버(데모)에선 운영자 코드가 아니면 데모·테스트용 주소만(2026-11-24 점검 5차) — 예전엔 소속사에 나눠 준 코드만 있으면
+    // 데모 서버에 소셜 로그인으로 들어온 실제 담당자 등 남의 이메일을 넣어 그 계정으로 로그인할 수 있었음. 로컬 개발(코드 없음)은 그대로
+    if (demoCode && !DEMO_LOGIN_DOMAINS.some((domain) => email.toLowerCase().endsWith(domain))) {
+      throw new UnauthorizedException(appError('DEV_LOGIN_CODE_INVALID'));
+    }
     const user = await this.prisma.user.upsert({
       where: { email },
       // 역할은 새로 만들 때만(2026-10-27) — 예전엔 입장 코드만 있으면 role을 실어 보내 기존 계정(시드 계정·남의 테스트 계정)의 역할을 바꿀 수 있었음.

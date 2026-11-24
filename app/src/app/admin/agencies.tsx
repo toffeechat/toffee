@@ -51,18 +51,18 @@ function SharePanel({ agency, onClose }: { agency: AdminAgency; onClose: () => v
     const value = text === '' ? null : Number(text);
     if (value !== null && (!Number.isInteger(value) || value < 0 || value > 100)) return setMessage('0~100 사이 정수로 입력해 주세요(비우면 기본값).');
     if (!MONTH_PATTERN.test(fromMonth.trim())) return setMessage('적용 시작 달은 2027-02처럼 입력해 주세요.');
-    if (!(await confirm('배분율 바꾸기', `${agency.name}: ${fromMonth.trim()}부터 ${label(value)}로 바꿀까요? 그 전 달은 그대로예요.`, '바꾸기', '취소'))) return;
+    if (!(await confirm('배분율 바꾸기', `${agency.name}: ${fromMonth.trim()}부터 ${label(value)}로 바꿀까요? 그 전 달은 그대로입니다.`, '바꾸기', '취소'))) return;
     setMessage(null);
     setRate.mutate(
       { fromMonth: fromMonth.trim(), percent: value },
-      { onSuccess: () => setPercent(''), onError: (e) => setMessage(errorText(e, '저장하지 못했어요.')) },
+      { onSuccess: () => setPercent(''), onError: (e) => setMessage(errorText(e, '저장하지 못했습니다.')) },
     );
   };
 
   const remove = async (month: string) => {
-    if (!(await confirm('배분율 줄 지우기', `${month}부터의 배분율을 지울까요? 그 달부터는 앞 줄의 비율로 돌아가요.`, '지우기', '취소'))) return;
+    if (!(await confirm('배분율 줄 지우기', `${month}부터의 배분율을 지울까요? 그 달부터는 앞 줄의 비율로 돌아갑니다.`, '지우기', '취소'))) return;
     setMessage(null);
-    deleteRate.mutate(month, { onError: (e) => setMessage(errorText(e, '지우지 못했어요.')) });
+    deleteRate.mutate(month, { onError: (e) => setMessage(errorText(e, '지우지 못했습니다.')) });
   };
 
   const applyFounding = async () => {
@@ -71,11 +71,11 @@ function SharePanel({ agency, onClose }: { agency: AdminAgency; onClose: () => v
     const after = shiftMonth(start, 12);
     if (!(await confirm('창립 파트너 적용', `${agency.name}: ${start}부터 12개월 70%, ${after}부터 기본값(${data?.defaultPercent ?? 60}%)으로 두 줄을 넣을까요?`, '적용', '취소'))) return;
     setMessage(null);
-    founding.mutate({ fromMonth: start }, { onError: (e) => setMessage(errorText(e, '적용하지 못했어요.')) });
+    founding.mutate({ fromMonth: start }, { onError: (e) => setMessage(errorText(e, '적용하지 못했습니다.')) });
   };
 
   if (isLoading) return <ActivityIndicator color={theme.tint} />;
-  if (!data) return <AdminMessage text={errorText(error, '배분율을 불러오지 못했어요.')} error />;
+  if (!data) return <AdminMessage text={errorText(error, '배분율을 불러오지 못했습니다.')} error />;
   return (
     <ThemedView style={styles.panel}>
       <ThemedText type="smallBold">
@@ -83,7 +83,7 @@ function SharePanel({ agency, onClose }: { agency: AdminAgency; onClose: () => v
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         정산은 결제가 속한 달의 비율로 계산해요(지난달 환불·조정도 그 달 비율).{' '}
-        {data.lastClosedMonth ? `${data.lastClosedMonth}까지는 마감돼서 바꿀 수 없어요.` : '아직 마감한 달이 없어요.'}
+        {data.lastClosedMonth ? `${data.lastClosedMonth}까지는 마감돼서 바꿀 수 없습니다.` : '아직 마감한 달이 없어요.'}
       </ThemedText>
       {data.rates.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
@@ -129,7 +129,7 @@ function AgencyRow({ agency }: { agency: AdminAgency }) {
     if (!name.trim()) return setMessage('이름을 입력해 주세요.');
     updateAgency.mutate(
       { id: agency.id, name: name.trim() },
-      { onSuccess: () => setEditing(false), onError: (e) => setMessage(errorText(e, '저장하지 못했어요.')) },
+      { onSuccess: () => setEditing(false), onError: (e) => setMessage(errorText(e, '저장하지 못했습니다.')) },
     );
   };
 
@@ -142,7 +142,7 @@ function AgencyRow({ agency }: { agency: AdminAgency }) {
       const key = await uploadProfileImage('AGENCY', agency.id, picked.uri, picked.contentType);
       await updateAgency.mutateAsync({ id: agency.id, logoUrl: key });
     } catch (e) {
-      setMessage(errorText(e, '로고를 올리지 못했어요.'));
+      setMessage(errorText(e, '로고를 올리지 못했습니다.'));
     } finally {
       setBusy(false);
     }
@@ -150,7 +150,7 @@ function AgencyRow({ agency }: { agency: AdminAgency }) {
 
   const removeLogo = async () => {
     if (await confirm('로고 삭제', `${agency.name} 로고를 지울까요?`, '삭제', '취소')) {
-      updateAgency.mutate({ id: agency.id, logoUrl: null }, { onError: (e) => setMessage(errorText(e, '삭제하지 못했어요.')) });
+      updateAgency.mutate({ id: agency.id, logoUrl: null }, { onError: (e) => setMessage(errorText(e, '삭제하지 못했습니다.')) });
     }
   };
 
@@ -200,7 +200,7 @@ export default function AdminAgenciesScreen() {
     if (!name.trim()) return;
     createAgency.mutate(name.trim(), {
       onSuccess: () => (setName(''), setMessage(null)),
-      onError: (e) => setMessage(errorText(e, '등록하지 못했어요.')),
+      onError: (e) => setMessage(errorText(e, '등록하지 못했습니다.')),
     });
   };
 
@@ -216,7 +216,7 @@ export default function AdminAgenciesScreen() {
           ListHeaderComponent={
             <AdminSection
               title="소속사 등록"
-              hint="로고는 등록한 뒤에 올릴 수 있어요. 직원 배정은 회원 관리에서, 아티스트 소속은 아티스트 관리에서 해요.">
+              hint="로고는 등록한 뒤에 올릴 수 있습니다. 직원 배정은 회원 관리에서, 아티스트 소속은 아티스트 관리에서 합니다.">
               <AdminField label="소속사 이름" value={name} onChangeText={setName} maxLength={100} onSubmitEditing={create} />
               <AdminMessage text={message} error />
               <AdminButton label="등록" disabled={createAgency.isPending || !name.trim()} onPress={create} />

@@ -150,7 +150,7 @@ export default function AdminImportActorsScreen() {
     const index = new Map(filledRows.map((row, i) => [row.key, i]));
     if (filledRows.length === 0 && cps.length === 0) return '등록할 아티스트나 CP방을 넣어 주세요.';
     if (rows.some((row) => !row.legalName.trim() && (row.chatDisplayName.trim() || cps.some((cp) => cp.members.some((m) => m?.kind === 'row' && m.key === row.key))))) {
-      return '영문 이름이 빈 줄이 있어요.';
+      return '영문 이름이 빈 줄이 있습니다.';
     }
     const couples = [];
     for (const [n, cp] of cps.entries()) {
@@ -182,7 +182,7 @@ export default function AdminImportActorsScreen() {
         setPlan(result.plan);
         setMessage(null);
       },
-      onError: (e) => setMessage({ text: errorText(e, '미리보기를 만들지 못했어요.'), error: true }),
+      onError: (e) => setMessage({ text: errorText(e, '미리보기를 만들지 못했습니다.'), error: true }),
     });
   };
 
@@ -196,11 +196,11 @@ export default function AdminImportActorsScreen() {
       const isCsv = file.name.toLowerCase().endsWith('.csv');
       const csvText = isCsv ? decodeCsv(await file.arrayBuffer()) : null;
       if (isCsv && csvText === null) {
-        return setMessage({ text: 'CSV 글자를 읽지 못했어요. 엑셀에서 [다른 이름으로 저장] → "CSV UTF-8(쉼표로 분리)"로 저장하거나 .xlsx로 올려 주세요.', error: true });
+        return setMessage({ text: 'CSV 글자를 읽지 못했습니다. 엑셀에서 [다른 이름으로 저장] → "CSV UTF-8(쉼표로 분리)"로 저장하거나 .xlsx로 올려 주세요.', error: true });
       }
       const table = csvText !== null ? parseCsv(csvText) : await readXlsx(await file.arrayBuffer());
       const parsed = rowsFromTable(table);
-      if (!parsed) return setMessage({ text: '"영문 이름"(English name) 칸을 찾지 못했어요. 양식의 첫 줄 칸 이름을 확인해 주세요.', error: true });
+      if (!parsed) return setMessage({ text: '"영문 이름"(English name) 칸을 찾지 못했습니다. 양식의 첫 줄 칸 이름을 확인해 주세요.', error: true });
       if (parsed.rows.length === 0) return setMessage({ text: '등록할 줄이 없어요.', error: true });
       const nextRows = parsed.rows.map((row: SheetRow) => ({ ...emptyRow(), legalName: row.legalName, chatDisplayName: row.chatDisplayName ?? '', gender: row.gender, warnings: row.warnings }));
       const byName = new Map(nextRows.map((row) => [row.legalName.trim().toLowerCase(), row.key]));
@@ -225,7 +225,7 @@ export default function AdminImportActorsScreen() {
       setScenario(-1);
       setIgnored(parsed.ignoredColumns);
     } catch (e) {
-      setMessage({ text: `파일을 읽지 못했어요(${e instanceof Error ? e.message : '알 수 없는 오류'}). 엑셀(.xlsx)이나 CSV로 저장해 올려 주세요.`, error: true });
+      setMessage({ text: `파일을 읽지 못했습니다(${e instanceof Error ? e.message : '알 수 없는 오류'}). 엑셀(.xlsx)이나 CSV로 저장해 올려 주세요.`, error: true });
     }
   };
 
@@ -239,7 +239,7 @@ export default function AdminImportActorsScreen() {
         const made = result.created;
         setMessage({ text: `아티스트 ${made?.actors.length ?? 0}명, CP방 ${made?.couples.length ?? 0}개를 등록했어요.` });
       },
-      onError: (e) => setMessage({ text: errorText(e, '등록하지 못했어요.'), error: true }),
+      onError: (e) => setMessage({ text: errorText(e, '등록하지 못했습니다.'), error: true }),
     });
   };
 
@@ -247,7 +247,7 @@ export default function AdminImportActorsScreen() {
     if (!created?.actors.length) return;
     issueLinks.mutate(
       created.actors.map((actor) => actor.id),
-      { onSuccess: setLinks, onError: (e) => setMessage({ text: errorText(e, '연결 링크를 만들지 못했어요.'), error: true }) },
+      { onSuccess: setLinks, onError: (e) => setMessage({ text: errorText(e, '연결 링크를 만들지 못했습니다.'), error: true }) },
     );
   };
   const linksText = links?.links.map((link) => `${link.legalName}: ${actorLinkUrl(link.token)}`).join('\n') ?? '';
@@ -264,7 +264,7 @@ export default function AdminImportActorsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <AdminSection title="① 무엇을 등록하나요?" hint="누르면 아래 칸이 그 모양으로 바뀌어요. 섞어서도 돼요 — 줄과 CP방은 아래에서 더하고 뺄 수 있어요.">
+        <AdminSection title="① 무엇을 등록하나요?" hint="누르면 아래 칸이 그 모양으로 바뀝니다. 섞어서도 됩니다 — 줄과 CP방은 아래에서 더하고 뺄 수 있어요.">
           <ThemedView style={styles.scenarios}>
             {SCENARIOS.map((item, index) => (
               <Pressable
@@ -285,16 +285,16 @@ export default function AdminImportActorsScreen() {
                 style={[styles.scenario, { borderColor: scenario === -1 ? theme.tint : theme.backgroundSelected, backgroundColor: scenario === -1 ? theme.tintSoft : theme.background }]}>
                 <ThemedText type="smallBold">엑셀·CSV로 여러 명</ThemedText>
                 <ThemedText type="caption" themeColor="textSecondary">
-                  {fileName ? `지금: ${fileName}(다시 누르면 다른 파일)` : '소속사 표를 올리면 아래가 채워져요(CP 짝 칸 → CP방)'}
+                  {fileName ? `지금: ${fileName}(다시 누르면 다른 파일)` : '소속사 표를 올리면 아래가 채워집니다(CP 짝 칸 → CP방)'}
                 </ThemedText>
               </Pressable>
             ) : null}
           </ThemedView>
           {canUseWebFiles ? <AdminChip label="엑셀 양식 받기(CSV)" onPress={() => downloadText('toffee-artists-template.csv', TEMPLATE_CSV)} /> : null}
-          {ignored.length > 0 ? <AdminMessage text={`파일에서 읽지 않은 칸: ${ignored.join(', ')}(태국어 이름·생년월일 등은 저장하지 않아요)`} /> : null}
+          {ignored.length > 0 ? <AdminMessage text={`파일에서 읽지 않은 칸: ${ignored.join(', ')}(태국어 이름·생년월일 등은 저장하지 않습니다)`} /> : null}
         </AdminSection>
 
-        <AdminSection title="② 소속사·구독료·공개 시각" hint="이번에 새로 만드는 개인방·CP방 전체에 적용돼요. 나중에 하나씩 상세 화면에서 바꿀 수 있어요.">
+        <AdminSection title="② 소속사·구독료·공개 시각" hint="이번에 새로 만드는 개인방·CP방 전체에 적용됩니다. 나중에 하나씩 상세 화면에서 바꿀 수 있습니다.">
           <ThemedView style={styles.chips}>
             <AdminChip label="무소속" selected={agencyId === null} onPress={() => setting(setAgencyId)(null)} />
             {agencies?.map((agency) => (
@@ -318,8 +318,8 @@ export default function AdminImportActorsScreen() {
           </ThemedView>
         </AdminSection>
 
-        <AdminSection title={`③ 새로 등록할 아티스트 (${filledRows.length}명)`} hint="한 줄 = 한 명(개인방 하나). 이미 등록된 사람은 여기 적지 말고 ④에서 골라요.">
-          {rows.length === 0 ? <AdminMessage text="새로 등록할 아티스트가 없어요(이미 있는 사람끼리 CP방만 만들 때)." /> : null}
+        <AdminSection title={`③ 새로 등록할 아티스트 (${filledRows.length}명)`} hint="한 줄 = 한 명(개인방 하나). 이미 등록된 사람은 여기 적지 말고 ④에서 고릅니다.">
+          {rows.length === 0 ? <AdminMessage text="새로 등록할 아티스트가 없습니다(이미 있는 사람끼리 CP방만 만들 때)." /> : null}
           {rows.map((row, index) => (
             <ThemedView key={row.key} style={[styles.editRow, { borderColor: theme.backgroundSelected }]}>
               <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rowNumber}>
@@ -364,7 +364,7 @@ export default function AdminImportActorsScreen() {
           </AdminButtonRow>
         </AdminSection>
 
-        <AdminSection title={`④ CP방 (${cps.length}개)`} hint="CP방마다 멤버 두 명을 골라요 — ③에 적은 사람이나 이미 등록된 사람. 개인방만 등록하면 비워 두세요.">
+        <AdminSection title={`④ CP방 (${cps.length}개)`} hint="CP방마다 멤버 두 명을 고릅니다 — ③에 적은 사람이나 이미 등록된 사람. 개인방만 등록하면 비워 두세요.">
           {cps.map((cp, n) => (
             <ThemedView key={cp.key} style={[styles.editRow, { borderColor: theme.backgroundSelected }]}>
               <ThemedText type="smallBold" style={styles.fullWidth}>
@@ -403,7 +403,7 @@ export default function AdminImportActorsScreen() {
           </AdminButtonRow>
         </AdminSection>
 
-        <AdminSection title="⑤ 확인하고 등록" hint="미리보기를 누르면 서버가 검사해요. 빨간 줄이 하나라도 있으면 아무것도 등록되지 않아요.">
+        <AdminSection title="⑤ 확인하고 등록" hint="미리보기를 누르면 서버가 검사합니다. 빨간 줄이 하나라도 있으면 아무것도 등록되지 않습니다.">
           <ThemedView style={[styles.summary, { backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}>
             <ThemedText type="smallBold">등록하면 만들어지는 것</ThemedText>
             {summary.length ? (
@@ -414,7 +414,7 @@ export default function AdminImportActorsScreen() {
               ))
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                아직 없어요 — 위에서 이름을 넣거나 CP방 멤버를 골라 주세요.
+                아직 없습니다 — 위에서 이름을 넣거나 CP방 멤버를 골라 주세요.
               </ThemedText>
             )}
           </ThemedView>
@@ -463,7 +463,7 @@ export default function AdminImportActorsScreen() {
         {created ? (
           <AdminSection
             title="⑥ 다음 할 일 — 계정 연결 링크·패키지"
-            hint="아이디·비밀번호는 만들지 않아요. 링크를 소속사 담당자에게 보내면 아티스트가 각자 열어 평소 쓰는 계정(Google·Apple·LINE 등)으로 로그인해 연결해요. 1회용이고 14일 뒤 만료돼요(새로 만들면 예전 링크는 무효).">
+            hint="아이디·비밀번호는 만들지 않습니다. 링크를 소속사 담당자에게 보내면 아티스트가 각자 열어 평소 쓰는 계정(Google·Apple·LINE 등)으로 로그인해 연결합니다. 1회용이고 14일 뒤 만료돼요(새로 만들면 예전 링크는 무효).">
             {links ? (
               <>
                 <ThemedText type="small" selectable>
@@ -488,7 +488,7 @@ export default function AdminImportActorsScreen() {
           </AdminSection>
         ) : null}
 
-        {canUseWebFiles ? <PhotoBatch agencyId={agencyId} /> : <AdminMessage text="사진 묶어 올리기는 PC 웹에서 돼요. 앱에선 아티스트 상세 화면에서 한 명씩 올려요." />}
+        {canUseWebFiles ? <PhotoBatch agencyId={agencyId} /> : <AdminMessage text="사진 묶어 올리기는 PC 웹에서 됩니다. 앱에선 아티스트 상세 화면에서 한 명씩 올립니다." />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -614,7 +614,7 @@ function PhotoBatch({ agencyId }: { agencyId: string | null }) {
         const key = await uploadProfileImage('ACTOR', match.actor!.id, photo.uri, photo.contentType);
         await apiClient.patch(`/admin/actors/${match.actor!.id}/images`, { officialProfileImageKey: key });
       } catch (e) {
-        errors.push(`${match.file.name}: ${errorText(e, '올리지 못했어요')}`);
+        errors.push(`${match.file.name}: ${errorText(e, '올리지 못했습니다')}`);
       }
     }
     setFailed(errors);
@@ -627,7 +627,7 @@ function PhotoBatch({ agencyId }: { agencyId: string | null }) {
   return (
     <AdminSection
       title="사진 묶어 올리기(공식 사진)"
-      hint='사진 파일 이름을 영문 이름과 같게 해서 여러 장을 한 번에 고르세요(예: "Bright.jpg", CP방은 "Bright & Win.jpg"). 이미 공식 사진이 있으면 바뀌어요. 정사각이 아니어도 돼요(화면에서 가운데를 맞춰 보여 줘요).'>
+      hint='사진 파일 이름을 영문 이름과 같게 해서 여러 장을 한 번에 고르세요(예: "Bright.jpg", CP방은 "Bright & Win.jpg"). 이미 공식 사진이 있으면 바뀝니다. 정사각이 아니어도 됩니다(화면에서 가운데를 맞춰 보여 줘요).'>
       <AdminButton label="사진 여러 장 고르기" onPress={() => void pick()} />
       {matches.map((match) => (
         <ThemedText key={match.file.name} type="small" style={{ color: match.actor ? theme.text : theme.danger }}>

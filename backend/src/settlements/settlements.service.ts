@@ -190,15 +190,35 @@ export class SettlementsService {
     const closedAt = new Map(closes.map((close) => [close.month, close.closedAt]));
     const book = shareRateBook(rateRows);
     const defaultSharePercent = this.defaultSharePercent;
-    // 갈아타기 차감 줄은 원래 결제 달의 배분율로 빼야 맞음(70% 달 결제를 60% 달에 갈아타면 70%로 줬던 걸 70%로 뺌, 2026-10-28 점검)
-    const creditOrigins = [...new Set([...current, ...earlier].filter((line) => line.charge.kind === ChargeKind.SWITCH_CREDIT && line.charge.switchOfChargeId).map((line) => line.charge.switchOfChargeId!))];
-    const originChargedAt = new Map(
-      creditOrigins.length === 0
-        ? []
-        : (await this.prisma.purchaseCharge.findMany({ where: { id: { in: creditOrigins } }, select: { id: true, chargedAt: true } })).map((row) => [row.id, row.chargedAt]),
-    );
+    // 갈아타기 차감·이월 줄은 원래 결제 달의 배분율로(70% 달 결제를 60% 달에 갈아타면 70%로 줬던 걸 70%로 뺌, 2026-10-28 점검).
+    // 이월(SWITCH_CARRY)도 같은 돈을 새 묶음으로 옮긴 것이라 원래 결제 달 기준(2026-11-24 점검 5차 — 예전엔 차감은 70%, 이월은 바꾼 달의 60%라
+    // 배분율이 바뀌는 달 경계에서 소속사 몫이 줄었음). 이어서 갈아탄 경우(이월의 이월)는 이월이 아닌 처음 결제까지 거슬러 올라감
+    const isSwitchLine = (line: AllocationLine) =>
+      (line.charge.kind === ChargeKind.SWITCH_CREDIT || line.charge.kind === ChargeKind.SWITCH_CARRY) && !!line.charge.switchOfChargeId;
+    const originChargedAt = new Map<string, Date>();
+    {
+      const known = new Map<string, { chargedAt: Date; kind: ChargeKind; switchOfChargeId: string | null }>();
+      let pending = [...new Set([...current, ...earlier].filter(isSwitchLine).map((line) => line.charge.switchOfChargeId!))];
+      for (let hop = 0; hop < 10 && pending.length > 0; hop += 1) {
+        const rows = await this.prisma.purchaseCharge.findMany({ where: { id: { in: pending } }, select: { id: true, chargedAt: true, kind: true, switchOfChargeId: true } });
+        rows.forEach((row) => known.set(row.id, row));
+        pending = [...new Set(rows.filter((row) => row.kind === ChargeKind.SWITCH_CARRY && row.switchOfChargeId && !known.has(row.switchOfChargeId)).map((row) => row.switchOfChargeId!))];
+      }
+      const resolve = (id: string): Date | undefined => {
+        let row = known.get(id);
+        for (let hop = 0; row && hop < 10; hop += 1) {
+          if (row.kind !== ChargeKind.SWITCH_CARRY || !row.switchOfChargeId || !known.has(row.switchOfChargeId)) return row.chargedAt;
+          row = known.get(row.switchOfChargeId);
+        }
+        return row?.chargedAt;
+      };
+      for (const line of [...current, ...earlier].filter(isSwitchLine)) {
+        const at = resolve(line.charge.switchOfChargeId!);
+        if (at) originChargedAt.set(line.charge.switchOfChargeId!, at);
+      }
+    }
     const rateMonthOf = (line: AllocationLine) => {
-      const origin = line.charge.kind === ChargeKind.SWITCH_CREDIT && line.charge.switchOfChargeId ? originChargedAt.get(line.charge.switchOfChargeId) : undefined;
+      const origin = isSwitchLine(line) ? originChargedAt.get(line.charge.switchOfChargeId!) : undefined;
       return monthOf(origin ?? line.charge.chargedAt);
     };
     const rateOfLine = (line: AllocationLine) => shareRateAt(book, line.agencyId, rateMonthOf(line), defaultSharePercent, line.agency?.revenueSharePercent);

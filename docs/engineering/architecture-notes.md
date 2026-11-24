@@ -2134,3 +2134,17 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - PC로 이어 보기 `components/pc-continue-sheet.tsx`: 데모면 `${웹}/?demo=코드&as=agency&lang=…`, 아니면 웹 주소만. `expo-clipboard` 복사, 공유는 앱 `Share`·웹 `navigator.share`(없으면 버튼 숨김).
 - 데모 시드: `demo-seed.ts`에서 데모 소속사 `AgencyShareRate` 70%(오늘 기준 3달 전 달부터)·60%(그 12개월 뒤). 새벽 초기화마다 다시 계산.
 
+
+## 2026-11-24 점검 5차에서 바뀐 구현 규칙
+
+- **정산 배분율 달**: `SWITCH_CREDIT`과 `SWITCH_CARRY` 줄 모두 `switchOfChargeId`를 따라 원래 결제 달의 배분율을 씀. 가리키는 결제가 다시
+  `SWITCH_CARRY`면 이월이 아닌 결제가 나올 때까지(최대 10단계) 거슬러 올라감(`settlements.service.ts` `rateMonthOf`).
+- **dev-login**: `DEV_LOGIN_CODE`가 있는 서버에서 운영자 코드가 아닌 로그인은 `DEMO_LOGIN_DOMAINS`(`@toffee.demo`, `@toffee.test`)만.
+- **스토어 PAID 알림 + 탈퇴 계정**: 결제 기록(`ledger.record`)만 하고 `upsertStorePurchase`·acknowledge는 안 함, `AdminAlertService` REFUND 알림.
+- **예약 작업 실패**: `@Cron` 안에서 잡아 넘기는 오류는 Sentry Nest 연동이 못 봄 → catch에서 `captureException(error, { tags: { job } })`.
+  밖으로 던지는 오류는 연동이 잡음.
+- **소속사 이동**: `assignActor` 트랜잭션 첫 줄에서 `SELECT … FROM "Actor" … FOR UPDATE`(같은 배우 동시 변경 직렬화, 스키마 변경 없음).
+- **앱 토큰 갱신**: 모듈 변수(`lastTokenRefreshAt`)가 웹 새로 고침마다 0이 되므로 JWT `iat`가 12시간 안이면 건너뜀(기기 시계가 5분 넘게
+  늦어 iat가 미래면 무시하고 갱신).
+- **데모 역할 바꾸기**: `login()` 성공 → `queryClient.clear()`·`resetSessionState()` → viewAs 저장 → 앞 토큰으로 `/auth/logout`(기다리지 않음).
+  viewAs는 `onSessionReset`에도 등록(로그아웃 때 지움, 역할 바꾸기 중엔 건너뜀).

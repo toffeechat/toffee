@@ -50,6 +50,19 @@ const LOGOUT_CLEANUP_MS = 3000;
 // 다시 로그인할 일이 없고, 서버는 세션 단위로 끊을 수 있음. 마지막 갱신 시각은 메모리에만(앱을 새로 켜면 한 번 갱신)
 const TOKEN_REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
 let lastTokenRefreshAt = 0;
+
+/** JWT의 발급 시각(iat, 밀리초) — 못 읽으면 null(그러면 예전처럼 갱신) */
+function tokenIssuedAtMs(jwt: string): number | null {
+  try {
+    const part = jwt.split('.')[1];
+    if (!part) return null;
+    const json = typeof atob === 'function' ? atob(part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '=')) : null;
+    const iat = json ? (JSON.parse(json) as { iat?: unknown }).iat : null;
+    return typeof iat === 'number' && iat > 0 ? iat * 1000 : null;
+  } catch {
+    return null;
+  }
+}
 let tokenRefreshing = false;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -131,6 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token || !role) return;
     const maybeRefresh = async () => {
       if (tokenRefreshing || Date.now() - lastTokenRefreshAt < TOKEN_REFRESH_INTERVAL_MS) return;
+      // 토큰을 받은 지 12시간이 안 됐으면 건너뜀(2026-11-24 점검 5차) — 웹은 새로 고침·새 탭마다 위 시각이 0으로 돌아가 매번 갱신했고,
+      // 소속사 PC 웹에서 탭을 여러 개 열면 갱신 요청 제한(분당 10회)에 걸렸음
+      const issuedAt = tokenIssuedAtMs(token);
+      // 기기 시계가 크게 늦으면(발급 시각이 미래) 믿지 않고 예전처럼 갱신
+      if (issuedAt && issuedAt <= Date.now() + 5 * 60 * 1000 && Date.now() - issuedAt < TOKEN_REFRESH_INTERVAL_MS) {
+        lastTokenRefreshAt = issuedAt;
+        return;
+      }
       tokenRefreshing = true;
       try {
         const { accessToken } = await apiClient.post<{ accessToken: string }>('/auth/refresh');

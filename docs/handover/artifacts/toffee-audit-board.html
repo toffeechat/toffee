@@ -1,0 +1,210 @@
+<title>[토피/매월] 점검 보드</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 젤리 점검 보드와 같은 한 열 작업 보드 — 상단 요약 → 분야별 섹션(행 = 작업 1건) → 회차 기록 → 운영 방식. 색은 토피 브랜드(Lavender·Charcoal) */
+:root{
+  --bg:#f4f6fb; --surface:#ffffff; --fg:#0f1115; --muted:#5d6273; --line:#e2e5f0;
+  --accent:#5f6fea; --accent-soft:#e6e9ff;
+  --ok:#1f7a4d; --ok-bg:#e3f4ea; --wip:#8a5a00; --wip-bg:#fdf0d4; --todo:#545a6b; --todo-bg:#eceef4;
+  --you:#1d5fa8; --you-bg:#e3eefa; --ask:#7a3fb0; --ask-bg:#f1e6fb;
+  --crit:#b4232f; --crit-bg:#fbe5e7; --mid:#a35a00; --mid-bg:#fdeedc; --low:#4f6b2a; --low-bg:#eaf2de;
+  --body:"Pretendard","IBM Plex Sans KR",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1115; --surface:#181b22; --fg:#eceef6; --muted:#a2a7b8; --line:#2a2e39;
+  --accent:#9aa6ff; --accent-soft:#252a45;
+  --ok:#7fd8a6; --ok-bg:#1d3328; --wip:#f2c56b; --wip-bg:#3a2f17; --todo:#c1c5d2; --todo-bg:#262a33;
+  --you:#8dbcf2; --you-bg:#1c2b3d; --ask:#d3a8ff; --ask-bg:#2f2240;
+  --crit:#ff8f98; --crit-bg:#3d1d21; --mid:#f5b46a; --mid-bg:#3b2a17; --low:#b5d68a; --low-bg:#28331b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --surface:#181b22; --fg:#eceef6; --muted:#a2a7b8; --line:#2a2e39;
+  --accent:#9aa6ff; --accent-soft:#252a45;
+  --ok:#7fd8a6; --ok-bg:#1d3328; --wip:#f2c56b; --wip-bg:#3a2f17; --todo:#c1c5d2; --todo-bg:#262a33;
+  --you:#8dbcf2; --you-bg:#1c2b3d; --ask:#d3a8ff; --ask-bg:#2f2240;
+  --crit:#ff8f98; --crit-bg:#3d1d21; --mid:#f5b46a; --mid-bg:#3b2a17; --low:#b5d68a; --low-bg:#28331b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:36px}
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+h1{font-weight:700;font-size:clamp(28px,5vw,38px);margin:0;line-height:1.2;text-wrap:balance;letter-spacing:-.01em}
+h2{font-weight:700;font-size:22px;margin:0;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:70ch}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.tile b{font-size:26px;font-variant-numeric:tabular-nums;font-weight:600}
+.tile span{color:var(--muted);font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--muted);align-items:center}
+section{display:flex;flex-direction:column;gap:12px}
+.sec-head{display:flex;flex-direction:column;gap:4px;border-bottom:2px solid var(--fg);padding-bottom:8px}
+.sec-head p{margin:0;color:var(--muted);font-size:14px}
+.list{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:46px 1fr auto;gap:4px 14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:start}
+.id{font-family:var(--mono);font-size:13px;color:var(--muted);padding-top:2px}
+.main{min-width:0;display:flex;flex-direction:column;gap:4px}
+.title{font-weight:600}
+.desc{color:var(--muted);font-size:14px}
+.dates{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.desc code{font-family:var(--mono);font-size:12.5px;background:var(--accent-soft);padding:1px 5px;border-radius:4px;color:var(--fg);word-break:break-all}
+.tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;max-width:220px}
+.chip{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap;line-height:1.6}
+.s-done{background:var(--ok-bg);color:var(--ok)} .s-wip{background:var(--wip-bg);color:var(--wip)} .s-todo{background:var(--todo-bg);color:var(--todo)} .s-you{background:var(--you-bg);color:var(--you)} .s-ask{background:var(--ask-bg);color:var(--ask)} .s-skip{background:var(--todo-bg);color:var(--muted);text-decoration:line-through}
+.p-crit{background:var(--crit-bg);color:var(--crit)} .p-mid{background:var(--mid-bg);color:var(--mid)} .p-low{background:var(--low-bg);color:var(--low)}
+.d{border:1px solid var(--line);color:var(--muted);background:transparent}
+.d-ver{border-color:var(--crit);color:var(--crit)}
+.empty{color:var(--muted);font-size:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.faq{display:flex;flex-direction:column}
+.qa{border-bottom:1px solid var(--line)}
+.qa summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;font-weight:600}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.qa[open] summary::after{transform:rotate(-135deg) translateY(-2px)}
+.qa summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.qa p{margin:0 0 14px;color:var(--muted);font-size:14px}
+@media (prefers-reduced-motion:reduce){.qa summary::after{transition:none}}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:5px 12px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.filters button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+footer{color:var(--muted);font-size:13px}
+@media (max-width:620px){.row{grid-template-columns:38px 1fr}.tags{grid-column:2;justify-content:flex-start;max-width:none}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Toffee · 매달 첫째 주 화요일 전수조사</div>
+  <h1>토피 점검 보드</h1>
+  <p class="lead">계약과 실제 운영이 시작되기 전까지 매달 코드 전체를 점검합니다. 버그·보안·결제 문제와 운영 방식, UI/UX, 문구 톤까지 함께 봅니다. 꼭 고쳐야 하는 건 점검하면서 바로 고쳐 데모(프리뷰)에 올리고, 사용자가 정해야 하는 것만 "결정 필요"로 남겨 둘게요.</p>
+</header>
+
+<div class="summary" id="summary"></div>
+
+<div class="legend">
+  <span class="chip s-ask">결정 필요</span><span class="chip s-you">사용자 할 일</span><span class="chip s-todo">대기</span><span class="chip s-wip">진행 중</span><span class="chip s-done">완료</span>
+  <span>·</span>
+  <span class="chip d">서버 배포</span><span class="chip d">웹</span><span class="chip d">OTA</span><span class="chip d d-ver">새 빌드 필요</span>
+</div>
+
+<div class="filters" role="group" aria-label="상태 필터">
+  <button type="button" data-f="all" aria-pressed="true">전체</button>
+  <button type="button" data-f="open" aria-pressed="false">안 끝난 것</button>
+  <button type="button" data-f="you" aria-pressed="false">내가 할 것·정할 것</button>
+  <button type="button" data-f="done" aria-pressed="false">완료</button>
+</div>
+
+<div id="sections" style="display:flex;flex-direction:column;gap:36px"></div>
+
+<section>
+  <div class="sec-head"><h2>점검 기록</h2><p>예약 점검은 매달 첫째 주 화요일 오전 9시 43분(한국 시간)에 실행됩니다. 결과는 회차마다 한 줄씩 남기고, 새로 찾은 항목은 위 표에 이어 붙입니다. 11월 말에 수동 전수조사(5차)를 한 번 하고, 예약 점검은 2026-12-01(화)부터 돌아요.</p></div>
+  <div class="list" id="history"></div>
+</section>
+
+<section>
+  <div class="sec-head"><h2>운영 방식</h2><p>2026-11-24에 정한 규칙입니다. 질문을 누르면 답이 펼쳐져요.</p></div>
+  <div class="faq">
+    <details class="qa"><summary>무엇을 점검하나?</summary><p>4갈래를 따로 조사한 뒤, 찾은 것은 코드로 한 번 더 확인합니다. ① 결제·정산·환불(구글·애플 구독, 창립 파트너 배분, 갈아타기) ② 메시지·보안·개인정보(유실·중복, 권한, 콘텐츠 유출, PDPA) ③ 앱 UI/UX·9개 언어(웹 화면을 PC·폰 폭으로 띄운 스크린샷, 번역 누락, 브랜드 가이드, 한국어 문구 톤) ④ 운영·인프라·문서(데모 서버, 배포 워크플로, Sentry 새 오류, 비용, STATUS와 코드가 맞는지). 타입·린트·테스트·의존성 취약점은 매번 공통으로 봐요.</p></details>
+    <details class="qa"><summary>무엇을 바로 고쳐서 올리나?</summary><p>버그·보안 구멍·데이터 오류처럼 반드시 고쳐야 하는 것은 묻지 않고 고칩니다. 로컬 검사가 통과하면 main에 합쳐 데모(프리뷰)에 배포하고, 배포 뒤 자동 점검 결과까지 확인합니다. 데모 새벽 초기화나 소속사 미팅 직전처럼 배포를 피할 시간에는 올리지 않고 다음 가능한 시간에 올려요.</p></details>
+    <details class="qa"><summary>무엇을 물어보나?</summary><p>기능 동작이 바뀌는 기획 결정, 가격·정산 비율·환불 정책, 되돌리기 어려운 스키마 대공사, 돈이 드는 외부 서비스, 스토어 심사가 필요한 새 빌드가 해당됩니다. 이런 건 "결정 필요"로 표에 올리고 추천안을 함께 적습니다. 화면이 크게 바뀌는 UI/UX 제안도 여기로 와요.</p></details>
+    <details class="qa"><summary>문구 톤은 어떻게 보나?</summary><p>한국어 문장이 전부 "~요"로 끝나면 AI가 쓴 글처럼 보입니다. 그래서 설명·정책·주의사항은 "~합니다"를 기본으로 하고, 사용자에게 건네는 짧은 말에는 "~해요"를 섞어 씁니다. 같은 어미가 세 번 연달아 나오지 않게 하는 게 기준이에요. 자세한 기준은 <code>docs/product/brand-guide.md</code> "문구 톤"에 있습니다.</p></details>
+    <details class="qa"><summary>운영(실제 사용자) 서버는?</summary><p>운영 환경이 아직 없어서 지금은 데모(프리뷰)까지만 올립니다. 운영이 생기면 운영 배포 워크플로가 GitHub 승인을 요구하므로, 그때 자동 반영 범위를 다시 정해요.</p></details>
+    <details class="qa"><summary>기록은 어디에 남나?</summary><p>할 일 목록의 원본은 이 보드입니다. 저장소에는 회차마다 작업 로그(<code>docs/deployment-readiness-plan.md</code>)에 한 단락을 남기고, 상태가 바뀐 기능은 <code>STATUS.md</code>에 반영합니다. 폰에서 확인해야 하는 화면은 실기기 테스트 페이지에 넣어 둘게요.</p></details>
+  </div>
+</section>
+
+<footer id="updated"></footer>
+</div>
+
+<script>
+// [id, 제목, 설명, status, prio, deploy, 발견일 YYYY-MM-DD, 완료일 YYYY-MM-DD 또는 '']
+// status: ask | you | todo | wip | done | skip      prio: crit | mid | low      deploy: 서버 배포 | 웹 | OTA | 새 빌드 필요 | 콘솔 | -
+const SECTIONS = [
+ {key:'ask', title:'결정 필요 — 사용자가 정할 것', note:'기획·가격·정산·외부 비용처럼 Claude가 혼자 정하면 안 되는 것. 항목마다 추천안을 함께 적습니다.', items:[
+  ['Q1','탈퇴한 계정의 갱신 결제를 자동으로 환불할지','지금은 잠정안으로 결제 기록만 남기고 방은 열지 않으며 운영자에게 알림을 보냅니다(S9). 추천: 출시 때까지 이대로 두고, 탈퇴 화면에 "스토어 구독도 해지하세요" 안내를 꼭 보여 줍니다. 자동 환불은 스토어 API 권한·환불 정책이 정해진 뒤에 검토. STATUS "출시 전 확정할 정책"에 올림.','ask','low','-','2026-11-24',''],
+ ]},
+ {key:'ops', title:'운영 — 사용자가 직접 할 일', note:'콘솔·대시보드에서 직접 눌러야 하는 것. 코드로는 처리할 수 없습니다.', items:[
+  ['U1','운영 Railway 종료 대기(Draining) 30초','데모는 10/25에 끝냈습니다. 운영 서버를 만들 때 Teardown 켜기·Draining 30초·Overlap 0초를 해야 배포 때 보내던 메시지·푸시가 끊기지 않습니다. 5차 점검에서 `ops-infra-backlog.md` B1과 런북 12-1 체크리스트에 넣었어요.','you','mid','콘솔','2026-10-28',''],
+  ['U3','폰 분실 대비 준비 7개(C2)','`phone-loss-plan.md` 2번 ①~⑦이 아직 전부 체크 전입니다. 출장·1인 운영 전에 해 둬야 하는 것이라 "지금"으로 잡혀 있어요.','you','mid','콘솔','2026-11-24',''],
+  ['U4','만료일 달력 만들기(C5)','도메인·인증서·구독·키처럼 날짜가 지나면 멈추는 것들의 만료일 달력. 기한이 11월이라 일주일 남았습니다.','you','low','콘솔','2026-11-24',''],
+  ['U2','배포 자동화 A 6~9 마무리','Wait for CI·폰 GitHub 앱·업타임 감시·Sentry 알림 — 10/25·10/27에 모두 끝난 것으로 5차 점검에서 확인했습니다.','done','low','콘솔','2026-10-27','2026-10-27'],
+ ]},
+ {key:'srv', title:'코드 — 서버', note:'Railway 배포만으로 적용됨. 앱 업데이트는 필요 없음.', items:[
+  ['S7','데모 입장 코드로 남의 이메일 계정에 로그인 가능','소속사에 나눠 준 코드만 있으면 데모 서버에 소셜 로그인으로 들어온 실제 담당자 등 다른 사람의 이메일로 로그인할 수 있었습니다. 입장 코드가 걸린 서버에선 운영자 코드가 아니면 `@toffee.demo`·`@toffee.test` 주소만 받게 고침(로컬 개발은 그대로). `auth.service.ts` devLogin.','done','mid','서버 배포','2026-11-24','2026-11-24'],
+  ['S8','갈아타기 이월분이 바꾼 달 배분율로 정산됨','차감 줄은 원래 결제 달(창립 파트너 70%)로 빼면서, 같은 돈을 새 묶음으로 옮긴 이월 줄은 바꾼 달(60%)로 줘서 배분율이 바뀌는 달 경계에 소속사 몫이 줄었습니다. 이월도 원래 결제 달 기준으로, 이월의 이월은 처음 결제까지 거슬러 올라가게 고침(10/27 "결제한 달 기준" 결정과 같은 해석). `settlements.service.ts`.','done','mid','서버 배포','2026-11-24','2026-11-24'],
+  ['S9','탈퇴한 팬의 구독이 스토어 갱신 결제로 다시 열림','탈퇴는 우리 구매만 닫고 스토어 자동 갱신은 끊을 수 없어서, 다음 달 갱신 알림이 오면 로그인도 못 하는 계정의 방이 다시 열리고 활성 구독자로 셌습니다. 결제 기록만 남기고 방은 열지 않으며 운영자에게 환불 검토 알림을 보내게 고침(잠정 정책, Q1).','done','mid','서버 배포','2026-11-24','2026-11-24'],
+  ['S10','예약 작업 실패가 Sentry로 가지 않음','활동 종료 처리, 구글 구독 갱신 해지, 공개 알림, 생일 메시지, 미발송 알림, 하루 통계, 결제 기록 채우기가 실패해도 로그에만 남아 운영자 홈 "최근 오류"와 폰 알림이 조용했습니다. 실패를 Sentry로 직접 보내게 고침.','done','mid','서버 배포','2026-11-24','2026-11-24'],
+  ['S6','소속사 이동을 동시에 하면 "현재 소속" 두 줄','운영자 두 명이 같은 배우의 소속을 동시에 바꾸면 현재 소속 이력이 두 줄 생겨 정산 귀속이 정해지지 않을 수 있었습니다. 바꾸기 전에 배우 줄을 잠그게 고침. (같은 묶음이던 2단계 인증 코드 재사용은 10/28에 이미 고쳐져 있었음)','done','low','서버 배포','2026-10-27','2026-11-24'],
+  ['S1','묶음 갈아타기 뒤 옛 결제 환불 시 이중 차감','10/28 점검 2차에서 이미 고쳐진 것을 확인했습니다 — 환불 처리 때 그 결제를 가리키는 차감·이월 줄도 함께 환불로 바꿈.','done','crit','서버 배포','2026-10-27','2026-10-28'],
+  ['S2','구글 갱신 결제가 월말에 늦게 오면 다음 달 정산으로','10/28에 갱신 주문은 "만료일 − 1개월"로 기록하도록 고쳐진 것을 확인했습니다. 유예 기간 중 회복한 갱신은 원래 갱신일로 잡히지만 마감한 달이면 다음 달 조정으로 들어가 금액은 맞습니다.','done','mid','서버 배포','2026-10-27','2026-10-28'],
+  ['S3','의존성 취약점(npm audit)','백엔드 high 3개는 Prisma CLI가 설정 파일을 읽을 때만 쓰는 `effect` 패키지(서버 실행 중엔 안 쓰임, 메이저 업그레이드 필요). moderate는 빌드 도구 쪽. `npm audit fix`는 npm 자체 오류로 여전히 실패해서, Dependabot PR(toffeechat/toffee#111 백엔드 묶음 24개)을 합칠 때 같이 정리합니다. 앱은 Expo·Firebase 쪽 high 16·critical 1(메이저 업그레이드 필요).','todo','mid','서버 배포','2026-10-27',''],
+  ['S4','요청 횟수 제한이 서버 메모리에만 있음','번역·업로드 제한이 서버 대수만큼 늘어납니다. 서버 1대인 동안은 문제없음 — 운영에서 서버를 늘릴 때 공유 저장소로.','todo','low','서버 배포','2026-10-27',''],
+  ['S5','메시지마다 구독자 전원 `lastArtistMessageAt` 갱신','사진 10장이면 10번 갱신. 부하 테스트(`load-test-plan.md`) 때 확인.','todo','low','서버 배포','2026-10-27',''],
+ ]},
+ {key:'app', title:'코드 — 앱·웹 (OTA)', note:'JS만 바뀌어서 웹 배포 + OTA로 반영. 새 빌드 필요 없음.', items:[
+  ['A1','데모 역할 바꾸기가 실패하면 돌아갈 방법이 없어짐','"소속사로 돌아가기"를 눌렀을 때 역할 조회가 실패하면 토큰은 앞 계정으로 돌아가는데 "보는 중" 표시만 먼저 바뀌어 띠가 사라졌습니다. 로그인이 성공한 뒤에 바꾸게 고침. `demo-switch.ts`.','done','mid','OTA','2026-11-24','2026-11-24'],
+  ['A2','역할을 바꿀 때 앞 계정 세션·화면 상태가 남음','역할을 오갈 때마다 30일짜리 로그인 세션이 하나씩 남고, 못 보낸 메시지·소속사 알림 상태가 새 계정에 남았습니다. 앞 세션을 끊고 로그아웃 때와 같은 정리를 하게 고침.','done','low','OTA','2026-11-24','2026-11-24'],
+  ['A3','로그아웃해도 "소속사로 돌아가기" 띠가 남음','팬 화면으로 보다가 로그아웃한 뒤 다른 방법으로 로그인하면 상관없는 띠가 다시 떴습니다. 로그아웃·로그인 끊김 때 함께 지움.','done','low','OTA','2026-11-24','2026-11-24'],
+  ['A4','소속사 "한눈에" 통계 카드가 실패하면 계속 로딩','통계를 못 불러오면 스피너가 끝없이 돌고 아티스트별 구독자 칸이 사라졌습니다. 안내 + 다시 시도 버튼으로 고침.','done','mid','OTA','2026-11-24','2026-11-24'],
+  ['A5','소속사 "한눈에" 정산이 실패하면 ฿0으로 보임','정산 요청이 실패하면 "฿0 · 이번 달엔 아직 결제가 없어요"가 떠서 소속사가 첫 화면에서 0원을 볼 수 있었습니다. "–"와 "정산을 불러오지 못했습니다"로 고침.','done','mid','OTA','2026-11-24','2026-11-24'],
+  ['A6','웹에서 새로 고칠 때마다 토큰 갱신','웹은 새로 고침·새 탭마다 토큰을 새로 받아서, 소속사 PC 웹에서 탭을 여러 개 열면 갱신 요청 제한(분당 10회)에 걸렸습니다. 토큰을 받은 지 12시간이 안 됐으면 건너뛰게 고침(화면 순회 중 발견).','done','low','OTA','2026-11-24','2026-11-24'],
+  ['A7','베트남어 "Toffee Membership" 번역 누락','`vi.json` actorProfile.membership → "Hội viên Toffee".','done','low','OTA','2026-11-24','2026-11-24'],
+ ]},
+ {key:'ux', title:'UI/UX 개선', note:'화면을 PC·폰 폭으로 직접 띄워 보고 브랜드 가이드와 비교해 찾은 것. 작은 다듬기는 바로 고치고, 화면이 크게 바뀌면 "결정 필요"로 올립니다.', items:[
+  ['X1','한국어 문구 어미 섞기(전체)','앱 문구 170개와 운영자 화면 168줄을 고쳤습니다. 정책·결제·환불·정산·주의 문구는 "~합니다", 빈 화면·짧은 알림은 "~해요". ko.json 끝 어미 "~요" 312 → 216, "~니다" 3 → 99(남은 "~요"는 대부분 "~해 주세요" 부탁형).','done','mid','OTA','2026-11-24','2026-11-24'],
+  ['X2','브랜드 팔레트 밖 색 5곳','로그인 화면 포인트 색·소셜 버튼 배지(#5566E8 → #5F6FEA), 로그인 안내 글자, 영상 타일 바탕, 음성 메시지 글자를 팔레트 값으로.','done','low','OTA','2026-11-24','2026-11-24'],
+  ['X3','역할별 화면 76개 순회(PC·폰)','팬·아티스트·소속사·운영자 화면을 PC 1280·폰 390 폭으로 열어 화면 오류·가로 넘침·실패한 요청을 확인했습니다. 토큰 갱신 429(A6) 말고는 문제 없음.','done','low','-','2026-11-24','2026-11-24'],
+ ]},
+ {key:'ops2', title:'코드 — 배포·운영 도구', note:'GitHub 워크플로·배포 스크립트. 서비스 화면에는 영향 없음.', items:[
+  ['D1','운영 데이터 수정 "미리보기"가 실제로 커밋될 수 있음','금지어 검사가 BEGIN·COMMIT만 막아서 COMMIT과 같은 뜻인 END·ABORT, psql 메타 명령(\\!, \\i)이 통과했습니다. 문장 첫머리 기준으로 막고(CASE … END는 통과), 커밋 뒤 줄 수도 다시 세어 다르면 경고하게 고침. 운영 DB가 아직 없어 피해는 없었음.','done','mid','-','2026-11-24','2026-11-24'],
+  ['D2','CI가 main 합치기에서도 앞 실행을 취소','연달아 합치면 앞 커밋의 CI가 "cancelled"로 남아 운영 배포의 CI 확인에 걸렸습니다. PR에서만 취소하게 하고, CI 권한을 읽기 전용으로.','done','low','-','2026-11-24','2026-11-24'],
+  ['D3','운영 배포 금지 시간이 새벽 정리 작업을 다 덮지 못함','정리 작업이 04:45까지 돌아서 운영 금지 구간을 03:45~04:55(태국)로 늘림.','done','low','-','2026-11-24','2026-11-24'],
+  ['D4','프리뷰 배포가 EAS 출력을 셸에 그대로 넣음','운영 워크플로처럼 환경 변수로 받고 커밋 모양인지 확인하게 고침.','done','low','-','2026-11-24','2026-11-24'],
+  ['D5','e2e가 이 환경 브라우저를 못 찾음','`CHROMIUM_PATH`로 브라우저 경로를 넘길 수 있게 함(3차 점검 때 손으로 우회하던 것).','done','low','-','2026-11-24','2026-11-24'],
+  ['D6','배포 도구 `eas-cli@latest` 고정 안 됨','새 버전이 나오면 OTA 기준 커밋을 못 읽을 수 있습니다. 확인한 버전으로 고정하고 월간 점검 때 올리기 — 다음 프리뷰 배포 로그에서 실제 버전을 확인한 뒤 고정합니다.','todo','low','-','2026-11-24',''],
+ ]},
+ {key:'ver', title:'새 빌드 필요 — 모아서', note:'네이티브 변경이라 OTA가 안 돼요. 다음 프리뷰·스토어 빌드 때 함께.', items:[
+ ]},
+ {key:'hold', title:'보류', note:'지금은 안 하기로 한 것.', items:[
+  ['H1','운영자 화면 문구 다국어 적용','운영자 화면 한글 약 1,100줄이 다국어를 거치지 않고 코드에 직접 있습니다. 운영자는 한국어만 쓰므로 그대로 둡니다. 운영자를 해외에서 뽑게 되면 재검토.','skip','low','-','2026-11-24',''],
+ ]},
+];
+// 회차 기록 — 최신이 위. [날짜, 회차 이름, 새로 찾은 개수(모르면 null), 요약]
+const HISTORY = [
+ ['2026-11-24','5차 · 수동 점검',21,'4갈래(결제·정산 / 메시지·보안 / 앱·번역·문구 / 운영·배포)를 따로 조사하고 화면 76개를 PC·폰 폭으로 순회했습니다. 새로 찾은 21건 중 17건과 지난번 남긴 S6·X1까지 19건을 고쳐 데모에 올림. 결정 필요 1건, 사용자 할 일 2건, 대기 1건이 새로 남았고 지난번 남긴 S1·S2는 이미 고쳐져 있었음. 다음 예약 점검: 2026-12-01(화).'],
+ ['2026-10-29','4차 · 수동 점검',null,'아티스트·소속사·운영자 화면과 데모 데이터. 세 역할 계정으로 모든 화면을 브라우저로 열어 화면 오류 0까지(데모 초기화 때 로그아웃, 옛 데모 가격, 입장 코드 길이 등). 보드를 만들기 전이라 항목은 작업 로그에만 있습니다.'],
+ ['2026-10-28','3차 · 수동 점검 + 전체 테스트',null,'결제·인증 / 메시지·운영자 / 공통·배포 / 앱. 단위 418개·e2e·마이그레이션·화면 e2e 9단계·배포 자동 점검 8개 모두 통과. 채팅방 재연결 시 대화 유지, 시작 화면 멈춤 등을 고침.'],
+ ['2026-10-28','2차 · 수동 점검',45,'로그인·공통 / 결제·정산 / 메시지·운영자 / 앱 훅 / 앱 화면. 갈아타기 환불·마감 경합·첫 달 할인 정산 등 약 45건 전부 고침.'],
+ ['2026-10-27','1차 · 수동 점검',null,'결제·정산 / 로그인·권한 / 메시지·번역 / 운영자·스키마 / 앱. 작은 것은 바로 고치고, 설계 판단이 필요한 8건을 남김(같은 날 2건 해결 → 남은 6건이 위 S1~S6).'],
+];
+const SL={ask:'결정 필요',you:'사용자 할 일',todo:'대기',wip:'진행 중',done:'완료',skip:'보류'};
+const PL={crit:'높음',mid:'중간',low:'낮음'};
+const UPDATED='2026-11-24 · 5차 수동 점검 끝 — 19건 고쳐 데모에 올림. 첫 예약 점검 2026-12-01(화)';
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function md(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>')}
+let filter='all';
+try{filter=localStorage.getItem('toffee-audit-filter')||'all'}catch(e){}
+function render(){
+  const all=SECTIONS.flatMap(s=>s.items);
+  const c=k=>all.filter(i=>i[3]===k).length;
+  document.getElementById('summary').innerHTML=[
+    ['전체 항목',all.filter(i=>i[3]!=='skip').length],['완료',c('done')],['대기(코드)',c('todo')+c('wip')],['결정 필요',c('ask')],['사용자 할 일',c('you')]
+  ].map(([l,n])=>`<div class="tile"><b>${n}</b><span>${l}</span></div>`).join('');
+  const match=i=>filter==='all'||(filter==='open'&&!['done','skip'].includes(i[3]))||(filter==='you'&&['you','ask'].includes(i[3]))||(filter==='done'&&i[3]==='done');
+  document.getElementById('sections').innerHTML=SECTIONS.map(s=>{
+    const rows=s.items.filter(match);
+    if(!rows.length&&(filter!=='all'||s.key==='hold'))return'';
+    const body=rows.length?rows.map(([id,t,d,st,p,dep,fd,dd])=>`
+      <div class="row"><div class="id">${esc(id)}</div><div class="main"><div class="title">${md(t)}</div><div class="desc">${md(d)}</div><div class="dates">${fd?fd.slice(5).replace('-','/')+' 발견':''}${dd?' · '+dd.slice(5).replace('-','/')+' 완료':''}</div></div>
+      <div class="tags"><span class="chip s-${st}">${SL[st]}</span><span class="chip p-${p}">${PL[p]}</span>${dep!=='-'?`<span class="chip d ${dep==='새 빌드 필요'?'d-ver':''}">${esc(dep)}</span>`:''}</div></div>`).join(''):'<div class="empty">아직 항목이 없습니다. 다음 월간 점검에서 찾으면 여기에 추가돼요.</div>';
+    return `<section><div class="sec-head"><h2>${esc(s.title)}</h2><p>${md(s.note)}</p></div><div class="list">${body}</div></section>`;
+  }).join('');
+  document.querySelectorAll('.filters button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.f===filter)));
+  document.getElementById('history').innerHTML=HISTORY.map(([d,n,c,t])=>`<div class="row"><div class="id">${esc(d.slice(5))}</div><div class="main"><div class="title">${esc(n)}</div><div class="desc">${md(t)}</div></div><div class="tags">${c!=null?`<span class="chip d">새 항목 ${c}</span>`:''}</div></div>`).join('');
+  document.getElementById('updated').textContent='마지막 갱신: '+UPDATED;
+}
+document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.f;try{localStorage.setItem('toffee-audit-filter',filter)}catch(e){}render()}));
+render();
+</script>
