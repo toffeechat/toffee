@@ -30,6 +30,8 @@ import { ParentalConsentModule } from './parental-consent/parental-consent.modul
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard.js';
+import { PrismaThrottlerStorage } from './common/throttler/prisma-throttler.storage.js';
+import { ThrottlerStoreModule } from './common/throttler/throttler-store.module.js';
 import { LocalizedExceptionFilter } from './common/filters/localized-exception.filter.js';
 import { AuditModule } from './audit/audit.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
@@ -47,7 +49,12 @@ import { LifecycleModule } from './common/lifecycle/shutdown.service.js';
     PrivacyModule,
     SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
+    // 요청 제한 기록은 DB에(2026-11-24 점검 5차 — 서버가 여러 대여도 한도가 한 곳에서 세지게). PrismaModule은 전역
+    ThrottlerModule.forRootAsync({
+      imports: [ThrottlerStoreModule],
+      inject: [PrismaThrottlerStorage],
+      useFactory: (storage: PrismaThrottlerStorage) => ({ throttlers: [{ ttl: 60_000, limit: 60 }], storage }),
+    }),
     ScheduleModule.forRoot(),
     // 배포 때 처리 중인 요청·푸시·cron을 끝내고 끄기(2026-10-25, main.ts)
     LifecycleModule,

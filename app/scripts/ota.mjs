@@ -29,7 +29,7 @@ const envOf = (name) => {
 
 const result = spawnSync(
   'npx',
-  ['--yes', 'eas-cli@latest', 'update', '--channel', profile.channel, '--environment', profileName, '--message', message, '--non-interactive'],
+  ['--yes', 'eas-cli@27.11.0', 'update', '--channel', profile.channel, '--environment', profileName, '--message', message, '--non-interactive'],
   { cwd: root, stdio: 'inherit', env: { ...process.env, ...envOf(profileName) } },
 );
 process.exit(result.status ?? 1);

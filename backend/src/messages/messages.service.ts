@@ -177,6 +177,9 @@ function personalize(body: string, fanName: string): string {
   return body.replaceAll(NAME_PLACEHOLDER, fanName);
 }
 
+// 구독의 lastArtistMessageAt을 다시 기록하는 최소 간격(무사용 판정용이라 분 단위로 충분)
+const ARTIST_MESSAGE_MARK_INTERVAL_MS = 10 * 60 * 1000;
+
 @Injectable()
 export class MessagesService {
   constructor(
@@ -559,9 +562,12 @@ export class MessagesService {
     const pushRecipients = activeSubscriptions.map((sub) => sub.userId);
     // 인용된 팬이 알림을 받는 구독자면 일반 알림 대신 "내 메시지에 답장했어요" 한 건만
     const notifyQuotedFan = !!quotedFanId && pushRecipients.includes(quotedFanId);
+    // 10분 안에 이미 기록됐으면 건너뜀(2026-11-24 점검 5차) — 예전엔 메시지 하나마다 구독자 전원의 줄을 고쳐서 사진 10장이면 10번,
+    // 구독자가 많으면 한 번에 수천 줄을 반복해서 고쳤음. 이 값은 30일 무사용 판정용이라 10분 늦어도 결과가 같음
+    const now = new Date();
     await this.prisma.subscription.updateMany({
-      where: { actorId, cancelledAt: null },
-      data: { lastArtistMessageAt: new Date() },
+      where: { actorId, cancelledAt: null, OR: [{ lastArtistMessageAt: null }, { lastArtistMessageAt: { lt: new Date(now.getTime() - ARTIST_MESSAGE_MARK_INTERVAL_MS) } }] },
+      data: { lastArtistMessageAt: now },
     });
 
     // 푸시는 실패해도 메시지 발송 자체는 성공으로 처리 (best-effort). 카톡처럼 제목은 보낸 사람(대화방 이름),

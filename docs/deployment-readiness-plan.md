@@ -26,6 +26,24 @@
 
 ---
 
+## 2026-11-24 (이어서 2) — 점검 5차에서 대기로 남긴 것까지 고침 + 만료일 달력
+
+- **계기**: 사용자 "코드로 수정해야 할 거 다 고쳐" — 5차에서 "서버 여러 대·부하 테스트 때"로 미룬 것도 지금 고침. "만료일 달력도 Claude가 만들면 되지 않나".
+- **요청 횟수 제한을 DB로**(S4): `PrismaThrottlerStorage`(`common/throttler/`) — `RateLimitHit` 표에 키별 횟수를 한 문장 upsert로 원자적으로 세고, 넘으면
+  blockDuration 동안 막음. DB 오류면 서버 메모리 저장소로 넘어감(1분에 한 번 Sentry). 매시간 지난 기록 정리. 마이그레이션 `20261124120000_rate_limit_hits`(표 추가만).
+  로컬: 60번 200 → 61번째부터 429, DB가 꺼졌을 때도 메모리로 같은 동작.
+- **`lastArtistMessageAt`**(S5): 10분 안에 이미 기록됐으면 구독자 일괄 갱신을 건너뜀(무사용 판정용이라 결과 같음).
+- **의존성 취약점**(S3): 백엔드 `npm audit --omit=dev` 13 → 0(`overrides` effect 3.22.4·rimraf 6.1.4·uuid 11.1.1, `@sentry/nestjs` 11.11.0 — `npm audit fix`는
+  npm 오류로 여전히 안 돼서 직접). 앱은 `npx expo install --fix`(SDK 57 안 패치 19개) + overrides 6개(shell-quote·node-forge·re2js·source-map-js·grpc-js·
+  decode-uri-component@0.5)로 16(critical 1) → 6(critical 0). 남은 6개는 expo-router 57의 query-string 7 → SDK 58 필요(점검 보드 Q2, 결정 필요).
+  확인: 백엔드 깨끗이 재설치 후 tsc·테스트 442개·빌드·Prisma CLI(validate·generate·드리프트 없음), 앱 tsc·eslint·테스트, `expo export` 안드로이드·웹 번들,
+  화면 e2e 9단계, 화면 76개 순회 — 모두 통과. Expo 패치는 네이티브라 폰 앱엔 12월 새 preview 빌드 때.
+- **`eas-cli` 버전 고정**(D6): 27.11.0(11-24 프리뷰 배포에서 실제로 동작한 버전) — ota.mjs·eas-last-update.mjs·두 배포 워크플로.
+- **만료일 달력**(C5): 사업화 장부에 "만료일" 탭 — 비용의 `renews`(YYYY-MM-DD로 시작) + 새 `expiries` 컬렉션(카드 유효기간·Expo·Sentry·Resend 토큰)을
+  날짜순으로, 30일 안이면 노란 표시·지나면 "지남", 날짜 모르는 항목은 탭에서 직접 입력. 애플 멤버십 2027-08-14·Railway 12-01·Claude Max 11-25(추정)·
+  버블 12-12(추정) 갱신일을 채움. 월요일 주간 브리핑 예약 작업이 `expiries`도 읽게 바꿈.
+- **남은 일**: 👤 장부 만료일 탭에서 카드 유효기간·토큰 만료일 넣기. 결정 필요 — Expo SDK 58(Q2), 탈퇴 계정 갱신 결제 자동 환불(Q1).
+
 ## 2026-11-24 (이어서) — 코드 전수 점검 5차(수동, 월간 점검 보드 첫 회차)
 
 - **방법**: 4갈래(결제·정산 / 메시지·보안·개인정보 / 앱·번역·문구 / 운영·배포·문서)를 따로 조사하고 찾은 것은 코드로 재확인. 기본 검사(백엔드 tsc·oxlint·단위

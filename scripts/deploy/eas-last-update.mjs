@@ -8,8 +8,10 @@ import { args, output, repoRoot } from './lib.mjs';
 const opts = args();
 const branch = opts.channel || 'preview'; // ota.mjs는 채널 = 브랜치 이름으로 보냄(eas update --channel이 같은 이름 브랜치를 씀)
 let commit = '';
+// eas-cli 버전 고정(2026-11-24 점검 5차) — 출력 모양이 버전마다 달라 @latest면 새 버전이 나오는 날 OTA 기준 커밋을 못 읽을 수 있었음.
+// ota.mjs·deploy-preview.yml·deploy-production.yml도 같은 버전. 올릴 땐 월간 점검 때 네 곳을 같이 바꾸고 프리뷰 배포로 확인
 const eas = (...cmd) =>
-  execFileSync('npx', ['--yes', 'eas-cli@latest', ...cmd], { cwd: join(repoRoot, 'app'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  execFileSync('npx', ['--yes', 'eas-cli@27.11.0', ...cmd], { cwd: join(repoRoot, 'app'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 // JSON 앞에 안내 문구가 붙는 버전이 있어서 처음 나오는 { 또는 [부터
 const parse = (raw) => JSON.parse(raw.slice(Math.min(...['{', '['].map((ch) => raw.indexOf(ch)).filter((i) => i >= 0))));
 // 출력 모양이 eas-cli 버전마다 조금 달라서 키를 아무 깊이에서나 찾음(첫 번째 = 가장 최근)
