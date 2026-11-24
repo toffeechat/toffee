@@ -346,9 +346,12 @@
   },
   "deleteAccount": {
     "title": "Delete account",
-    "body": "Deleting your account removes your information such as nickname and date of birth, and it can't be undone.\n\n• If you have active subscriptions, cancel them in the App Store or Google Play first. Deleting your account does not stop store billing.\n• You won't be able to see your chats again. Save any photos, voice or videos you want to keep beforehand.\n• Replies you sent will be shown to stars as \"Deleted fan\".",
+    "body": "Deleting your account removes your information such as nickname and date of birth, and it can't be undone.\n\n• Cancel App Store subscriptions first — deleting your account does not stop App Store billing. For Google Play subscriptions, the next payment is turned off automatically when you delete your account (the current period is not refunded).\n• You won't be able to see your chats again. Save any photos, voice or videos you want to keep beforehand.\n• Replies you sent will be shown to stars as \"Deleted fan\".",
     "confirm": "Delete",
-    "failed": "Couldn't delete your account. Please try again."
+    "failed": "Couldn't delete your account. Please try again.",
+    "storeActiveTitle": "You still have an active subscription",
+    "storeActiveBody": "Deleting your account does not stop {{store}} billing. Please cancel it in subscription settings before you delete your account.",
+    "storeActiveAndroid": "When you delete your account, the next Google Play payment is turned off automatically. The current period is not refunded — to cancel now, use subscription settings."
   },
   "discover": {
     "tagline": "Closer to what matters.",

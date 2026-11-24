@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { confirm } from '@/lib/confirm';
 import { exportMyData } from '@/lib/export-my-data';
 import { ApiError } from '@/lib/api-client';
 import { openStoreSubscriptions } from '@/lib/store-links';
+import { storeName } from '@/lib/store-subscriptions';
 import { useMySubscriptions } from '@/hooks/use-subscriptions';
 import { useDeleteAccount, useMe } from '@/hooks/use-onboarding';
 import { BUSINESS_FIELDS, useBusinessInfo } from '@/hooks/use-business-info';
@@ -50,6 +51,20 @@ export default function ProfileScreen() {
 
   const availableAt = me?.nicknameChangeAvailableAt ? new Date(me.nicknameChangeAvailableAt) : null;
   const locked = !!availableAt && availableAt > new Date();
+
+  // 자동 갱신 중인 스토어 구독(2026-11-24 — 애플 계정 삭제 지침: 결제가 스토어에서 계속된다고 알리고 구독 관리로 바로 가게).
+  // 애플은 서버에서 못 끄니 탈퇴 전에 직접 해지, 구글은 탈퇴하면 서버가 다음 결제를 끔(StoreRenewalService)
+  const renewingStores = [
+    ...new Set(
+      (subscriptions ?? [])
+        .filter((sub) => sub.renewsAt && !sub.endsAt && !sub.cancelledAt)
+        .flatMap((sub) => sub.coveredBy.map((cover) => cover.iapPlatform))
+        .filter((platform): platform is 'IOS' | 'ANDROID' => platform === 'IOS' || platform === 'ANDROID'),
+    ),
+  ];
+  const renewingApple = renewingStores.includes('IOS');
+  // 구독 관리 버튼은 이 기기 스토어와 결제한 스토어가 같을 때만(아이폰에서 산 구독을 안드로이드 폰에서 열 수는 없음)
+  const deviceStore = Platform.OS === 'ios' ? 'IOS' : Platform.OS === 'android' ? 'ANDROID' : null;
 
   // 회원 탈퇴 — 되돌릴 수 없고, 스토어 구독은 앱이 끊을 수 없어서 스토어에서 먼저 해지하라고 안내(애플 가이드라인 5.1.1)
   const startDelete = async () => {
@@ -164,6 +179,22 @@ export default function ProfileScreen() {
             {notice}
           </ThemedText>
         ) : null}
+        {renewingStores.length > 0 ? (
+          <View style={[styles.storeBox, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold">{t('deleteAccount.storeActiveTitle')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {renewingApple ? t('deleteAccount.storeActiveBody', { store: storeName('IOS') }) : t('deleteAccount.storeActiveAndroid')}
+            </ThemedText>
+            {deviceStore && renewingStores.includes(deviceStore) ? (
+              <Button
+                title={t('manage.openStore', { store: storeName(deviceStore) })}
+                variant="secondary"
+                size="md"
+                onPress={() => void openStoreSubscriptions().catch(() => {})}
+              />
+            ) : null}
+          </View>
+        ) : null}
         <Button title={t('deleteAccount.title')} variant="ghost" size="md" onPress={startDelete} loading={deleteAccount.isPending} style={styles.delete} />
         {businessInfo ? (
           <View style={styles.business}>
@@ -214,6 +245,7 @@ const styles = StyleSheet.create({
   sectionLabel: { paddingHorizontal: Spacing.four, marginBottom: Spacing.one, letterSpacing: 0.6 },
   center: { textAlign: 'center', marginTop: Spacing.three },
   delete: { alignSelf: 'center', marginTop: Spacing.three },
+  storeBox: { borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.two, marginTop: Spacing.four, marginHorizontal: Spacing.four },
   newDot: { width: 8, height: 8, borderRadius: 4 },
   business: { gap: 2, marginTop: Spacing.four, paddingHorizontal: Spacing.two },
 });

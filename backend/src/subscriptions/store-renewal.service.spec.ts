@@ -35,6 +35,22 @@ describe('활동 종료 때 스토어 갱신 멈추기(2026-10-20)', () => {
     expect(prisma.purchase.updateMany).toHaveBeenCalledWith({ where: { id: 'p2', willRenew: false }, data: { willRenew: true } });
   });
 
+  it('탈퇴한 회원의 안드로이드 구독은 다음 결제를 끔(2026-11-24)', async () => {
+    const prisma = {
+      purchase: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'p9', iapTransactionId: 't9' }]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const iap = { cancelGoogleSubscription: vi.fn().mockResolvedValue(true) };
+    const service = new StoreRenewalService(prisma as never, iap as never);
+    expect(await service.stopDeletedUserRenewals()).toBe(1);
+    expect(prisma.purchase.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ iapPlatform: 'ANDROID', willRenew: true, user: { deletedAt: { not: null } } }) }),
+    );
+    expect(iap.cancelGoogleSubscription).toHaveBeenCalledWith('t9');
+  });
+
   it('다른 서버가 먼저 표시했으면(count 0) 구글에 다시 요청하지 않음(2026-10-27)', async () => {
     const prisma = {
       purchase: {

@@ -355,9 +355,12 @@
   },
   "deleteAccount": {
     "title": "Excluir conta",
-    "body": "Ao excluir sua conta, suas informações, como apelido e data de nascimento, são apagadas, e isso não pode ser desfeito.\n\n• Se você tiver assinaturas ativas, cancele-as primeiro na App Store ou no Google Play. Excluir a conta não interrompe as cobranças da loja.\n• Você não poderá ver suas conversas de novo. Salve antes as fotos, áudios ou vídeos que quiser guardar.\n• As respostas que você enviou aparecerão para os artistas como \"Fã excluído\".",
+    "body": "Ao excluir sua conta, suas informações, como apelido e data de nascimento, são apagadas, e isso não pode ser desfeito.\n\n• Cancele primeiro as assinaturas da App Store — excluir a conta não interrompe as cobranças da App Store. No Google Play, o próximo pagamento é desativado automaticamente ao excluir a conta (o período atual não é reembolsado).\n• Você não poderá ver suas conversas de novo. Salve antes as fotos, áudios ou vídeos que quiser guardar.\n• As respostas que você enviou aparecerão para os artistas como \"Fã excluído\".",
     "confirm": "Excluir",
-    "failed": "Não foi possível excluir sua conta. Tente novamente."
+    "failed": "Não foi possível excluir sua conta. Tente novamente.",
+    "storeActiveTitle": "Você ainda tem uma assinatura ativa",
+    "storeActiveBody": "Excluir a conta não interrompe as cobranças da {{store}}. Cancele no gerenciamento de assinaturas antes de excluir a conta.",
+    "storeActiveAndroid": "Ao excluir a conta, o próximo pagamento do Google Play é desativado automaticamente. O período atual não é reembolsado; para cancelar agora, use o gerenciamento de assinaturas."
   },
   "discover": {
     "tagline": "Mais perto do que importa.",
