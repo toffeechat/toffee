@@ -237,7 +237,7 @@ jobs:
 
       - name: 웹 배포(Cloudflare Pages)
         if: needs.plan.outputs.web == 'true'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
