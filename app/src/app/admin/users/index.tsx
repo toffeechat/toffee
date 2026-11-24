@@ -145,7 +145,7 @@ export default function AdminUsersScreen() {
                 {page} / {pages}쪽 · {data.total.toLocaleString()}명
               </ThemedText>
             </View>
-          ) : null
+          ) : undefined
         }
       />
     </SafeAreaView>

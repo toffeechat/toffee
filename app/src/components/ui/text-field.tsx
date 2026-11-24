@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { StyleSheet, TextInput, View, type StyleProp, type TextInputInstance, type TextInputProps, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -7,7 +7,7 @@ import { fontFor, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /** 입력창 — Cloud 배경, 위에 작은 라벨(선택), 아래 오류·도움말(선택) */
-export const TextField = forwardRef<TextInput, TextInputProps & { label?: string; error?: string | null; hint?: string; containerStyle?: StyleProp<ViewStyle> }>(
+export const TextField = forwardRef<TextInputInstance, TextInputProps & { label?: string; error?: string | null; hint?: string; containerStyle?: StyleProp<ViewStyle> }>(
   function TextField({ label, error, hint, containerStyle, style, ...rest }, ref) {
     const theme = useTheme();
     const { i18n } = useTranslation();

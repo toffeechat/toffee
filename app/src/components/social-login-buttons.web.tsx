@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ComponentRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -52,7 +52,7 @@ export function SocialLoginButtons({
   busy?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const container = useRef<View>(null);
+  const container = useRef<ComponentRef<typeof View>>(null);
   const last = useLastLoginProvider();
 
   useEffect(() => {

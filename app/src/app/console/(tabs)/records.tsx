@@ -72,7 +72,7 @@ export default function ConsoleRecordsScreen() {
           </View>
         }
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? undefined : (
             <ThemedText type="small" themeColor="textTertiary" style={styles.empty}>
               {t(`records.empty.${tab}`)}
             </ThemedText>
@@ -83,7 +83,7 @@ export default function ConsoleRecordsScreen() {
             <ThemedText type="caption" themeColor="textTertiary" style={styles.empty}>
               {t('records.limitNote', { count: data.limit })}
             </ThemedText>
-          ) : null
+          ) : undefined
         }
         renderItem={({ item }) =>
           tab === 'blocks' ? (

@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance } from 'expo-notifications';
 import {
   AuthorizationStatus,
   getInitialNotification,
@@ -55,7 +56,7 @@ export async function registerThisDevice(): Promise<void> {
     // 서버가 android.notification.channelId = 'messages'로 보냄 — 이름은 설정 화면에 보이는 문구
     await Notifications.setNotificationChannelAsync('messages', {
       name: i18n.t('push.channelMessages'),
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: AndroidImportance.HIGH,
       // 진동을 기기 기본값에 맡기지 않고 켬(2026-10-13) — 안드로이드 채널은 처음 만들 때 값이 고정돼서 바꾸려면 채널 id를 새로
       enableVibrate: true,
       vibrationPattern: [0, 250, 150, 250],

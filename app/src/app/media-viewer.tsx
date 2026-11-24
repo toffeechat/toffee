@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, StyleSheet, View, useWindowDimensions, type ListViewToken } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +85,7 @@ export default function MediaViewerScreen() {
   }, [foundIndex, params.id]);
 
   // FlatList는 onViewableItemsChanged가 바뀌면 오류를 내서 처음 만든 함수를 계속 씀(setIndex는 안 바뀜)
-  const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: ViewToken<ChatMediaItem>[] }) => {
+  const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: ListViewToken[] }) => {
     const first = viewableItems[0];
     if (first?.index !== null && first?.index !== undefined) setIndex(first.index);
   });

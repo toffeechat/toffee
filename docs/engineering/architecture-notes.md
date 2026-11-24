@@ -2152,3 +2152,6 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   해시 그대로 `RateLimitHit.key`, 고정 창(ttl) 카운트 + `blockedUntil`. 요청마다 쿼리 1~2개가 늘어남(한도 넘을 때만 2개). `@Cron`은 `common/lifecycle/cron.js`.
 - **의존성 overrides**: backend `effect`(Prisma CLI 고정 3.20.0 취약), `rimraf`·`uuid`(firebase-admin → google-gax·gaxios). app `shell-quote`·`node-forge`·`re2js`·
   `source-map-js`·`@grpc/grpc-js`·`decode-uri-component@0.5.0`. 상위 패키지가 고치면 지울 것(월간 점검 때 `npm ls`로 확인).
+- **Expo SDK 58(같은 날)**: iOS는 SceneDelegate 구조 — 소셜 로그인 콜백은 `plugins/with-social-login-urls.js`가 AppDelegate `application(_:open:options:)`에 넣음
+  (LINE 라이브러리 플러그인 대신, Kakao·Naver 플러그인의 AppDelegate 수정은 실패해도 우리 것이 대신). 새 네이티브 플러그인을 넣으면 preview env로
+  복사본 `expo prebuild --clean`을 돌려 AppDelegate를 눈으로 확인할 것. 잠금 파일을 처음부터 다시 만들 땐 npm 11로 만들고 npm 10 `npm install`로 맞춘 뒤 `npm ci` 확인.

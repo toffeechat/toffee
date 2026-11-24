@@ -360,7 +360,7 @@ export default function AdminDemoCodesScreen() {
               {isError ? '목록을 불러오지 못했습니다.' : '등록된 입장 코드가 없어요.'}
             </ThemedText>
           }
-          ListFooterComponent={data?.common ? <CommonRow summary={data.common} /> : null}
+          ListFooterComponent={data?.common ? <CommonRow summary={data.common} /> : undefined}
           renderItem={({ item }) => <CodeRow item={item} linkRole={linkRole} linkLang={linkLang} />}
         />
       )}

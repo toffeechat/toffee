@@ -137,7 +137,7 @@ export default function AdminReportsScreen() {
           </View>
         }
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? undefined : (
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
               {filter.status === 'PENDING' ? '대기 중인 신고가 없어요.' : '조건에 맞는 신고가 없어요.'}
             </ThemedText>

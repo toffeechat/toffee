@@ -34,7 +34,7 @@ export default function SupportListScreen() {
           {isLoading ? <ActivityIndicator color={theme.tint} /> : null}
         </View>
       }
-      ListEmptyComponent={isLoading ? null : <EmptyState icon={MessageSquarePlus} title={t('inquiry.empty')} />}
+      ListEmptyComponent={isLoading ? undefined : <EmptyState icon={MessageSquarePlus} title={t('inquiry.empty')} />}
       renderItem={({ item }) => (
         <Pressable
           onPress={() => router.push({ pathname: '/support/[id]', params: { id: item.id } })}

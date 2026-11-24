@@ -28,7 +28,8 @@ const config: ExpoConfig = {
   // EAS 프로젝트(2026-10-01 생성) — 개인 계정이 아니라 조직 소유로 둬서 팀원 초대·법인 이전이 쉽게.
   // 운영·개발 변형이 같은 EAS 프로젝트를 씀(빌드 프로필로만 구분).
   owner: 'toffeechat-team',
-  version: '1.0.0',
+  // 1.1.0(2026-11-24): Expo SDK 58(RN 0.88) 업그레이드 — 1.0.0 앱(SDK 57)에 SDK 58용 OTA가 내려가면 꺼지므로 런타임을 나눔
+  version: '1.1.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: IS_PRODUCTION ? 'toffee' : 'toffee-dev',
@@ -138,8 +139,8 @@ const config: ExpoConfig = {
       { ios: { useFrameworks: 'static' }, android: { extraMavenRepos: ['https://devrepo.kakao.com/nexus/content/groups/public/'] } },
     ],
     'expo-apple-authentication',
-    // LINE — 채널 ID는 런타임(JS)에서 setup, 플러그인은 URL 콜백 연결만
-    '@xmartlabs/react-native-line',
+    // LINE — 채널 ID는 런타임(JS)에서 setup, 플러그인은 URL 콜백 연결만. SDK 58 SceneDelegate 구조라 라이브러리 플러그인 대신 우리 플러그인이 LINE·Kakao·Naver 콜백을 같이 넣음(2026-11-24)
+    ['./plugins/with-social-login-urls', { kakao: !!KAKAO_NATIVE_APP_KEY, naverUrlScheme: NAVER_URL_SCHEME }],
     ...(GOOGLE_IOS_URL_SCHEME ? [['@react-native-google-signin/google-signin', { iosUrlScheme: GOOGLE_IOS_URL_SCHEME }] as [string, object]] : []),
     // ios·android 옵션을 안 넘기면 플러그인이 키만 확인하고 아무것도 안 함(카카오톡에서 돌아오는 URL scheme·AppDelegate 처리·안드로이드
     // AuthCodeHandlerActivity가 빠져서 카톡 로그인 후 앱으로 못 돌아옴) — 2026-10-02 실기기 빌드 준비 중 prebuild로 확인
