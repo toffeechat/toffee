@@ -79,7 +79,9 @@
      `status`(`done`/`todo`), `when`, `login`, `method`, `purpose`, `recovery`, `twofa`(`on`/`off`/`unknown`),
      `created`, `updated`, `url`, `note`, `order`.
    - `expenses`(문서 하나 = 결제 한 건 또는 예정 비용 하나): `item`, `category`, `stage`, `status`(`paid`/`planned`),
-     `amount`(숫자) + `currency`(`USD`/`KRW`) 또는 예정이면 `estimate`(글), `krw`(카드 청구 원화, 알면), `cycle`,
+     `amount`(숫자) + `currency`(`USD`/`KRW`) 또는 예정이면 `estimate`(글), `krw`(카드 청구 원화, 알면), 달러 결제면 `fxRate`(결제일 무렵 원/달러
+     대략 환율 — 장부가 원화 합계를 계산, 2026-11-24 사용자 요청), 정기 결제면 `recur`(`{amount, currency, every: month|year, active}` —
+     상단 "매달 고정비·이번 달·다음 결제" 카드 계산용, 해지하면 `active: false`), `cycle`,
      `date`, `renews` + `renewAmount`(정기 결제면), `payer`, `receipt`, `note`, `order`. 정기 결제가 갱신되면 새
      문서를 추가(연도별 기록 유지).
    - `meta/roadmap`: `current`(지금 단계) + `stages`. 단계가 넘어가면 `current`를 바꾼다.

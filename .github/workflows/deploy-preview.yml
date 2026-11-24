@@ -22,6 +22,10 @@ on:
         type: choice
         options: [none, ios, android, all]
         default: none
+      ota_base:
+        description: OTA 기준 커밋(비우면 EAS의 마지막 OTA) — 새 빌드 직후엔 그 빌드의 커밋을 넣어야 다음 OTA가 열림
+        required: false
+        default: ''
       skip_ota:
         description: 앱 OTA 건너뛰기
         type: boolean
@@ -77,14 +81,15 @@ jobs:
 
       - name: 마지막 OTA 커밋(EAS)
         id: last_ota
-        if: env.EXPO_TOKEN != ''
+        if: env.EXPO_TOKEN != '' && inputs.ota_base == ''
         run: node scripts/deploy/eas-last-update.mjs --channel preview
 
       - name: 배포 계획(바뀐 부분)
         id: plan
         env:
           # EAS 출력은 환경 변수로 받아 커밋 모양인지 확인(운영 워크플로와 같게, 2026-11-24 점검 5차)
-          OTA_BASE: ${{ steps.last_ota.outputs.commit }}
+          # 새 빌드 직후엔 빌드한 커밋을 직접 넣음(2026-11-24 — 예전엔 빌드 뒤에도 옛 OTA 기준이라 네이티브 변경으로 보고 OTA가 계속 막혔음)
+          OTA_BASE: ${{ inputs.ota_base || steps.last_ota.outputs.commit }}
         run: |
           [[ -z "$OTA_BASE" || "$OTA_BASE" =~ ^[0-9a-f]{7,40}$ ]] || { echo "⛔ 마지막 OTA 커밋 모양이 이상함: $OTA_BASE"; exit 1; }
           node scripts/deploy/plan.mjs --env preview --target ${{ steps.target.outputs.sha }} --ota-base "$OTA_BASE" --json plan.json

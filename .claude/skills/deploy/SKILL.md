@@ -80,7 +80,7 @@ node scripts/deploy/plan.mjs --env preview --target HEAD     # 떠 있는 서버
 mcp__github__actions_run_trigger  method=run_workflow  owner=toffeechat repo=toffee
   workflow_id=deploy-preview.yml  ref=main  inputs={"ref":"main","ota_message":"<한 줄 설명>"}
 ```
-- 네이티브 변경이면 `build`를 `ios`(또는 all)로. 배포를 피할 시간인데 급하면 `override_window: true`(사용자가 급하다고 했을 때만).
+- 네이티브 변경이면 `build`를 `ios`(또는 all)로. **새 빌드 직후의 다음 OTA**는 `ota_base`에 그 빌드를 만든 커밋을 넣을 것(2026-11-24 — 안 넣으면 EAS의 옛 OTA를 기준으로 계산해 네이티브 변경으로 보고 OTA가 막힘). 배포를 피할 시간인데 급하면 `override_window: true`(사용자가 급하다고 했을 때만).
 - 진행 확인: `mcp__github__actions_list`(list_workflow_runs, workflow_id `deploy-preview.yml`) → `actions_get`(get_workflow_run / list_workflow_jobs).
   기다릴 땐 sleep 대신 `node scripts/deploy/wait-deployed.mjs --env preview --part server --target <sha>`를 백그라운드(run_in_background)로 돌려
   끝나면 깨어나게 하거나, Monitor로 실행 상태를 본다. 보통 10~20분(CI 대기 + 도커 빌드).

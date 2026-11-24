@@ -341,9 +341,12 @@
   },
   "deleteAccount": {
     "title": "Xóa tài khoản",
-    "body": "Xóa tài khoản sẽ xóa các thông tin như biệt danh và ngày sinh của bạn, và không thể hoàn tác.\n\n• Nếu bạn đang có gói đăng ký, hãy hủy trong App Store hoặc Google Play trước. Xóa tài khoản không dừng việc thanh toán của cửa hàng.\n• Bạn sẽ không xem lại được các cuộc trò chuyện. Hãy lưu trước những ảnh, tin nhắn thoại hoặc video bạn muốn giữ.\n• Câu trả lời bạn đã gửi sẽ hiển thị với nghệ sĩ là \"Fan đã xóa tài khoản\".",
+    "body": "Xóa tài khoản sẽ xóa các thông tin như biệt danh và ngày sinh của bạn, và không thể hoàn tác.\n\n• Hãy hủy gói đăng ký App Store trước — xóa tài khoản không dừng việc thanh toán của App Store. Với Google Play, lần thanh toán tiếp theo sẽ tự động tắt khi bạn xóa tài khoản (kỳ hiện tại không được hoàn tiền).\n• Bạn sẽ không xem lại được các cuộc trò chuyện. Hãy lưu trước những ảnh, tin nhắn thoại hoặc video bạn muốn giữ.\n• Câu trả lời bạn đã gửi sẽ hiển thị với nghệ sĩ là \"Fan đã xóa tài khoản\".",
     "confirm": "Xóa",
-    "failed": "Không xóa được tài khoản. Vui lòng thử lại."
+    "failed": "Không xóa được tài khoản. Vui lòng thử lại.",
+    "storeActiveTitle": "Bạn vẫn còn gói đăng ký đang hoạt động",
+    "storeActiveBody": "Xóa tài khoản không dừng việc thanh toán của {{store}}. Vui lòng hủy trong phần quản lý gói đăng ký trước khi xóa tài khoản.",
+    "storeActiveAndroid": "Khi xóa tài khoản, lần thanh toán Google Play tiếp theo sẽ tự động tắt. Kỳ hiện tại không được hoàn tiền; để hủy ngay, hãy dùng phần quản lý gói đăng ký."
   },
   "discover": {
     "tagline": "Closer to what matters.",

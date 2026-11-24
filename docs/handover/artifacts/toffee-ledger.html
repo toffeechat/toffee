@@ -50,7 +50,9 @@ h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; text
 .stage-now b { color: var(--ink); }
 
 /* stat tiles */
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.acc-sum { margin: 0; color: var(--muted); font-size: 14px; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
 .stat .k { font-size: 12px; color: var(--muted); }
 .stat .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -90,6 +92,15 @@ h2 .tot { letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nu
 .line2 { grid-column: 1 / -1; color: var(--muted); font-size: 14px; }
 .empty { padding: 20px 16px; color: var(--muted); font-size: 14px; }
 .b-late { background: var(--warn); color: var(--surface); }
+/* 메모 — 길어서 기본 접힘(2026-11-24 사용자 요청) */
+.memo { grid-column: 1 / -1; font-size: 14px; }
+.memo summary { cursor: pointer; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.memo summary::-webkit-details-marker { display: none; }
+.memo summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s; }
+.memo[open] summary::before { transform: rotate(45deg); }
+.memo summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.memo p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .memo summary::before { transition: none; } }
 .when { font-family: var(--font-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .setdate { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 14px; }
 .setdate input { font: inherit; font-size: 14px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
@@ -113,8 +124,9 @@ footer { color: var(--muted); font-size: 13px; }
 
   <div class="stats" id="stats">
     <div class="stat"><div class="k">지금까지 쓴 돈</div><div class="v">불러오는 중</div></div>
-    <div class="stat"><div class="k">다음 정기 결제</div><div class="v">불러오는 중</div></div>
-    <div class="stat"><div class="k">만든 계정</div><div class="v">불러오는 중</div></div>
+    <div class="stat"><div class="k">매달 고정비</div><div class="v">불러오는 중</div></div>
+    <div class="stat"><div class="k">이번 달</div><div class="v">불러오는 중</div></div>
+    <div class="stat"><div class="k">다음 결제</div><div class="v">불러오는 중</div></div>
   </div>
 
   <div class="tabs" role="tablist" aria-label="보기 선택">
@@ -125,6 +137,7 @@ footer { color: var(--muted); font-size: 13px; }
 
   <div class="panel" id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts">
     <div class="notice"><b>비밀번호·인증 코드·API 키는 여기 적지 않습니다.</b> 비밀번호 관리 앱에 따로 보관하세요. 이 페이지는 어디에 무슨 계정이 있는지만 기록합니다.</div>
+    <p class="acc-sum" id="accSum"></p>
     <div id="accountsBody"><div class="list"><div class="empty">계정 목록을 불러오는 중입니다. 계정을 만들었다고 Claude에게 말하면 여기에 추가됩니다.</div></div></div>
   </div>
 
@@ -150,7 +163,7 @@ footer { color: var(--muted); font-size: 13px; }
     { n: 1, name: "계정·기반" }, { n: 2, name: "데모·제안" }, { n: 3, name: "소속사 의견" }, { n: 4, name: "지원사업" },
     { n: 5, name: "법인 설립" }, { n: 6, name: "출시 준비" }, { n: 7, name: "출시·파일럿" }, { n: 8, name: "확장" }
   ];
-  const state = { accounts: [], costs: [], roadmap: null, expiries: [] };
+  const state = { accounts: [], costs: [], roadmap: null, expiries: [], fx: null };
   let dbRef = null;
 
   // tabs
@@ -166,6 +179,13 @@ footer { color: var(--muted); font-size: 13px; }
   const stageName = (n) => { const s = stages().find((x) => x.n === n); return s ? n + "단계 · " + s.name : "단계 미정"; };
   const fmtUSD = (v) => "$" + (Math.round(v * 100) / 100).toFixed(2);
   const fmtKRW = (v) => Math.round(v).toLocaleString("ko-KR") + "원";
+  // 원화로 본 금액(2026-11-24): 카드 청구 원화(krw)가 있으면 그 값, 없으면 결제일 무렵 대략 환율(fxRate, 원/달러)로 환산. 둘 다 없으면 null
+  function krwOf(d) {
+    if (typeof d.krw === "number") return d.krw;
+    if (typeof d.amount !== "number") return null;
+    if (d.currency === "KRW") return d.amount;
+    return typeof d.fxRate === "number" ? d.amount * d.fxRate : null;
+  }
   function money(d) {
     if (typeof d.amount !== "number") return d.estimate || "";
     return d.currency === "KRW" ? fmtKRW(d.amount) : fmtUSD(d.amount);
@@ -181,6 +201,16 @@ footer { color: var(--muted); font-size: 13px; }
   function addMeta(dl, label, value, mono) {
     if (!value) return;
     dl.append(el("dt", null, label), el("dd", mono ? "mono" : null, value));
+  }
+  // 메모는 접어 둔 아코디언으로(펼친 상태는 화면을 다시 그려도 기억)
+  const openMemos = new Set();
+  function memo(key, text) {
+    if (!text) return null;
+    const det = el("details", "memo");
+    det.open = openMemos.has(key);
+    det.addEventListener("toggle", () => { if (det.open) openMemos.add(key); else openMemos.delete(key); });
+    det.append(el("summary", null, "메모"), el("p", null, text));
+    return det;
   }
   function group(items, rowFn, emptyText, totalFn) {
     const box = document.createDocumentFragment();
@@ -214,10 +244,11 @@ footer { color: var(--muted); font-size: 13px; }
       addMeta(dl, "용도", d.purpose);
       addMeta(dl, "복구 수단", d.recovery);
       addMeta(dl, "만든 날", d.created, true);
-      addMeta(dl, "메모", d.note);
       r.append(dl);
+      const m = memo("a:" + (d.service || ""), d.note); if (m) r.append(m);
     } else {
       r.append(el("div", "line2", [d.purpose, d.login ? "가입 계정: " + d.login : ""].filter(Boolean).join(" · ")));
+      const m = memo("a:" + (d.service || ""), d.note); if (m) r.append(m);
     }
     return r;
   }
@@ -233,11 +264,12 @@ footer { color: var(--muted); font-size: 13px; }
     addMeta(dl, "주기", d.cycle);
     if (paid) addMeta(dl, "결제일", d.date, true);
     if (typeof d.krw === "number") addMeta(dl, "카드 청구액", fmtKRW(d.krw));
+    else if (paid && d.currency !== "KRW" && typeof d.amount === "number" && d.amount > 0 && typeof d.fxRate === "number") addMeta(dl, "원화(추정)", "약 " + fmtKRW(d.amount * d.fxRate) + " · 1달러 " + d.fxRate.toLocaleString("ko-KR") + "원 기준");
     addMeta(dl, "다음 결제", d.renews ? d.renews + (d.renewAmount ? " · " + d.renewAmount : "") : "", false);
     addMeta(dl, "결제 수단", d.payer);
     if (paid) addMeta(dl, "영수증", d.receipt || "보관 확인 필요");
-    addMeta(dl, "메모", d.note);
     r.append(dl);
+    const m = memo("c:" + (d.item || ""), d.note); if (m) r.append(m);
     return r;
   }
   function paidTotal(rows) {
@@ -245,7 +277,8 @@ footer { color: var(--muted); font-size: 13px; }
     if (!p.length) return "";
     const usd = p.filter((d) => d.currency !== "KRW").reduce((s, d) => s + d.amount, 0);
     const krw = p.filter((d) => d.currency === "KRW").reduce((s, d) => s + d.amount, 0);
-    return "쓴 돈 " + [usd ? fmtUSD(usd) : "", krw ? fmtKRW(krw) : ""].filter(Boolean).join(" + ");
+    const total = p.reduce((s, d) => s + (krwOf(d) ?? 0), 0);
+    return "쓴 돈 약 " + fmtKRW(total) + " (" + [usd ? fmtUSD(usd) : "", krw ? fmtKRW(krw) : ""].filter(Boolean).join(" + ") + ")";
   }
 
   // 만료일 — 비용의 다음 결제일(YYYY-MM-DD로 시작하는 것) + expiries 컬렉션(토큰·카드처럼 돈이 안 드는 만료)
@@ -279,8 +312,8 @@ footer { color: var(--muted); font-size: 13px; }
     if (d.when && d.when.length > 10) addMeta(dl, "참고", d.when.slice(10).replace(/^[\s(·-]+|\)$/g, ""));
     addMeta(dl, "만료되면", d.impact);
     addMeta(dl, "확인·갱신", d.how);
-    addMeta(dl, "메모", d.note);
     r.append(dl);
+    const m = memo("e:" + (d.item || ""), d.note); if (m) r.append(m);
     if (d.id && dbRef) {
       const f = el("div", "setdate");
       const label = el("label", null, at === null ? "날짜 넣기" : "날짜 바꾸기");
@@ -318,16 +351,37 @@ footer { color: var(--muted); font-size: 13px; }
     const paid = state.costs.filter((d) => d.status === "paid" && typeof d.amount === "number");
     const usd = paid.filter((d) => d.currency !== "KRW").reduce((s, d) => s + d.amount, 0);
     const krwOnly = paid.filter((d) => d.currency === "KRW").reduce((s, d) => s + d.amount, 0);
-    const charged = paid.filter((d) => typeof d.krw === "number").reduce((s, d) => s + d.krw, 0) + krwOnly;
-    const spentV = [usd ? fmtUSD(usd) : "", krwOnly ? fmtKRW(krwOnly) : ""].filter(Boolean).join(" + ") || "0원";
-    const next = state.costs.filter((d) => d.renews).sort((a, b) => (a.renews < b.renews ? -1 : 1))[0];
+    const parts = [usd ? fmtUSD(usd) : "", krwOnly ? fmtKRW(krwOnly) : ""].filter(Boolean).join(" + ") || "0원";
+    // 원화 합계 — 카드 청구액이 있으면 그 값, 없으면 결제일 무렵 대략 환율로(카드 해외 결제 수수료는 빠짐)
+    const missingFx = paid.filter((d) => d.amount > 0 && krwOf(d) === null).length;
+    const totalKrw = paid.reduce((s, d) => s + (krwOf(d) ?? 0), 0);
+    const spentV = paid.length ? "약 " + fmtKRW(totalKrw) : "0원";
+    const spentSub = parts + (missingFx ? " · 환율 없는 " + missingFx + "건 빠짐" : " · 결제일 무렵 환율로 환산");
+    // 정기 결제(recur: {amount, currency, every: month|year, active}) — 매달 고정비·이번 달 예상·다음 결제(2026-11-24 사용자 요청, 젤리 장부처럼)
+    const latestFx = paid.filter((d) => typeof d.fxRate === "number").sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    const usdKrw = (state.fx && typeof state.fx.usdKrw === "number" ? state.fx.usdKrw : null) ?? (latestFx ? latestFx.fxRate : 1335);
+    const recurKrw = (r) => (r.currency === "KRW" ? r.amount : r.amount * usdKrw);
+    const recurring = state.costs.filter((d) => d.recur && typeof d.recur.amount === "number" && d.recur.active !== false);
+    const monthlyOf = (d) => recurKrw(d.recur) / (d.recur.every === "year" ? 12 : 1);
+    const monthly = recurring.reduce((sum, d) => sum + monthlyOf(d), 0);
+    const biggest = [...recurring].sort((a, b) => monthlyOf(b) - monthlyOf(a))[0];
+    const nowD = new Date();
+    const ym = nowD.getFullYear() + "-" + String(nowD.getMonth() + 1).padStart(2, "0");
+    const todayStr = ym + "-" + String(nowD.getDate()).padStart(2, "0");
+    const paidThisMonth = paid.filter((d) => (d.date || "").startsWith(ym)).reduce((sum, d) => sum + (krwOf(d) ?? 0), 0);
+    const upcoming = recurring.filter((d) => dateOf(d.renews) !== null && d.renews.slice(0, 10) >= todayStr).sort((a, b) => (a.renews < b.renews ? -1 : 1));
+    const expectedThisMonth = upcoming.filter((d) => d.renews.startsWith(ym)).reduce((sum, d) => sum + recurKrw(d.recur), 0);
+    const next = upcoming[0];
+    const recurLabel = (d) => (d.recur.currency === "KRW" ? fmtKRW(d.recur.amount) : fmtUSD(d.recur.amount) + " (약 " + fmtKRW(recurKrw(d.recur)) + ")");
     const doneAcc = state.accounts.filter((d) => d.status === "done");
     const warn = doneAcc.filter((d) => d.twofa !== "on").length;
+    $("accSum").textContent = "만든 계정 " + doneAcc.length + "개 · " + (warn ? "2단계 인증 확인 필요 " + warn + "개" : "모두 2단계 인증 켬");
     const tile = (k, v, s) => { const t = el("div", "stat"); t.append(el("div", "k", k), el("div", "v", v)); if (s) t.append(el("div", "s", s)); return t; };
     $("stats").replaceChildren(
-      tile("지금까지 쓴 돈", spentV, paid.length + "건" + (charged ? " · 카드 청구 " + fmtKRW(charged) : "")),
-      tile("다음 정기 결제", next ? next.renews : "없음", next ? (next.item + (next.renewAmount ? " · " + next.renewAmount : "")) : ""),
-      tile("만든 계정", doneAcc.length + "개", warn ? "2단계 인증 확인 " + warn + "개" : "모두 2단계 인증 켬")
+      tile("지금까지 쓴 돈", spentV, paid.length + "건 · " + spentSub),
+      tile("매달 고정비", recurring.length ? "약 " + fmtKRW(monthly) : "없음", recurring.length ? recurring.length + "개 · 연간 결제는 12로 나눠 포함" + (biggest ? " · 가장 큰 것 " + biggest.item.split("(")[0].trim() : "") : ""),
+      tile("이번 달", "약 " + fmtKRW(paidThisMonth + expectedThisMonth), "실제 " + fmtKRW(paidThisMonth) + " + 예상 " + fmtKRW(expectedThisMonth)),
+      tile("다음 결제", next ? next.renews.slice(5, 10).replace("-", "/") : "없음", next ? next.item.split("(")[0].trim() + " · " + recurLabel(next) : "")
     );
 
     // panels
@@ -357,6 +411,7 @@ footer { color: var(--muted); font-size: 13px; }
     db.collection("accounts").onSnapshot((s) => { state.accounts = data(s); render(); }, unavailable);
     db.collection("expenses").onSnapshot((s) => { state.costs = data(s); render(); }, unavailable);
     db.collection("expiries").onSnapshot((s) => { state.expiries = s.docs.map((x) => ({ id: x.id, ...x.data() })).filter((x) => x.item); render(); }, () => {});
+    db.doc("meta/fx").onSnapshot((s) => { state.fx = s.exists ? s.data() : null; render(); }, () => {});
     db.doc("meta/roadmap").onSnapshot((s) => { state.roadmap = s.exists ? s.data() : null; render(); }, () => {});
   })();
 })();

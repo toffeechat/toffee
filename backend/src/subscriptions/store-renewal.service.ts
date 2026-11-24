@@ -36,6 +36,8 @@ export class StoreRenewalService {
     try {
       const stopped = await this.stopGoogleRenewals();
       if (stopped > 0) this.logger.log(`활동 종료 방 구글 구독 갱신 해지 ${stopped}건`);
+      const deleted = await this.stopDeletedUserRenewals();
+      if (deleted > 0) this.logger.log(`탈퇴 회원 구글 구독 갱신 해지 ${deleted}건`);
     } catch (error) {
       this.logger.error('구글 구독 갱신 해지 실패', error as Error);
       // 잡아서 넘기는 실패는 Sentry가 모름 — 직접 보냄(2026-11-24 점검 5차, 운영자 홈 "최근 오류"·폰 알림에 보이게)
@@ -69,20 +71,37 @@ export class StoreRenewalService {
     for (const purchase of purchases) {
       const rooms = purchase.actor ? [purchase.actor] : (purchase.bundle?.actors.map((item) => item.actor) ?? []);
       if (!rooms.some((room) => shouldStopNow(room, purchase.iapExpiresAt, now))) continue;
-      // 여러 서버가 동시에 돌아도 한 번만 해지 — 먼저 갱신 꺼짐으로 표시한 쪽만 구글에 요청하고, 실패하면 되돌려 다음에 다시(2026-10-27)
-      const { count } = await this.prisma.purchase.updateMany({ where: { id: purchase.id, willRenew: true }, data: { willRenew: false } });
-      if (count !== 1) continue;
-      try {
-        if (await this.iap.cancelGoogleSubscription(purchase.iapTransactionId!)) {
-          stopped += 1;
-          continue;
-        }
-      } catch (error) {
-        this.logger.warn(`구글 구독 해지 실패(purchase ${purchase.id}): ${String(error)}`);
-      }
-      await this.prisma.purchase.updateMany({ where: { id: purchase.id, willRenew: false }, data: { willRenew: true } });
+      if (await this.cancelRenewal(purchase)) stopped += 1;
     }
     return stopped;
+  }
+
+  /**
+   * 탈퇴한 회원의 구글 구독 다음 결제 끄기(2026-11-24 사용자 결정) — 탈퇴는 우리 구매만 닫고 스토어 자동 갱신은 남아서, 해지를 잊은 팬은
+   * 다음 달에도 돈이 나갔음. 안드로이드는 서버에서 끌 수 있어 매시간 정리(이번 기간은 그대로 끝까지 — 환불은 아님). 애플은 서버에서 못 꺼서
+   * 탈퇴 화면에서 [구독 관리 열기]로 안내하고, 그래도 갱신되면 결제 알림 처리에서 운영자에게 환불 검토 알림.
+   */
+  async stopDeletedUserRenewals() {
+    const purchases = await this.prisma.purchase.findMany({
+      where: { iapPlatform: IapPlatform.ANDROID, iapTransactionId: { not: null }, willRenew: true, user: { deletedAt: { not: null } } },
+      select: { id: true, iapTransactionId: true },
+    });
+    let stopped = 0;
+    for (const purchase of purchases) if (await this.cancelRenewal(purchase)) stopped += 1;
+    return stopped;
+  }
+
+  // 여러 서버가 동시에 돌아도 한 번만 해지 — 먼저 갱신 꺼짐으로 표시한 쪽만 구글에 요청하고, 실패하면 되돌려 다음에 다시(2026-10-27)
+  private async cancelRenewal(purchase: { id: string; iapTransactionId: string | null }): Promise<boolean> {
+    const { count } = await this.prisma.purchase.updateMany({ where: { id: purchase.id, willRenew: true }, data: { willRenew: false } });
+    if (count !== 1) return false;
+    try {
+      if (await this.iap.cancelGoogleSubscription(purchase.iapTransactionId!)) return true;
+    } catch (error) {
+      this.logger.warn(`구글 구독 해지 실패(purchase ${purchase.id}): ${String(error)}`);
+    }
+    await this.prisma.purchase.updateMany({ where: { id: purchase.id, willRenew: false }, data: { willRenew: true } });
+    return false;
   }
 
   /**

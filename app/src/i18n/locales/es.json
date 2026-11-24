@@ -348,9 +348,12 @@
   },
   "deleteAccount": {
     "title": "Eliminar cuenta",
-    "body": "Al eliminar tu cuenta se borra tu información, como el apodo y la fecha de nacimiento, y no se puede deshacer.\n\n• Si tienes suscripciones activas, cancélalas primero en App Store o Google Play. Eliminar tu cuenta no detiene los cobros de la tienda.\n• No podrás volver a ver tus chats. Guarda antes las fotos, audios o videos que quieras conservar.\n• Las respuestas que enviaste se mostrarán a los artistas como \"Fan eliminado\".",
+    "body": "Al eliminar tu cuenta se borra tu información, como el apodo y la fecha de nacimiento, y no se puede deshacer.\n\n• Cancela primero las suscripciones de App Store: eliminar tu cuenta no detiene los cobros de App Store. En Google Play, el siguiente pago se desactiva automáticamente al eliminar tu cuenta (el periodo actual no se reembolsa).\n• No podrás volver a ver tus chats. Guarda antes las fotos, audios o videos que quieras conservar.\n• Las respuestas que enviaste se mostrarán a los artistas como \"Fan eliminado\".",
     "confirm": "Eliminar",
-    "failed": "No se pudo eliminar tu cuenta. Inténtalo de nuevo."
+    "failed": "No se pudo eliminar tu cuenta. Inténtalo de nuevo.",
+    "storeActiveTitle": "Todavía tienes una suscripción activa",
+    "storeActiveBody": "Eliminar tu cuenta no detiene los cobros de {{store}}. Cancélala en la gestión de suscripciones antes de eliminar tu cuenta.",
+    "storeActiveAndroid": "Al eliminar tu cuenta, el siguiente pago de Google Play se desactiva automáticamente. El periodo actual no se reembolsa; para cancelar ahora, usa la gestión de suscripciones."
   },
   "discover": {
     "tagline": "Más cerca de lo que importa.",
