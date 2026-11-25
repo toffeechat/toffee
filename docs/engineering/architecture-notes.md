@@ -2155,3 +2155,23 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
 - **Expo SDK 58(같은 날)**: iOS는 SceneDelegate 구조 — 소셜 로그인 콜백은 `plugins/with-social-login-urls.js`가 AppDelegate `application(_:open:options:)`에 넣음
   (LINE 라이브러리 플러그인 대신, Kakao·Naver 플러그인의 AppDelegate 수정은 실패해도 우리 것이 대신). 새 네이티브 플러그인을 넣으면 preview env로
   복사본 `expo prebuild --clean`을 돌려 AppDelegate를 눈으로 확인할 것. 잠금 파일을 처음부터 다시 만들 땐 npm 11로 만들고 npm 10 `npm install`로 맞춘 뒤 `npm ci` 확인.
+
+## 디저트랩 서비스 연결 — 검볼 "토피로 로그인" (2026-10-28)
+
+- 모듈 `src/partners/` — `partner-clients.ts`(환경 변수 `<PARTNER>_OAUTH_CLIENT_ID/SECRET/REDIRECT_URIS`, 비밀값은 sha256 후 timingSafeEqual, 돌아갈 주소는 정확히 일치),
+  `partner-subscriptions.ts`(순수 함수 `fullMonthsBetween`·`summarize`), `partners.service.ts`, `partners.controller.ts`.
+- 표 `PartnerLink(userId, partner, sub unique, consentedAt, revokedAt, lastUsedAt, codeHash unique, codeExpiresAt, codeChallenge, codeRedirectUri)`, `@@unique([userId, partner])`.
+- API: (로그인) `GET partners/:clientId/preview?redirectUri=`, `POST partners/authorize {clientId, redirectUri, state, codeChallenge}` → `{redirectTo}`(코드 60초, 해시만 저장),
+  `GET me/partner-links`, `DELETE me/partner-links/:partner` / (서비스 서버, @Public + 본문의 clientId·clientSecret) `POST partners/token {code, codeVerifier, redirectUri}` → `{sub, nickname, email, emailVerified, locale}`(emailVerified는 아래 2026-11-25)
+  (코드는 맞든 틀리든 한 번 보면 지움, 비밀값이 틀리면 코드는 그대로), `POST partners/subscriptions {sub, artistIds≤20}` → `{artists: {[id]: summary}}`(끊겼으면 404 `LINK_REVOKED`, 정지·차단 계정은 전부 inactive),
+  `POST partners/revoke {sub}`.
+- 구독 요약: 방 = 아티스트 개인방 + `CoupleMember.memberId = 아티스트`인 커플방, 열린 `Subscription`(cancelledAt null)의 가장 이른 `streakStartedAt` 기준 꽉 찬 개월(2026-11-25부터 — 만료 뒤 24시간 안 재구독은 이어짐, 그 뒤 재구독은 0부터).
+- **2026-11-25 main 반영 때 바꾼 것**: 마이그레이션 폴더를 `20261125120000_partner_links`로(최신 `20261124120000_rate_limit_hits` 뒤 — 10-28 날짜 그대로면 이미 적용된 10-29·11-24보다 앞 순서가 됨).
+  `token` 응답에 `emailVerified`(검볼 보안 점검 요청 — 검볼은 true일 때만 같은 이메일 계정과 자동 연결): `emailVerified(email, _count.authIdentities)` = 이메일이 있고 `AuthIdentity`가 1개 이상.
+  `findOrCreateUser`는 제공자가 확인한 이메일만 `User.email`에 저장하므로(네이버·LINE은 저장 안 함) 소셜 연결이 있으면 확인된 이메일, dev-login·시드·스모크 계정은 false.
+  서버 간 오류 코드 `PARTNER_INVALID_CLIENT`(401)·`PARTNER_INVALID_GRANT`(400)·`LINK_REVOKED`(404)를 `ERROR_MESSAGES`에 등록 — 예전 `{ code: 'LINK_REVOKED' }`는 표에 없어서
+  `LocalizedExceptionFilter`가 `NOT_FOUND`로 바꿔 버려 검볼이 연결 끊김을 알아채지 못했음(검볼 `ToffeeClient`는 404 + `LINK_REVOKED`만 봄).
+  `checkEnv`: `GUMBALL_OAUTH_*` 셋 다 비면 아무 말 없음(꺼짐), 일부만·비밀값 32자 미만·주소 형식 아님은 경고만(운영에서도 오류로 멈추지 않음).
+- 앱: `app/connect/[clientId].tsx`(파라미터 redirect_uri·state·code_challenge·code_challenge_method=S256), `lib/partner-connect.ts`(로그인 전 주소 기억), AuthGate가 `connect`를 로그인 전 허용 +
+  온보딩 끝난 뒤 기억한 주소로, `app/settings/connected.tsx`. 오류 코드 `PARTNER_INVALID_REQUEST`(9개 언어).
+- 검볼 쪽 구현은 `toffeechat/gumball` `backend/src/toffee/*`·`auth/toffee-auth.controller.ts`(구독 요약을 Redis에 60초만, DB엔 sub만).

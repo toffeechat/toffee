@@ -57,4 +57,16 @@ describe('서버 시작 설정 점검', () => {
     expect(checkEnv({ ...prod, TRUST_PROXY: '1' }).warnings.some((w) => w.startsWith('TRUST_PROXY'))).toBe(false);
     expect(checkEnv(base).warnings.some((w) => w.startsWith('TRUST_PROXY'))).toBe(false);
   });
+
+  it('검볼 연동 값 — 셋 다 비면 조용히 꺼짐, 운영에서도 오류 없이 경고만(2026-11-25)', () => {
+    const prod = { ...base, NODE_ENV: 'production', API_PUBLIC_URL: 'https://api', KAKAO_APP_ID: '1' };
+    const gumballWarnings = (env: Record<string, string>) => checkEnv(env).warnings.filter((w) => w.includes('GUMBALL') || w.includes('검볼'));
+    expect(gumballWarnings(prod)).toHaveLength(0);
+    expect(checkEnv({ ...prod, GUMBALL_OAUTH_CLIENT_ID: 'gumball-demo' }).errors).toHaveLength(0);
+    expect(gumballWarnings({ ...prod, GUMBALL_OAUTH_CLIENT_ID: 'gumball-demo' })).toHaveLength(1);
+    const full = { ...prod, GUMBALL_OAUTH_CLIENT_ID: 'gumball-demo', GUMBALL_OAUTH_CLIENT_SECRET: 'x'.repeat(40), GUMBALL_OAUTH_REDIRECT_URIS: 'https://gumball.test/auth/toffee, gumball-dev://auth/toffee' };
+    expect(gumballWarnings(full)).toHaveLength(0);
+    expect(gumballWarnings({ ...full, GUMBALL_OAUTH_CLIENT_SECRET: 'short' })).toHaveLength(1);
+    expect(gumballWarnings({ ...full, GUMBALL_OAUTH_REDIRECT_URIS: 'gumball.test/auth/toffee' })).toHaveLength(1);
+  });
 });
