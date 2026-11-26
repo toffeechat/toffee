@@ -208,6 +208,15 @@ describe('데모 입장 코드(2026-10-01, 운영자 코드 분리 2026-10-14)',
     expect(admin.prisma.user.upsert).not.toHaveBeenCalled();
   });
 
+  it('바로 입장 as=fan2·as=former 계정(팬 2·이전 소속사)도 공용 코드·소속사별 코드로 다른 역할과 똑같이 들어감(2026-11-26)', async () => {
+    const { service } = withCode('candy-demo-42', 'boss-77');
+    for (const email of ['fan2@toffee.demo', 'former-staff@toffee.demo']) {
+      await expect(service.devLogin(email, undefined, undefined, 'candy-demo-42')).resolves.toMatchObject({ demoCode: 'common' });
+      await expect(service.devLogin(email, undefined, undefined, 'gmm-7k3p', 'code-1')).resolves.toMatchObject({ demoCode: 'code-1' });
+      await expect(service.devLogin(email, undefined, undefined, 'wrong')).rejects.toThrow();
+    }
+  });
+
   it('운영자 계정·운영자 역할 요청은 운영자 코드로만 — 일반 입장 코드로는 안 됨', async () => {
     const admin = withCode('candy-demo-42', 'boss-77', 'ADMIN');
     await expect(admin.service.devLogin('admin@toffee.demo', undefined, undefined, 'candy-demo-42')).rejects.toThrow();

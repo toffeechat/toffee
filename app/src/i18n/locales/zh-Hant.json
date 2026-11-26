@@ -512,7 +512,9 @@
     "demoRole": {
       "agency": "經紀公司",
       "artist": "藝人",
-      "fan": "粉絲",
+      "fan": "粉絲 1",
+      "fan2": "粉絲 2",
+      "former": "原經紀公司",
       "admin": "管理員",
       "email": "用信箱"
     },

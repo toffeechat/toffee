@@ -520,7 +520,9 @@
     "demoRole": {
       "agency": "Agencia",
       "artist": "Artista",
-      "fan": "Fan",
+      "fan": "Fan 1",
+      "fan2": "Fan 2",
+      "former": "Agencia anterior",
       "admin": "Admin",
       "email": "Con correo"
     },

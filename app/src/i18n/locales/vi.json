@@ -512,7 +512,9 @@
     "demoRole": {
       "agency": "Công ty quản lý",
       "artist": "Nghệ sĩ",
-      "fan": "Fan",
+      "fan": "Fan 1",
+      "fan2": "Fan 2",
+      "former": "Công ty cũ",
       "admin": "Quản trị viên",
       "email": "Bằng email"
     },
