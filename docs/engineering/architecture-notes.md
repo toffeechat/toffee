@@ -1359,6 +1359,7 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   2026-11-26: 역할 → 이메일 표를 `app/src/utils/demo-roles.ts`(순수 함수, `demo-roles.test.ts`)로 옮기고 주소 전용 역할 `fan2`(`fan2@`)·`former`
   (`former-staff@toffee.demo`, AGENCY_STAFF)를 추가. 로그인 칸 버튼은 `visibleDemoRoles({ showAdmin, extra })` — 기본 셋 + 운영자(보일 때) + 링크·저장된
   역할이 주소 전용이면 그 하나. 서버는 손대지 않음: `AuthService.devLogin`이 공용 코드·소속사별 코드 모두 `@toffee.demo`면 받고(11-24 점검 규칙),
+  `as=fan1`은 `parseDemoRole`이 `fan`으로 바꿈(버튼 라벨 `welcome.demoRole.fan` = "팬 1").
   접속 기록 역할은 계정 role로 나눠 `former`는 agency, `fan2`는 fan으로 잡힘.
 
 
