@@ -23,10 +23,8 @@ describe('데모 바로 입장 역할', () => {
     expect(parseDemoRole('nobody')).toBeNull();
   });
 
-  it('버튼: 기본 셋, 운영자·주소 전용 역할은 해당될 때만', () => {
-    expect(visibleDemoRoles({ showAdmin: false, extra: null })).toEqual(['agency', 'artist', 'fan']);
-    expect(visibleDemoRoles({ showAdmin: true, extra: null })).toEqual(['agency', 'artist', 'fan', 'admin']);
-    expect(visibleDemoRoles({ showAdmin: false, extra: 'former' })).toEqual(['agency', 'artist', 'fan', 'former']);
-    expect(visibleDemoRoles({ showAdmin: false, extra: 'fan' })).toEqual(['agency', 'artist', 'fan']);
+  it('버튼: 소속사·아티스트·팬 1·팬 2·이전 소속사는 늘, 운영자는 보일 때만', () => {
+    expect(visibleDemoRoles({ showAdmin: false })).toEqual(['agency', 'artist', 'fan', 'fan2', 'former']);
+    expect(visibleDemoRoles({ showAdmin: true })).toEqual(['agency', 'artist', 'fan', 'fan2', 'former', 'admin']);
   });
 });
