@@ -4,7 +4,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: 한 줄 세로 흐름 — 시작 전 안내(계정·초기화) → 역할 탭 → 남은 항목(기능별 묶음) → 통과한 항목(접힘). 토피 브랜드 색(Periwinkle) */
+/* 실기기 테스트 공통 틀(2026-11-26, 토피·검볼 같은 모양) — 맨 위 "지금 할 것" → 진행 → 고르기(누가·기기·상태) → 역할 탭 → 항목(문제 먼저, 묶음별) → 통과(접힘) → 시작 준비·변경 기록(접힘).
+   서비스마다 다른 것은 색(토큰)·계정·항목(ROLES)뿐. 결과는 db results/<항목 id>, 입장 코드는 data/users/<나>/… 에 저장(예전과 같은 곳). */
 :root{
   --bg:#FFFFFF; --surface:#F4F6FB; --line:#E3E6F0; --fg:#0F1115; --muted:#5B6172;
   --accent:#7C8CFF; --accent-strong:#5566F2; --accent-soft:#DCE1FF; --on-accent:#FFFFFF;
@@ -22,51 +23,60 @@
   --accent:#8E9BFF; --accent-strong:#A9B3FF; --accent-soft:#252B4D; --on-accent:#0F1115;
   --ok:#5BD39A; --ok-soft:#15301F; --bad:#FF7B90; --bad-soft:#3A1A21; --skip:#E9C46A; --skip-soft:#33291A; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;padding:0 16px}
-.wrap{max-width:820px;margin:0 auto;padding-block:24px 64px;display:flex;flex-direction:column;gap:22px}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;margin:0;padding:0 16px}
+.wrap{max-width:820px;margin:0 auto;padding-block:24px 64px;display:flex;flex-direction:column;gap:18px}
 h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance}
 h1{font-size:24px;font-weight:700}
-h2{font-size:17px;font-weight:700}
-.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent-strong);text-transform:uppercase}
-.sub{color:var(--muted);margin:6px 0 0;font-size:14px}
+h2{font-size:16px;font-weight:700}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--accent-strong)}
+.eyebrow .svc{background:var(--accent);color:var(--on-accent);border-radius:6px;padding:1px 8px;letter-spacing:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:14px}
 .mono{font-family:var(--mono);font-size:13px}
 button{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px;border-radius:6px}
+a{color:var(--accent-strong)}
 .panel{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .panel p{margin:0;font-size:14px}
-.warn{background:var(--skip-soft);border-radius:var(--r);padding:12px 14px;font-size:14px}
-.warn strong{color:var(--skip)}
-.warn ul{margin:6px 0 0;padding-left:18px}
-table.acc{width:100%;border-collapse:collapse;font-size:13.5px}
-.tblwrap{overflow-x:auto}
-table.acc th,table.acc td{text-align:left;padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
-table.acc th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
-.copy{background:none;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:12px;cursor:pointer;color:var(--muted);margin-left:4px}
-.progress{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.now{border-left:4px solid var(--accent);background:var(--surface)}
+.now ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.build{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.pill{font-size:12px;font-weight:600;border-radius:99px;padding:1px 9px;background:var(--accent-soft);color:var(--accent-strong);white-space:nowrap}
+.progress{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .progress b{color:var(--fg);font-variant-numeric:tabular-nums}
 .bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;display:flex}
 .bar i{display:block;height:100%}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:2}
-.tab{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:6px 14px;font-size:14px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.filters{display:flex;flex-direction:column;gap:8px}
+.frow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.frow .lab{font-size:12px;color:var(--muted);min-width:34px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:4px 11px;font-size:13.5px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-strong);font-weight:600}
+.chip .n{font-size:12px;opacity:.75;font-variant-numeric:tabular-nums;margin-left:2px}
+.tabs{display:flex;gap:6px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:2;scrollbar-width:none}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:6px 14px;font-size:14px;cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .tab .n{font-size:12px;opacity:.75;font-variant-numeric:tabular-nums}
+.tab .dot{width:7px;height:7px;border-radius:50%;background:var(--bad)}
 .section{display:flex;flex-direction:column;gap:10px}
 .who{font-size:14px;color:var(--muted);margin:0}
 .who code{font-family:var(--mono);font-size:13px;color:var(--fg)}
-.group{font-size:13px;font-weight:600;color:var(--muted);margin-top:8px}
+.group{font-size:13px;font-weight:700;color:var(--muted);margin-top:8px}
+.group.bad{color:var(--bad)}
 .item{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
 .item[data-s="ok"]{border-color:var(--ok)}
-.item[data-s="bad"]{border-color:var(--bad)}
-.item-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.item-title{font-weight:600;flex:1;min-width:200px}
-.tag{font-size:11.5px;font-weight:600;border-radius:99px;padding:1px 8px;background:var(--accent-soft);color:var(--accent-strong);white-space:nowrap}
-.tag.device{background:var(--skip-soft);color:var(--skip)}
+.item[data-s="bad"]{border-color:var(--bad);border-width:2px}
+.item-head{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.item-title{font-weight:600;flex:1 1 200px;min-width:0}
+.tag{font-size:11.5px;font-weight:600;border-radius:99px;padding:1px 8px;background:var(--surface);color:var(--muted);white-space:nowrap}
+.tag.me{background:var(--ok-soft);color:var(--ok)}
+.tag.new{background:var(--accent);color:var(--on-accent)}
+.tag.later{background:var(--skip-soft);color:var(--skip)}
 .steps{font-size:13.5px;color:var(--muted);margin:0;padding-left:18px}
 .expect{font-size:13.5px}
 .expect b{color:var(--muted);font-weight:600}
 .prev{font-size:12.5px;color:var(--muted);border-left:2px solid var(--line);padding-left:8px}
+.stale{font-size:12.5px;color:var(--skip);border-left:2px solid var(--skip);padding-left:8px}
 .choices{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
-.ch{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 12px;font-size:13.5px;cursor:pointer}
+.ch{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 12px;font-size:13.5px;cursor:pointer;min-height:34px}
 .ch[aria-pressed="true"][data-v="ok"]{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:600}
 .ch[aria-pressed="true"][data-v="bad"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);font-weight:600}
 .ch[aria-pressed="true"][data-v="skip"]{background:var(--skip-soft);border-color:var(--skip);color:var(--skip);font-weight:600}
@@ -74,64 +84,129 @@ table.acc th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
 textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-height:54px;resize:vertical}
 .saved{font-size:12px;color:var(--muted)}
 .banner{background:var(--bad-soft);border-radius:8px;padding:10px 14px;font-size:13.5px}
-.foot{font-size:12.5px;color:var(--muted)}
+.foot{font-size:12.5px;color:var(--muted);margin:0}
 .code-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .code-row input{font:inherit;font-family:var(--mono);font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;flex:1;min-width:160px}
 .btn{background:var(--accent-strong);color:var(--on-accent);border:0;border-radius:8px;padding:7px 14px;font-weight:600;cursor:pointer}
 .btn.ghost{background:var(--bg);color:var(--fg);border:1px solid var(--line);font-weight:500}
+.copy{background:none;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:12px;cursor:pointer;color:var(--muted);margin-left:4px}
+.entries{display:flex;gap:6px;flex-wrap:wrap}
+.entry{display:inline-flex;align-items:center;border:1px solid var(--accent);color:var(--accent-strong);border-radius:8px;padding:5px 11px;font-size:13.5px;text-decoration:none;background:var(--bg)}
+.entry[aria-disabled="true"]{border-color:var(--line);color:var(--muted);pointer-events:none}
+table.acc{width:100%;border-collapse:collapse;font-size:13.5px}
+.tblwrap{overflow-x:auto}
+table.acc th,table.acc td{text-align:left;padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+table.acc th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
+table.acc td:first-child{white-space:nowrap;font-weight:600}
+table.acc td{vertical-align:middle}
+.cell{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.acts{display:flex;gap:6px;flex-wrap:nowrap}
+.btn.sm{padding:4px 10px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+a.btn.sm[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.codes{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;align-items:center}
+.memo{border-top:1px solid var(--line);padding-top:8px}
+.memo>summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+.memo[open]>summary{margin-bottom:8px}
+table.acc td .mono{word-break:break-all}
+.code-row input::placeholder{font-family:var(--font);letter-spacing:0}
 .steps-big{margin:0;padding-left:20px;font-size:14px;display:flex;flex-direction:column;gap:4px}
 details.fold{border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
 details.fold>summary{cursor:pointer;padding:10px 14px;font-size:14px;font-weight:600;color:var(--muted)}
 details.fold[open]>summary{border-bottom:1px solid var(--line)}
 details.fold .inner{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
-details.panel>summary{cursor:pointer;font-weight:700;font-size:17px}
+details.panel>summary{cursor:pointer;font-weight:700;font-size:16px}
+details.panel>summary .sumnote{font-weight:400;font-size:13px;color:var(--muted);margin-left:6px}
+.hist{display:flex;flex-direction:column;gap:10px;font-size:13.5px}
+.hist h3{font-size:14px;color:var(--muted);margin-top:6px}
+.hist ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.hist details{border-top:1px solid var(--line);padding-top:8px}
+.hist details>summary{cursor:pointer;font-weight:600}
 .cleanup{font-size:13.5px;display:flex;flex-direction:column;gap:10px}
 .cleanup h3{font-size:14px;color:var(--muted)}
 .cleanup ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
 .cleanup .mono{font-size:12px;color:var(--muted)}
-.views{display:flex;gap:6px;flex-wrap:wrap}
-.view{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer}
-.view[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-strong);font-weight:600}
-.tag.me{background:var(--ok-soft);color:var(--ok)}
-.tag.claude{background:var(--surface);color:var(--muted)}
-.tag.later{background:var(--surface);color:var(--muted)}
-.stale{font-size:12.5px;color:var(--skip);border-left:2px solid var(--skip);padding-left:8px}
+.empty{color:var(--muted);font-size:14px;margin:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Toffee Dev · 데모 서버</div>
-    <h1>토피 실기기 테스트</h1>
-    <p class="sub">항목마다 통과 / 문제 / 건너뜀을 누르고, 문제면 메모에 무슨 일이 있었는지 적어 주세요. 바로 저장되고 Claude가 읽어서 고칩니다. 통과한 항목은 탭 맨 아래 "통과한 항목"으로 접혀 들어갑니다.</p>
+    <div class="eyebrow"><span class="svc">토피</span>Toffee Dev · 데모 서버</div>
+    <h1 style="margin-top:6px">토피 실기기 테스트</h1>
+    <p class="sub">항목마다 통과 · 문제 · 건너뜀을 누르고, 문제면 무슨 일이 있었는지 메모에 적습니다. 바로 저장되고 Claude가 읽어서 고칩니다.</p>
   </header>
 
   <div id="banner" class="banner" hidden></div>
 
-  <section class="panel" aria-label="진행 상황">
-    <div class="progress" id="progress"></div>
-    <div class="bar" id="bar" aria-hidden="true"></div>
-  </section>
-
-  <div class="warn"><strong>누가 무엇을 확인하나요 (11-24부터)</strong>
+  <section class="panel now" aria-label="지금 할 것">
+    <div class="build"><h2>지금 할 것</h2><span class="pill" id="build-pill"></span></div>
     <ul>
-      <li><b>내가 확인</b> — 실제 폰이 있어야만 되는 항목입니다(소셜 로그인, 푸시, 카메라·녹음, 화면 캡처, 진동, 스토어 결제 등). 페이지를 열면 이것만 먼저 보여요.</li>
-      <li><b>Claude 확인</b> — PC 웹과 폰 폭 브라우저로 볼 수 있는 항목입니다. 매달 첫째 주 화요일 <b>월간 점검</b> 때 Claude가 데모(<span class="mono">demo.toffeechat.app</span>)에서 돌고, 결과를 항목마다 <b>[Claude 날짜]</b> 메모로 남깁니다. 따로 안 보셔도 되고, 폰 앱에서 이상한 게 보이면 그때 문제로 눌러 주세요.</li>
-      <li>위 <b>[내가 확인] [Claude 확인] [전체]</b>로 바꿔 볼 수 있어요.</li>
-    </ul>
-  </div>
-
-  <div class="warn"><strong>지금 기준 — 11-24 Expo SDK 58 preview 새 빌드</strong>
-    <ul>
+  <li><b>11-24 preview 빌드</b>를 깐 폰으로 확인</li>
+  <li>먼저 <b>로그인 5종</b> → 그다음 푸시·사진·영상·음성·카메라</li>
+  <li>시작 전에 <b>운영자 → 데모 초기화</b> 한 번</li>
+</ul>
+<details class="memo"><summary>자세히</summary>    <ul>
       <li><b>폰 항목은 11-24 새 preview 빌드를 깐 뒤에</b> 확인해 주세요. 앱 틀(React Native)이 통째로 바뀌어서, 그 전에 누른 폰 결과는 <b>"이전 빌드 결과"</b>로 흐리게 보이고 다시 확인할 항목으로 돌아왔습니다.</li>
       <li><b>가장 먼저: 로그인 5종</b>(애플·구글·카카오·네이버·LINE). 새 빌드에서 아이폰 소셜 로그인이 앱으로 돌아오는 부분을 새로 짰습니다. 로그인 뒤 앱으로 못 돌아오면 바로 문제로 눌러 주세요.</li>
       <li>그다음 푸시(앱을 닫아도 오는지)·사진·영상·음성 보내기·카메라입니다.</li>
       <li>탈퇴할 때 스토어 구독 안내(11-24)는 새 빌드 다음 OTA에 들어갑니다. 실제 스토어 구독이 있어야 상자가 보여서 1월 샌드박스 때 확인합니다.</li>
       <li>시작 전에 <b>운영자 → 데모 초기화</b> 한 번(아래 "데모 초기화 방법"). 제목에 <b>1월</b>이 붙은 항목은 스토어 상품 등록 뒤에만 할 수 있어요.</li>
     </ul>
-  </div>
+<p class="sub" style="margin:6px 0 0"><b>내가 확인</b> = 실제 폰이 있어야 되는 항목(소셜 로그인·푸시·카메라·녹음·캡처·진동·스토어 결제). <b>Claude 확인</b> = 매달 첫째 주 화요일 월간 점검 때 Claude가 데모 웹으로 보고 [Claude 날짜] 메모를 남김.</p></details>
+  </section>
 
-  <details class="panel" aria-label="지난 배포 안내">
+  <details class="panel" id="start" aria-label="계정·바로 입장" open>
+    <summary>계정 · 바로 입장</summary>
+    <div class="codes"><span>입장 코드(운영자 빼고 전부) <b class="mono" data-code-show="demo-code">—</b> <button class="copy" data-code-copy="demo-code" hidden>복사</button></span><span>운영자 코드(운영자만) <b class="mono" data-code-show="admin-code">—</b> <button class="copy" data-code-copy="admin-code" hidden>복사</button></span></div>
+<div class="tblwrap"><table class="acc"><tr><th>역할</th><th>아이디 <span style="font-weight:400">(@toffee.demo)</span></th><th>바로 입장</th></tr>
+<tr><td>운영자</td><td><div class="cell"><span class="mono">admin</span><button class="copy" data-copy="admin@toffee.demo" aria-label="admin@toffee.demo 복사">복사</button></div></td><td><div class="acts"><a class="btn sm" data-entry="admin">열기</a><button class="btn ghost sm" data-entry-copy="admin">주소 복사</button></div></td></tr>
+<tr><td>소속사</td><td><div class="cell"><span class="mono">staff</span><button class="copy" data-copy="staff@toffee.demo" aria-label="staff@toffee.demo 복사">복사</button></div></td><td><div class="acts"><a class="btn sm" data-entry="agency">열기</a><button class="btn ghost sm" data-entry-copy="agency">주소 복사</button></div></td></tr>
+<tr><td>아티스트</td><td><div class="cell"><span class="mono">caramel-self</span><button class="copy" data-copy="caramel-self@toffee.demo" aria-label="caramel-self@toffee.demo 복사">복사</button></div></td><td><div class="acts"><a class="btn sm" data-entry="artist">열기</a><button class="btn ghost sm" data-entry-copy="artist">주소 복사</button></div></td></tr>
+<tr><td>팬 1</td><td><div class="cell"><span class="mono">fan1</span><button class="copy" data-copy="fan1@toffee.demo" aria-label="fan1@toffee.demo 복사">복사</button></div></td><td><div class="acts"><a class="btn sm" data-entry="fan">열기</a><button class="btn ghost sm" data-entry-copy="fan">주소 복사</button></div></td></tr>
+<tr><td>팬 2</td><td><div class="cell"><span class="mono">fan2</span><button class="copy" data-copy="fan2@toffee.demo" aria-label="fan2@toffee.demo 복사">복사</button></div></td><td><div class="acts"><a class="btn sm" data-entry="fan2">열기</a><button class="btn ghost sm" data-entry-copy="fan2">주소 복사</button></div></td></tr>
+<tr><td>이전 소속사</td><td><div class="cell"><span class="mono">former-staff</span><button class="copy" data-copy="former-staff@toffee.demo" aria-label="former-staff@toffee.demo 복사">복사</button></div></td><td><div class="acts"><a class="btn sm" data-entry="former">열기</a><button class="btn ghost sm" data-entry-copy="former">주소 복사</button></div></td></tr>
+</table></div>
+<p class="sub" style="margin:0">팬 2(<span class="mono">as=fan2</span>)·이전 소속사(<span class="mono">as=former</span>) 바로 입장은 11-26 PR #122가 main에 합쳐져 데모 웹에 배포된 뒤부터 열립니다. 그 전엔 로그인 화면 [이메일로] + 아이디 + 입장 코드로 들어가 주십시오.</p>
+<details class="memo"><summary>메모 — 계정별 상태 · 초기화 · 기타</summary><p class="sub" style="margin:0">운영자 「열기」는 운영자 칸이 보이는 주소만 엽니다 — 운영자 코드를 붙여 넣으십시오(외부 소속사에 주지 않음). 코드가 —로 보이면 Claude에게 알려 주면 넣어 둡니다(Railway → toffee → Variables → DEV_LOGIN_CODE · DEV_LOGIN_ADMIN_CODE).</p>
+    <p><b>폰</b>: 설치한 Toffee Dev 앱 · <b>PC</b>: <span class="mono">demo.toffeechat.app</span> (같은 데모 서버라 서로 연결돼요). 폰으로 팬, PC로 아티스트를 같이 켜 두면 푸시·실시간 확인이 쉬워요.</p>
+    <div class="tblwrap"><table class="acc">
+      <tr><th>역할 · 들어가는 버튼</th><th>이메일</th><th>상태</th></tr>
+      <tr><td>운영자 · <span class="mono">?as=admin</span> → [운영자]</td><td><span class="mono">admin@toffee.demo</span><button class="copy" data-copy="admin@toffee.demo">복사</button></td><td>모든 관리 화면 — <b>운영자 입장 코드</b>로 로그인</td></tr>
+      <tr><td>소속사 · [소속사]</td><td><span class="mono">staff@toffee.demo</span><button class="copy" data-copy="staff@toffee.demo">복사</button></td><td>Demo Entertainment (sample) — Caramel·Nougat·Macaron·Jellybean·CP방(Caramel &amp; Macaron) 관리. 데모 초기화 후 통계용 가상 팬 48명·최근 120일 기록이 들어 있음</td></tr>
+      <tr><td>이전 소속사 · <span class="mono">as=former</span> → [이전 소속사]</td><td><span class="mono">former-staff@toffee.demo</span><button class="copy" data-copy="former-staff@toffee.demo">복사</button></td><td>Former Agency (sample) — Nougat가 30일 전 떠난 소속사</td></tr>
+      <tr><td>아티스트 · [아티스트]</td><td><span class="mono">caramel-self@toffee.demo</span><button class="copy" data-copy="caramel-self@toffee.demo">복사</button></td><td>Caramel 본인(여성) · CP방 "Caramel &amp; Macaron" 멤버</td></tr>
+      <tr><td>팬 1 · <span class="mono">as=fan</span>(=fan1) → [팬 1]</td><td><span class="mono">fan1@toffee.demo</span><button class="copy" data-copy="fan1@toffee.demo">복사</button></td><td>Minji, 닉네임 <b>caramel_love</b> · "Caramel + Caramel &amp; Macaron" 묶음(두 방) 구독, Nougat는 이틀 전 해지</td></tr>
+      <tr><td>팬 2 · <span class="mono">as=fan2</span> → [팬 2]</td><td><span class="mono">fan2@toffee.demo</span><button class="copy" data-copy="fan2@toffee.demo">복사</button></td><td>Ploy, 닉네임 <b>nougat_lover</b> · "Caramel &amp; Macaron — All" 묶음(세 방) + Nougat 개인 구독</td></tr>
+      <tr><td colspan="3" class="sub">아티스트·소속사 이름은 10-14부터 영문(태국 소속사용 데모). 데모 메시지는 대부분 태국어라 한국어 화면에선 자동 번역이 같이 보여요.</td></tr>
+    </table></div>
+<h3>데모 초기화 방법</h3>
+    <p>테스트로 생긴 메시지·구독·계정을 지우고 처음 데모 상태로 돌려요. 테스트 시작 전 한 번, 다 하고 맨 마지막에 한 번 하세요.</p>
+    <ol class="steps-big">
+      <li>PC에서 <span class="mono">demo.toffeechat.app/?as=admin</span> → [운영자] → 운영자 입장 코드</li>
+      <li>운영자 첫 화면을 <b>맨 아래까지</b> 내려서 <b>데모 초기화</b> 누르기</li>
+      <li>확인 창에서 <b>초기화</b> → "초기화하는 중…"이 끝날 때까지 기다리기(10초 안팎)</li>
+      <li>폰 앱: 프로필 → <b>로그아웃</b> → 다시 로그인(소셜 계정은 새로 만들어지고 푸시 등록도 다시 됨)</li>
+    </ol>
+    <p class="sub" style="margin:0"><b>지워지는 것</b>: 메시지·답장·신고·차단·구독·환불·정산 마감, 새로 만든 아티스트·CP·묶음·소속사, 소셜 로그인으로 생긴 계정, 폰 푸시 등록. <b>그대로</b>: 데모 계정 6개, 앱 설치, 서버 설정, 이 체크리스트 결과.</p>
+    <p class="sub" style="margin:0"><b>버튼이 안 보이거나 실패할 때</b>: Railway → toffee → Variables → <span class="mono">DEMO_SEED</span>를 <span class="mono">reset</span>으로 바꾸고 Deploy → 배포가 끝나면 다시 <span class="mono">true</span>로 바꾸고 Deploy(이걸 안 하면 배포할 때마다 초기화됨).</p></details>
+  </details>
+
+  <section class="panel" aria-label="진행 상황">
+    <div class="progress" id="progress"></div>
+    <div class="bar" id="bar" aria-hidden="true"></div>
+  </section>
+
+  <div class="filters" aria-label="고르기">
+    <div class="frow" role="group" aria-label="누가 확인"><span class="lab">누가</span><span id="f-who" class="frow"></span></div>
+    <div class="frow" role="group" aria-label="기기"><span class="lab">기기</span><span id="f-dev" class="frow"></span></div>
+    <div class="frow" role="group" aria-label="상태"><span class="lab">상태</span><span id="f-st" class="frow"></span></div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs" aria-label="역할"></nav>
+  <div id="sections"></div>
+
+  <details class="panel" aria-label="변경 기록">
+    <summary>변경 기록 <span class="sumnote">언제 무엇이 바뀌었는지</span></summary>
+    <div class="hist">  <details>
     <summary>지난 배포 안내 (10-12 ~ 11-24)</summary>
     <p class="sub" style="margin:0">날짜별로 무엇이 언제 데모에 들어갔는지 적어 둔 기록입니다. 지금은 모두 main·데모에 들어가 있어요.</p>
     <ul class="cleanup" style="padding-left:18px">
@@ -156,50 +231,7 @@ details.panel>summary{cursor:pointer;font-weight:700;font-size:17px}
       <li>사진·음성·영상 보내기는 10-13에 파일 저장소(R2)를 연결해서 이제 돼요. 실패하면 화면 문구를 메모에 그대로 적어 주세요.</li>
     </ul>
   </details>
-
-  <section class="panel" aria-label="시작 전">
-    <h2>시작 전에</h2>
-    <p><b>폰</b>: 설치한 Toffee Dev 앱 · <b>PC</b>: <span class="mono">demo.toffeechat.app</span> (같은 데모 서버라 서로 연결돼요). 폰으로 팬, PC로 아티스트를 같이 켜 두면 푸시·실시간 확인이 쉬워요.</p>
-    <p>데모 계정은 로그인 화면 아래 <b>데모 로그인</b> 칸에서 들어가요. <b>[소속사] [아티스트] [팬]</b> 버튼을 고르고 입장 코드만 넣으면 돼요(이메일 입력 없음). 아래 표에서 버튼이 없는 계정(팬 2·이전 소속사)은 <b>[이메일로]</b>를 골라 이메일 + 입장 코드. 입장 코드는 Railway → toffee → Variables → <span class="mono">DEV_LOGIN_CODE</span>(눈 아이콘), 또는 운영자 화면 "데모 입장 코드"에서 만든 소속사용 코드도 돼요.</p>
-    <div class="code-row" aria-label="입장 코드">
-      <input id="code-input" type="text" autocomplete="off" spellcheck="false" placeholder="입장 코드를 한 번 붙여넣어 두세요">
-      <button class="btn" id="code-save" type="button">저장</button>
-      <button class="btn ghost" id="code-copy" type="button">복사</button>
-    </div>
-    <p style="margin:0"><b>운영자로 들어가는 주소</b> — 운영자 버튼은 숨겨져 있어요. <span class="mono">demo.toffeechat.app/?as=admin</span><button class="copy" data-copy="https://demo.toffeechat.app/?as=admin">복사</button> 으로 열면 [운영자] 칸이 나오고, 아래 <b>운영자 입장 코드</b>를 넣어요(브라우저에 기억 안 됨, 매번 입력).</p>
-    <p style="margin:0"><b>운영자 입장 코드</b> — <span class="mono">admin@toffee.demo</span>는 위 입장 코드가 아니라 이 코드로만 들어가요(Railway <span class="mono">DEV_LOGIN_ADMIN_CODE</span>와 같은 값). 외부 소속사에 주지 마세요.</p>
-    <div class="code-row" aria-label="운영자 입장 코드">
-      <input id="admin-code-input" type="text" autocomplete="off" spellcheck="false" placeholder="운영자 입장 코드">
-      <button class="btn" id="admin-code-save" type="button">저장</button>
-      <button class="btn ghost" id="admin-code-copy" type="button">복사</button>
-    </div>
-    <p class="sub" id="code-hint" style="margin:0">이 칸은 <b>본인만</b> 볼 수 있는 곳에 저장돼요(공유해도 다른 사람에겐 안 보임). Claude에게도 보내지 않아요.</p>
-    <div class="tblwrap"><table class="acc">
-      <tr><th>역할 · 들어가는 버튼</th><th>이메일</th><th>상태</th></tr>
-      <tr><td>운영자 · <span class="mono">?as=admin</span> → [운영자]</td><td><span class="mono">admin@toffee.demo</span><button class="copy" data-copy="admin@toffee.demo">복사</button></td><td>모든 관리 화면 — <b>운영자 입장 코드</b>로 로그인</td></tr>
-      <tr><td>소속사 · [소속사]</td><td><span class="mono">staff@toffee.demo</span><button class="copy" data-copy="staff@toffee.demo">복사</button></td><td>Demo Entertainment (sample) — Caramel·Nougat·Macaron·Jellybean·CP방(Caramel &amp; Macaron) 관리. 데모 초기화 후 통계용 가상 팬 48명·최근 120일 기록이 들어 있음</td></tr>
-      <tr><td>이전 소속사 · [이메일로]</td><td><span class="mono">former-staff@toffee.demo</span><button class="copy" data-copy="former-staff@toffee.demo">복사</button></td><td>Former Agency (sample) — Nougat가 30일 전 떠난 소속사</td></tr>
-      <tr><td>아티스트 · [아티스트]</td><td><span class="mono">caramel-self@toffee.demo</span><button class="copy" data-copy="caramel-self@toffee.demo">복사</button></td><td>Caramel 본인(여성) · CP방 "Caramel &amp; Macaron" 멤버</td></tr>
-      <tr><td>팬 1 · [팬]</td><td><span class="mono">fan1@toffee.demo</span><button class="copy" data-copy="fan1@toffee.demo">복사</button></td><td>Minji, 닉네임 <b>caramel_love</b> · "Caramel + Caramel &amp; Macaron" 묶음(두 방) 구독, Nougat는 이틀 전 해지</td></tr>
-      <tr><td>팬 2 · [이메일로]</td><td><span class="mono">fan2@toffee.demo</span><button class="copy" data-copy="fan2@toffee.demo">복사</button></td><td>Ploy, 닉네임 <b>nougat_lover</b> · "Caramel &amp; Macaron — All" 묶음(세 방) + Nougat 개인 구독</td></tr>
-      <tr><td colspan="3" class="sub">아티스트·소속사 이름은 10-14부터 영문(태국 소속사용 데모). 데모 메시지는 대부분 태국어라 한국어 화면에선 자동 번역이 같이 보여요.</td></tr>
-    </table></div>
-  </section>
-
-  <details class="panel" aria-label="데모 초기화 방법">
-    <summary>데모 초기화 방법</summary>
-    <p>테스트로 생긴 메시지·구독·계정을 지우고 처음 데모 상태로 돌려요. 테스트 시작 전 한 번, 다 하고 맨 마지막에 한 번 하세요.</p>
-    <ol class="steps-big">
-      <li>PC에서 <span class="mono">demo.toffeechat.app/?as=admin</span> → [운영자] → 운영자 입장 코드</li>
-      <li>운영자 첫 화면을 <b>맨 아래까지</b> 내려서 <b>데모 초기화</b> 누르기</li>
-      <li>확인 창에서 <b>초기화</b> → "초기화하는 중…"이 끝날 때까지 기다리기(10초 안팎)</li>
-      <li>폰 앱: 프로필 → <b>로그아웃</b> → 다시 로그인(소셜 계정은 새로 만들어지고 푸시 등록도 다시 됨)</li>
-    </ol>
-    <p class="sub" style="margin:0"><b>지워지는 것</b>: 메시지·답장·신고·차단·구독·환불·정산 마감, 새로 만든 아티스트·CP·묶음·소속사, 소셜 로그인으로 생긴 계정, 폰 푸시 등록. <b>그대로</b>: 데모 계정 6개, 앱 설치, 서버 설정, 이 체크리스트 결과.</p>
-    <p class="sub" style="margin:0"><b>버튼이 안 보이거나 실패할 때</b>: Railway → toffee → Variables → <span class="mono">DEMO_SEED</span>를 <span class="mono">reset</span>으로 바꾸고 Deploy → 배포가 끝나면 다시 <span class="mono">true</span>로 바꾸고 Deploy(이걸 안 하면 배포할 때마다 초기화됨).</p>
-  </details>
-
-  <details class="panel" id="cleanup" aria-label="10-15 정리 내역">
+  <details>
     <summary>10-15 정리 내역 — 142개 → 88개</summary>
     <div class="cleanup">
       <p>같은 화면을 여러 날짜에 나눠 확인하던 항목을 하나로 합치고, 고쳐진 뒤 새 항목으로 다시 들어간 예전 "문제" 항목은 새 항목 하나로 바꿨어요. 묶음도 날짜("10-12 피드백 반영" 등) 대신 기능별로 다시 나눴어요. 통과로 눌러 두신 19개는 그대로 남아 있고 탭 맨 아래에 접혀 있어요.</p>
@@ -249,8 +281,7 @@ details.panel>summary{cursor:pointer;font-weight:700;font-size:17px}
       <p class="mono">예전 항목의 결과·메모는 지우지 않았어요(화면에서만 빠짐). 지난번 문제 메모는 합친 항목 아래 "지난번"으로 옮겨 적었어요.</p>
     </div>
   </details>
-
-  <details class="panel" id="audit1020" aria-label="10-20 전수 정리 내역">
+  <details>
     <summary>10-20 전수 정리 내역 — 109개 → 120개</summary>
     <div class="cleanup">
       <p>체크리스트를 작업 로그·STATUS·실제 코드와 하나씩 맞췄어요. 항목 id는 그대로라 지금까지 누른 결과·메모는 남아 있어요.</p>
@@ -283,17 +314,28 @@ details.panel>summary{cursor:pointer;font-weight:700;font-size:17px}
       <p class="mono">스토어 갱신 자동 멈춤(구글)·데모 매일 새벽 자동 초기화는 실제 스토어 결제·새벽 시각이 필요해 항목으로 넣지 않았어요.</p>
     </div>
   </details>
-
-  <div class="views" id="views" role="group" aria-label="누가 확인"></div>
-  <nav class="tabs" role="tablist" id="tabs" aria-label="역할"></nav>
-  <div id="sections"></div>
+<p class="sub" style="margin:0">2026-11-26 — 팬 2(<span class="mono">as=fan2</span>)·이전 소속사(<span class="mono">as=former</span>)도 바로 입장([열기]·[주소 복사]), 데모 로그인 버튼에 [팬 1][팬 2][이전 소속사]. 팬 탭(PC 웹)에 항목 하나 추가(PR #122 — main 반영·데모 배포 뒤 확인).</p>
+<p class="sub" style="margin:0">2026-11-26 — 화면 틀을 검볼 실기기 테스트와 같은 모양으로 바꿈(지금 할 것 · 시작 준비 접기 · 누가·기기·상태 고르기 · 문제 먼저 · 제목의 날짜는 「새로」 배지로). 항목과 누른 결과·메모는 그대로.</p></div>
+  </details>
 
   <div class="code-row"><button class="btn ghost" id="clear-all" type="button">결과 모두 지우기</button><span class="sub" id="clear-hint" style="margin:0"></span></div>
-  <p class="foot">문제가 생긴 화면은 캡처해서 대화에도 같이 보내 주시면 더 빨리 고칠 수 있어요.</p>
+  <p class="foot">문제가 생긴 화면은 캡처해서 대화에도 같이 보내 주시면 더 빨리 고칠 수 있습니다.</p>
 </div>
 
 <script>
-// [id, 제목, 단계[], 기대 결과, 태그("폰"/"PC"/"폰·PC"), 실기기전용?, 그룹, 지난번(선택)]
+// [id, 제목, 단계[], 되면, 기기("폰"/"PC"/"폰·PC"), 실기기에서만?, 묶음, 지난번(선택), 넣은 날 "YYYY-MM-DD"(선택)]
+const CFG = {
+  storageKey: "toffee-test-",
+  codeDocs: ["demo-code", "admin-code"],
+  // 폰 앱 기준 빌드 — 이 날짜 전에 누른 "내가 확인" 결과는 "이전 빌드 결과"로 보고 다시 확인 목록에 넣음
+  build: {date: "2026-11-24", name: "SDK 58 preview 빌드", pill: "폰 기준 · 11-24 SDK 58 preview 빌드"},
+  // 진짜 소셜 계정 등이 필요해 사람이 보는 항목(실기기 칸이 false여도)
+  ownerMe: new Set(["w-social","w-same","f-loginmark","f-delete","f28-partner"]),
+  laterLabel: "1월 샌드박스 때",
+  claudeNote: "Claude가 월간 점검 때 데모 웹으로 확인하는 항목입니다. 따로 안 보셔도 됩니다.",
+  // 운영자는 코드를 주소에 넣지 않음(운영자 칸만 열림)
+  entryUrl: (codes, as) => as === "admin" ? "https://demo.toffeechat.app/?as=admin" : codes["demo-code"] ? `https://demo.toffeechat.app/?demo=${encodeURIComponent(codes["demo-code"])}&as=${as}` : null,
+};
 const ROLES = [
   {key:"fan", name:"팬 (폰)", who:"폰 앱 — 새 소셜 계정, 또는 <code>fan1@toffee.demo</code>", items:[
     ["f-apple","애플로 로그인",["로그인 화면 → Apple로 계속","Face ID / 암호"],"약관 동의 → 생년월일 → 닉네임 순서로 가입되고 홈이 나옴","폰",true,"로그인·가입"],
@@ -374,6 +416,7 @@ const ROLES = [
     ["w-photo","사진 넘기기",["사진 전체 화면 → 좌우 화살표"],"이전·다음 사진으로 넘어감","PC",false,"토피룸"],
     ["w-live","실시간 도착",["폰 팬 + PC 아티스트 동시에 열기","아티스트가 보내기"],"새로고침 없이 폰 대화방에 바로 뜸","폰·PC",false,"토피룸"],
     ["w-demolink","데모 링크로 바로 입장·언어 지정 (10-14·10-15 추가)",["로그아웃한 PC 창에서 demo.toffeechat.app/?demo=<입장 코드>&as=agency&lang=th 열기","같은 창에서 &as=fan으로 다시","틀린 코드로 ?demo=틀린코드&as=artist"],"입력 없이 그 역할로 바로 로그인(소속사 → 태국어 대시보드, 팬 → 둘러보기), 주소창의 코드는 지워짐, 이미 다른 데모 계정이면 바꿔서 로그인. 틀린 코드는 로그인 화면에 '입장 코드가 맞지 않아요'(그 언어로). ?lang=th만 붙여도 그 언어로 열리고 다음에도 유지","PC",false,"로그인"],
+    ["w26-demoroles","팬 2·이전 소속사 바로 입장·데모 로그인 버튼 5개 (11-26 추가)",["로그아웃한 PC 창(또는 폰 브라우저)에서 위 표 팬 2의 [열기] — 주소 끝이 &as=fan2","이전 소속사 [열기](&as=former)","&as=fan1로도 한 번(팬 1)","로그아웃 → 로그인 화면 아래 데모 로그인 칸의 버튼 보기 → [팬 2] 누르고 입장 코드"],"팬 2는 Ploy(nougat_lover)의 토피룸 목록(Caramel·Macaron·CP방·Nougat), 이전 소속사는 Former Agency 소속사 화면(소속 아티스트 없음). as=fan1은 as=fan과 같은 팬 1. 데모 로그인 버튼은 [소속사][아티스트][팬 1][팬 2][이전 소속사][이메일로](예전 [팬]은 [팬 1], 운영자는 ?as=admin일 때만). 폰 폭에선 버튼이 두 줄로 들어감. 소속사별 데모 코드로도 똑같이 들어감","PC",false,"로그인"],
     ["w24-tabs","PC 웹 탭 여러 개·새로 고침 (11-24 점검)",["PC 웹에 staff로 로그인","같은 주소를 새 탭으로 5개 이상 열기","탭마다 새로 고침 두세 번"],"모든 탭이 로그인된 채로 열리고 '요청이 너무 많아요'나 로그인 화면으로 튕기지 않음(예전엔 탭마다 토큰을 새로 받아 분당 10회 제한에 걸렸음)","PC",false,"로그인"],
     ["w-faq","공개 FAQ 페이지",["PC에서 api-demo.toffeechat.app/support 열기","'자주 묻는 질문 →' 누르기 → 위쪽 언어 바꾸기"],"FAQ 페이지가 열리고 언어별로 바뀜(스토어 고객센터 주소로 쓰는 곳)","PC",false,"기타"],
   ]},
@@ -438,7 +481,7 @@ const ROLES = [
     ["s24-roleview","데모: 팬·아티스트 화면으로 보기 (11-24 폰)",["폰 staff → 한눈에 맨 아래 [팬 화면으로 보기]","위쪽 검은 띠 '팬 화면으로 보는 중 · ‹ 소속사로 돌아가기' 보고 토피룸 하나 열어 보기 → 띠 누르기","[아티스트 화면으로 보기] → 띠 누르기","설정(톱니)에도 같은 두 줄이 있는지","운영자 → 데모 입장 코드 → 그 코드 카드의 화면별 횟수"],"로그아웃·코드 입력 없이 팬(fan1 토피룸 목록)·아티스트(Caramel 스튜디오)로 바뀌고, 맨 위에 검은 띠가 상태 표시줄 자리까지 덮고 화면 내용은 그 아래로(겹치지 않음). 띠를 누르면 소속사 한눈에로 돌아옴. 실패하면 띠에 '바꾸지 못했어요…'. 접속 기록 카드에 '소속사 · 팬 · 아티스트' 횟수가 같이 늘어남. 운영 앱·데모 아닌 계정엔 버튼·띠가 없음. 11-24 점검: 팬·아티스트 화면에서 로그아웃하면 띠도 같이 사라지고(다른 계정에 남지 않음), 돌아가기가 실패해도 띠가 남아 다시 누를 수 있음","폰·PC",false,"정산·권한"],
     ["s24-pc","PC로 이어 보기 (11-24 폰)",["폰 staff → 한눈에 맨 아래 'PC로 이어 보기'","[링크 복사] → 메모 앱이나 PC로 보내 열기","[보내기] → LINE·메일 공유창","바깥(어두운 곳) 눌러 닫기"],"아래에서 올라오는 창: 'PC에서 보면 한 화면에 다 보여요' + '같은 입장 코드로 바로 열려요 · 우리 팀에게만 보내 주세요' + 글자 없는 PC 화면 그림 + 주소(코드는 ••••로 가림). 복사하면 버튼이 '✓ 복사했어요', 복사한 주소를 PC에서 열면 입력 없이 그 언어의 소속사 대시보드. 공유창이 없는 PC 브라우저에선 [보내기]가 안 보이는 게 정상","폰",false,"정산·권한"],
     ["sn-settle","정산에 토피 몫 없음",["PC: 정산 → 맨 위 카드와 표 → 아티스트별 CSV 받기","(비교) admin으로 운영자 → 정산"],"소속사 화면엔 '토피 몫' 카드·칸이 없고 CSV에도 platform 열이 없음. 운영자 화면엔 그대로 있음(폰 정산 요약에도 토피 몫 없음, 11-24). 좁은 창에선 설정 대신 아래 탭 '정산'(요약)","PC",false,"정산·권한"],
-    ["s-former","이전 소속사 계정",["데모 로그인 → [이메일로] → former-staff@toffee.demo + 입장 코드"],"Nougat(30일 전 이적)가 목록에 안 보임 — 지금 이 소속사엔 아티스트가 없어 '소속 아티스트가 없어요'","PC",false,"정산·권한"],
+    ["s-former","이전 소속사 계정",["데모 로그인 → [이전 소속사] + 입장 코드(또는 위 표 이전 소속사 [열기])"],"Nougat(30일 전 이적)가 목록에 안 보임 — 지금 이 소속사엔 아티스트가 없어 '소속 아티스트가 없어요'","PC",false,"정산·권한"],
     ["s14-back","웹 뒤로가기",["PC 창을 좁히거나 폰 브라우저로 정산·아티스트 화면을 연 상태에서 새로고침"],"새로고침해도 왼쪽 위 ←가 있고, 누르면 대시보드로","PC",false,"정산·권한"],
   ]},
   {key:"admin", name:"운영자", who:"<code>admin@toffee.demo</code> — PC 웹 권장", items:[
@@ -482,101 +525,124 @@ const ROLES = [
 ];
 
 const LABEL = {ok:"통과", bad:"문제", skip:"건너뜀"};
-// 폰 앱 기준 빌드 — 이 날짜 전에 누른 "내가 확인" 결과는 "이전 빌드 결과"로 보고 다시 확인 목록에 넣음
-const BUILD = {date: "2026-11-24", name: "SDK 58 preview 빌드"};
-// 누가 확인: 기본은 "실기기에서만"(6번째 칸)이면 사람, 아니면 Claude(웹·폰 폭). 진짜 소셜 계정이 필요한 것 등은 여기서 사람으로
-const OWNER_ME = new Set(["w-social","w-same","f-loginmark","f-delete","f28-partner"]);
-const ownerOf = x => (x[5] || OWNER_ME.has(x[0])) ? "me" : "claude";
-const VIEWS = [["me","내가 확인"],["claude","Claude 확인"],["all","전체"]];
-const state = {results:{}, tab:"fan", view:"me"};
+const NEW_DAYS = 14;
+// 제목 끝 "(10-28 추가)" 같은 날짜 표시는 화면에서 빼고 "새로" 배지로(넣은 날이 따로 없으면 여기서 읽음). "1월"은 배지로 남김
+const DATE_SUFFIX = /\s*\((\d{1,2})-(\d{1,2})\b([^)]*)\)\s*$/;
+function meta(x){
+  if (x._m) return x._m;
+  let title = x[1], added = x[8] || null;
+  const m = DATE_SUFFIX.exec(title);
+  if (m) { title = title.slice(0, m.index); if (!added) added = `2026-${m[1].padStart(2,"0")}-${m[2].padStart(2,"0")}`; }
+  const later = /1월/.test(x[1]);
+  return (x._m = {title, added, later});
+}
+const daysSince = d => d ? (Date.now() - Date.parse(d + "T00:00:00+09:00")) / 86400000 : Infinity;
+const isNew = x => daysSince(meta(x).added) <= NEW_DAYS;
+const ownerOf = x => (x[5] || CFG.ownerMe.has(x[0])) ? "me" : "claude";
+const devOf = x => /폰/.test(x[4]) && /PC/.test(x[4]) ? "both" : /폰/.test(x[4]) ? "phone" : "pc";
+const WHO = [["me","내가 확인"],["claude","Claude 확인"],["all","전체"]];
+const DEV = [["all","전체"],["phone","폰"],["pc","PC"]];
+const ST = [["left","남은 것"],["bad","문제만"],["new","새로 생긴 것"],["all","전부"]];
+const P = CFG.storageKey;
+const state = {results:{}, tab:ROLES[0].key, who:"me", dev:"all", st:"left"};
 let db = null, canWrite = false;
 const openFolds = {};
-try { const t = localStorage.getItem("toffee-test-tab"); if (t && ROLES.some(r => r.key === t)) state.tab = t; } catch(e) {}
-try { const v = localStorage.getItem("toffee-test-view"); if (v && VIEWS.some(w => w[0] === v)) state.view = v; } catch(e) {}
+const load = (k, ok) => { try { const v = localStorage.getItem(P + k); if (v && ok(v)) state[k] = v; } catch(e) {} };
+load("tab", v => ROLES.some(r => r.key === v)); load("who", v => WHO.some(w => w[0] === v)); load("dev", v => DEV.some(w => w[0] === v)); load("st", v => ST.some(w => w[0] === v));
+const keep = k => { try { localStorage.setItem(P + k, state[k]); } catch(e) {} };
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const inView = x => state.view === "all" || ownerOf(x) === state.view;
+const whoOk = x => state.who === "all" || ownerOf(x) === state.who;
+const devOk = x => state.dev === "all" || devOf(x) === "both" || devOf(x) === state.dev;
+const inView = x => whoOk(x) && devOk(x);
 const allItems = () => ROLES.flatMap(r => r.items).filter(inView);
 // 이전 빌드 결과: "내가 확인" 항목인데 기준 빌드 날짜 전에 누른 것
-const isStale = x => { const r = state.results[x[0]]; return !!(r && r.status && ownerOf(x) === "me" && (r.updatedAt || "") < BUILD.date); };
+const isStale = x => { const r = state.results[x[0]]; return !!(CFG.build.date && r && r.status && ownerOf(x) === "me" && (r.updatedAt || "") < CFG.build.date); };
 const cur = x => isStale(x) ? undefined : state.results[x[0]]?.status;
-const isDone = x => cur(x) === "ok";
+const stOk = x => state.st === "all" || (state.st === "bad" ? cur(x) === "bad" : state.st === "new" ? isNew(x) : cur(x) !== "ok");
 
 function renderProgress(){
   const items = allItems(); const n = items.length;
   const c = {ok:0, bad:0, skip:0};
   items.forEach(x => { const s = cur(x); if (c[s] !== undefined) c[s]++; });
   const left = n - c.ok - c.bad - c.skip;
-  if (!n) { $("#progress").innerHTML = "항목이 없어요"; $("#bar").innerHTML = ""; return; }
+  if (!n) { $("#progress").innerHTML = "고른 조건에 맞는 항목이 없습니다"; $("#bar").innerHTML = ""; return; }
   $("#progress").innerHTML = `<span>전체 <b>${n}</b></span><span style="color:var(--ok)">통과 <b>${c.ok}</b></span><span style="color:var(--bad)">문제 <b>${c.bad}</b></span><span style="color:var(--skip)">건너뜀 <b>${c.skip}</b></span><span>남음 <b>${left}</b></span>`;
   $("#bar").innerHTML = ["ok","bad","skip"].map(k => `<i style="width:${c[k]/n*100}%;background:var(--${k})"></i>`).join("");
 }
 
-function renderTabs(){
-  $("#views").innerHTML = VIEWS.map(([k, label]) => {
-    const n = ROLES.flatMap(r => r.items).filter(x => k === "all" || ownerOf(x) === k).length;
-    return `<button class="view" data-view="${k}" aria-pressed="${state.view === k}">${label} <span class="n">${n}</span></button>`;
-  }).join("");
+function chips(list, key, count){
+  return list.map(([k, label]) => `<button class="chip" data-f="${key}" data-v="${k}" aria-pressed="${state[key] === k}">${label}${count ? ` <span class="n">${count(k)}</span>` : ""}</button>`).join("");
+}
+function renderFilters(){
+  const every = ROLES.flatMap(r => r.items);
+  $("#f-who").innerHTML = chips(WHO, "who", k => every.filter(x => (k === "all" || ownerOf(x) === k) && devOk(x)).length);
+  $("#f-dev").innerHTML = chips(DEV, "dev");
+  $("#f-st").innerHTML = chips(ST, "st", k => allItems().filter(x => k === "all" || (k === "bad" ? cur(x) === "bad" : k === "new" ? isNew(x) : cur(x) !== "ok")).length);
   $("#tabs").innerHTML = ROLES.map(r => {
     const items = r.items.filter(inView);
     const done = items.filter(x => cur(x)).length;
-    return `<button class="tab" role="tab" data-tab="${r.key}" aria-selected="${r.key === state.tab}">${esc(r.name)} <span class="n">${done}/${items.length}</span></button>`;
+    const bad = items.some(x => cur(x) === "bad");
+    return `<button class="tab" role="tab" data-tab="${r.key}" aria-selected="${r.key === state.tab}">${bad ? '<span class="dot" aria-label="문제 있음"></span>' : ""}${esc(r.name)} <span class="n">${done}/${items.length}</span></button>`;
   }).join("");
 }
 
 function renderItem(x){
-  const [id, title, steps, expect, tag, device, , prev] = x;
+  const [id, , steps, expect, tag, , , prev] = x;
+  const {title, later} = meta(x);
   const raw = state.results[id] || {};
   const stale = isStale(x);
   const r = stale ? {note: raw.note} : raw;
   const owner = ownerOf(x);
   return `<div class="item" data-s="${r.status || ""}" id="item-${id}">
     <div class="item-head"><span class="item-title">${esc(title)}</span>
-      <span class="tag ${owner}">${owner === "me" ? "내가 확인" : "Claude 확인"}</span><span class="tag">${esc(tag)}</span>${/1월/.test(title) ? '<span class="tag later">1월 샌드박스 때</span>' : ""}</div>
+      ${isNew(x) ? '<span class="tag new">새로</span>' : ""}<span class="tag ${owner}">${owner === "me" ? "내가 확인" : "Claude 확인"}</span><span class="tag">${esc(tag)}</span>${later ? `<span class="tag later">${esc(CFG.laterLabel)}</span>` : ""}</div>
     <ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
     <div class="expect"><b>되면:</b> ${esc(expect)}</div>
     ${prev ? `<div class="prev">지난번 — ${esc(prev)}</div>` : ""}
-    ${stale ? `<div class="stale">이전 빌드 결과(${esc((raw.updatedAt || "").slice(5, 10))}): ${LABEL[raw.status] || ""} — ${esc(BUILD.name)}에서 다시 봐 주세요</div>` : ""}
+    ${stale ? `<div class="stale">이전 빌드 결과(${esc((raw.updatedAt || "").slice(5, 10))}): ${LABEL[raw.status] || ""} — ${esc(CFG.build.name)}에서 다시 봐 주십시오</div>` : ""}
     <div class="choices">${["ok","bad","skip"].map(v => `<button class="ch" data-id="${id}" data-v="${v}" aria-pressed="${r.status === v}" ${canWrite ? "" : "disabled"}>${LABEL[v]}</button>`).join("")}</div>
-    ${(r.status === "bad" || r.note) ? `<textarea id="note-${id}" data-note="${id}" placeholder="무슨 일이 있었나요? (어떤 화면에서, 무엇을 눌렀더니, 무엇이 나왔는지)" ${canWrite ? "" : "disabled"}>${esc(r.note || "")}</textarea><span class="saved" id="saved-${id}"></span>`
+    ${(r.status === "bad" || r.note) ? `<textarea id="note-${id}" data-note="${id}" aria-label="메모" placeholder="어떤 화면에서, 무엇을 눌렀더니, 무엇이 나왔는지" ${canWrite ? "" : "disabled"}>${esc(r.note || "")}</textarea><span class="saved" id="saved-${id}"></span>`
       : (canWrite ? `<button class="ch" data-addnote="${id}" style="align-self:flex-start;font-size:12.5px">메모 남기기</button>` : "")}
   </div>`;
 }
 
 function renderGroups(items){
-  let html = "", last = "";
-  items.forEach(x => { if (x[6] !== last) { html += `<div class="group">${esc(x[6])}</div>`; last = x[6]; } html += renderItem(x); });
+  let html = "";
+  const bad = items.filter(x => cur(x) === "bad"), rest = items.filter(x => cur(x) !== "bad");
+  if (bad.length) html += `<div class="group bad">문제 ${bad.length}개 — 먼저 확인</div>` + bad.map(renderItem).join("");
+  let last = "";
+  rest.forEach(x => { if (x[6] !== last) { html += `<div class="group">${esc(x[6])}</div>`; last = x[6]; } html += renderItem(x); });
   return html;
 }
 
 function renderSections(){
   const role = ROLES.find(r => r.key === state.tab);
   const items = role.items.filter(inView);
-  const pending = items.filter(x => !isDone(x));
-  const done = items.filter(isDone);
+  const shown = items.filter(stOk);
+  const done = state.st === "left" ? items.filter(x => cur(x) === "ok") : [];
   let html = `<section class="section" role="tabpanel"><p class="who">${role.who}</p>`;
-  if (state.view === "claude") html += `<p class="sub" style="margin:0">Claude가 월간 점검 때 데모 웹으로 확인하는 항목입니다. 따로 안 보셔도 돼요.</p>`;
-  html += !items.length ? `<p class="sub">이 탭엔 ${state.view === "me" ? "직접 확인할" : "Claude가 확인할"} 항목이 없어요.</p>` : pending.length ? renderGroups(pending) : `<p class="sub">이 탭은 모두 통과했어요.</p>`;
+  if (state.who === "claude") html += `<p class="sub" style="margin:0">${esc(CFG.claudeNote)}</p>`;
+  html += !items.length ? `<p class="empty">이 탭엔 고른 조건에 맞는 항목이 없습니다.</p>` : shown.length ? renderGroups(shown) : `<p class="empty">${state.st === "left" ? "이 탭은 모두 통과했습니다." : "해당하는 항목이 없습니다."}</p>`;
   if (done.length) html += `<details class="fold" data-fold="${role.key}" ${openFolds[role.key] ? "open" : ""}><summary>통과한 항목 ${done.length}개</summary><div class="inner">${done.map(renderItem).join("")}</div></details>`;
   $("#sections").innerHTML = html + "</section>";
 }
 
 document.addEventListener("toggle", e => { const k = e.target.dataset && e.target.dataset.fold; if (k) openFolds[k] = e.target.open; }, true);
-
-function renderAll(){ renderProgress(); renderTabs(); renderSections(); }
+function renderAll(){ renderProgress(); renderFilters(); renderSections(); }
 
 async function save(id, patch){
   const prev = state.results[id] || {};
   const next = {...prev, ...patch, updatedAt: new Date().toISOString()};
   state.results[id] = next;
   try { await db.doc("results/" + id).set(next); return true; }
-  catch(e) { state.results[id] = prev; showBanner("저장하지 못했어요. 잠시 뒤 다시 눌러 주세요."); return false; }
+  catch(e) { state.results[id] = prev; showBanner("저장하지 못했습니다. 잠시 뒤 다시 눌러 주십시오."); return false; }
 }
 
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t) return;
-  if (t.dataset.view) { state.view = t.dataset.view; try { localStorage.setItem("toffee-test-view", state.view); } catch(err) {} renderAll(); return; }
-  if (t.dataset.tab) { state.tab = t.dataset.tab; try { localStorage.setItem("toffee-test-tab", state.tab); } catch(err) {} renderTabs(); renderSections(); return; }
+  if (t.dataset.f) { state[t.dataset.f] = t.dataset.v; keep(t.dataset.f); renderAll(); return; }
+  if (t.dataset.tab) { state.tab = t.dataset.tab; keep("tab"); renderFilters(); renderSections(); return; }
   if (t.dataset.copy) {
     try { await navigator.clipboard.writeText(t.dataset.copy); t.textContent = "복사됨"; setTimeout(() => t.textContent = "복사", 1200); }
     catch(err) { t.textContent = "길게 눌러 복사"; }
@@ -585,7 +651,7 @@ document.addEventListener("click", async e => {
   if (t.dataset.addnote) { state.results[t.dataset.addnote] = {...(state.results[t.dataset.addnote] || {}), note: state.results[t.dataset.addnote]?.note || " "}; renderSections(); const ta = document.getElementById("note-" + t.dataset.addnote); if (ta) { ta.value = ""; ta.focus(); } return; }
   if (t.dataset.id && db && canWrite) {
     const id = t.dataset.id, v = t.dataset.v;
-    const item = allItems().find(x => x[0] === id);
+    const item = ROLES.flatMap(r => r.items).find(x => x[0] === id);
     const now = item ? cur(item) : state.results[id]?.status;
     await save(id, {status: now === v ? null : v});
     renderAll();
@@ -601,75 +667,79 @@ document.addEventListener("input", e => {
   const text = e.target.value;
   timers[id] = setTimeout(async () => {
     const ok = await save(id, {note: text});
-    const s2 = document.getElementById("saved-" + id); if (s2) s2.textContent = ok ? "저장됨" : "저장하지 못했어요";
+    const s2 = document.getElementById("saved-" + id); if (s2) s2.textContent = ok ? "저장됨" : "저장하지 못했습니다";
   }, 800);
 });
 
-let codeDoc = null, adminCodeDoc = null, clearArmed = false;
-async function setupCode(user){
-  const input = $("#code-input");
-  if (!db || !user) { $("#code-hint").textContent = "입장 코드 저장은 claude.ai에 로그인한 상태에서만 돼요."; return; }
-  try {
-    const id = await user.id();
-    codeDoc = db.collection("data/users/" + id).doc("demo-code");
-    const snap = await codeDoc.get();
-    if (snap.exists && snap.data().code) input.value = snap.data().code;
-    adminCodeDoc = db.collection("data/users/" + id).doc("admin-code");
-    const adminSnap = await adminCodeDoc.get();
-    if (adminSnap.exists && adminSnap.data().code) $("#admin-code-input").value = adminSnap.data().code;
-  } catch(e) { $("#code-hint").textContent = "입장 코드를 불러오지 못했어요."; }
+// 입장 코드 — 각자 개인 칸(data/users/<나>/<문서>)에서 읽어 표에만 보여 줌(페이지 원본엔 없음 — 공유해도 코드가 새지 않음)
+const CODES = {};
+const entryUrl = as => CFG.entryUrl(CODES, as);
+function updateEntries(){
+  document.querySelectorAll("[data-code-show]").forEach(el => { const c = CODES[el.dataset.codeShow]; el.textContent = c || "—"; });
+  document.querySelectorAll("button[data-code-copy]").forEach(b => { b.hidden = !CODES[b.dataset.codeCopy]; });
+  document.querySelectorAll("a[data-entry]").forEach(a => {
+    const url = entryUrl(a.dataset.entry);
+    if (!url) { a.setAttribute("aria-disabled", "true"); a.removeAttribute("href"); return; }
+    a.removeAttribute("aria-disabled"); a.href = url; a.target = "_blank"; a.rel = "noopener";
+  });
+  document.querySelectorAll("button[data-entry-copy]").forEach(b => { b.disabled = !entryUrl(b.dataset.entryCopy); });
 }
-document.getElementById("code-save").addEventListener("click", async () => {
-  if (!codeDoc) return;
-  try { await codeDoc.set({code: $("#code-input").value.trim()}); $("#code-save").textContent = "저장됨"; setTimeout(() => $("#code-save").textContent = "저장", 1200); }
-  catch(e) { showBanner("입장 코드를 저장하지 못했어요. 다시 눌러 주세요."); }
+async function loadCodes(user){
+  if (!db || !user) { updateEntries(); return; }
+  try {
+    const uid = await user.id();
+    for (const name of CFG.codeDocs) {
+      const snap = await db.collection("data/users/" + uid).doc(name).get();
+      if (snap.exists && snap.data().code) CODES[name] = String(snap.data().code);
+    }
+  } catch(e) {}
+  updateEntries();
+}
+async function copyText(b, text){
+  const label = b.textContent;
+  try { await navigator.clipboard.writeText(text); b.textContent = "복사됨"; }
+  catch(err) { b.textContent = "복사 못 함"; }
+  setTimeout(() => b.textContent = label, 1200);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.codeCopy && CODES[b.dataset.codeCopy]) copyText(b, CODES[b.dataset.codeCopy]);
+  if (b.dataset.entryCopy) { const u = entryUrl(b.dataset.entryCopy); if (u) copyText(b, u); }
 });
-document.getElementById("code-copy").addEventListener("click", async () => {
-  const v = $("#code-input").value.trim(); if (!v) return;
-  try { await navigator.clipboard.writeText(v); $("#code-copy").textContent = "복사됨"; setTimeout(() => $("#code-copy").textContent = "복사", 1200); }
-  catch(e) { $("#code-input").select(); }
-});
-document.getElementById("admin-code-save").addEventListener("click", async () => {
-  if (!adminCodeDoc) return;
-  try { await adminCodeDoc.set({code: $("#admin-code-input").value.trim()}); $("#admin-code-save").textContent = "저장됨"; setTimeout(() => $("#admin-code-save").textContent = "저장", 1200); }
-  catch(e) { showBanner("운영자 입장 코드를 저장하지 못했어요. 다시 눌러 주세요."); }
-});
-document.getElementById("admin-code-copy").addEventListener("click", async () => {
-  const v = $("#admin-code-input").value.trim(); if (!v) return;
-  try { await navigator.clipboard.writeText(v); $("#admin-code-copy").textContent = "복사됨"; setTimeout(() => $("#admin-code-copy").textContent = "복사", 1200); }
-  catch(e) { $("#admin-code-input").select(); }
-});
+
+let clearArmed = false;
 document.getElementById("clear-all").addEventListener("click", async () => {
   if (!db || !canWrite) return;
-  if (!clearArmed) { clearArmed = true; $("#clear-all").textContent = "한 번 더 누르면 지워요"; $("#clear-hint").textContent = "모든 항목의 통과·문제·메모가 지워져요."; setTimeout(() => { clearArmed = false; $("#clear-all").textContent = "결과 모두 지우기"; $("#clear-hint").textContent = ""; }, 4000); return; }
+  if (!clearArmed) { clearArmed = true; $("#clear-all").textContent = "한 번 더 누르면 지웁니다"; $("#clear-hint").textContent = "모든 항목의 통과·문제·메모가 지워집니다."; setTimeout(() => { clearArmed = false; $("#clear-all").textContent = "결과 모두 지우기"; $("#clear-hint").textContent = ""; }, 4000); return; }
   clearArmed = false; $("#clear-all").textContent = "지우는 중…";
   try { for (const id of Object.keys(state.results)) await db.doc("results/" + id).delete(); }
-  catch(e) { showBanner("일부를 지우지 못했어요. 다시 눌러 주세요."); }
+  catch(e) { showBanner("일부를 지우지 못했습니다. 다시 눌러 주십시오."); }
   $("#clear-all").textContent = "결과 모두 지우기"; $("#clear-hint").textContent = "";
 });
 
 function showBanner(m){ const b = $("#banner"); b.textContent = m; b.hidden = false; }
 
+$("#build-pill").textContent = CFG.build.pill;
 renderAll();
+updateEntries();
 
 (async () => {
-  if (!window.claude || !window.claude.use) { showBanner("이 화면에서는 결과를 저장할 수 없어요. claude.ai에서 열면 저장돼요."); return; }
+  if (!window.claude || !window.claude.use) { showBanner("이 화면에서는 결과를 저장할 수 없습니다. claude.ai에서 열면 저장됩니다."); return; }
   db = await window.claude.use("db");
-  if (!db) { showBanner("결과를 저장할 수 없는 화면이에요. claude.ai에 로그인한 상태로 열어 주세요."); return; }
+  if (!db) { showBanner("결과를 저장할 수 없는 화면입니다. claude.ai에 로그인한 상태로 열어 주십시오."); return; }
   const user = await window.claude.use("user");
   const cw = user ? await user.can("data.write") : null;
   canWrite = cw !== false;
-  if (!canWrite) showBanner("보기 전용이에요. 결과는 소유자만 바꿀 수 있어요.");
+  if (!canWrite) showBanner("보기 전용입니다. 결과는 소유자만 바꿀 수 있습니다.");
   renderAll();
-  setupCode(user);
+  loadCodes(user);
   db.collection("results").onSnapshot(snap => {
     const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); });
     const typing = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.note;
     state.results = {...m, ...(typing ? {[typing]: state.results[typing]} : {})};
-    if (typing) { renderProgress(); renderTabs(); } else renderAll();
-  }, () => showBanner("저장 연결이 끊겼어요. 페이지를 새로 열어 주세요."));
+    if (typing) { renderProgress(); renderFilters(); } else renderAll();
+  }, () => showBanner("저장 연결이 끊겼습니다. 페이지를 새로 열어 주십시오."));
 })();
 </script>
-
 
 </body></html>
