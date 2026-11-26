@@ -18,7 +18,7 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { saveLastLoginProvider } from '@/lib/last-login';
 import { clearDemoViewAs } from '@/lib/demo-switch';
-import { DEMO_ROLE_EMAILS, DEMO_ROLES, loadDemoPrefs, peekDemoLink, saveDemoPrefs, SHOW_DEV_LOGIN, takeDemoLink, type DemoRole } from '@/lib/demo-entry';
+import { DEMO_ROLE_EMAILS, isLinkOnlyDemoRole, loadDemoPrefs, peekDemoLink, saveDemoPrefs, SHOW_DEV_LOGIN, takeDemoLink, visibleDemoRoles, type DemoRole } from '@/lib/demo-entry';
 import { Radius, Spacing } from '@/constants/theme';
 
 /**
@@ -27,7 +27,7 @@ import { Radius, Spacing } from '@/constants/theme';
  * DESIGN_GUIDE §3 온보딩 목표: 배우를 찾고 → 구독하면 DM이 열리고 → 사진·음성·영상이 오고 → 유료라는 걸 한눈에.
  * 로그인: 소셜 로그인(키가 설정된 것만 — 앱은 애플·구글·LINE·카카오·네이버, PC 웹은 구글, 2026-09-29) + 개발용 이메일 로그인(개발 빌드나
  * EXPO_PUBLIC_ENABLE_DEV_LOGIN=true일 때만 — 운영 빌드엔 안 보임, 서버도 운영에선 막음). 2026-10-15부터 데모 로그인은 역할 버튼 + 입장 코드,
- * 웹 링크 `?demo=코드&as=역할`이면 입력 없이 바로(`@/lib/demo-entry`).
+ * 웹 링크 `?demo=코드&as=역할`이면 입력 없이 바로(`@/lib/demo-entry` — 팬 2 `as=fan2`·이전 소속사 `as=former`는 주소로만, 2026-11-26).
  */
 
 export default function LoginScreen() {
@@ -43,6 +43,11 @@ export default function LoginScreen() {
   const codeValue = demoChoice === 'admin' ? adminCode : code;
   // 운영자 버튼은 숨겨 둠 — 소속사에 보내는 화면에 "운영자"가 보이지 않게. 주소에 `?as=admin`을 붙이거나 개발 빌드면 보임
   const [showAdmin] = useState(() => __DEV__ || peekDemoLink()?.role === 'admin');
+  // 주소로만 되는 역할(팬 2·이전 소속사, 2026-11-26) — 그 주소로 들어왔거나 지난번에 그 역할이었을 때만 버튼을 보여 줌(칸이 복잡해지지 않게)
+  const [extraRole, setExtraRole] = useState<DemoRole | null>(() => {
+    const role = peekDemoLink()?.role ?? null;
+    return isLinkOnlyDemoRole(role) ? role : null;
+  });
   const loginEmail = demoChoice === 'email' ? email.trim() : DEMO_ROLE_EMAILS[demoChoice];
 
   const devLogin = useMutation({
@@ -70,7 +75,10 @@ export default function LoginScreen() {
     }
     void loadDemoPrefs().then((saved) => {
       if (saved.code) setCode((current) => current || saved.code!);
-      if (!link?.role && saved.role) setDemoChoice(saved.role);
+      if (!link?.role && saved.role) {
+        setDemoChoice(saved.role);
+        if (isLinkOnlyDemoRole(saved.role)) setExtraRole(saved.role);
+      }
     });
     // 첫 화면에서 한 번만
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,7 +162,7 @@ export default function LoginScreen() {
                 {t('welcome.devHint')}
               </ThemedText>
               <View style={styles.roles}>
-                {DEMO_ROLES.filter((role) => role !== 'admin' || showAdmin).map((role) => (
+                {visibleDemoRoles({ showAdmin, extra: extraRole }).map((role) => (
                   <Chip key={role} label={t(`welcome.demoRole.${role}`)} selected={demoChoice === role} onPress={() => setDemoChoice(role)} />
                 ))}
                 <Chip label={t('welcome.demoRole.email')} selected={demoChoice === 'email'} onPress={() => setDemoChoice('email')} />

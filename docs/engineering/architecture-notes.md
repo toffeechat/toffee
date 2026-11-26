@@ -1356,6 +1356,10 @@ idToken aud로 채널 선택). 카카오는 `KAKAO_APP_ID`가 있으면 `/v1/use
   지움 — AuthGate가 `/login`으로 replace하면서 검색어가 사라지기 전에 잡으려고 `_layout.tsx`에서 import. 파라미터 이름이 `code`가 아닌 건
   `/oauth/<회사>?code=` 복귀와 안 겹치게. 로그인 화면이 `takeDemoLink()`로 한 번만 소비해 자동 dev-login, 이미 토큰이 있으면
   `_layout`의 `useDemoLinkSwitch`가 먼저 `logout()`. 코드·마지막 역할은 `preference-storage`(`toffee_demo_code`/`toffee_demo_role`, 운영자는 저장 안 함).
+  2026-11-26: 역할 → 이메일 표를 `app/src/utils/demo-roles.ts`(순수 함수, `demo-roles.test.ts`)로 옮기고 주소 전용 역할 `fan2`(`fan2@`)·`former`
+  (`former-staff@toffee.demo`, AGENCY_STAFF)를 추가. 로그인 칸 버튼은 `visibleDemoRoles({ showAdmin, extra })` — 기본 셋 + 운영자(보일 때) + 링크·저장된
+  역할이 주소 전용이면 그 하나. 서버는 손대지 않음: `AuthService.devLogin`이 공용 코드·소속사별 코드 모두 `@toffee.demo`면 받고(11-24 점검 규칙),
+  접속 기록 역할은 계정 role로 나눠 `former`는 agency, `fan2`는 fan으로 잡힘.
 
 
 ## 채팅방 묶음 기준·헤더·대화방 프로필 카드 (2026-10-02)

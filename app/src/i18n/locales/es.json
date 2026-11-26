@@ -521,6 +521,8 @@
       "agency": "Agencia",
       "artist": "Artista",
       "fan": "Fan",
+      "fan2": "Fan 2",
+      "former": "Agencia anterior",
       "admin": "Admin",
       "email": "Con correo"
     },

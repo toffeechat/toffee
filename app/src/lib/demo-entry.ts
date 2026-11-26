@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 
 import { loadPreference, savePreference } from './preference-storage';
+import { isDemoRole, type DemoRole } from '@/utils/demo-roles';
+
+export { DEMO_ROLE_EMAILS, DEMO_ROLES, isDemoRole, isLinkOnlyDemoRole, visibleDemoRoles, type DemoRole } from '@/utils/demo-roles';
 
 /**
  * 데모 로그인 간소화(2026-10-15 사용자 결정): 이메일을 치는 대신 [소속사][아티스트][팬][운영자] 중 하나를 고르고 입장 코드만.
@@ -8,25 +11,11 @@ import { loadPreference, savePreference } from './preference-storage';
  * 따로 요구하므로 소속사용 코드로는 못 들어감.
  *
  * 웹 링크로 바로 입장: `demo.toffeechat.app/?demo=<입장 코드>&as=agency&lang=th` — 누르면 입력 없이 그 역할로 로그인.
+ * `as`: agency·artist·fan·admin + 주소로만 되는 fan2(팬 2)·former(이전 소속사, 2026-11-26) — 계정 표는 `@/utils/demo-roles`.
  * (`code`가 아니라 `demo`인 건 PC 웹 소셜 로그인 복귀 주소 `/oauth/<회사>?code=…`와 겹치지 않게)
  */
 /** 데모 로그인 칸이 보이는 빌드인지 — 개발 빌드나 EXPO_PUBLIC_ENABLE_DEV_LOGIN=true(웹 데모·preview 앱). 운영 빌드엔 안 보이고 서버도 막음 */
 export const SHOW_DEV_LOGIN = __DEV__ || process.env.EXPO_PUBLIC_ENABLE_DEV_LOGIN === 'true';
-
-export type DemoRole = 'agency' | 'artist' | 'fan' | 'admin';
-
-export const DEMO_ROLES: DemoRole[] = ['agency', 'artist', 'fan', 'admin'];
-
-export const DEMO_ROLE_EMAILS: Record<DemoRole, string> = {
-  agency: 'staff@toffee.demo',
-  artist: 'caramel-self@toffee.demo',
-  fan: 'fan1@toffee.demo',
-  admin: 'admin@toffee.demo',
-};
-
-export function isDemoRole(value: string | null | undefined): value is DemoRole {
-  return !!value && (DEMO_ROLES as string[]).includes(value);
-}
 
 export interface DemoLink {
   role: DemoRole | null;
